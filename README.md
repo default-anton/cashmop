@@ -19,8 +19,8 @@
     3.  Amount: (Can be negative or positive, can be in separate Debit/Credit columns, a single Amount column, or in separate Amount + Type columns).
     4.  Description: (Transaction details, can combine multiple CSV columns if needed).
     5.  Owner: (To distinguish between spouses/users in a multi-user setup).
-    6.  Date/Time: (Or just Date).
-* Import Logic: User is prompted to transactions from the *last month* or select the months to import (to handle overlapping data in bank exports). *Note: This should be a month multi-selector UI based on the transaction dates in the file. Defaults to the last month.*
+    6.  Date: (Transaction date).
+* Import Logic: User is prompted to transactions from the *last month* or select months to import (to handle overlapping data in bank exports). *Note: This should be a month multi-selector UI based on the transaction dates in the file. Defaults to the last month.*
 
 ---
 
