@@ -36,7 +36,7 @@
 * Auto-Matching:
     * Once a rule is created (Category + Name), the app applies it to the current transaction *and* searches for all other existing uncategorized transactions that match.
     * These are batch-categorized immediately ("punched through").
-* Duplicate Prevention: When creating a new category, the system allows searching existing categories to prevent slight naming variations (BM25 and/or semantic similarity search).
+* Duplicate Prevention: When creating a new category, the system allows searching existing categories to prevent slight naming variations (keyword search using BM25).
 
 ---
 
@@ -56,8 +56,8 @@
 * Database: Local on-device database.
 * Web Search Integration:
     * Integrate a free search engine API (e.g., DuckDuckGo) to allow users to search for transaction details directly from the app.
-    * Goal: If the user is unsure how to categorize a transaction, the system suggests a category based on similar past transactions (BM25 + semantic search).
-    * *Note: This might suggest using a vector-capable database setup.*
+    * Goal: If the user is unsure how to categorize a transaction, the system suggests a category based on similar past transactions (keyword search using BM25).
+
 
 ---
 
