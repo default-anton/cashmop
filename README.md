@@ -1,6 +1,6 @@
 ### Product Overview
 * Concept: A high-performance, desktop-first cash flow and finance tracking application.
-* Target Audience: Tech-savvy users ("techies"), solo users, or a family of two (e.g., spouses).
+* Target Audience: Tech-savvy users, solo users, or a family of two (e.g., spouses).
 * Core Philosophy: Delightful, fast, and easy. No friction.
 * Platform: Cross-platform Desktop application (Windows, Linux, macOS). *Note: Explicitly not a web or mobile app.*
 
