@@ -1,23 +1,23 @@
 package database
 
 import (
- "database/sql"
- "log"
+	"database/sql"
+	"log"
 
- _ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var DB *sql.DB
 
 func InitDB() {
- var err error
- // Creates cashflow.db in the project root for now
- DB, err = sql.Open("sqlite3", "./cashflow.db")
- if err != nil {
-  log.Fatal(err)
- }
+	var err error
+	// Creates cashflow.db in the project root for now
+	DB, err = sql.Open("sqlite3", "./cashflow.db")
+	if err != nil {
+		log.Fatal(err)
+	}
 
- query := `CREATE TABLE IF NOT EXISTS transactions (
+	query := `CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         account TEXT NOT NULL,
         currency TEXT DEFAULT 'CAD',
@@ -30,9 +30,10 @@ func InitDB() {
     );
     CREATE INDEX IF NOT EXISTS idx_date ON transactions(date);
     CREATE INDEX IF NOT EXISTS idx_category ON transactions(category);`
-    
- _, err = DB.Exec(query)
- if err != nil {
-  log.Fatalf("Failed to init db: %q", err)
- }
+
+	_, err = DB.Exec(query)
+	if err != nil {
+		log.Fatalf("Failed to init db: %q", err)
+	}
 }
+

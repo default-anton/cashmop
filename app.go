@@ -1,9 +1,9 @@
 package main
 
 import (
- "context"
- "fmt"
- "cashflow/internal/database"
+	"cashflow/internal/database"
+	"context"
+	"fmt"
 )
 
 // App struct
@@ -19,8 +19,8 @@ func NewApp() *App {
 // startup is called when the app starts. The context is saved
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
- a.ctx = ctx
- database.InitDB() // Initialize SQLite
+	a.ctx = ctx
+	database.InitDB() // Initialize SQLite
 }
 
 // Greet returns a greeting for the given name
