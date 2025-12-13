@@ -1,13 +1,21 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { ArrowRight, Save, X } from 'lucide-react';
 
-type CsvFieldKey = 'date' | 'description' | 'amount' | 'owner' | 'currency';
+const LOCAL_STORAGE_KEY = 'cashflow.savedMappings';
+
+type CsvFieldKey = 'date' | 'description' | 'amount' | 'owner' | 'currency' | 'debit' | 'credit' | 'amountColumn' | 'typeColumn';
+
+type AmountMapping =
+  | { type: 'single'; column: string }
+  | { type: 'debitCredit'; debitColumn?: string; creditColumn?: string }
+  | { type: 'amountWithType'; amountColumn: string; typeColumn: string };
 
 export type ImportMapping = {
   csv: {
     date: string;
     description: string[];
-    amount: string;
+    amount: string; // legacy, keep for backward compatibility
+    amountMapping?: AmountMapping;
     owner?: string;
     currency?: string;
   };
@@ -32,6 +40,7 @@ const defaultMapping = (): ImportMapping => ({
     date: '',
     description: [],
     amount: '',
+    amountMapping: { type: 'single', column: '' },
   },
   account: '',
   currencyDefault: 'CAD',
@@ -43,6 +52,8 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
   const [mapping, setMapping] = useState<ImportMapping>(() => defaultMapping());
   const [activeDropKey, setActiveDropKey] = useState<CsvFieldKey | null>(null);
   const [attemptedNext, setAttemptedNext] = useState(false);
+  const [draggingDescIndex, setDraggingDescIndex] = useState<number | null>(null);
+  const [dragOverDescIndex, setDragOverDescIndex] = useState<number | null>(null);
 
   const [savedMappings, setSavedMappings] = useState<SavedMapping[]>(() => [
     {
@@ -53,6 +64,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
           date: 'Transaction Date',
           description: ['Description 1'],
           amount: 'Debit',
+          amountMapping: { type: 'single', column: 'Debit' },
           owner: 'Card Member',
         },
         account: 'RBC Checking',
@@ -67,28 +79,41 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
           date: 'Posting Date',
           description: ['Description 1'],
           amount: 'Credit',
+          amountMapping: { type: 'single', column: 'Credit' },
         },
         account: 'TD Visa',
         currencyDefault: 'CAD',
       },
     },
   ]);
+
+  // Load saved mappings from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Validate structure? For now assume correct
+          setSavedMappings(parsed);
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load saved mappings from localStorage', e);
+    }
+  }, []);
+
+  // Save saved mappings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(savedMappings));
+    } catch (e) {
+      console.warn('Failed to save mappings to localStorage', e);
+    }
+  }, [savedMappings]);
+
   const [selectedMappingId, setSelectedMappingId] = useState<string>('new');
   const [saveName, setSaveName] = useState('');
-
-  const isMissing = (key: 'date' | 'description' | 'amount' | 'account') => {
-    if (key === 'account') return mapping.account.trim().length === 0;
-    if (key === 'description') return mapping.csv.description.length === 0;
-    return (mapping.csv[key] ?? '').trim().length === 0;
-  };
-
-  const canProceed = useMemo(() => {
-    const csvOk = requiredCsvFields.every((k) => {
-      if (k === 'description') return mapping.csv.description.length > 0;
-      return mapping.csv[k].trim().length > 0;
-    });
-    return csvOk && mapping.account.trim().length > 0;
-  }, [mapping]);
 
   const usedHeaders = useMemo(() => {
     const used = new Set<string>();
@@ -97,12 +122,55 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
     if (mapping.csv.owner) used.add(mapping.csv.owner);
     if (mapping.csv.currency) used.add(mapping.csv.currency);
     mapping.csv.description.forEach((h) => used.add(h));
+    // Add columns from amountMapping
+    const am = mapping.csv.amountMapping;
+    if (am) {
+      if (am.type === 'single' && am.column) used.add(am.column);
+      if (am.type === 'debitCredit') {
+        if (am.debitColumn) used.add(am.debitColumn);
+        if (am.creditColumn) used.add(am.creditColumn);
+      }
+      if (am.type === 'amountWithType') {
+        if (am.amountColumn) used.add(am.amountColumn);
+        if (am.typeColumn) used.add(am.typeColumn);
+      }
+    }
     return used;
   }, [mapping]);
 
   const availableForDescription = useMemo(() => {
     return csvHeaders.filter((h) => !mapping.csv.description.includes(h));
   }, [csvHeaders, mapping.csv.description]);
+
+  const isAmountMappingValid = useMemo(() => {
+    const am = mapping.csv.amountMapping;
+    if (!am) return mapping.csv.amount.trim().length > 0; // legacy
+    switch (am.type) {
+      case 'single':
+        return am.column.trim().length > 0;
+      case 'debitCredit':
+        return !!(am.debitColumn || am.creditColumn);
+      case 'amountWithType':
+        return !!(am.amountColumn && am.typeColumn);
+    }
+  }, [mapping.csv.amountMapping, mapping.csv.amount]);
+
+  const amountMappingType = mapping.csv.amountMapping?.type ?? 'single';
+
+  const isMissing = (key: 'date' | 'description' | 'amount' | 'account') => {
+    if (key === 'account') return mapping.account.trim().length === 0;
+    if (key === 'description') return mapping.csv.description.length === 0;
+    if (key === 'amount') return !isAmountMappingValid;
+    return (mapping.csv[key] ?? '').trim().length === 0;
+  };
+
+  const canProceed = useMemo(() => {
+    const dateOk = mapping.csv.date.trim().length > 0;
+    const descriptionOk = mapping.csv.description.length > 0;
+    const amountOk = isAmountMappingValid;
+    const accountOk = mapping.account.trim().length > 0;
+    return dateOk && descriptionOk && amountOk && accountOk;
+  }, [mapping.csv.date, mapping.csv.description, mapping.account, isAmountMappingValid]);
 
   const removeHeaderEverywhere = (header: string) => {
     if (!header) return;
@@ -121,6 +189,35 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
       if (next.csv.owner === header) delete next.csv.owner;
       if (next.csv.currency === header) delete next.csv.currency;
 
+      // Clear from amountMapping
+      const am = next.csv.amountMapping;
+      if (am) {
+        switch (am.type) {
+          case 'single':
+            if (am.column === header) {
+              next.csv.amountMapping = { type: 'single', column: '' };
+              next.csv.amount = '';
+            }
+            break;
+          case 'debitCredit':
+            if (am.debitColumn === header) {
+              next.csv.amountMapping = { ...am, debitColumn: undefined };
+            }
+            if (am.creditColumn === header) {
+              next.csv.amountMapping = { ...am, creditColumn: undefined };
+            }
+            break;
+          case 'amountWithType':
+            if (am.amountColumn === header) {
+              next.csv.amountMapping = { ...am, amountColumn: '' };
+            }
+            if (am.typeColumn === header) {
+              next.csv.amountMapping = { ...am, typeColumn: '' };
+            }
+            break;
+        }
+      }
+
       return next;
     });
   };
@@ -138,6 +235,34 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
         if (next.csv.owner === h) delete next.csv.owner;
         if (next.csv.currency === h) delete next.csv.currency;
         next.csv.description = next.csv.description.filter((x) => x !== h);
+        // Clear from amountMapping
+        const am = next.csv.amountMapping;
+        if (am) {
+          switch (am.type) {
+            case 'single':
+              if (am.column === h) {
+                next.csv.amountMapping = { type: 'single', column: '' };
+                next.csv.amount = '';
+              }
+              break;
+            case 'debitCredit':
+              if (am.debitColumn === h) {
+                next.csv.amountMapping = { ...am, debitColumn: undefined };
+              }
+              if (am.creditColumn === h) {
+                next.csv.amountMapping = { ...am, creditColumn: undefined };
+              }
+              break;
+            case 'amountWithType':
+              if (am.amountColumn === h) {
+                next.csv.amountMapping = { ...am, amountColumn: '' };
+              }
+              if (am.typeColumn === h) {
+                next.csv.amountMapping = { ...am, typeColumn: '' };
+              }
+              break;
+          }
+        }
       };
 
       clearHeader(header);
@@ -147,8 +272,15 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
         return next;
       }
 
-      if (field === 'date' || field === 'amount') {
-        next.csv[field] = header;
+      if (field === 'date') {
+        next.csv.date = header;
+        return next;
+      }
+
+      if (field === 'amount') {
+        // Update amountMapping to single column
+        next.csv.amount = header;
+        next.csv.amountMapping = { type: 'single', column: header };
         return next;
       }
 
@@ -163,6 +295,84 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
       }
 
       return next;
+    });
+  };
+
+  const reorderDescription = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    setMapping((prev) => {
+      const newDescription = [...prev.csv.description];
+      const [removed] = newDescription.splice(fromIndex, 1);
+      newDescription.splice(toIndex, 0, removed);
+      return {
+        ...prev,
+        csv: {
+          ...prev.csv,
+          description: newDescription,
+        },
+      };
+    });
+  };
+
+  const handleAmountMappingTypeChange = (newType: AmountMapping['type']) => {
+    setMapping((prev) => {
+      const prevAm = prev.csv.amountMapping;
+      let newAm: AmountMapping;
+      // Preserve existing columns where applicable
+      switch (newType) {
+        case 'single':
+          const column = prevAm?.type === 'single' ? prevAm.column : '';
+          newAm = { type: 'single', column };
+          break;
+        case 'debitCredit':
+          const debitColumn = prevAm?.type === 'debitCredit' ? prevAm.debitColumn : undefined;
+          const creditColumn = prevAm?.type === 'debitCredit' ? prevAm.creditColumn : undefined;
+          newAm = { type: 'debitCredit', debitColumn, creditColumn };
+          break;
+        case 'amountWithType':
+          const amountColumn = prevAm?.type === 'amountWithType' ? prevAm.amountColumn : '';
+          const typeColumn = prevAm?.type === 'amountWithType' ? prevAm.typeColumn : '';
+          newAm = { type: 'amountWithType', amountColumn, typeColumn };
+          break;
+      }
+      return {
+        ...prev,
+        csv: {
+          ...prev.csv,
+          amountMapping: newAm,
+          // Keep legacy amount field in sync for single type
+          amount: newAm.type === 'single' ? newAm.column : prev.csv.amount,
+        },
+      };
+    });
+  };
+
+  const assignAmountMappingColumn = (field: 'column' | 'debitColumn' | 'creditColumn' | 'amountColumn' | 'typeColumn', header: string) => {
+    if (!header) return;
+    setMapping((prev) => {
+      const prevAm = prev.csv.amountMapping ?? { type: 'single', column: '' };
+      let newAm: AmountMapping;
+      switch (prevAm.type) {
+        case 'single':
+          newAm = { ...prevAm, column: header };
+          break;
+        case 'debitCredit':
+          newAm = { ...prevAm, [field]: header };
+          break;
+        case 'amountWithType':
+          newAm = { ...prevAm, [field]: header };
+          break;
+        default:
+          newAm = prevAm;
+      }
+      return {
+        ...prev,
+        csv: {
+          ...prev.csv,
+          amountMapping: newAm,
+          amount: newAm.type === 'single' ? newAm.column : prev.csv.amount,
+        },
+      };
     });
   };
 
@@ -349,10 +559,44 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 justify-end">
-                    {mapping.csv.description.map((h) => (
+                    {mapping.csv.description.map((h, index) => (
                       <span
                         key={h}
-                        className="inline-flex items-center gap-2 text-xs font-mono bg-obsidian-900 px-3 py-1.5 rounded border border-obsidian-800"
+                        draggable
+                        data-index={index}
+                        className={`inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border cursor-grab active:cursor-grabbing ${
+                          dragOverDescIndex === index
+                            ? 'border-brand bg-brand/10'
+                            : 'border-obsidian-800 bg-obsidian-900'
+                        }`}
+                        onDragStart={(e) => {
+                          setDraggingDescIndex(index);
+                          e.dataTransfer.setData('text/plain', index.toString());
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          setDragOverDescIndex(index);
+                          e.stopPropagation();
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverDescIndex === index) {
+                            setDragOverDescIndex(null);
+                          }
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                          reorderDescription(sourceIndex, index);
+                          setDragOverDescIndex(null);
+                          setDraggingDescIndex(null);
+                          e.stopPropagation();
+                        }}
+                        onDragEnd={() => {
+                          setDraggingDescIndex(null);
+                          setDragOverDescIndex(null);
+                        }}
                       >
                         {h}
                         <button
@@ -364,6 +608,11 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                         </button>
                       </span>
                     ))}
+                  </div>
+                )}
+                {mapping.csv.description.length >= 2 && (
+                  <div className="mt-2 text-xs text-obsidian-500 text-right">
+                    Drag columns to reorder
                   </div>
                 )}
 
@@ -390,31 +639,165 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
             </div>
 
             {/* Amount */}
-            <div
-              className={
-                dropTargetBase +
-                ' ' +
-                (activeDropKey === 'amount' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600') +
-                ' ' +
-                (attemptedNext && isMissing('amount') ? missingBorder : '')
-              }
-              onDragOver={(e) => {
-                e.preventDefault();
-                setActiveDropKey('amount');
-              }}
-              onDragLeave={() => setActiveDropKey(null)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setActiveDropKey(null);
-                assignHeaderToField('amount', e.dataTransfer.getData('text/plain'));
-              }}
-            >
-              <FieldMeta label="Amount" required />
-              <SingleMappingPill
-                value={mapping.csv.amount}
-                placeholder="Drop CSV column here"
-                onClear={() => removeHeaderEverywhere(mapping.csv.amount)}
-              />
+            <div className="bg-obsidian-800/50 border border-obsidian-700 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-4">
+                <FieldMeta label="Amount" required />
+                <select
+                  value={amountMappingType}
+                  onChange={(e) => handleAmountMappingTypeChange(e.target.value as AmountMapping['type'])}
+                  className="bg-obsidian-900 border border-obsidian-700 text-xs rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
+                >
+                  <option value="single">Single column</option>
+                  <option value="debitCredit">Separate Debit/Credit columns</option>
+                  <option value="amountWithType">Amount + Type column</option>
+                </select>
+              </div>
+
+              {amountMappingType === 'single' && (
+                <div
+                  className={
+                    'border-2 border-dashed rounded-lg p-3 transition-colors ' +
+                    (activeDropKey === 'amount' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600') +
+                    ' ' +
+                    (attemptedNext && isMissing('amount') ? missingBorder : '')
+                  }
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setActiveDropKey('amount');
+                  }}
+                  onDragLeave={() => setActiveDropKey(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setActiveDropKey(null);
+                    assignHeaderToField('amount', e.dataTransfer.getData('text/plain'));
+                  }}
+                >
+                  <SingleMappingPill
+                    value={mapping.csv.amountMapping?.type === 'single' ? mapping.csv.amountMapping.column : mapping.csv.amount}
+                    placeholder="Drop CSV column here"
+                    onClear={() => {
+                      const col = mapping.csv.amountMapping?.type === 'single' ? mapping.csv.amountMapping.column : mapping.csv.amount;
+                      if (col) removeHeaderEverywhere(col);
+                    }}
+                  />
+                </div>
+              )}
+
+              {amountMappingType === 'debitCredit' && (
+                <div className="space-y-3">
+                  <div
+                    className={
+                      'border-2 border-dashed rounded-lg p-3 transition-colors ' +
+                      (activeDropKey === 'debit' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                    }
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setActiveDropKey('debit');
+                    }}
+                    onDragLeave={() => setActiveDropKey(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setActiveDropKey(null);
+                      assignAmountMappingColumn('debitColumn', e.dataTransfer.getData('text/plain'));
+                    }}
+                  >
+                    <div className="text-xs font-semibold text-obsidian-300 mb-1">Debit (negative)</div>
+                    <SingleMappingPill
+                      value={mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.debitColumn ?? '' : ''}
+                      placeholder="Drop debit column here"
+                      onClear={() => {
+                        const col = mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.debitColumn : undefined;
+                        if (col) removeHeaderEverywhere(col);
+                      }}
+                    />
+                  </div>
+                  <div
+                    className={
+                      'border-2 border-dashed rounded-lg p-3 transition-colors ' +
+                      (activeDropKey === 'credit' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                    }
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setActiveDropKey('credit');
+                    }}
+                    onDragLeave={() => setActiveDropKey(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setActiveDropKey(null);
+                      assignAmountMappingColumn('creditColumn', e.dataTransfer.getData('text/plain'));
+                    }}
+                  >
+                    <div className="text-xs font-semibold text-obsidian-300 mb-1">Credit (positive)</div>
+                    <SingleMappingPill
+                      value={mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.creditColumn ?? '' : ''}
+                      placeholder="Drop credit column here"
+                      onClear={() => {
+                        const col = mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.creditColumn : undefined;
+                        if (col) removeHeaderEverywhere(col);
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-obsidian-500">Map at least one column. Debits are treated as negative amounts.</p>
+                </div>
+              )}
+
+              {amountMappingType === 'amountWithType' && (
+                <div className="space-y-3">
+                  <div
+                    className={
+                      'border-2 border-dashed rounded-lg p-3 transition-colors ' +
+                      (activeDropKey === 'amountColumn' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                    }
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setActiveDropKey('amountColumn');
+                    }}
+                    onDragLeave={() => setActiveDropKey(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setActiveDropKey(null);
+                      assignAmountMappingColumn('amountColumn', e.dataTransfer.getData('text/plain'));
+                    }}
+                  >
+                    <div className="text-xs font-semibold text-obsidian-300 mb-1">Amount column</div>
+                    <SingleMappingPill
+                      value={mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.amountColumn : ''}
+                      placeholder="Drop amount column here"
+                      onClear={() => {
+                        const col = mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.amountColumn : undefined;
+                        if (col) removeHeaderEverywhere(col);
+                      }}
+                    />
+                  </div>
+                  <div
+                    className={
+                      'border-2 border-dashed rounded-lg p-3 transition-colors ' +
+                      (activeDropKey === 'typeColumn' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                    }
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setActiveDropKey('typeColumn');
+                    }}
+                    onDragLeave={() => setActiveDropKey(null)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setActiveDropKey(null);
+                      assignAmountMappingColumn('typeColumn', e.dataTransfer.getData('text/plain'));
+                    }}
+                  >
+                    <div className="text-xs font-semibold text-obsidian-300 mb-1">Type column (Debit/Credit)</div>
+                    <SingleMappingPill
+                      value={mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.typeColumn : ''}
+                      placeholder="Drop type column here"
+                      onClear={() => {
+                        const col = mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.typeColumn : undefined;
+                        if (col) removeHeaderEverywhere(col);
+                      }}
+                    />
+                  </div>
+                  <p className="text-xs text-obsidian-500">Map both columns. Type column should contain "Debit" or "Credit".</p>
+                </div>
+              )}
             </div>
 
             {/* Owner */}

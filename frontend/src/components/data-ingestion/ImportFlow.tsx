@@ -6,7 +6,7 @@ import ColumnMapper, { type ImportMapping } from './ColumnMapper';
 import MonthSelector, { type MonthOption } from './MonthSelector';
 import ImportConfirmation from './ImportConfirmation';
 
-type ParsedFile = {
+export type ParsedFile = {
   file: File;
   kind: 'csv' | 'excel';
   headers: string[];
@@ -45,16 +45,72 @@ function parseCSVLine(line: string): string[] {
 }
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length === 0) return { headers: [], rows: [] };
-
-  const headers = parseCSVLine(lines[0]).filter(Boolean);
-  const rows = lines.slice(1).map(parseCSVLine).map((r) => {
-    if (headers.length === 0) return r;
-    if (r.length < headers.length) return [...r, ...Array(headers.length - r.length).fill('')];
-    return r.slice(0, headers.length);
-  });
-
+  // Remove BOM and normalize line endings
+  const normalized = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  
+  // Split lines, preserving empty lines for error detection
+  const lines = normalized.split('\n');
+  
+  // Find first non-empty line for header detection (skip leading empty lines)
+  let firstLineIdx = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].trim().length > 0) {
+      firstLineIdx = i;
+      break;
+    }
+  }
+  
+  if (firstLineIdx === -1) {
+    throw new Error('File appears to be empty or contains only whitespace.');
+  }
+  
+  // Parse headers from first non-empty line
+  const headers = parseCSVLine(lines[firstLineIdx]).filter(Boolean);
+  if (headers.length === 0) {
+    throw new Error('No columns detected in the first non-empty row. Ensure your CSV uses commas (,) as separators.');
+  }
+  
+  // Process remaining lines (skip empty lines but keep track)
+  const rows: string[][] = [];
+  let maxColumns = headers.length;
+  let skippedEmpty = 0;
+  let inconsistentColumns = 0;
+  
+  for (let i = firstLineIdx + 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.trim().length === 0) {
+      skippedEmpty++;
+      continue;
+    }
+    
+    const row = parseCSVLine(line);
+    if (row.length > maxColumns) {
+      maxColumns = row.length;
+      inconsistentColumns++;
+    }
+    
+    // Ensure each row has exactly headers.length columns (pad or truncate)
+    const padded = row.slice(0, headers.length);
+    if (padded.length < headers.length) {
+      padded.push(...Array(headers.length - padded.length).fill(''));
+    }
+    
+    rows.push(padded);
+  }
+  
+  // Warn about inconsistencies (could be logged)
+  if (inconsistentColumns > 0) {
+    console.warn(`${inconsistentColumns} rows have more columns than headers. Extra columns were truncated.`);
+  }
+  if (skippedEmpty > 0) {
+    console.warn(`Skipped ${skippedEmpty} empty lines.`);
+  }
+  
+  // Ensure we have at least one data row (optional)
+  if (rows.length === 0) {
+    console.warn('No data rows found after header.');
+  }
+  
   return { headers, rows };
 }
 
@@ -154,10 +210,28 @@ export default function ImportFlow() {
     try {
       const name = file.name.toLowerCase();
 
+      // Basic file validation
+      if (file.size === 0) {
+        throw new Error('File is empty (0 bytes). Please select a valid CSV or Excel export.');
+      }
+      
+      // Limit file size to prevent browser freezing (10 MB)
+      if (file.size > 10 * 1024 * 1024) {
+        throw new Error('File exceeds 10 MB limit. Please split large exports into smaller files.');
+      }
+
       if (name.endsWith('.csv')) {
         const text = await file.text();
+        // Check for empty content after trimming
+        if (text.trim().length === 0) {
+          throw new Error('File contains no readable text. Ensure it is a valid CSV file.');
+        }
+        
         const { headers, rows } = parseCSV(text);
-        if (headers.length === 0) throw new Error('No headers detected. Is this a valid CSV export?');
+        // parseCSV now throws on empty headers, but double-check
+        if (headers.length === 0) {
+          throw new Error('No columns detected. Ensure your CSV uses commas (,) as separators and has a header row.');
+        }
 
         setParsed({ file, kind: 'csv', headers, rows });
         setExcelMock(false);
@@ -275,6 +349,7 @@ export default function ImportFlow() {
               totalTransactions={parsed.rows.length}
               selectedMonths={selectedMonths}
               mapping={mapping}
+              parsed={parsed}
               onBack={() => setStep(3)}
               onConfirm={handleConfirm}
             />

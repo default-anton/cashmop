@@ -1,14 +1,16 @@
 import React from 'react';
-import { CheckCircle2, FileText, ArrowLeft } from 'lucide-react';
+import { CheckCircle2, FileText, ArrowLeft, Eye } from 'lucide-react';
 
 import type { ImportMapping } from './ColumnMapper';
 import type { MonthOption } from './MonthSelector';
+import type { ParsedFile } from './ImportFlow';
 
 interface ImportConfirmationProps {
   fileName: string;
   totalTransactions: number;
   selectedMonths: MonthOption[];
   mapping: ImportMapping;
+  parsed?: ParsedFile;
   onBack: () => void;
   onConfirm: () => void;
 }
@@ -18,9 +20,62 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
   totalTransactions,
   selectedMonths,
   mapping,
+  parsed,
   onBack,
   onConfirm,
 }) => {
+  const [showPreview, setShowPreview] = React.useState(false);
+
+  const previewRows = React.useMemo(() => {
+    if (!parsed) return [];
+    const { headers, rows } = parsed;
+    const sample = rows.slice(0, 5); // first 5 rows
+
+    // Helper to get column index, returns -1 if not found
+    const colIdx = (col: string | undefined) => (col ? headers.indexOf(col) : -1);
+
+    const dateIdx = colIdx(mapping.csv.date);
+    const ownerIdx = colIdx(mapping.csv.owner);
+    const currencyIdx = colIdx(mapping.csv.currency);
+    const descIdxs = mapping.csv.description.map(h => headers.indexOf(h)).filter(i => i !== -1);
+    
+    // Amount mapping
+    const am = mapping.csv.amountMapping;
+    let amountFn: (row: string[]) => number;
+    if (am?.type === 'single') {
+      const idx = colIdx(am.column);
+      amountFn = (row) => idx >= 0 ? parseFloat(row[idx] || '0') || 0 : 0;
+    } else if (am?.type === 'debitCredit') {
+      const debitIdx = colIdx(am.debitColumn);
+      const creditIdx = colIdx(am.creditColumn);
+      amountFn = (row) => {
+        const debit = debitIdx >= 0 ? parseFloat(row[debitIdx] || '0') || 0 : 0;
+        const credit = creditIdx >= 0 ? parseFloat(row[creditIdx] || '0') || 0 : 0;
+        return credit - debit; // debit negative, credit positive
+      };
+    } else if (am?.type === 'amountWithType') {
+      const amountIdx = colIdx(am.amountColumn);
+      const typeIdx = colIdx(am.typeColumn);
+      amountFn = (row) => {
+        const amount = amountIdx >= 0 ? parseFloat(row[amountIdx] || '0') || 0 : 0;
+        const type = typeIdx >= 0 ? row[typeIdx]?.toLowerCase() : '';
+        return type.includes('debit') ? -amount : amount;
+      };
+    } else {
+      // fallback to legacy amount column
+      const idx = colIdx(mapping.csv.amount);
+      amountFn = (row) => idx >= 0 ? parseFloat(row[idx] || '0') || 0 : 0;
+    }
+
+    return sample.map(row => ({
+      date: dateIdx >= 0 ? row[dateIdx] : '',
+      description: descIdxs.map(i => row[i]).filter(Boolean).join(' '),
+      amount: amountFn(row),
+      owner: ownerIdx >= 0 ? row[ownerIdx] : '',
+      currency: currencyIdx >= 0 ? row[currencyIdx] : mapping.currencyDefault,
+    }));
+  }, [parsed, mapping]);
+
   return (
     <div className="max-w-xl mx-auto animate-snap-in">
       <div className="text-center mb-8">
@@ -71,6 +126,47 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
             </div>
           </div>
         </div>
+
+        {parsed && (
+          <div className="pt-4 border-t border-obsidian-800">
+            <button
+              onClick={() => setShowPreview(!showPreview)}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-obsidian-300 hover:text-white transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+              {showPreview ? 'Hide preview' : 'Show preview of mapped data'}
+            </button>
+            {showPreview && previewRows.length > 0 && (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full border-collapse text-xs font-mono">
+                  <thead>
+                    <tr className="border-b border-obsidian-800">
+                      <th className="text-left py-2 px-3 text-obsidian-500">Date</th>
+                      <th className="text-left py-2 px-3 text-obsidian-500">Description</th>
+                      <th className="text-left py-2 px-3 text-obsidian-500">Amount</th>
+                      <th className="text-left py-2 px-3 text-obsidian-500">Owner</th>
+                      <th className="text-left py-2 px-3 text-obsidian-500">Currency</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {previewRows.map((row, idx) => (
+                      <tr key={idx} className="border-b border-obsidian-900 hover:bg-obsidian-800/30">
+                        <td className="py-2 px-3">{row.date}</td>
+                        <td className="py-2 px-3 max-w-xs truncate">{row.description}</td>
+                        <td className={`py-2 px-3 ${row.amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
+                          {row.amount < 0 ? '-' : ''}{Math.abs(row.amount).toFixed(2)}
+                        </td>
+                        <td className="py-2 px-3">{row.owner}</td>
+                        <td className="py-2 px-3">{row.currency}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="mt-2 text-xs text-obsidian-500">Showing first {previewRows.length} rows</p>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="pt-2 border-t border-obsidian-800 flex items-center justify-between">
           <button
