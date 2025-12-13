@@ -26,6 +26,7 @@ export type ImportMapping = {
 interface ColumnMapperProps {
   csvHeaders: string[];
   excelMock?: boolean;
+  fileCount?: number;
   onComplete: (mapping: ImportMapping) => void;
 }
 
@@ -48,7 +49,7 @@ const defaultMapping = (): ImportMapping => ({
 
 const requiredCsvFields: Array<Exclude<CsvFieldKey, 'owner' | 'currency'>> = ['date', 'description', 'amount'];
 
-const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onComplete }) => {
+const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, fileCount = 1, onComplete }) => {
   const [mapping, setMapping] = useState<ImportMapping>(() => defaultMapping());
   const [activeDropKey, setActiveDropKey] = useState<CsvFieldKey | null>(null);
   const [attemptedNext, setAttemptedNext] = useState(false);
@@ -457,6 +458,12 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
       {excelMock && (
         <div className="px-6 py-3 bg-brand/10 border-b border-brand/30 text-sm text-obsidian-200">
           Excel parsing is mocked for now. We extracted placeholder headers so you can continue the flow.
+        </div>
+      )}
+
+      {fileCount > 1 && (
+        <div className="px-6 py-3 bg-obsidian-800/50 border-b border-obsidian-700 text-sm text-obsidian-200">
+          Mapping will be applied to all {fileCount} files.
         </div>
       )}
 
