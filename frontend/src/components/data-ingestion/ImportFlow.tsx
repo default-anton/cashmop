@@ -20,7 +20,7 @@ export default function ImportFlow() {
       <div className="w-full max-w-4xl">
 
         <div className="mb-12">
-          <div className="flex items-center justify-between relative">
+          <div className="flex items-center justify-between relative px-8">
 
             {/* The Connecting Line (Background) */}
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-obsidian-800 rounded-full -z-10" />
