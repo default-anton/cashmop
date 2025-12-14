@@ -1,7 +1,13 @@
 import React from 'react';
 
+interface SelectOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  options: Array<{ value: string; label: string }>;
+  options: Array<SelectOption>;
   placeholder?: string;
 }
 
@@ -20,7 +26,7 @@ const Select: React.FC<SelectProps> = ({
     >
       {placeholder && <option value="">{placeholder}</option>}
       {options.map((option) => (
-        <option key={option.value} value={option.value}>
+        <option key={option.value} value={option.value} disabled={option.disabled}>
           {option.label}
         </option>
       ))}

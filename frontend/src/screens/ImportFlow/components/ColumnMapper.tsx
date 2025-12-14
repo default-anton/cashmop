@@ -1,5 +1,14 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { ArrowRight, Save, X } from 'lucide-react';
+import {
+  DropTarget,
+  FieldMeta,
+  SingleMappingPill,
+  DragReorderableList,
+  Button,
+  Select,
+  Input
+} from '../../../components';
 
 const LOCAL_STORAGE_KEY = 'cashflow.savedMappings';
 const ACCOUNTS_LOCAL_STORAGE_KEY = 'cashflow.accounts';
@@ -482,43 +491,32 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
     setSaveName('');
   };
 
-  const dropTargetBase =
-    'bg-canvas-200/50 border-2 border-dashed rounded-xl p-4 flex items-center gap-2 justify-between group transition-colors [&>*]:flex-1';
-
-  const missingBorder = 'border-finance-expense/60 bg-finance-expense/5';
-
   return (
     <div className="bg-canvas-50 border border-canvas-200 rounded-xl shadow-glass overflow-hidden animate-snap-in">
       <div className="bg-canvas-100 p-4 border-b border-canvas-200 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <h2 className="font-bold text-canvas-800">Map Columns</h2>
           <div className="h-4 w-px bg-canvas-300 mx-2" />
-          <select
+          <Select
             value={selectedMappingId}
             onChange={(e) => handleSelectSavedMapping(e.target.value)}
-            className="bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
-          >
-            <option value="new">New Mapping...</option>
-            {savedMappings.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
+            options={[
+              { value: 'new', label: 'New Mapping...' },
+              ...savedMappings.map(m => ({ value: m.id, label: m.name }))
+            ]}
+            className="bg-canvas-50"
+          />
         </div>
 
-        <button
+        <Button
           onClick={handleNext}
           disabled={!canProceed}
-          className={
-            'flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg transition-colors ' +
-            (canProceed
-              ? 'bg-brand hover:bg-brand-hover text-white hover:shadow-brand-glow'
-              : 'bg-canvas-200 text-canvas-500 cursor-not-allowed')
-          }
+          variant="primary"
+          size="md"
+          className="flex items-center gap-2"
         >
           Next Step <ArrowRight className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
 
       {excelMock && (
@@ -577,14 +575,9 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
 
           <div className="grid gap-4">
             {/* Date */}
-            <div
-              className={
-                dropTargetBase +
-                ' ' +
-                (activeDropKey === 'date' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600') +
-                ' ' +
-                (attemptedNext && isMissing('date') ? missingBorder : '')
-              }
+            <DropTarget
+              isActive={activeDropKey === 'date'}
+              isMissing={attemptedNext && isMissing('date')}
               onDragOver={(e) => {
                 e.preventDefault();
                 setActiveDropKey('date');
@@ -602,17 +595,13 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                 placeholder="Drop column here"
                 onClear={() => removeHeaderEverywhere(mapping.csv.date)}
               />
-            </div>
+            </DropTarget>
 
             {/* Description (combine) */}
-            <div
-              className={
-                dropTargetBase +
-                ' items-start ' +
-                (activeDropKey === 'description' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600') +
-                ' ' +
-                (attemptedNext && isMissing('description') ? missingBorder : '')
-              }
+            <DropTarget
+              isActive={activeDropKey === 'description'}
+              isMissing={attemptedNext && isMissing('description')}
+              className="items-start"
               onDragOver={(e) => {
                 e.preventDefault();
                 setActiveDropKey('description');
@@ -631,60 +620,21 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               <FieldMeta label="Description" required hint="Supports combining multiple columns" />
               <div className="flex flex-col gap-2">
                 {mapping.csv.description.length === 0 ? (
-                  <div className="text-xs text-canvas-600 font-mono bg-canvas-50 px-3 py-1.5 rounded border border-canvas-200">
-                    Drop column(s) here
-                  </div>
+                  <SingleMappingPill
+                    value=""
+                    placeholder="Drop column(s) here"
+                  />
                 ) : (
-                  <div className="flex flex-wrap gap-2 justify-end">
-                    {mapping.csv.description.map((h, index) => (
-                      <span
-                        key={h}
-                        draggable
-                        data-index={index}
-                        className={`inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border cursor-grab active:cursor-grabbing ${dragOverDescIndex === index
-                          ? 'border-brand bg-brand/10'
-                          : 'border-canvas-200 bg-canvas-50'
-                          }`}
-                        onDragStart={(e) => {
-                          setDraggingDescIndex(index);
-                          e.dataTransfer.setData('text/plain', index.toString());
-                          e.dataTransfer.effectAllowed = 'move';
-                        }}
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = 'move';
-                          setDragOverDescIndex(index);
-                          e.stopPropagation();
-                        }}
-                        onDragLeave={() => {
-                          if (dragOverDescIndex === index) {
-                            setDragOverDescIndex(null);
-                          }
-                        }}
-                        onDrop={(e) => {
-                          e.preventDefault();
-                          const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
-                          reorderDescription(sourceIndex, index);
-                          setDragOverDescIndex(null);
-                          setDraggingDescIndex(null);
-                          e.stopPropagation();
-                        }}
-                        onDragEnd={() => {
-                          setDraggingDescIndex(null);
-                          setDragOverDescIndex(null);
-                        }}
-                      >
-                        {h}
-                        <button
-                          onClick={() => removeHeaderEverywhere(h)}
-                          className="text-canvas-500 hover:text-brand"
-                          aria-label={`Remove ${h}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
+                  <DragReorderableList
+                    items={mapping.csv.description}
+                    renderItem={(h, index) => h}
+                    onReorder={reorderDescription}
+                    onRemove={(index) => {
+                      const header = mapping.csv.description[index];
+                      if (header) removeHeaderEverywhere(header);
+                    }}
+                    emptyPlaceholder={null}
+                  />
                 )}
                 {mapping.csv.description.length >= 2 && (
                   <div className="text-xs text-canvas-500 text-right">
@@ -692,31 +642,29 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                   </div>
                 )}
               </div>
-            </div>
+            </DropTarget>
 
             {/* Amount */}
             <div className="bg-canvas-200/50 border border-canvas-300 rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <FieldMeta label="Amount" required />
-                <select
+                <Select
                   value={amountMappingType}
                   onChange={(e) => handleAmountMappingTypeChange(e.target.value as AmountMapping['type'])}
-                  className="bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <option value="single">Single column</option>
-                  <option value="debitCredit">Separate Debit/Credit columns</option>
-                  <option value="amountWithType">Amount + Type column</option>
-                </select>
+                  options={[
+                    { value: 'single', label: 'Single column' },
+                    { value: 'debitCredit', label: 'Separate Debit/Credit columns' },
+                    { value: 'amountWithType', label: 'Amount + Type column' }
+                  ]}
+                  className="bg-canvas-50"
+                />
               </div>
 
               {amountMappingType === 'single' && (
-                <div
-                  className={
-                    'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                    (activeDropKey === 'amount' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600') +
-                    ' ' +
-                    (attemptedNext && isMissing('amount') ? missingBorder : '')
-                  }
+                <DropTarget
+                  isActive={activeDropKey === 'amount'}
+                  isMissing={attemptedNext && isMissing('amount')}
+                  className="border-dashed rounded-lg p-3"
                   onDragOver={(e) => {
                     e.preventDefault();
                     setActiveDropKey('amount');
@@ -736,16 +684,14 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                       if (col) removeHeaderEverywhere(col);
                     }}
                   />
-                </div>
+                </DropTarget>
               )}
 
               {amountMappingType === 'debitCredit' && (
                 <div className="space-y-3">
-                  <div
-                    className={
-                      'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                      (activeDropKey === 'debit' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
-                    }
+                  <DropTarget
+                    isActive={activeDropKey === 'debit'}
+                    className="border-dashed rounded-lg p-3"
                     onDragOver={(e) => {
                       e.preventDefault();
                       setActiveDropKey('debit');
@@ -766,12 +712,10 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                         if (col) removeHeaderEverywhere(col);
                       }}
                     />
-                  </div>
-                  <div
-                    className={
-                      'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                      (activeDropKey === 'credit' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
-                    }
+                  </DropTarget>
+                  <DropTarget
+                    isActive={activeDropKey === 'credit'}
+                    className="border-dashed rounded-lg p-3"
                     onDragOver={(e) => {
                       e.preventDefault();
                       setActiveDropKey('credit');
@@ -792,18 +736,16 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                         if (col) removeHeaderEverywhere(col);
                       }}
                     />
-                  </div>
+                  </DropTarget>
                   <p className="text-xs text-canvas-500">Map at least one column. Debits are treated as negative amounts.</p>
                 </div>
               )}
 
               {amountMappingType === 'amountWithType' && (
                 <div className="space-y-3">
-                  <div
-                    className={
-                      'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                      (activeDropKey === 'amountColumn' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
-                    }
+                  <DropTarget
+                    isActive={activeDropKey === 'amountColumn'}
+                    className="border-dashed rounded-lg p-3"
                     onDragOver={(e) => {
                       e.preventDefault();
                       setActiveDropKey('amountColumn');
@@ -824,12 +766,10 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                         if (col) removeHeaderEverywhere(col);
                       }}
                     />
-                  </div>
-                  <div
-                    className={
-                      'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                      (activeDropKey === 'typeColumn' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
-                    }
+                  </DropTarget>
+                  <DropTarget
+                    isActive={activeDropKey === 'typeColumn'}
+                    className="border-dashed rounded-lg p-3"
                     onDragOver={(e) => {
                       e.preventDefault();
                       setActiveDropKey('typeColumn');
@@ -850,27 +790,29 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                         if (col) removeHeaderEverywhere(col);
                       }}
                     />
-                  </div>
+                  </DropTarget>
                   <div className="space-y-2">
                     <p className="text-xs text-canvas-500">Map both columns. Type column values:</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="block text-xs font-semibold text-canvas-600 mb-1">Negative amount value</label>
-                        <input
+                        <Input
                           type="text"
+                          variant="mono"
                           value={mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.negativeValue ?? 'debit' : 'debit'}
                           onChange={(e) => updateAmountWithTypeValues('negativeValue', e.target.value)}
-                          className="w-full text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                          className="w-full"
                           placeholder="debit"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-semibold text-canvas-600 mb-1">Positive amount value</label>
-                        <input
+                        <Input
                           type="text"
+                          variant="mono"
                           value={mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.positiveValue ?? 'credit' : 'credit'}
                           onChange={(e) => updateAmountWithTypeValues('positiveValue', e.target.value)}
-                          className="w-full text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                          className="w-full"
                           placeholder="credit"
                         />
                       </div>
@@ -882,12 +824,9 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
             </div>
 
             {/* Owner */}
-            <div
-              className={
-                dropTargetBase +
-                ' items-start ' +
-                (activeDropKey === 'owner' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
-              }
+            <DropTarget
+              isActive={activeDropKey === 'owner'}
+              className="items-start"
               onDragOver={(e) => {
                 e.preventDefault();
                 setActiveDropKey('owner');
@@ -910,7 +849,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
 
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center gap-2">
-                    <select
+                    <Select
                       value={isAddingNewOwner ? '__add_new' : (mapping.defaultOwner || '')}
                       onChange={(e) => {
                         if (e.target.value === '__add_new') {
@@ -921,17 +860,14 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                         }
                       }}
                       disabled={!!mapping.csv.owner}
-                      className="w-full bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select default owner...</option>
-                      {availableOwners.map((owner) => (
-                        <option key={owner} value={owner}>
-                          {owner}
-                        </option>
-                      ))}
-                      <option disabled>---</option>
-                      <option value="__add_new">Add new owner...</option>
-                    </select>
+                      options={[
+                        { value: '', label: 'Select default owner...' },
+                        ...availableOwners.map(owner => ({ value: owner, label: owner })),
+                        { value: '', label: '---', disabled: true },
+                        { value: '__add_new', label: 'Add new owner...' }
+                      ]}
+                      className="w-full"
+                    />
                     {mapping.defaultOwner && !mapping.csv.owner && !isAddingNewOwner && (
                       <button
                         type="button"
@@ -947,17 +883,19 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                   {isAddingNewOwner && (
                     <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
                       <div className="flex items-center gap-2">
-                        <input
+                        <Input
                           type="text"
+                          variant="mono"
                           value={newOwnerInput}
                           onChange={(e) => setNewOwnerInput(e.target.value)}
                           placeholder="New owner name"
                           maxLength={25}
-                          className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                          className="flex-1"
                           autoFocus
                         />
-                        <button
-                          type="button"
+                        <Button
+                          variant="primary"
+                          size="sm"
                           onClick={() => {
                             const trimmed = newOwnerInput.trim().slice(0, 25);
                             if (trimmed) {
@@ -969,10 +907,9 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                               setIsAddingNewOwner(false);
                             }
                           }}
-                          className="text-xs font-semibold px-3 py-1.5 bg-brand text-white rounded-md border border-brand hover:bg-brand-hover transition-colors"
                         >
                           Save
-                        </button>
+                        </Button>
                       </div>
                       <div className="text-xs text-canvas-500 text-right font-mono">
                         {newOwnerInput.length}/25
@@ -986,7 +923,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                   </p>
                 </div>
               </div>
-            </div>
+            </DropTarget>
 
             {/* Account (constant) */}
             <div
@@ -998,7 +935,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               <FieldMeta label="Account" required />
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
-                  <select
+                  <Select
                     value={isAddingNewAccount ? '__add_new' : mapping.account}
                     onChange={(e) => {
                       if (e.target.value === '__add_new') {
@@ -1008,17 +945,14 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                         setIsAddingNewAccount(false);
                       }
                     }}
-                    className="w-full bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Select account...</option>
-                    {availableAccounts.map((acc) => (
-                      <option key={acc} value={acc}>
-                        {acc}
-                      </option>
-                    ))}
-                    <option disabled>---</option>
-                    <option value="__add_new">Add new account...</option>
-                  </select>
+                    options={[
+                      { value: '', label: 'Select account...' },
+                      ...availableAccounts.map(acc => ({ value: acc, label: acc })),
+                      { value: '', label: '---', disabled: true },
+                      { value: '__add_new', label: 'Add new account...' }
+                    ]}
+                    className="w-full"
+                  />
                   {mapping.account && !isAddingNewAccount && (
                     <button
                       type="button"
@@ -1034,17 +968,19 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                 {isAddingNewAccount && (
                   <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
                     <div className="flex items-center gap-2">
-                      <input
+                      <Input
                         type="text"
+                        variant="mono"
                         value={newAccountInput}
                         onChange={(e) => setNewAccountInput(e.target.value)}
                         placeholder="New account name"
                         maxLength={25}
-                        className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                        className="flex-1"
                         autoFocus
                       />
-                      <button
-                        type="button"
+                      <Button
+                        variant="primary"
+                        size="sm"
                         onClick={() => {
                           const trimmed = newAccountInput.trim().slice(0, 25);
                           if (trimmed) {
@@ -1056,10 +992,9 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                             setIsAddingNewAccount(false);
                           }
                         }}
-                        className="text-xs font-semibold px-3 py-1.5 bg-brand text-white rounded-md border border-brand hover:bg-brand-hover transition-colors"
                       >
                         Save
-                      </button>
+                      </Button>
                     </div>
                     <div className="text-xs text-canvas-500 text-right font-mono">
                       {newAccountInput.length}/25
@@ -1071,12 +1006,8 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
             </div>
 
             {/* Currency */}
-            <div
-              className={
-                dropTargetBase +
-                ' ' +
-                (activeDropKey === 'currency' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
-              }
+            <DropTarget
+              isActive={activeDropKey === 'currency'}
               onDragOver={(e) => {
                 e.preventDefault();
                 setActiveDropKey('currency');
@@ -1098,16 +1029,17 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                 />
 
                 <div className="flex flex-col gap-2">
-                  <select
+                  <Select
                     value={mapping.currencyDefault}
                     onChange={(e) => setMapping((prev) => ({ ...prev, currencyDefault: e.target.value }))}
                     disabled={!!mapping.csv.currency}
-                    className="w-full bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="CAD">CAD</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                  </select>
+                    options={[
+                      { value: 'CAD', label: 'CAD' },
+                      { value: 'USD', label: 'USD' },
+                      { value: 'EUR', label: 'EUR' }
+                    ]}
+                    className="w-full"
+                  />
                   <p className="text-xs text-canvas-500">
                     {mapping.csv.currency
                       ? 'Currency is mapped from CSV column.'
@@ -1115,7 +1047,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                   </p>
                 </div>
               </div>
-            </div>
+            </DropTarget>
           </div>
 
           {!canProceed && attemptedNext && (
@@ -1126,81 +1058,26 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
 
           <div className="mt-8 flex items-center gap-3 p-4 bg-brand/5 border border-brand/20 rounded-lg">
             <Save className="w-4 h-4 text-brand" />
-            <input
+            <Input
               type="text"
               value={saveName}
               onChange={(e) => setSaveName(e.target.value)}
               placeholder="Name this mapping (e.g., RBC Checking)"
-              className="bg-transparent text-sm text-canvas-800 placeholder-canvas-500 focus:outline-none w-full"
+              className="bg-transparent text-sm text-canvas-800 placeholder-canvas-500 focus:outline-none w-full border-0"
             />
-            <button
+            <Button
               onClick={handleSaveMapping}
               disabled={!saveName.trim()}
-              className={
-                'text-xs font-semibold px-3 py-1.5 rounded-md border transition-colors ' +
-                (saveName.trim()
-                  ? 'bg-brand text-white border-brand hover:bg-brand-hover'
-                  : 'bg-canvas-50 text-canvas-600 border-canvas-200 cursor-not-allowed')
-              }
+              variant={saveName.trim() ? "primary" : "secondary"}
+              size="sm"
             >
               Save
-            </button>
+            </Button>
           </div>
         </div>
       </div>
     </div>
   );
 };
-
-function FieldMeta({ label, required, hint }: { label: string; required: boolean; hint?: string }) {
-  return (
-    <div className="flex items-center gap-3">
-      <div
-        className={
-          'w-8 h-8 rounded-lg flex items-center justify-center ' +
-          (required ? 'bg-canvas-300 text-canvas-600' : 'bg-canvas-200 text-canvas-500')
-        }
-      >
-        <span className="text-xs font-bold">{label[0]}</span>
-      </div>
-      <div>
-        <p className="text-sm font-semibold text-canvas-700">{label}</p>
-        <p className="text-xs text-canvas-500">
-          {required ? 'Required' : 'Optional'}
-          {hint ? ` • ${hint}` : ''}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function SingleMappingPill({
-  value,
-  placeholder,
-  onClear,
-}: {
-  value: string;
-  placeholder: string;
-  onClear?: () => void;
-}) {
-  if (!value) {
-    return (
-      <div className="text-xs text-canvas-600 font-mono bg-canvas-50 px-3 py-1.5 rounded border border-canvas-200">
-        {placeholder}
-      </div>
-    );
-  }
-
-  return (
-    <div className="inline-flex items-center gap-2 text-xs font-mono bg-canvas-50 px-3 py-1.5 rounded border border-canvas-200">
-      {value}
-      {onClear && (
-        <button onClick={onClear} className="text-canvas-500 hover:text-brand" aria-label="Clear mapping">
-          <X className="w-3 h-3" />
-        </button>
-      )}
-    </div>
-  );
-}
 
 export default ColumnMapper;
