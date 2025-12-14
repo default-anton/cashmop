@@ -19,10 +19,10 @@ export type ImportMapping = {
     amount: string; // legacy, keep for backward compatibility
     amountMapping?: AmountMapping;
     owner?: string;
-    owners?: string[];
     currency?: string;
   };
   account: string;
+  defaultOwner?: string;
   currencyDefault: string; // Used when csv.currency is not set
 };
 
@@ -119,6 +119,9 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
 
   const [newAccountInput, setNewAccountInput] = useState('');
   const [isAddingNewAccount, setIsAddingNewAccount] = useState(false);
+
+  const [newOwnerInput, setNewOwnerInput] = useState('');
+  const [isAddingNewOwner, setIsAddingNewOwner] = useState(false);
 
   // Load saved mappings from localStorage on mount
   useEffect(() => {
@@ -337,7 +340,6 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
 
       if (field === 'owner') {
         next.csv.owner = header;
-        delete next.csv.owners;
         return next;
       }
 
@@ -443,42 +445,6 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
         },
       };
     });
-  };
-
-  const ownerMappingType = mapping.csv.owner ? 'column' : (mapping.csv.owners && mapping.csv.owners.length > 0 ? 'manual' : 'column');
-
-  const setOwnerMappingType = (type: 'column' | 'manual') => {
-    setMapping((prev) => {
-      const next = { ...prev };
-      if (type === 'column') {
-        delete next.csv.owners;
-        // keep existing owner column if any
-      } else {
-        delete next.csv.owner;
-        if (!next.csv.owners) next.csv.owners = [];
-      }
-      return next;
-    });
-  };
-
-  const updateManualOwners = (owners: string[]) => {
-    setMapping((prev) => {
-      const { owner, ...rest } = prev.csv;
-      return { ...prev, csv: { ...rest, owners } };
-    });
-  };
-
-  const addNewOwner = (owner: string) => {
-    const trimmed = owner.trim();
-    if (!trimmed) return;
-    if (!availableOwners.includes(trimmed)) {
-      setAvailableOwners((prev) => [...prev, trimmed]);
-    }
-    // Also add to selected owners if not already
-    const currentOwners = mapping.csv.owners || [];
-    if (!currentOwners.includes(trimmed)) {
-      updateManualOwners([...currentOwners, trimmed]);
-    }
   };
 
   const handleNext = () => {
@@ -937,103 +903,104 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
             </div>
 
             {/* Owner */}
-            <div className={dropTargetBase + ' ' + (ownerMappingType === 'column' && activeDropKey === 'owner' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')}>
-              <div className="flex items-center justify-between mb-3">
-                <FieldMeta label="Owner" required={false} />
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setOwnerMappingType('column')}
-                    className={`text-xs font-semibold px-3 py-1 rounded-md border transition-colors ${ownerMappingType === 'column' ? 'bg-brand text-white border-brand' : 'bg-canvas-50 text-canvas-600 border-canvas-200 hover:bg-canvas-100'}`}
-                  >
-                    Map column
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOwnerMappingType('manual')}
-                    className={`text-xs font-semibold px-3 py-1 rounded-md border transition-colors ${ownerMappingType === 'manual' ? 'bg-brand text-white border-brand' : 'bg-canvas-50 text-canvas-600 border-canvas-200 hover:bg-canvas-100'}`}
-                  >
-                    Assign manually
-                  </button>
-                </div>
-              </div>
+            <div
+              className={
+                'bg-canvas-200/50 border rounded-xl p-4 flex flex-col gap-4 group transition-colors ' +
+                (activeDropKey === 'owner' ? 'border-brand' : 'border-canvas-300')
+              }
+              onDragOver={(e) => {
+                e.preventDefault();
+                setActiveDropKey('owner');
+              }}
+              onDragLeave={() => setActiveDropKey(null)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setActiveDropKey(null);
+                assignHeaderToField('owner', e.dataTransfer.getData('text/plain'));
+              }}
+            >
+              <FieldMeta label="Owner" required={false} hint="Map column or select default" />
+              
+              <div className="space-y-3">
+                <SingleMappingPill
+                  value={mapping.csv.owner ?? ''}
+                  placeholder="Drop CSV column here (overrides selection)"
+                  onClear={() => (mapping.csv.owner ? removeHeaderEverywhere(mapping.csv.owner) : undefined)}
+                />
 
-              {ownerMappingType === 'column' ? (
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setActiveDropKey('owner');
-                  }}
-                  onDragLeave={() => setActiveDropKey(null)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setActiveDropKey(null);
-                    assignHeaderToField('owner', e.dataTransfer.getData('text/plain'));
-                  }}
-                >
-                  <SingleMappingPill
-                    value={mapping.csv.owner ?? ''}
-                    placeholder="Drop CSV column here (optional)"
-                    onClear={() => (mapping.csv.owner ? removeHeaderEverywhere(mapping.csv.owner) : undefined)}
-                  />
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    {availableOwners.map((owner) => {
-                      const selected = mapping.csv.owners?.includes(owner) ?? false;
-                      return (
-                        <label
-                          key={owner}
-                          className={`inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border cursor-pointer transition-colors ${selected ? 'bg-brand/10 border-brand text-brand' : 'bg-canvas-50 border-canvas-200 text-canvas-700 hover:border-canvas-400'}`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selected}
-                            onChange={(e) => {
-                              const newSelected = e.target.checked;
-                              const current = mapping.csv.owners || [];
-                              const updated = newSelected
-                                ? [...current, owner]
-                                : current.filter((o) => o !== owner);
-                              updateManualOwners(updated);
-                            }}
-                            className="sr-only"
-                          />
-                          {owner}
-                        </label>
-                      );
-                    })}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="New owner name"
-                      className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          addNewOwner(e.currentTarget.value);
-                          e.currentTarget.value = '';
-                        }
-                      }}
-                    />
+                <div className="flex flex-col gap-2 w-[280px]">
+                  {isAddingNewOwner ? (
+                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
+                      <input
+                        type="text"
+                        value={newOwnerInput}
+                        onChange={(e) => setNewOwnerInput(e.target.value)}
+                        placeholder="New owner name"
+                        className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const trimmed = newOwnerInput.trim();
+                          if (trimmed) {
+                            if (!availableOwners.includes(trimmed)) {
+                              setAvailableOwners((prev) => [...prev, trimmed]);
+                            }
+                            setMapping((prev) => ({ ...prev, defaultOwner: trimmed }));
+                            setNewOwnerInput('');
+                            setIsAddingNewOwner(false);
+                          }
+                        }}
+                        className="text-xs font-semibold px-3 py-1.5 bg-brand text-white rounded-md border border-brand hover:bg-brand-hover transition-colors"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <select
+                        value={isAddingNewOwner ? '__add_new' : (mapping.defaultOwner || '')}
+                        onChange={(e) => {
+                          if (e.target.value === '__add_new') {
+                            setIsAddingNewOwner(true);
+                          } else {
+                            setMapping((prev) => ({ ...prev, defaultOwner: e.target.value }));
+                            setIsAddingNewOwner(false);
+                          }
+                        }}
+                        disabled={!!mapping.csv.owner}
+                        className="w-full bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Select default owner...</option>
+                        {availableOwners.map((owner) => (
+                          <option key={owner} value={owner}>
+                            {owner}
+                          </option>
+                        ))}
+                        <option disabled>---</option>
+                        <option value="__add_new">Add new owner...</option>
+                      </select>
+                      {mapping.csv.owner && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-canvas-100/10 backdrop-blur-[1px] rounded-md pointer-events-none">
+                          <span className="text-xs font-semibold text-canvas-600 bg-canvas-50/90 px-2 py-1 rounded border border-canvas-200 shadow-sm">
+                            Using CSV Column
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {mapping.defaultOwner && !mapping.csv.owner && !isAddingNewOwner && (
                     <button
                       type="button"
-                      onClick={() => {
-                        const input = document.querySelector('input[placeholder="New owner name"]');
-                        if (input) {
-                          addNewOwner((input as HTMLInputElement).value);
-                          (input as HTMLInputElement).value = '';
-                        }
-                      }}
-                      className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-canvas-200 text-canvas-700 rounded-md border border-canvas-300 hover:bg-canvas-300 transition-colors"
+                      onClick={() => setMapping((prev) => ({ ...prev, defaultOwner: undefined }))}
+                      className="text-xs text-canvas-500 hover:text-brand flex items-center gap-1 self-start"
                     >
-                      <Plus className="w-3 h-3" /> Add
+                      <X className="w-3 h-3" /> Clear selection
                     </button>
-                  </div>
-                  <p className="text-xs text-canvas-500">Select one or more owners. Owners can be added on the fly.</p>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Account (constant) */}
@@ -1045,8 +1012,42 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
             >
               <FieldMeta label="Account" required hint="Required (constant)" />
               <div className="flex flex-col gap-2 w-[280px]">
-                {isAddingNewAccount ? (
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <select
+                    value={isAddingNewAccount ? '__add_new' : mapping.account}
+                    onChange={(e) => {
+                      if (e.target.value === '__add_new') {
+                        setIsAddingNewAccount(true);
+                      } else {
+                        setMapping((prev) => ({ ...prev, account: e.target.value }));
+                        setIsAddingNewAccount(false);
+                      }
+                    }}
+                    className="flex-1 bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
+                  >
+                    <option value="">Select account...</option>
+                    {availableAccounts.map((acc) => (
+                      <option key={acc} value={acc}>
+                        {acc}
+                      </option>
+                    ))}
+                    <option disabled>---</option>
+                    <option value="__add_new">Add new account...</option>
+                  </select>
+                  {mapping.account && !isAddingNewAccount && (
+                    <button
+                      type="button"
+                      onClick={() => setMapping((prev) => ({ ...prev, account: '' }))}
+                      className="text-canvas-500 hover:text-brand"
+                      aria-label="Clear selection"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {isAddingNewAccount && (
+                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
                     <input
                       type="text"
                       value={newAccountInput}
@@ -1072,49 +1073,6 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                     >
                       Save
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAddingNewAccount(false);
-                        setNewAccountInput('');
-                      }}
-                      className="text-xs font-semibold px-3 py-1.5 bg-canvas-50 text-canvas-600 rounded-md border border-canvas-300 hover:bg-canvas-100 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={mapping.account}
-                      onChange={(e) => {
-                        if (e.target.value === '__add_new') {
-                          setIsAddingNewAccount(true);
-                        } else {
-                          setMapping((prev) => ({ ...prev, account: e.target.value }));
-                        }
-                      }}
-                      className="flex-1 bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
-                    >
-                      <option value="">Select account...</option>
-                      {availableAccounts.map((acc) => (
-                        <option key={acc} value={acc}>
-                          {acc}
-                        </option>
-                      ))}
-                      <option disabled>---</option>
-                      <option value="__add_new">Add new account...</option>
-                    </select>
-                    {mapping.account && (
-                      <button
-                        type="button"
-                        onClick={() => setMapping((prev) => ({ ...prev, account: '' }))}
-                        className="text-canvas-500 hover:text-brand"
-                        aria-label="Clear selection"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
                   </div>
                 )}
                 <p className="text-xs text-canvas-500">Pick an existing account or add a new one.</p>
