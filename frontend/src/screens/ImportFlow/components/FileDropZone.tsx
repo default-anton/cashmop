@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { Upload, X, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Upload, X, FileText } from 'lucide-react';
+import { Button } from '../../../components';
 
 interface FileDropZoneProps {
   busy?: boolean;
@@ -30,7 +31,6 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
       onFileSelected?.(singleFile);
       if (onFilesSelected) onFilesSelected([singleFile]);
     } else {
-      // Add new files, avoiding duplicates by name+size
       setSelectedFiles((prev) => {
         const newFiles = fileArray.filter(
           (f) => !prev.some((p) => p.name === f.name && p.size === f.size)
@@ -117,15 +117,16 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
                 </div>
               </div>
               {selectedFiles.length > 0 && (
-                <button
+                <Button
                   onClick={(e) => {
                     e.stopPropagation();
                     clearAll();
                   }}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-md bg-canvas-200 border border-canvas-300 text-canvas-600 hover:border-canvas-400 transition-colors"
+                  variant="secondary"
+                  size="sm"
                 >
                   Clear All
-                </button>
+                </Button>
               )}
             </div>
 
@@ -151,13 +152,15 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
                     <span className="text-xs font-mono px-2 py-1 rounded bg-canvas-300 border border-canvas-400 text-canvas-600">
                       {file.name.endsWith('.csv') ? 'CSV' : file.name.endsWith('.xlsx') ? 'Excel' : 'Excel'}
                     </span>
-                    <button
+                    <Button
                       onClick={() => removeFile(idx)}
-                      className="p-1.5 rounded-md bg-canvas-300 border border-canvas-400 text-canvas-600 hover:text-canvas-800 hover:border-canvas-500 transition-colors"
+                      variant="ghost"
+                      size="sm"
+                      className="p-1.5"
                       aria-label={`Remove ${file.name}`}
                     >
                       <X className="w-4 h-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -165,12 +168,13 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
 
             {multiple && (
               <div className="mt-6 text-center">
-                <button
+                <Button
                   onClick={() => inputRef.current?.click()}
-                  className="text-sm font-semibold px-4 py-2 rounded-lg bg-canvas-200 border border-canvas-300 text-canvas-600 hover:border-canvas-400 transition-colors"
+                  variant="secondary"
+                  size="sm"
                 >
                   Add More Files
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -188,7 +192,6 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
           </div>
         )}
 
-        {/* Supported formats hint */}
         <div className="absolute bottom-8 flex gap-3 text-xs font-mono text-canvas-500">
           <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300">.CSV</span>
           <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300">.XLSX</span>

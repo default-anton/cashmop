@@ -7,7 +7,8 @@ import {
   DragReorderableList,
   Button,
   Select,
-  Input
+  Input,
+  Card
 } from '../../../components';
 
 const LOCAL_STORAGE_KEY = 'cashflow.savedMappings';
@@ -488,7 +489,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
   };
 
   return (
-    <div className="bg-canvas-50 border border-canvas-200 rounded-xl shadow-glass overflow-hidden animate-snap-in">
+    <Card variant="glass" className="overflow-hidden animate-snap-in">
       <div className="bg-canvas-100 p-4 border-b border-canvas-200 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <h2 className="font-bold text-canvas-800">Map Columns</h2>
@@ -1072,7 +1073,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };
 

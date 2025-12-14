@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle2, FileText, ArrowLeft, Eye } from 'lucide-react';
+import { Button, Card } from '../../../components';
 
 import type { ImportMapping } from './ColumnMapper';
 import type { MonthOption } from './MonthSelector';
@@ -29,9 +30,8 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
   const previewRows = React.useMemo(() => {
     if (!parsed) return [];
     const { headers, rows } = parsed;
-    const sample = rows.slice(0, 5); // first 5 rows
+    const sample = rows.slice(0, 5);
 
-    // Helper to get column index, returns -1 if not found
     const colIdx = (col: string | undefined) => (col ? headers.indexOf(col) : -1);
 
     const dateIdx = colIdx(mapping.csv.date);
@@ -39,7 +39,6 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
     const currencyIdx = colIdx(mapping.csv.currency);
     const descIdxs = mapping.csv.description.map(h => headers.indexOf(h)).filter(i => i !== -1);
     
-    // Amount mapping
     const am = mapping.csv.amountMapping;
     let amountFn: (row: string[]) => number;
     if (am?.type === 'single') {
@@ -51,7 +50,7 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
       amountFn = (row) => {
         const debit = debitIdx >= 0 ? parseFloat(row[debitIdx] || '0') || 0 : 0;
         const credit = creditIdx >= 0 ? parseFloat(row[creditIdx] || '0') || 0 : 0;
-        return credit - debit; // debit negative, credit positive
+        return credit - debit;
       };
     } else if (am?.type === 'amountWithType') {
       const amountIdx = colIdx(am.amountColumn);
@@ -62,7 +61,6 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
         return type.includes('debit') ? -amount : amount;
       };
     } else {
-      // fallback to legacy amount column
       const idx = colIdx(mapping.csv.amount);
       amountFn = (row) => idx >= 0 ? parseFloat(row[idx] || '0') || 0 : 0;
     }
@@ -86,7 +84,7 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
         <p className="text-canvas-500">Review the summary before importing.</p>
       </div>
 
-      <div className="bg-canvas-50/40 border border-canvas-200 rounded-2xl p-6 space-y-5">
+      <Card variant="elevated" className="p-6 space-y-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-canvas-50 border border-canvas-200">
@@ -129,13 +127,15 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
 
         {parsed && (
           <div className="pt-4 border-t border-canvas-200">
-            <button
+            <Button
               onClick={() => setShowPreview(!showPreview)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-canvas-600 hover:text-brand transition-colors"
+              variant="ghost"
+              size="sm"
+              className="inline-flex items-center gap-2"
             >
               <Eye className="w-4 h-4" />
               {showPreview ? 'Hide preview' : 'Show preview of mapped data'}
-            </button>
+            </Button>
             {showPreview && previewRows.length > 0 && (
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full border-collapse text-xs font-mono">
@@ -169,21 +169,25 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
         )}
 
         <div className="pt-2 border-t border-canvas-200 flex items-center justify-between">
-          <button
+          <Button
             onClick={onBack}
-            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg bg-canvas-200 border border-canvas-300 text-canvas-700 hover:border-canvas-500 transition-colors"
+            variant="secondary"
+            size="md"
+            className="inline-flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" /> Back
-          </button>
+          </Button>
 
-          <button
+          <Button
             onClick={onConfirm}
-            className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white hover:shadow-brand-glow transition-colors"
+            variant="primary"
+            size="md"
+            className="inline-flex items-center gap-2"
           >
             Confirm Import
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };
