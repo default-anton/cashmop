@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ArrowRight, Save, X, Plus } from 'lucide-react';
+import { ArrowRight, Save, X } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'cashflow.savedMappings';
 const ACCOUNTS_LOCAL_STORAGE_KEY = 'cashflow.accounts';
@@ -191,10 +191,6 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
     }
     return used;
   }, [mapping]);
-
-  const availableForDescription = useMemo(() => {
-    return csvHeaders.filter((h) => !mapping.csv.description.includes(h));
-  }, [csvHeaders, mapping.csv.description]);
 
   const isAmountMappingValid = useMemo(() => {
     const am = mapping.csv.amountMapping;
@@ -632,7 +628,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               <div className="w-[280px]">
                 {mapping.csv.description.length === 0 ? (
                   <div className="text-xs text-canvas-600 font-mono bg-canvas-50 px-3 py-1.5 rounded border border-canvas-200 text-center">
-                    Drop one or more CSV columns here
+                    Drop CSV column(s) here
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2 justify-end">
@@ -641,11 +637,10 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                         key={h}
                         draggable
                         data-index={index}
-                        className={`inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border cursor-grab active:cursor-grabbing ${
-                          dragOverDescIndex === index
-                            ? 'border-brand bg-brand/10'
-                            : 'border-canvas-200 bg-canvas-50'
-                        }`}
+                        className={`inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border cursor-grab active:cursor-grabbing ${dragOverDescIndex === index
+                          ? 'border-brand bg-brand/10'
+                          : 'border-canvas-200 bg-canvas-50'
+                          }`}
                         onDragStart={(e) => {
                           setDraggingDescIndex(index);
                           e.dataTransfer.setData('text/plain', index.toString());
@@ -692,26 +687,6 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                     Drag columns to reorder
                   </div>
                 )}
-
-                <div className="mt-3 flex items-center gap-2 justify-end">
-                  <span className="text-xs text-canvas-500">Combine with</span>
-                  <select
-                    value=""
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (!v) return;
-                      assignHeaderToField('description', v);
-                    }}
-                    className="bg-canvas-50 border border-canvas-300 text-xs rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
-                  >
-                    <option value="">Select...</option>
-                    {availableForDescription.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
-                  </select>
-                </div>
               </div>
             </div>
 
@@ -920,7 +895,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               }}
             >
               <FieldMeta label="Owner" required={false} hint="Map column or select default" />
-              
+
               <div className="space-y-3">
                 <SingleMappingPill
                   value={mapping.csv.owner ?? ''}
@@ -929,7 +904,42 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                 />
 
                 <div className="flex flex-col gap-2 w-[280px]">
-                  {isAddingNewOwner ? (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={isAddingNewOwner ? '__add_new' : (mapping.defaultOwner || '')}
+                      onChange={(e) => {
+                        if (e.target.value === '__add_new') {
+                          setIsAddingNewOwner(true);
+                        } else {
+                          setMapping((prev) => ({ ...prev, defaultOwner: e.target.value }));
+                          setIsAddingNewOwner(false);
+                        }
+                      }}
+                      disabled={!!mapping.csv.owner}
+                      className="w-full bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Select default owner...</option>
+                      {availableOwners.map((owner) => (
+                        <option key={owner} value={owner}>
+                          {owner}
+                        </option>
+                      ))}
+                      <option disabled>---</option>
+                      <option value="__add_new">Add new owner...</option>
+                    </select>
+                    {mapping.defaultOwner && !mapping.csv.owner && !isAddingNewOwner && (
+                      <button
+                        type="button"
+                        onClick={() => setMapping((prev) => ({ ...prev, defaultOwner: undefined }))}
+                        className="text-canvas-500 hover:text-brand"
+                        aria-label="Clear selection"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {isAddingNewOwner && (
                     <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
                       <input
                         type="text"
@@ -956,41 +966,6 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                       >
                         Save
                       </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={isAddingNewOwner ? '__add_new' : (mapping.defaultOwner || '')}
-                        onChange={(e) => {
-                          if (e.target.value === '__add_new') {
-                            setIsAddingNewOwner(true);
-                          } else {
-                            setMapping((prev) => ({ ...prev, defaultOwner: e.target.value }));
-                            setIsAddingNewOwner(false);
-                          }
-                        }}
-                        disabled={!!mapping.csv.owner}
-                        className="w-full bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <option value="">Select default owner...</option>
-                        {availableOwners.map((owner) => (
-                          <option key={owner} value={owner}>
-                            {owner}
-                          </option>
-                        ))}
-                        <option disabled>---</option>
-                        <option value="__add_new">Add new owner...</option>
-                      </select>
-                      {mapping.defaultOwner && !mapping.csv.owner && (
-                        <button
-                          type="button"
-                          onClick={() => setMapping((prev) => ({ ...prev, defaultOwner: undefined }))}
-                          className="text-canvas-500 hover:text-brand"
-                          aria-label="Clear selection"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
                   )}
                   <p className="text-xs text-canvas-500">
