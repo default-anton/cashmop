@@ -958,7 +958,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                       </button>
                     </div>
                   ) : (
-                    <div className="relative">
+                    <div className="flex items-center gap-2">
                       <select
                         value={isAddingNewOwner ? '__add_new' : (mapping.defaultOwner || '')}
                         onChange={(e) => {
@@ -981,24 +981,23 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                         <option disabled>---</option>
                         <option value="__add_new">Add new owner...</option>
                       </select>
-                      {mapping.csv.owner && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-canvas-100/10 backdrop-blur-[1px] rounded-md pointer-events-none">
-                          <span className="text-xs font-semibold text-canvas-600 bg-canvas-50/90 px-2 py-1 rounded border border-canvas-200 shadow-sm">
-                            Using CSV Column
-                          </span>
-                        </div>
+                      {mapping.defaultOwner && !mapping.csv.owner && (
+                        <button
+                          type="button"
+                          onClick={() => setMapping((prev) => ({ ...prev, defaultOwner: undefined }))}
+                          className="text-canvas-500 hover:text-brand"
+                          aria-label="Clear selection"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
                   )}
-                  {mapping.defaultOwner && !mapping.csv.owner && !isAddingNewOwner && (
-                    <button
-                      type="button"
-                      onClick={() => setMapping((prev) => ({ ...prev, defaultOwner: undefined }))}
-                      className="text-xs text-canvas-500 hover:text-brand flex items-center gap-1 self-start"
-                    >
-                      <X className="w-3 h-3" /> Clear selection
-                    </button>
-                  )}
+                  <p className="text-xs text-canvas-500">
+                    {mapping.csv.owner
+                      ? 'Owner is mapped from CSV column.'
+                      : 'Pick a default owner or add a new one.'}
+                  </p>
                 </div>
               </div>
             </div>
