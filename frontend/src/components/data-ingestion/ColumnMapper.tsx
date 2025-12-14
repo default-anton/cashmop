@@ -943,32 +943,38 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                   </div>
 
                   {isAddingNewOwner && (
-                    <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                      <input
-                        type="text"
-                        value={newOwnerInput}
-                        onChange={(e) => setNewOwnerInput(e.target.value)}
-                        placeholder="New owner name"
-                        className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const trimmed = newOwnerInput.trim();
-                          if (trimmed) {
-                            if (!availableOwners.includes(trimmed)) {
-                              setAvailableOwners((prev) => [...prev, trimmed]);
+                    <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={newOwnerInput}
+                          onChange={(e) => setNewOwnerInput(e.target.value)}
+                          placeholder="New owner name"
+                          maxLength={25}
+                          className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const trimmed = newOwnerInput.trim().slice(0, 25);
+                            if (trimmed) {
+                              if (!availableOwners.includes(trimmed)) {
+                                setAvailableOwners((prev) => [...prev, trimmed]);
+                              }
+                              setMapping((prev) => ({ ...prev, defaultOwner: trimmed }));
+                              setNewOwnerInput('');
+                              setIsAddingNewOwner(false);
                             }
-                            setMapping((prev) => ({ ...prev, defaultOwner: trimmed }));
-                            setNewOwnerInput('');
-                            setIsAddingNewOwner(false);
-                          }
-                        }}
-                        className="text-xs font-semibold px-3 py-1.5 bg-brand text-white rounded-md border border-brand hover:bg-brand-hover transition-colors"
-                      >
-                        Save
-                      </button>
+                          }}
+                          className="text-xs font-semibold px-3 py-1.5 bg-brand text-white rounded-md border border-brand hover:bg-brand-hover transition-colors"
+                        >
+                          Save
+                        </button>
+                      </div>
+                      <div className="text-xs text-canvas-500 text-right font-mono">
+                        {newOwnerInput.length}/25
+                      </div>
                     </div>
                   )}
                   <p className="text-xs text-canvas-500">
@@ -1024,32 +1030,38 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                 </div>
 
                 {isAddingNewAccount && (
-                  <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-                    <input
-                      type="text"
-                      value={newAccountInput}
-                      onChange={(e) => setNewAccountInput(e.target.value)}
-                      placeholder="New account name"
-                      className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
-                      autoFocus
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const trimmed = newAccountInput.trim();
-                        if (trimmed) {
-                          if (!availableAccounts.includes(trimmed)) {
-                            setAvailableAccounts((prev) => [...prev, trimmed]);
+                  <div className="space-y-1 animate-in fade-in slide-in-from-top-1">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newAccountInput}
+                        onChange={(e) => setNewAccountInput(e.target.value)}
+                        placeholder="New account name"
+                        maxLength={25}
+                        className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const trimmed = newAccountInput.trim().slice(0, 25);
+                          if (trimmed) {
+                            if (!availableAccounts.includes(trimmed)) {
+                              setAvailableAccounts((prev) => [...prev, trimmed]);
+                            }
+                            setMapping((prev) => ({ ...prev, account: trimmed }));
+                            setNewAccountInput('');
+                            setIsAddingNewAccount(false);
                           }
-                          setMapping((prev) => ({ ...prev, account: trimmed }));
-                          setNewAccountInput('');
-                          setIsAddingNewAccount(false);
-                        }
-                      }}
-                      className="text-xs font-semibold px-3 py-1.5 bg-brand text-white rounded-md border border-brand hover:bg-brand-hover transition-colors"
-                    >
-                      Save
-                    </button>
+                        }}
+                        className="text-xs font-semibold px-3 py-1.5 bg-brand text-white rounded-md border border-brand hover:bg-brand-hover transition-colors"
+                      >
+                        Save
+                      </button>
+                    </div>
+                    <div className="text-xs text-canvas-500 text-right font-mono">
+                      {newAccountInput.length}/25
+                    </div>
                   </div>
                 )}
                 <p className="text-xs text-canvas-500">Pick an existing account or add a new one.</p>
