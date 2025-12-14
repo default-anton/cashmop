@@ -1,14 +1,16 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { ArrowRight, Save, X } from 'lucide-react';
+import { ArrowRight, Save, X, Plus } from 'lucide-react';
 
 const LOCAL_STORAGE_KEY = 'cashflow.savedMappings';
+const ACCOUNTS_LOCAL_STORAGE_KEY = 'cashflow.accounts';
+const OWNERS_LOCAL_STORAGE_KEY = 'cashflow.owners';
 
 type CsvFieldKey = 'date' | 'description' | 'amount' | 'owner' | 'currency' | 'debit' | 'credit' | 'amountColumn' | 'typeColumn';
 
 type AmountMapping =
   | { type: 'single'; column: string }
   | { type: 'debitCredit'; debitColumn?: string; creditColumn?: string }
-  | { type: 'amountWithType'; amountColumn: string; typeColumn: string };
+  | { type: 'amountWithType'; amountColumn: string; typeColumn: string; negativeValue?: string; positiveValue?: string };
 
 export type ImportMapping = {
   csv: {
@@ -17,6 +19,7 @@ export type ImportMapping = {
     amount: string; // legacy, keep for backward compatibility
     amountMapping?: AmountMapping;
     owner?: string;
+    owners?: string[];
     currency?: string;
   };
   account: string;
@@ -88,6 +91,35 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
     },
   ]);
 
+  const [availableAccounts, setAvailableAccounts] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(ACCOUNTS_LOCAL_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to load accounts from localStorage', e);
+    }
+    return ['RBC Checking', 'TD Visa', 'Wealthsimple Cash'];
+  });
+
+  const [availableOwners, setAvailableOwners] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem(OWNERS_LOCAL_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to load owners from localStorage', e);
+    }
+    return [];
+  });
+
+  const [newAccountInput, setNewAccountInput] = useState('');
+  const [isAddingNewAccount, setIsAddingNewAccount] = useState(false);
+
   // Load saved mappings from localStorage on mount
   useEffect(() => {
     try {
@@ -112,6 +144,24 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
       console.warn('Failed to save mappings to localStorage', e);
     }
   }, [savedMappings]);
+
+  // Save accounts to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(ACCOUNTS_LOCAL_STORAGE_KEY, JSON.stringify(availableAccounts));
+    } catch (e) {
+      console.warn('Failed to save accounts to localStorage', e);
+    }
+  }, [availableAccounts]);
+
+  // Save owners to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(OWNERS_LOCAL_STORAGE_KEY, JSON.stringify(availableOwners));
+    } catch (e) {
+      console.warn('Failed to save owners to localStorage', e);
+    }
+  }, [availableOwners]);
 
   const [selectedMappingId, setSelectedMappingId] = useState<string>('new');
   const [saveName, setSaveName] = useState('');
@@ -287,6 +337,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
 
       if (field === 'owner') {
         next.csv.owner = header;
+        delete next.csv.owners;
         return next;
       }
 
@@ -333,7 +384,9 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
         case 'amountWithType':
           const amountColumn = prevAm?.type === 'amountWithType' ? prevAm.amountColumn : '';
           const typeColumn = prevAm?.type === 'amountWithType' ? prevAm.typeColumn : '';
-          newAm = { type: 'amountWithType', amountColumn, typeColumn };
+          const negativeValue = prevAm?.type === 'amountWithType' ? prevAm.negativeValue ?? 'debit' : 'debit';
+          const positiveValue = prevAm?.type === 'amountWithType' ? prevAm.positiveValue ?? 'credit' : 'credit';
+          newAm = { type: 'amountWithType', amountColumn, typeColumn, negativeValue, positiveValue };
           break;
       }
       return {
@@ -375,6 +428,57 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
         },
       };
     });
+  };
+
+  const updateAmountWithTypeValues = (field: 'negativeValue' | 'positiveValue', value: string) => {
+    setMapping((prev) => {
+      const prevAm = prev.csv.amountMapping;
+      if (!prevAm || prevAm.type !== 'amountWithType') return prev;
+      const newAm = { ...prevAm, [field]: value };
+      return {
+        ...prev,
+        csv: {
+          ...prev.csv,
+          amountMapping: newAm,
+        },
+      };
+    });
+  };
+
+  const ownerMappingType = mapping.csv.owner ? 'column' : (mapping.csv.owners && mapping.csv.owners.length > 0 ? 'manual' : 'column');
+
+  const setOwnerMappingType = (type: 'column' | 'manual') => {
+    setMapping((prev) => {
+      const next = { ...prev };
+      if (type === 'column') {
+        delete next.csv.owners;
+        // keep existing owner column if any
+      } else {
+        delete next.csv.owner;
+        if (!next.csv.owners) next.csv.owners = [];
+      }
+      return next;
+    });
+  };
+
+  const updateManualOwners = (owners: string[]) => {
+    setMapping((prev) => {
+      const { owner, ...rest } = prev.csv;
+      return { ...prev, csv: { ...rest, owners } };
+    });
+  };
+
+  const addNewOwner = (owner: string) => {
+    const trimmed = owner.trim();
+    if (!trimmed) return;
+    if (!availableOwners.includes(trimmed)) {
+      setAvailableOwners((prev) => [...prev, trimmed]);
+    }
+    // Also add to selected owners if not already
+    const currentOwners = mapping.csv.owners || [];
+    if (!currentOwners.includes(trimmed)) {
+      updateManualOwners([...currentOwners, trimmed]);
+    }
   };
 
   const handleNext = () => {
@@ -792,7 +896,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                       assignAmountMappingColumn('typeColumn', e.dataTransfer.getData('text/plain'));
                     }}
                   >
-                    <div className="text-xs font-semibold text-canvas-600 mb-1">Type column (Debit/Credit)</div>
+                    <div className="text-xs font-semibold text-canvas-600 mb-1">Type column</div>
                     <SingleMappingPill
                       value={mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.typeColumn : ''}
                       placeholder="Drop type column here"
@@ -802,35 +906,134 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                       }}
                     />
                   </div>
-                  <p className="text-xs text-canvas-500">Map both columns. Type column should contain "Debit" or "Credit".</p>
+                  <div className="space-y-2">
+                    <p className="text-xs text-canvas-500">Map both columns. Type column values:</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-canvas-600 mb-1">Negative amount value</label>
+                        <input
+                          type="text"
+                          value={mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.negativeValue ?? 'debit' : 'debit'}
+                          onChange={(e) => updateAmountWithTypeValues('negativeValue', e.target.value)}
+                          className="w-full text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                          placeholder="debit"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-canvas-600 mb-1">Positive amount value</label>
+                        <input
+                          type="text"
+                          value={mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.positiveValue ?? 'credit' : 'credit'}
+                          onChange={(e) => updateAmountWithTypeValues('positiveValue', e.target.value)}
+                          className="w-full text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                          placeholder="credit"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-canvas-500">Values are matched case‑insensitively.</p>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Owner */}
-            <div
-              className={
-                dropTargetBase +
-                ' ' +
-                (activeDropKey === 'owner' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
-              }
-              onDragOver={(e) => {
-                e.preventDefault();
-                setActiveDropKey('owner');
-              }}
-              onDragLeave={() => setActiveDropKey(null)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setActiveDropKey(null);
-                assignHeaderToField('owner', e.dataTransfer.getData('text/plain'));
-              }}
-            >
-              <FieldMeta label="Owner" required={false} />
-              <SingleMappingPill
-                value={mapping.csv.owner ?? ''}
-                placeholder="Optional"
-                onClear={() => (mapping.csv.owner ? removeHeaderEverywhere(mapping.csv.owner) : undefined)}
-              />
+            <div className={dropTargetBase + ' ' + (ownerMappingType === 'column' && activeDropKey === 'owner' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')}>
+              <div className="flex items-center justify-between mb-3">
+                <FieldMeta label="Owner" required={false} />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setOwnerMappingType('column')}
+                    className={`text-xs font-semibold px-3 py-1 rounded-md border transition-colors ${ownerMappingType === 'column' ? 'bg-brand text-white border-brand' : 'bg-canvas-50 text-canvas-600 border-canvas-200 hover:bg-canvas-100'}`}
+                  >
+                    Map column
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOwnerMappingType('manual')}
+                    className={`text-xs font-semibold px-3 py-1 rounded-md border transition-colors ${ownerMappingType === 'manual' ? 'bg-brand text-white border-brand' : 'bg-canvas-50 text-canvas-600 border-canvas-200 hover:bg-canvas-100'}`}
+                  >
+                    Assign manually
+                  </button>
+                </div>
+              </div>
+
+              {ownerMappingType === 'column' ? (
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setActiveDropKey('owner');
+                  }}
+                  onDragLeave={() => setActiveDropKey(null)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setActiveDropKey(null);
+                    assignHeaderToField('owner', e.dataTransfer.getData('text/plain'));
+                  }}
+                >
+                  <SingleMappingPill
+                    value={mapping.csv.owner ?? ''}
+                    placeholder="Drop CSV column here (optional)"
+                    onClear={() => (mapping.csv.owner ? removeHeaderEverywhere(mapping.csv.owner) : undefined)}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {availableOwners.map((owner) => {
+                      const selected = mapping.csv.owners?.includes(owner) ?? false;
+                      return (
+                        <label
+                          key={owner}
+                          className={`inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border cursor-pointer transition-colors ${selected ? 'bg-brand/10 border-brand text-brand' : 'bg-canvas-50 border-canvas-200 text-canvas-700 hover:border-canvas-400'}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={(e) => {
+                              const newSelected = e.target.checked;
+                              const current = mapping.csv.owners || [];
+                              const updated = newSelected
+                                ? [...current, owner]
+                                : current.filter((o) => o !== owner);
+                              updateManualOwners(updated);
+                            }}
+                            className="sr-only"
+                          />
+                          {owner}
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="New owner name"
+                      className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          addNewOwner(e.currentTarget.value);
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.querySelector('input[placeholder="New owner name"]');
+                        if (input) {
+                          addNewOwner((input as HTMLInputElement).value);
+                          (input as HTMLInputElement).value = '';
+                        }
+                      }}
+                      className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 bg-canvas-200 text-canvas-700 rounded-md border border-canvas-300 hover:bg-canvas-300 transition-colors"
+                    >
+                      <Plus className="w-3 h-3" /> Add
+                    </button>
+                  </div>
+                  <p className="text-xs text-canvas-500">Select one or more owners. Owners can be added on the fly.</p>
+                </div>
+              )}
             </div>
 
             {/* Account (constant) */}
@@ -841,16 +1044,81 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               }
             >
               <FieldMeta label="Account" required hint="Required (constant)" />
-              <select
-                value={mapping.account}
-                onChange={(e) => setMapping((prev) => ({ ...prev, account: e.target.value }))}
-                className="bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
-              >
-                <option value="">Select account...</option>
-                <option value="RBC Checking">RBC Checking</option>
-                <option value="TD Visa">TD Visa</option>
-                <option value="Wealthsimple Cash">Wealthsimple Cash</option>
-              </select>
+              <div className="flex flex-col gap-2 w-[280px]">
+                {isAddingNewAccount ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newAccountInput}
+                      onChange={(e) => setNewAccountInput(e.target.value)}
+                      placeholder="New account name"
+                      className="flex-1 text-xs font-mono bg-canvas-50 border border-canvas-300 rounded-md px-2 py-1.5 focus:ring-1 focus:ring-brand outline-none"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const trimmed = newAccountInput.trim();
+                        if (trimmed) {
+                          if (!availableAccounts.includes(trimmed)) {
+                            setAvailableAccounts((prev) => [...prev, trimmed]);
+                          }
+                          setMapping((prev) => ({ ...prev, account: trimmed }));
+                          setNewAccountInput('');
+                          setIsAddingNewAccount(false);
+                        }
+                      }}
+                      className="text-xs font-semibold px-3 py-1.5 bg-brand text-white rounded-md border border-brand hover:bg-brand-hover transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingNewAccount(false);
+                        setNewAccountInput('');
+                      }}
+                      className="text-xs font-semibold px-3 py-1.5 bg-canvas-50 text-canvas-600 rounded-md border border-canvas-300 hover:bg-canvas-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={mapping.account}
+                      onChange={(e) => {
+                        if (e.target.value === '__add_new') {
+                          setIsAddingNewAccount(true);
+                        } else {
+                          setMapping((prev) => ({ ...prev, account: e.target.value }));
+                        }
+                      }}
+                      className="flex-1 bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
+                    >
+                      <option value="">Select account...</option>
+                      {availableAccounts.map((acc) => (
+                        <option key={acc} value={acc}>
+                          {acc}
+                        </option>
+                      ))}
+                      <option disabled>---</option>
+                      <option value="__add_new">Add new account...</option>
+                    </select>
+                    {mapping.account && (
+                      <button
+                        type="button"
+                        onClick={() => setMapping((prev) => ({ ...prev, account: '' }))}
+                        className="text-canvas-500 hover:text-brand"
+                        aria-label="Clear selection"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs text-canvas-500">Pick an existing account or add a new one.</p>
+              </div>
             </div>
 
             {/* Currency */}
