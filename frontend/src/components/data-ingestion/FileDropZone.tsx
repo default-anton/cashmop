@@ -25,7 +25,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({ busy, error, onFileSelected
           `flex flex-col items-center justify-center h-96\n` +
           (isDragging
             ? 'border-brand bg-brand/5 scale-[1.01]'
-            : 'border-obsidian-700 bg-obsidian-900 hover:border-obsidian-600 hover:bg-obsidian-800')
+            : 'border-canvas-300 bg-canvas-50 hover:border-canvas-600 hover:bg-canvas-200')
         }
         onDragOver={(e) => {
           e.preventDefault();
@@ -48,15 +48,15 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({ busy, error, onFileSelected
           onChange={(e) => handleFiles(e.target.files)}
         />
 
-        <div className="p-6 bg-obsidian-800 rounded-full mb-6 shadow-glass group-hover:scale-110 transition-transform">
+        <div className="p-6 bg-canvas-200 rounded-full mb-6 shadow-glass group-hover:scale-110 transition-transform">
           <Upload className="w-8 h-8 text-brand" />
         </div>
 
-        <h3 className="text-xl font-bold text-white mb-2">Drop your bank export here</h3>
-        <p className="text-obsidian-400">or click to browse</p>
+        <h3 className="text-xl font-bold text-canvas-800 mb-2">Drop your bank export here</h3>
+        <p className="text-canvas-500">or click to browse</p>
 
         {busy && (
-          <div className="mt-6 text-sm font-mono text-obsidian-400 bg-obsidian-800/60 border border-obsidian-700 rounded-lg px-3 py-2">
+          <div className="mt-6 text-sm font-mono text-canvas-500 bg-canvas-200/60 border border-canvas-300 rounded-lg px-3 py-2">
             Parsing file...
           </div>
         )}
@@ -68,13 +68,13 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({ busy, error, onFileSelected
         )}
 
         {/* Supported formats hint */}
-        <div className="absolute bottom-8 flex gap-3 text-xs font-mono text-obsidian-500">
-          <span className="bg-obsidian-800 px-2 py-1 rounded border border-obsidian-700">.CSV</span>
-          <span className="bg-obsidian-800 px-2 py-1 rounded border border-obsidian-700">.XLSX</span>
+        <div className="absolute bottom-8 flex gap-3 text-xs font-mono text-canvas-500">
+          <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300">.CSV</span>
+          <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300">.XLSX</span>
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-obsidian-500 text-center">
+      <p className="mt-4 text-xs text-canvas-500 text-center">
         CSV parsing runs locally. Excel parsing is mocked for now.
       </p>
     </div>

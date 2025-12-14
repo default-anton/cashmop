@@ -48,26 +48,26 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete }) => 
   return (
     <div className="max-w-xl mx-auto animate-snap-in">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-white mb-2">Select Range</h2>
-        <p className="text-obsidian-400">
+        <h2 className="text-2xl font-bold text-canvas-800 mb-2">Select Range</h2>
+        <p className="text-canvas-500">
           We found transactions spanning {months.length} month{months.length === 1 ? '' : 's'}.
         </p>
       </div>
 
       <div className="flex items-center justify-between mb-4">
-        <div className="text-sm text-obsidian-400">
-          Selected: <span className="font-mono text-obsidian-200">{totalSelectedTxns}</span> txns
+        <div className="text-sm text-canvas-500">
+          Selected: <span className="font-mono text-canvas-700">{totalSelectedTxns}</span> txns
         </div>
         <div className="flex gap-2">
           <button
             onClick={selectAll}
-            className="text-xs font-semibold px-3 py-1.5 rounded-md bg-obsidian-800 border border-obsidian-700 text-obsidian-200 hover:border-obsidian-500 transition-colors"
+            className="text-xs font-semibold px-3 py-1.5 rounded-md bg-canvas-200 border border-canvas-300 text-canvas-700 hover:border-canvas-500 transition-colors"
           >
             Select All
           </button>
           <button
             onClick={deselectAll}
-            className="text-xs font-semibold px-3 py-1.5 rounded-md bg-obsidian-800 border border-obsidian-700 text-obsidian-200 hover:border-obsidian-500 transition-colors"
+            className="text-xs font-semibold px-3 py-1.5 rounded-md bg-canvas-200 border border-canvas-300 text-canvas-700 hover:border-canvas-500 transition-colors"
           >
             Deselect All
           </button>
@@ -85,12 +85,12 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete }) => 
                 'flex items-center justify-between p-4 rounded-xl border transition-all duration-200 ' +
                 (isSelected
                   ? 'bg-brand text-white border-brand shadow-focus-ring'
-                  : 'bg-obsidian-800 text-obsidian-300 border-obsidian-700 hover:border-obsidian-500')
+                  : 'bg-canvas-200 text-canvas-600 border-canvas-300 hover:border-canvas-500')
               }
             >
               <div className="flex items-center gap-3">
                 <div className={
-                  'p-2 rounded-lg ' + (isSelected ? 'bg-white/20' : 'bg-obsidian-900')
+                  'p-2 rounded-lg ' + (isSelected ? 'bg-white/20' : 'bg-canvas-50')
                 }>
                   <Calendar className="w-5 h-5" />
                 </div>
@@ -99,7 +99,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete }) => 
 
               <div className="flex items-center gap-4">
                 <span className={
-                  'text-sm font-mono ' + (isSelected ? 'text-white/80' : 'text-obsidian-500')
+                  'text-sm font-mono ' + (isSelected ? 'text-white/80' : 'text-canvas-500')
                 }>
                   {m.count} txns
                 </span>
@@ -110,7 +110,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete }) => 
         })}
 
         {months.length === 0 && (
-          <div className="text-sm text-obsidian-500 bg-obsidian-900/50 border border-obsidian-800 rounded-xl p-4">
+          <div className="text-sm text-canvas-500 bg-canvas-50/50 border border-canvas-200 rounded-xl p-4">
             No months detected. Check that your Date mapping is correct.
           </div>
         )}
@@ -122,8 +122,8 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete }) => 
         className={
           'w-full font-bold text-lg py-4 rounded-xl transition-colors shadow-lg ' +
           (canStart
-            ? 'bg-white text-obsidian-950 hover:bg-obsidian-200'
-            : 'bg-obsidian-800 text-obsidian-600 cursor-not-allowed')
+            ? 'bg-brand hover:bg-brand-hover text-white hover:shadow-brand-glow'
+            : 'bg-canvas-200 text-canvas-600 cursor-not-allowed')
         }
       >
         Continue

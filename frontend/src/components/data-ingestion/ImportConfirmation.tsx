@@ -82,36 +82,36 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-brand/10 border border-brand/30 mb-4">
           <CheckCircle2 className="w-7 h-7 text-brand" />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">Confirm Import</h2>
-        <p className="text-obsidian-400">Review the summary before importing.</p>
+        <h2 className="text-2xl font-bold text-canvas-800 mb-2">Confirm Import</h2>
+        <p className="text-canvas-500">Review the summary before importing.</p>
       </div>
 
-      <div className="bg-obsidian-900/40 border border-obsidian-800 rounded-2xl p-6 space-y-5">
+      <div className="bg-canvas-50/40 border border-canvas-200 rounded-2xl p-6 space-y-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-obsidian-900 border border-obsidian-800">
-              <FileText className="w-5 h-5 text-obsidian-300" />
+            <div className="p-2 rounded-lg bg-canvas-50 border border-canvas-200">
+              <FileText className="w-5 h-5 text-canvas-600" />
             </div>
             <div>
-              <div className="text-sm font-semibold text-white">{fileName}</div>
-              <div className="text-xs text-obsidian-500 font-mono">{totalTransactions} transactions detected</div>
+              <div className="text-sm font-semibold text-canvas-800">{fileName}</div>
+              <div className="text-xs text-canvas-500 font-mono">{totalTransactions} transactions detected</div>
             </div>
           </div>
 
           <div className="text-right">
-            <div className="text-xs text-obsidian-500">Account</div>
-            <div className="text-sm font-semibold text-white">{mapping.account}</div>
+            <div className="text-xs text-canvas-500">Account</div>
+            <div className="text-sm font-semibold text-canvas-800">{mapping.account}</div>
           </div>
         </div>
 
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="text-xs text-obsidian-500">Months</div>
+            <div className="text-xs text-canvas-500">Months</div>
             <div className="mt-2 flex flex-wrap gap-2">
               {selectedMonths.map((m) => (
                 <span
                   key={m.key}
-                  className="text-xs font-mono bg-obsidian-900 border border-obsidian-800 px-3 py-1.5 rounded"
+                  className="text-xs font-mono bg-canvas-50 border border-canvas-200 px-3 py-1.5 rounded"
                 >
                   {m.label} • {m.count}
                 </span>
@@ -120,18 +120,18 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
           </div>
 
           <div className="text-right">
-            <div className="text-xs text-obsidian-500">Currency</div>
-            <div className="text-sm font-semibold text-white">
+            <div className="text-xs text-canvas-500">Currency</div>
+            <div className="text-sm font-semibold text-canvas-800">
               {mapping.csv.currency ? `From: ${mapping.csv.currency}` : mapping.currencyDefault}
             </div>
           </div>
         </div>
 
         {parsed && (
-          <div className="pt-4 border-t border-obsidian-800">
+          <div className="pt-4 border-t border-canvas-200">
             <button
               onClick={() => setShowPreview(!showPreview)}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-obsidian-300 hover:text-white transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-canvas-600 hover:text-brand transition-colors"
             >
               <Eye className="w-4 h-4" />
               {showPreview ? 'Hide preview' : 'Show preview of mapped data'}
@@ -140,17 +140,17 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full border-collapse text-xs font-mono">
                   <thead>
-                    <tr className="border-b border-obsidian-800">
-                      <th className="text-left py-2 px-3 text-obsidian-500">Date</th>
-                      <th className="text-left py-2 px-3 text-obsidian-500">Description</th>
-                      <th className="text-left py-2 px-3 text-obsidian-500">Amount</th>
-                      <th className="text-left py-2 px-3 text-obsidian-500">Owner</th>
-                      <th className="text-left py-2 px-3 text-obsidian-500">Currency</th>
+                    <tr className="border-b border-canvas-200">
+                      <th className="text-left py-2 px-3 text-canvas-500">Date</th>
+                      <th className="text-left py-2 px-3 text-canvas-500">Description</th>
+                      <th className="text-left py-2 px-3 text-canvas-500">Amount</th>
+                      <th className="text-left py-2 px-3 text-canvas-500">Owner</th>
+                      <th className="text-left py-2 px-3 text-canvas-500">Currency</th>
                     </tr>
                   </thead>
                   <tbody>
                     {previewRows.map((row, idx) => (
-                      <tr key={idx} className="border-b border-obsidian-900 hover:bg-obsidian-800/30">
+                      <tr key={idx} className="border-b border-canvas-50 hover:bg-canvas-200/30">
                         <td className="py-2 px-3">{row.date}</td>
                         <td className="py-2 px-3 max-w-xs truncate">{row.description}</td>
                         <td className={`py-2 px-3 ${row.amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
@@ -162,23 +162,23 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
                     ))}
                   </tbody>
                 </table>
-                <p className="mt-2 text-xs text-obsidian-500">Showing first {previewRows.length} rows</p>
+                <p className="mt-2 text-xs text-canvas-500">Showing first {previewRows.length} rows</p>
               </div>
             )}
           </div>
         )}
 
-        <div className="pt-2 border-t border-obsidian-800 flex items-center justify-between">
+        <div className="pt-2 border-t border-canvas-200 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg bg-obsidian-800 border border-obsidian-700 text-obsidian-200 hover:border-obsidian-500 transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg bg-canvas-200 border border-canvas-300 text-canvas-700 hover:border-canvas-500 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
 
           <button
             onClick={onConfirm}
-            className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-semibold px-5 py-2 rounded-lg bg-brand hover:bg-brand-hover text-white hover:shadow-brand-glow transition-colors"
           >
             Confirm Import
           </button>

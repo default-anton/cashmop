@@ -416,20 +416,20 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
   };
 
   const dropTargetBase =
-    'bg-obsidian-800/50 border-2 border-dashed rounded-xl p-4 flex items-center justify-between group transition-colors';
+    'bg-canvas-200/50 border-2 border-dashed rounded-xl p-4 flex items-center justify-between group transition-colors';
 
   const missingBorder = 'border-finance-expense/60 bg-finance-expense/5';
 
   return (
-    <div className="bg-obsidian-900 border border-obsidian-800 rounded-xl shadow-glass overflow-hidden animate-snap-in">
-      <div className="bg-obsidian-950 p-4 border-b border-obsidian-800 flex justify-between items-center">
+    <div className="bg-canvas-50 border border-canvas-200 rounded-xl shadow-glass overflow-hidden animate-snap-in">
+      <div className="bg-canvas-100 p-4 border-b border-canvas-200 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <h2 className="font-bold text-white">Map Columns</h2>
-          <div className="h-4 w-px bg-obsidian-700 mx-2" />
+          <h2 className="font-bold text-canvas-800">Map Columns</h2>
+          <div className="h-4 w-px bg-canvas-300 mx-2" />
           <select
             value={selectedMappingId}
             onChange={(e) => handleSelectSavedMapping(e.target.value)}
-            className="bg-obsidian-900 border border-obsidian-700 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
+            className="bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
           >
             <option value="new">New Mapping...</option>
             {savedMappings.map((m) => (
@@ -446,8 +446,8 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
           className={
             'flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg transition-colors ' +
             (canProceed
-              ? 'bg-brand hover:bg-brand-hover text-white'
-              : 'bg-obsidian-800 text-obsidian-500 cursor-not-allowed')
+              ? 'bg-brand hover:bg-brand-hover text-white hover:shadow-brand-glow'
+              : 'bg-canvas-200 text-canvas-500 cursor-not-allowed')
           }
         >
           Next Step <ArrowRight className="w-4 h-4" />
@@ -455,14 +455,14 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
       </div>
 
       {excelMock && (
-        <div className="px-6 py-3 bg-brand/10 border-b border-brand/30 text-sm text-obsidian-200">
+        <div className="px-6 py-3 bg-brand/10 border-b border-brand/30 text-sm text-canvas-700">
           Excel parsing is mocked for now. We extracted placeholder headers so you can continue the flow.
         </div>
       )}
 
       <div className="flex h-[560px]">
-        <div className="w-1/3 bg-obsidian-900 p-6 border-r border-obsidian-800 overflow-y-auto">
-          <h3 className="text-xs font-mono uppercase text-obsidian-500 mb-4 tracking-wider">Found in File</h3>
+        <div className="w-1/3 bg-canvas-50 p-6 border-r border-canvas-200 overflow-y-auto">
+          <h3 className="text-xs font-mono uppercase text-canvas-500 mb-4 tracking-wider">Found in File</h3>
           <div className="space-y-3">
             {csvHeaders.map((header) => {
               const isUsed = usedHeaders.has(header);
@@ -477,8 +477,8 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                   className={
                     'p-3 border rounded-lg cursor-grab active:cursor-grabbing transition-colors shadow-sm group ' +
                     (isUsed
-                      ? 'bg-obsidian-900 border-obsidian-800 text-obsidian-600'
-                      : 'bg-obsidian-800 border-obsidian-700 hover:border-obsidian-500')
+                      ? 'bg-canvas-50 border-canvas-200 text-canvas-600'
+                      : 'bg-canvas-200 border-canvas-300 hover:border-canvas-500')
                   }
                   title={isUsed ? 'Already mapped (dropping elsewhere will move it)' : 'Drag to map'}
                 >
@@ -486,7 +486,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                     <span className="font-mono text-sm">{header}</span>
                     <div className={
                       'w-1.5 h-1.5 rounded-full transition-colors ' +
-                      (isUsed ? 'bg-obsidian-700' : 'bg-obsidian-600 group-hover:bg-brand')
+                      (isUsed ? 'bg-canvas-300' : 'bg-canvas-600 group-hover:bg-brand')
                     } />
                   </div>
                 </div>
@@ -494,13 +494,13 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
             })}
 
             {csvHeaders.length === 0 && (
-              <div className="text-sm text-obsidian-500">No headers found.</div>
+              <div className="text-sm text-canvas-500">No headers found.</div>
             )}
           </div>
         </div>
 
-        <div className="w-2/3 bg-obsidian-950/50 p-6 overflow-y-auto">
-          <h3 className="text-xs font-mono uppercase text-obsidian-500 mb-4 tracking-wider">App Schema</h3>
+        <div className="w-2/3 bg-canvas-100/50 p-6 overflow-y-auto">
+          <h3 className="text-xs font-mono uppercase text-canvas-500 mb-4 tracking-wider">App Schema</h3>
 
           <div className="grid gap-4">
             {/* Date */}
@@ -508,7 +508,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
               className={
                 dropTargetBase +
                 ' ' +
-                (activeDropKey === 'date' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600') +
+                (activeDropKey === 'date' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600') +
                 ' ' +
                 (attemptedNext && isMissing('date') ? missingBorder : '')
               }
@@ -536,7 +536,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
               className={
                 dropTargetBase +
                 ' items-start ' +
-                (activeDropKey === 'description' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600') +
+                (activeDropKey === 'description' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600') +
                 ' ' +
                 (attemptedNext && isMissing('description') ? missingBorder : '')
               }
@@ -554,7 +554,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
               <FieldMeta label="Description" required hint="Supports combining multiple columns" />
               <div className="w-[280px]">
                 {mapping.csv.description.length === 0 ? (
-                  <div className="text-xs text-obsidian-600 font-mono bg-obsidian-900 px-3 py-1.5 rounded border border-obsidian-800 text-center">
+                  <div className="text-xs text-canvas-600 font-mono bg-canvas-50 px-3 py-1.5 rounded border border-canvas-200 text-center">
                     Drop one or more CSV columns here
                   </div>
                 ) : (
@@ -567,7 +567,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                         className={`inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border cursor-grab active:cursor-grabbing ${
                           dragOverDescIndex === index
                             ? 'border-brand bg-brand/10'
-                            : 'border-obsidian-800 bg-obsidian-900'
+                            : 'border-canvas-200 bg-canvas-50'
                         }`}
                         onDragStart={(e) => {
                           setDraggingDescIndex(index);
@@ -601,7 +601,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                         {h}
                         <button
                           onClick={() => removeHeaderEverywhere(h)}
-                          className="text-obsidian-500 hover:text-white"
+                          className="text-canvas-500 hover:text-brand"
                           aria-label={`Remove ${h}`}
                         >
                           <X className="w-3 h-3" />
@@ -611,13 +611,13 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                   </div>
                 )}
                 {mapping.csv.description.length >= 2 && (
-                  <div className="mt-2 text-xs text-obsidian-500 text-right">
+                  <div className="mt-2 text-xs text-canvas-500 text-right">
                     Drag columns to reorder
                   </div>
                 )}
 
                 <div className="mt-3 flex items-center gap-2 justify-end">
-                  <span className="text-xs text-obsidian-500">Combine with</span>
+                  <span className="text-xs text-canvas-500">Combine with</span>
                   <select
                     value=""
                     onChange={(e) => {
@@ -625,7 +625,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                       if (!v) return;
                       assignHeaderToField('description', v);
                     }}
-                    className="bg-obsidian-900 border border-obsidian-700 text-xs rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
+                    className="bg-canvas-50 border border-canvas-300 text-xs rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
                   >
                     <option value="">Select...</option>
                     {availableForDescription.map((h) => (
@@ -639,13 +639,13 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
             </div>
 
             {/* Amount */}
-            <div className="bg-obsidian-800/50 border border-obsidian-700 rounded-xl p-4">
+            <div className="bg-canvas-200/50 border border-canvas-300 rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <FieldMeta label="Amount" required />
                 <select
                   value={amountMappingType}
                   onChange={(e) => handleAmountMappingTypeChange(e.target.value as AmountMapping['type'])}
-                  className="bg-obsidian-900 border border-obsidian-700 text-xs rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
+                  className="bg-canvas-50 border border-canvas-300 text-xs rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
                 >
                   <option value="single">Single column</option>
                   <option value="debitCredit">Separate Debit/Credit columns</option>
@@ -657,7 +657,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                 <div
                   className={
                     'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                    (activeDropKey === 'amount' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600') +
+                    (activeDropKey === 'amount' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600') +
                     ' ' +
                     (attemptedNext && isMissing('amount') ? missingBorder : '')
                   }
@@ -688,7 +688,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                   <div
                     className={
                       'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                      (activeDropKey === 'debit' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                      (activeDropKey === 'debit' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
                     }
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -701,7 +701,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                       assignAmountMappingColumn('debitColumn', e.dataTransfer.getData('text/plain'));
                     }}
                   >
-                    <div className="text-xs font-semibold text-obsidian-300 mb-1">Debit (negative)</div>
+                    <div className="text-xs font-semibold text-canvas-600 mb-1">Debit (negative)</div>
                     <SingleMappingPill
                       value={mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.debitColumn ?? '' : ''}
                       placeholder="Drop debit column here"
@@ -714,7 +714,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                   <div
                     className={
                       'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                      (activeDropKey === 'credit' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                      (activeDropKey === 'credit' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
                     }
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -727,7 +727,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                       assignAmountMappingColumn('creditColumn', e.dataTransfer.getData('text/plain'));
                     }}
                   >
-                    <div className="text-xs font-semibold text-obsidian-300 mb-1">Credit (positive)</div>
+                    <div className="text-xs font-semibold text-canvas-600 mb-1">Credit (positive)</div>
                     <SingleMappingPill
                       value={mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.creditColumn ?? '' : ''}
                       placeholder="Drop credit column here"
@@ -737,7 +737,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                       }}
                     />
                   </div>
-                  <p className="text-xs text-obsidian-500">Map at least one column. Debits are treated as negative amounts.</p>
+                  <p className="text-xs text-canvas-500">Map at least one column. Debits are treated as negative amounts.</p>
                 </div>
               )}
 
@@ -746,7 +746,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                   <div
                     className={
                       'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                      (activeDropKey === 'amountColumn' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                      (activeDropKey === 'amountColumn' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
                     }
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -759,7 +759,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                       assignAmountMappingColumn('amountColumn', e.dataTransfer.getData('text/plain'));
                     }}
                   >
-                    <div className="text-xs font-semibold text-obsidian-300 mb-1">Amount column</div>
+                    <div className="text-xs font-semibold text-canvas-600 mb-1">Amount column</div>
                     <SingleMappingPill
                       value={mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.amountColumn : ''}
                       placeholder="Drop amount column here"
@@ -772,7 +772,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                   <div
                     className={
                       'border-2 border-dashed rounded-lg p-3 transition-colors ' +
-                      (activeDropKey === 'typeColumn' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                      (activeDropKey === 'typeColumn' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
                     }
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -785,7 +785,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                       assignAmountMappingColumn('typeColumn', e.dataTransfer.getData('text/plain'));
                     }}
                   >
-                    <div className="text-xs font-semibold text-obsidian-300 mb-1">Type column (Debit/Credit)</div>
+                    <div className="text-xs font-semibold text-canvas-600 mb-1">Type column (Debit/Credit)</div>
                     <SingleMappingPill
                       value={mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.typeColumn : ''}
                       placeholder="Drop type column here"
@@ -795,7 +795,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                       }}
                     />
                   </div>
-                  <p className="text-xs text-obsidian-500">Map both columns. Type column should contain "Debit" or "Credit".</p>
+                  <p className="text-xs text-canvas-500">Map both columns. Type column should contain "Debit" or "Credit".</p>
                 </div>
               )}
             </div>
@@ -805,7 +805,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
               className={
                 dropTargetBase +
                 ' ' +
-                (activeDropKey === 'owner' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                (activeDropKey === 'owner' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
               }
               onDragOver={(e) => {
                 e.preventDefault();
@@ -829,15 +829,15 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
             {/* Account (constant) */}
             <div
               className={
-                'bg-obsidian-800/50 border rounded-xl p-4 flex items-center justify-between group transition-colors ' +
-                (attemptedNext && isMissing('account') ? 'border-finance-expense/60 bg-finance-expense/5' : 'border-obsidian-700')
+                'bg-canvas-200/50 border rounded-xl p-4 flex items-center justify-between group transition-colors ' +
+                (attemptedNext && isMissing('account') ? 'border-finance-expense/60 bg-finance-expense/5' : 'border-canvas-300')
               }
             >
               <FieldMeta label="Account" required hint="Required (constant)" />
               <select
                 value={mapping.account}
                 onChange={(e) => setMapping((prev) => ({ ...prev, account: e.target.value }))}
-                className="bg-obsidian-900 border border-obsidian-700 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
+                className="bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
               >
                 <option value="">Select account...</option>
                 <option value="RBC Checking">RBC Checking</option>
@@ -851,7 +851,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
               className={
                 dropTargetBase +
                 ' ' +
-                (activeDropKey === 'currency' ? 'border-brand' : 'border-obsidian-700 hover:border-obsidian-600')
+                (activeDropKey === 'currency' ? 'border-brand' : 'border-canvas-300 hover:border-canvas-600')
               }
               onDragOver={(e) => {
                 e.preventDefault();
@@ -869,7 +869,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                 <select
                   value={mapping.currencyDefault}
                   onChange={(e) => setMapping((prev) => ({ ...prev, currencyDefault: e.target.value }))}
-                  className="bg-obsidian-900 border border-obsidian-700 text-xs rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
+                  className="bg-canvas-50 border border-canvas-300 text-xs rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none"
                 >
                   <option value="CAD">CAD</option>
                   <option value="USD">USD</option>
@@ -898,7 +898,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
               value={saveName}
               onChange={(e) => setSaveName(e.target.value)}
               placeholder="Name this mapping (e.g., RBC Checking)"
-              className="bg-transparent text-sm text-white placeholder-obsidian-500 focus:outline-none w-full"
+              className="bg-transparent text-sm text-canvas-800 placeholder-canvas-500 focus:outline-none w-full"
             />
             <button
               onClick={handleSaveMapping}
@@ -907,7 +907,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, onCo
                 'text-xs font-semibold px-3 py-1.5 rounded-md border transition-colors ' +
                 (saveName.trim()
                   ? 'bg-brand text-white border-brand hover:bg-brand-hover'
-                  : 'bg-obsidian-900 text-obsidian-600 border-obsidian-800 cursor-not-allowed')
+                  : 'bg-canvas-50 text-canvas-600 border-canvas-200 cursor-not-allowed')
               }
             >
               Save
@@ -925,14 +925,14 @@ function FieldMeta({ label, required, hint }: { label: string; required: boolean
       <div
         className={
           'w-8 h-8 rounded-lg flex items-center justify-center ' +
-          (required ? 'bg-obsidian-700 text-obsidian-300' : 'bg-obsidian-800 text-obsidian-500')
+          (required ? 'bg-canvas-300 text-canvas-600' : 'bg-canvas-200 text-canvas-500')
         }
       >
         <span className="text-xs font-bold">{label[0]}</span>
       </div>
       <div>
-        <p className="text-sm font-semibold text-obsidian-200">{label}</p>
-        <p className="text-xs text-obsidian-500">
+        <p className="text-sm font-semibold text-canvas-700">{label}</p>
+        <p className="text-xs text-canvas-500">
           {required ? 'Required' : 'Optional'}
           {hint ? ` • ${hint}` : ''}
         </p>
@@ -952,17 +952,17 @@ function SingleMappingPill({
 }) {
   if (!value) {
     return (
-      <div className="text-xs text-obsidian-600 font-mono bg-obsidian-900 px-3 py-1.5 rounded border border-obsidian-800">
+      <div className="text-xs text-canvas-600 font-mono bg-canvas-50 px-3 py-1.5 rounded border border-canvas-200">
         {placeholder}
       </div>
     );
   }
 
   return (
-    <div className="inline-flex items-center gap-2 text-xs font-mono bg-obsidian-900 px-3 py-1.5 rounded border border-obsidian-800">
+    <div className="inline-flex items-center gap-2 text-xs font-mono bg-canvas-50 px-3 py-1.5 rounded border border-canvas-200">
       {value}
       {onClear && (
-        <button onClick={onClear} className="text-obsidian-500 hover:text-white" aria-label="Clear mapping">
+        <button onClick={onClear} className="text-canvas-500 hover:text-brand" aria-label="Clear mapping">
           <X className="w-3 h-3" />
         </button>
       )}
