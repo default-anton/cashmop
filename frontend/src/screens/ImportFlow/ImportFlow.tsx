@@ -146,34 +146,6 @@ function parseDateLoose(value: string): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function computeMonthsFromMapping(parsed: ParsedFile, mapping: ImportMapping): MonthOption[] {
-  const dateHeader = mapping.csv.date;
-  const idx = parsed.headers.indexOf(dateHeader);
-  if (idx === -1) return [];
-
-  const buckets = new Map<string, { year: number; month: number; count: number }>();
-
-  for (const row of parsed.rows) {
-    const d = parseDateLoose(row[idx] ?? '');
-    if (!d) continue;
-
-    const year = d.getFullYear();
-    const month = d.getMonth() + 1;
-    const key = `${year}-${String(month).padStart(2, '0')}`;
-
-    const cur = buckets.get(key);
-    if (cur) cur.count += 1;
-    else buckets.set(key, { year, month, count: 1 });
-  }
-
-  return Array.from(buckets.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, v]) => {
-      const label = new Date(v.year, v.month - 1, 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
-      return { key, label, count: v.count };
-    });
-}
-
 async function parseFile(file: File): Promise<ParsedFile> {
   const name = file.name.toLowerCase();
   // Basic file validation
@@ -211,7 +183,6 @@ export default function ImportFlow() {
 
   const [parsedFiles, setParsedFiles] = useState<ParsedFile[]>([]);
   const [fileErrors, setFileErrors] = useState<Map<string, string>>(new Map());
-  const [mappingValidationErrors, setMappingValidationErrors] = useState<string[]>([]);
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [excelMock, setExcelMock] = useState(false);
 
@@ -270,11 +241,6 @@ export default function ImportFlow() {
     setExcelMock(parsedResults[0].kind === 'excel');
     setStep(2);
     setParseBusy(false);
-  };
-
-  // Backward compatibility: single file
-  const handleFileSelected = async (file: File) => {
-    handleFilesSelected([file]);
   };
 
   const computeMonthsFromMappingAll = (m: ImportMapping): MonthOption[] => {
