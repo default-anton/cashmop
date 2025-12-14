@@ -174,12 +174,44 @@ function computeMonthsFromMapping(parsed: ParsedFile, mapping: ImportMapping): M
     });
 }
 
+async function parseFile(file: File): Promise<ParsedFile> {
+  const name = file.name.toLowerCase();
+  // Basic file validation
+  if (file.size === 0) {
+    throw new Error('File is empty (0 bytes). Please select a valid CSV or Excel export.');
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('File exceeds 10 MB limit. Please split large exports into smaller files.');
+  }
+  if (name.endsWith('.csv')) {
+    const text = await file.text();
+    if (text.trim().length === 0) {
+      throw new Error('File contains no readable text. Ensure it is a valid CSV file.');
+    }
+    const { headers, rows } = parseCSV(text);
+    if (headers.length === 0) {
+      throw new Error('No columns detected. Ensure your CSV uses commas (,) as separators and has a header row.');
+    }
+    return { file, kind: 'csv', headers, rows };
+  }
+  if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+    // Placeholder: Excel parsing will be added later.
+    const headers = ['Transaction Date', 'Posting Date', 'Description 1', 'Debit', 'Credit', 'Card Member'];
+    const rows: string[][] = [];
+    return { file, kind: 'excel', headers, rows };
+  }
+  throw new Error('Unsupported file type. Please upload a .csv or .xlsx file.');
+}
+
 export default function ImportFlow() {
   const [step, setStep] = useState(1); // 1: Upload, 2: Map, 3: Month Select, 4: Confirm
 
   const [parseBusy, setParseBusy] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
 
+  const [parsedFiles, setParsedFiles] = useState<ParsedFile[]>([]);
+  const [fileErrors, setFileErrors] = useState<Map<string, string>>(new Map());
+  const [mappingValidationErrors, setMappingValidationErrors] = useState<string[]>([]);
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
   const [excelMock, setExcelMock] = useState(false);
 
@@ -192,6 +224,10 @@ export default function ImportFlow() {
     return months.filter((m) => selected.has(m.key));
   }, [months, selectedMonthKeys]);
 
+  const totalTransactionsAllFiles = useMemo(() => {
+    return parsedFiles.reduce((acc, pf) => acc + pf.rows.length, 0);
+  }, [parsedFiles]);
+
   const totalSelectedTxns = useMemo(() => {
     return selectedMonths.reduce((acc, m) => acc + m.count, 0);
   }, [selectedMonths]);
@@ -203,65 +239,78 @@ export default function ImportFlow() {
     { id: 4, label: 'Confirm', icon: CheckCircle2 },
   ];
 
-  const handleFileSelected = async (file: File) => {
+  const handleFilesSelected = async (files: File[]) => {
     setParseError(null);
     setParseBusy(true);
+    setFileErrors(new Map());
 
-    try {
-      const name = file.name.toLowerCase();
+    const parsedResults: ParsedFile[] = [];
+    const errors = new Map<string, string>();
 
-      // Basic file validation
-      if (file.size === 0) {
-        throw new Error('File is empty (0 bytes). Please select a valid CSV or Excel export.');
+    for (const file of files) {
+      try {
+        const parsed = await parseFile(file);
+        parsedResults.push(parsed);
+      } catch (e) {
+        errors.set(file.name, e instanceof Error ? e.message : 'Failed to parse file');
       }
-      
-      // Limit file size to prevent browser freezing (10 MB)
-      if (file.size > 10 * 1024 * 1024) {
-        throw new Error('File exceeds 10 MB limit. Please split large exports into smaller files.');
-      }
-
-      if (name.endsWith('.csv')) {
-        const text = await file.text();
-        // Check for empty content after trimming
-        if (text.trim().length === 0) {
-          throw new Error('File contains no readable text. Ensure it is a valid CSV file.');
-        }
-        
-        const { headers, rows } = parseCSV(text);
-        // parseCSV now throws on empty headers, but double-check
-        if (headers.length === 0) {
-          throw new Error('No columns detected. Ensure your CSV uses commas (,) as separators and has a header row.');
-        }
-
-        setParsed({ file, kind: 'csv', headers, rows });
-        setExcelMock(false);
-        setStep(2);
-        return;
-      }
-
-      if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-        // Placeholder: Excel parsing will be added later.
-        const headers = ['Transaction Date', 'Posting Date', 'Description 1', 'Debit', 'Credit', 'Card Member'];
-        const rows: string[][] = [];
-
-        setParsed({ file, kind: 'excel', headers, rows });
-        setExcelMock(true);
-        setStep(2);
-        return;
-      }
-
-      throw new Error('Unsupported file type. Please upload a .csv or .xlsx file.');
-    } catch (e) {
-      setParseError(e instanceof Error ? e.message : 'Failed to parse file');
-    } finally {
-      setParseBusy(false);
     }
+
+    setParsedFiles(parsedResults);
+    setFileErrors(errors);
+
+    if (parsedResults.length === 0) {
+      setParseError('No files could be parsed. Check errors above.');
+      setParseBusy(false);
+      return;
+    }
+
+    // Use first file for mapping
+    setParsed(parsedResults[0]);
+    setExcelMock(parsedResults[0].kind === 'excel');
+    setStep(2);
+    setParseBusy(false);
+  };
+
+  // Backward compatibility: single file
+  const handleFileSelected = async (file: File) => {
+    handleFilesSelected([file]);
+  };
+
+  const computeMonthsFromMappingAll = (m: ImportMapping): MonthOption[] => {
+    const buckets = new Map<string, { year: number; month: number; count: number }>();
+
+    for (const pf of parsedFiles) {
+      const dateHeader = m.csv.date;
+      const idx = pf.headers.indexOf(dateHeader);
+      if (idx === -1) continue;
+
+      for (const row of pf.rows) {
+        const d = parseDateLoose(row[idx] ?? '');
+        if (!d) continue;
+
+        const year = d.getFullYear();
+        const month = d.getMonth() + 1;
+        const key = `${year}-${String(month).padStart(2, '0')}`;
+
+        const cur = buckets.get(key);
+        if (cur) cur.count += 1;
+        else buckets.set(key, { year, month, count: 1 });
+      }
+    }
+
+    return Array.from(buckets.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, v]) => {
+        const label = new Date(v.year, v.month - 1, 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
+        return { key, label, count: v.count };
+      });
   };
 
   const handleMappingComplete = (m: ImportMapping) => {
-    if (!parsed) return;
+    if (parsedFiles.length === 0) return;
     setMapping(m);
-    const computed = computeMonthsFromMapping(parsed, m);
+    const computed = computeMonthsFromMappingAll(m);
     setMonths(computed);
     setSelectedMonthKeys([]);
     setStep(3);
@@ -273,13 +322,14 @@ export default function ImportFlow() {
   };
 
   const handleConfirm = () => {
-    if (!parsed || !mapping) return;
+    if (parsedFiles.length === 0 || !mapping) return;
 
     console.log('Import Started', {
-      file: parsed.file.name,
+      files: parsedFiles.map(pf => pf.file.name),
       mapping,
       months: selectedMonths,
       totalSelectedTxns,
+      totalTransactionsAllFiles,
     });
   };
 
@@ -330,13 +380,28 @@ export default function ImportFlow() {
 
         <div className="bg-canvas-50/30 border border-canvas-200/50 rounded-2xl p-8 backdrop-blur-sm shadow-card hover:scale-[1.01] hover:shadow-card-hover transition-all duration-200">
           {step === 1 && (
-            <FileDropZone busy={parseBusy} error={parseError} onFileSelected={handleFileSelected} />
+            <>
+              <FileDropZone busy={parseBusy} error={parseError} multiple={true} onFilesSelected={handleFilesSelected} />
+              {fileErrors.size > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-semibold text-finance-expense mb-2">File Errors</h4>
+                  <div className="space-y-2">
+                    {Array.from(fileErrors.entries()).map(([fileName, error]) => (
+                      <div key={fileName} className="text-xs text-canvas-600 bg-canvas-300/60 border border-canvas-400 rounded-lg px-3 py-2">
+                        <span className="font-mono">{fileName}</span>: {error}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {step === 2 && (
             <ColumnMapper
               csvHeaders={parsed?.headers ?? []}
               excelMock={excelMock}
+              fileCount={parsedFiles.length}
               onComplete={handleMappingComplete}
             />
           )}
@@ -345,8 +410,8 @@ export default function ImportFlow() {
 
           {step === 4 && parsed && mapping && (
             <ImportConfirmation
-              fileName={parsed.file.name}
-              totalTransactions={parsed.rows.length}
+              fileName={parsedFiles.length === 1 ? parsedFiles[0].file.name : `${parsedFiles.length} files`}
+              totalTransactions={totalTransactionsAllFiles}
               selectedMonths={selectedMonths}
               mapping={mapping}
               parsed={parsed}

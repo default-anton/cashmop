@@ -26,6 +26,6 @@
 
 - Preview of mapped data (sample rows) before confirmation. ✅ **Done**
 - Ability to edit/rename/delete saved mappings.
-- Support for multiple file upload (batch import).
+- Support for multiple file upload (batch import). ✅ **Done** (UI implemented; backend integration pending)
 - Automatic detection of common bank formats (RBC, TD, etc.) and pre‑load saved mappings.
 - Drag‑and‑drop reordering of combined Description columns. ✅ **Done**
