@@ -16,3 +16,4 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 ## Project Rules You MUST Follow
 
 - Always read `frontend/tailwind.config.js` when creating or editing UI components to ensure consistency with the design system (colors, fonts, shadows, animations, etc.).
+- Check types with `npx exec tsc` in the `frontend/` directory after editing .ts, .tsx files.
