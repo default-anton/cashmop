@@ -621,7 +621,11 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               onDrop={(e) => {
                 e.preventDefault();
                 setActiveDropKey(null);
-                assignHeaderToField('description', e.dataTransfer.getData('text/plain'));
+                const header = e.dataTransfer.getData('text/plain');
+                if (!csvHeaders.includes(header)) {
+                  return;
+                }
+                assignHeaderToField('description', header);
               }}
             >
               <FieldMeta label="Description" required hint="Supports combining multiple columns" />
