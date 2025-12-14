@@ -3,7 +3,7 @@ import { CheckCircle2, FileText, ArrowLeft, Eye } from 'lucide-react';
 
 import type { ImportMapping } from './ColumnMapper';
 import type { MonthOption } from './MonthSelector';
-import type { ParsedFile } from './ImportFlow';
+import type { ParsedFile } from '../ImportFlow';
 
 interface ImportConfirmationProps {
   fileName: string;

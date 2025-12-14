@@ -1,4 +1,4 @@
-import ImportFlow from './components/data-ingestion/ImportFlow';
+import ImportFlow from './screens/ImportFlow';
 
 function App() {
   return <ImportFlow />;

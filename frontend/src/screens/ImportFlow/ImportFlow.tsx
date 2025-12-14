@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { Upload, Table, Calendar, Check, CheckCircle2 } from 'lucide-react';
 
-import FileDropZone from './FileDropZone';
-import ColumnMapper, { type ImportMapping } from './ColumnMapper';
-import MonthSelector, { type MonthOption } from './MonthSelector';
-import ImportConfirmation from './ImportConfirmation';
+import FileDropZone from './components/FileDropZone';
+import ColumnMapper, { type ImportMapping } from './components/ColumnMapper';
+import MonthSelector, { type MonthOption } from './components/MonthSelector';
+import ImportConfirmation from './components/ImportConfirmation';
 
 export type ParsedFile = {
   file: File;
