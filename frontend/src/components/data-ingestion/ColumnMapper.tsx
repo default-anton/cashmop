@@ -629,67 +629,69 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               }}
             >
               <FieldMeta label="Description" required hint="Supports combining multiple columns" />
-              {mapping.csv.description.length === 0 ? (
-                <div className="text-xs text-canvas-600 font-mono bg-canvas-50 px-3 py-1.5 rounded border border-canvas-200">
-                  Drop column(s) here
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2 justify-end">
-                  {mapping.csv.description.map((h, index) => (
-                    <span
-                      key={h}
-                      draggable
-                      data-index={index}
-                      className={`inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border cursor-grab active:cursor-grabbing ${dragOverDescIndex === index
-                        ? 'border-brand bg-brand/10'
-                        : 'border-canvas-200 bg-canvas-50'
-                        }`}
-                      onDragStart={(e) => {
-                        setDraggingDescIndex(index);
-                        e.dataTransfer.setData('text/plain', index.toString());
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.dataTransfer.dropEffect = 'move';
-                        setDragOverDescIndex(index);
-                        e.stopPropagation();
-                      }}
-                      onDragLeave={() => {
-                        if (dragOverDescIndex === index) {
+              <div className="flex flex-col gap-2">
+                {mapping.csv.description.length === 0 ? (
+                  <div className="text-xs text-canvas-600 font-mono bg-canvas-50 px-3 py-1.5 rounded border border-canvas-200">
+                    Drop column(s) here
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    {mapping.csv.description.map((h, index) => (
+                      <span
+                        key={h}
+                        draggable
+                        data-index={index}
+                        className={`inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border cursor-grab active:cursor-grabbing ${dragOverDescIndex === index
+                          ? 'border-brand bg-brand/10'
+                          : 'border-canvas-200 bg-canvas-50'
+                          }`}
+                        onDragStart={(e) => {
+                          setDraggingDescIndex(index);
+                          e.dataTransfer.setData('text/plain', index.toString());
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.dataTransfer.dropEffect = 'move';
+                          setDragOverDescIndex(index);
+                          e.stopPropagation();
+                        }}
+                        onDragLeave={() => {
+                          if (dragOverDescIndex === index) {
+                            setDragOverDescIndex(null);
+                          }
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                          reorderDescription(sourceIndex, index);
                           setDragOverDescIndex(null);
-                        }
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
-                        reorderDescription(sourceIndex, index);
-                        setDragOverDescIndex(null);
-                        setDraggingDescIndex(null);
-                        e.stopPropagation();
-                      }}
-                      onDragEnd={() => {
-                        setDraggingDescIndex(null);
-                        setDragOverDescIndex(null);
-                      }}
-                    >
-                      {h}
-                      <button
-                        onClick={() => removeHeaderEverywhere(h)}
-                        className="text-canvas-500 hover:text-brand"
-                        aria-label={`Remove ${h}`}
+                          setDraggingDescIndex(null);
+                          e.stopPropagation();
+                        }}
+                        onDragEnd={() => {
+                          setDraggingDescIndex(null);
+                          setDragOverDescIndex(null);
+                        }}
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {mapping.csv.description.length >= 2 && (
-                <div className="mt-2 text-xs text-canvas-500 text-right">
-                  Drag columns to reorder
-                </div>
-              )}
+                        {h}
+                        <button
+                          onClick={() => removeHeaderEverywhere(h)}
+                          className="text-canvas-500 hover:text-brand"
+                          aria-label={`Remove ${h}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {mapping.csv.description.length >= 2 && (
+                  <div className="text-xs text-canvas-500 text-right">
+                    Drag columns to reorder
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Amount */}
