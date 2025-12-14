@@ -65,7 +65,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
           `flex flex-col items-center justify-center ${selectedFiles.length > 0 ? 'h-auto py-8' : 'h-96'}\n` +
           (isDragging
             ? 'border-brand bg-brand/5 scale-[1.01]'
-            : 'border-obsidian-700 bg-obsidian-900 hover:border-obsidian-600 hover:bg-obsidian-800')
+            : 'border-canvas-300 bg-canvas-50 hover:border-canvas-600 hover:bg-canvas-200')
         }
         onDragOver={(e) => {
           e.preventDefault();
@@ -91,27 +91,27 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
 
         {selectedFiles.length === 0 ? (
           <>
-            <div className="p-6 bg-obsidian-800 rounded-full mb-6 shadow-glass group-hover:scale-110 transition-transform">
+            <div className="p-6 bg-canvas-200 rounded-full mb-6 shadow-glass group-hover:scale-110 transition-transform">
               <Upload className="w-8 h-8 text-brand" />
             </div>
 
-            <h3 className="text-xl font-bold text-white mb-2">
+            <h3 className="text-xl font-bold text-canvas-800 mb-2">
               {multiple ? 'Drop your bank exports here' : 'Drop your bank export here'}
             </h3>
-            <p className="text-obsidian-400">or click to browse</p>
+            <p className="text-canvas-500">or click to browse</p>
           </>
         ) : (
           <div className="w-full max-w-2xl">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-obsidian-800 rounded-full">
+                <div className="p-3 bg-canvas-200 rounded-full">
                   <FileText className="w-6 h-6 text-brand" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">
+                  <h3 className="text-lg font-bold text-canvas-800">
                     {selectedFiles.length} file{selectedFiles.length === 1 ? '' : 's'} selected
                   </h3>
-                  <p className="text-sm text-obsidian-400">
+                  <p className="text-sm text-canvas-500">
                     {multiple ? 'Add more files or continue' : 'Replace file'}
                   </p>
                 </div>
@@ -122,7 +122,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
                     e.stopPropagation();
                     clearAll();
                   }}
-                  className="text-xs font-semibold px-3 py-1.5 rounded-md bg-obsidian-800 border border-obsidian-700 text-obsidian-300 hover:border-obsidian-500 transition-colors"
+                  className="text-xs font-semibold px-3 py-1.5 rounded-md bg-canvas-200 border border-canvas-300 text-canvas-600 hover:border-canvas-400 transition-colors"
                 >
                   Clear All
                 </button>
@@ -133,27 +133,27 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
               {selectedFiles.map((file, idx) => (
                 <div
                   key={`${file.name}-${file.size}`}
-                  className="flex items-center justify-between p-4 bg-obsidian-800/50 border border-obsidian-700 rounded-xl hover:border-obsidian-600 transition-colors"
+                  className="flex items-center justify-between p-4 bg-canvas-200/50 border border-canvas-300 rounded-xl hover:border-canvas-500 transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-obsidian-900 rounded-lg">
-                      <FileText className="w-5 h-5 text-obsidian-300" />
+                    <div className="p-2 bg-canvas-300 rounded-lg">
+                      <FileText className="w-5 h-5 text-canvas-600" />
                     </div>
                     <div className="flex flex-col">
-                      <span className="font-medium text-white">{file.name}</span>
-                      <span className="text-xs text-obsidian-500 font-mono">
+                      <span className="font-medium text-canvas-800">{file.name}</span>
+                      <span className="text-xs text-canvas-500 font-mono">
                         {(file.size / 1024).toFixed(1)} KB
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono px-2 py-1 rounded bg-obsidian-900 border border-obsidian-800 text-obsidian-400">
+                    <span className="text-xs font-mono px-2 py-1 rounded bg-canvas-300 border border-canvas-400 text-canvas-600">
                       {file.name.endsWith('.csv') ? 'CSV' : file.name.endsWith('.xlsx') ? 'Excel' : 'Excel'}
                     </span>
                     <button
                       onClick={() => removeFile(idx)}
-                      className="p-1.5 rounded-md bg-obsidian-900 border border-obsidian-800 text-obsidian-400 hover:text-white hover:border-obsidian-600 transition-colors"
+                      className="p-1.5 rounded-md bg-canvas-300 border border-canvas-400 text-canvas-600 hover:text-canvas-800 hover:border-canvas-500 transition-colors"
                       aria-label={`Remove ${file.name}`}
                     >
                       <X className="w-4 h-4" />
@@ -167,7 +167,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
               <div className="mt-6 text-center">
                 <button
                   onClick={() => inputRef.current?.click()}
-                  className="text-sm font-semibold px-4 py-2 rounded-lg bg-obsidian-800 border border-obsidian-700 text-obsidian-200 hover:border-obsidian-500 transition-colors"
+                  className="text-sm font-semibold px-4 py-2 rounded-lg bg-canvas-200 border border-canvas-300 text-canvas-600 hover:border-canvas-400 transition-colors"
                 >
                   Add More Files
                 </button>
@@ -177,7 +177,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
         )}
 
         {busy && (
-          <div className="mt-6 text-sm font-mono text-obsidian-400 bg-obsidian-800/60 border border-obsidian-700 rounded-lg px-3 py-2">
+          <div className="mt-6 text-sm font-mono text-canvas-500 bg-canvas-200/60 border border-canvas-300 rounded-lg px-3 py-2">
             Parsing file{selectedFiles.length > 1 ? 's...' : '...'}
           </div>
         )}
@@ -189,13 +189,13 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
         )}
 
         {/* Supported formats hint */}
-        <div className="absolute bottom-8 flex gap-3 text-xs font-mono text-obsidian-500">
-          <span className="bg-obsidian-800 px-2 py-1 rounded border border-obsidian-700">.CSV</span>
-          <span className="bg-obsidian-800 px-2 py-1 rounded border border-obsidian-700">.XLSX</span>
+        <div className="absolute bottom-8 flex gap-3 text-xs font-mono text-canvas-500">
+          <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300">.CSV</span>
+          <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300">.XLSX</span>
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-obsidian-500 text-center">
+      <p className="mt-4 text-xs text-canvas-500 text-center">
         CSV parsing runs locally. Excel parsing is mocked for now.
       </p>
     </div>
