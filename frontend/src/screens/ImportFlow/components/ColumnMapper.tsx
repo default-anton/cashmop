@@ -59,14 +59,10 @@ const defaultMapping = (): ImportMapping => ({
   currencyDefault: 'CAD',
 });
 
-const requiredCsvFields: Array<Exclude<CsvFieldKey, 'owner' | 'currency'>> = ['date', 'description', 'amount'];
-
 const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, fileCount = 1, onComplete }) => {
   const [mapping, setMapping] = useState<ImportMapping>(() => defaultMapping());
   const [activeDropKey, setActiveDropKey] = useState<CsvFieldKey | null>(null);
   const [attemptedNext, setAttemptedNext] = useState(false);
-  const [draggingDescIndex, setDraggingDescIndex] = useState<number | null>(null);
-  const [dragOverDescIndex, setDragOverDescIndex] = useState<number | null>(null);
 
   const [savedMappings, setSavedMappings] = useState<SavedMapping[]>(() => [
     {
@@ -627,7 +623,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
                 ) : (
                   <DragReorderableList
                     items={mapping.csv.description}
-                    renderItem={(h, index) => h}
+                    renderItem={(h, _index) => h}
                     onReorder={reorderDescription}
                     onRemove={(index) => {
                       const header = mapping.csv.description[index];
