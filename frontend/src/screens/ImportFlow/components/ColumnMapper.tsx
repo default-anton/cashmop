@@ -272,21 +272,21 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               onDrop={(key, header) => {
                 setActiveDropKey(null);
                 if (key === 'amount') {
-                    assignHeaderToField('amount', header);
+                  assignHeaderToField('amount', header);
                 } else if (key === 'debit' || key === 'credit' || key === 'amountColumn' || key === 'typeColumn') {
-                    // This is handled by assignAmountMappingColumn inside the component logic but here we receive key
-                    // We need to map key to 'debitColumn', 'creditColumn', etc.
-                    // Wait, AmountMapping component calls onDrop with 'amount', 'debit', 'credit', etc.
-                    // assignHeaderToField can handle 'amount'.
-                    // For others, AmountMapping calls onAssignAmountMappingColumn directly?
-                    // Let's check AmountMapping.tsx
+                  // This is handled by assignAmountMappingColumn inside the component logic but here we receive key
+                  // We need to map key to 'debitColumn', 'creditColumn', etc.
+                  // Wait, AmountMapping component calls onDrop with 'amount', 'debit', 'credit', etc.
+                  // assignHeaderToField can handle 'amount'.
+                  // For others, AmountMapping calls onAssignAmountMappingColumn directly?
+                  // Let's check AmountMapping.tsx
                 }
               }}
               onClear={(header) => removeHeaderEverywhere(header)}
               onTypeChange={handleAmountMappingTypeChange}
               onAssignAmountColumn={(field, header) => {
-                  setActiveDropKey(null);
-                  assignAmountMappingColumn(field, header);
+                setActiveDropKey(null);
+                assignAmountMappingColumn(field, header);
               }}
               onUpdateAmountWithTypeValues={updateAmountWithTypeValues}
             />
@@ -306,7 +306,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               onSetDefaultOwner={(owner) => setMapping((prev) => ({ ...prev, defaultOwner: owner }))}
               onAddOwner={(owner) => {
                 if (!availableOwners.includes(owner)) {
-                    setAvailableOwners((prev) => [...prev, owner]);
+                  setAvailableOwners((prev) => [...prev, owner]);
                 }
               }}
             />
@@ -318,7 +318,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
               onSetAccount={(account) => setMapping((prev) => ({ ...prev, account }))}
               onAddAccount={(account) => {
                 if (!availableAccounts.includes(account)) {
-                    setAvailableAccounts((prev) => [...prev, account]);
+                  setAvailableAccounts((prev) => [...prev, account]);
                 }
               }}
             />
