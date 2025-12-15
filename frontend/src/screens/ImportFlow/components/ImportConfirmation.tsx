@@ -2,7 +2,7 @@ import React from 'react';
 import { CheckCircle2, FileText, ArrowLeft, Eye } from 'lucide-react';
 import { Button, Card } from '../../../components';
 
-import type { ImportMapping } from './ColumnMapper';
+import type { ImportMapping } from './ColumnMapperTypes';
 import type { MonthOption } from './MonthSelector';
 import type { ParsedFile } from '../ImportFlow';
 
@@ -37,7 +37,7 @@ const ImportConfirmation: React.FC<ImportConfirmationProps> = ({
     const dateIdx = colIdx(mapping.csv.date);
     const ownerIdx = colIdx(mapping.csv.owner);
     const currencyIdx = colIdx(mapping.csv.currency);
-    const descIdxs = mapping.csv.description.map(h => headers.indexOf(h)).filter(i => i !== -1);
+    const descIdxs = mapping.csv.description.map((h: string) => headers.indexOf(h)).filter((i: number) => i !== -1);
     
     const am = mapping.csv.amountMapping;
     let amountFn: (row: string[]) => number;
