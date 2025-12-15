@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Upload, Table, Calendar, Check, CheckCircle2 } from 'lucide-react';
 
 import FileDropZone from './components/FileDropZone';
-import ColumnMapper, { type ImportMapping } from './components/ColumnMapper';
+import ColumnMapper from './components/ColumnMapper';
+import { type ImportMapping } from './components/ColumnMapperTypes';
 import MonthSelector, { type MonthOption } from './components/MonthSelector';
 import ImportConfirmation from './components/ImportConfirmation';
 
