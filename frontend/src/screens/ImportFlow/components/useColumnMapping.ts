@@ -20,6 +20,7 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
     if (mapping.csv.date) used.add(mapping.csv.date);
     if (mapping.csv.amount) used.add(mapping.csv.amount);
     if (mapping.csv.owner) used.add(mapping.csv.owner);
+    if (mapping.csv.account) used.add(mapping.csv.account);
     if (mapping.csv.currency) used.add(mapping.csv.currency);
     mapping.csv.description.forEach((h) => used.add(h));
     // Add columns from amountMapping
@@ -52,7 +53,7 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
   }, [mapping.csv.amountMapping, mapping.csv.amount]);
 
   const isMissing = (key: 'date' | 'description' | 'amount' | 'account') => {
-    if (key === 'account') return mapping.account.trim().length === 0;
+    if (key === 'account') return mapping.account.trim().length === 0 && (mapping.csv.account ?? '').trim().length === 0;
     if (key === 'description') return mapping.csv.description.length === 0;
     if (key === 'amount') return !isAmountMappingValid;
     return (mapping.csv[key] ?? '').trim().length === 0;
@@ -62,9 +63,9 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
     const dateOk = mapping.csv.date.trim().length > 0;
     const descriptionOk = mapping.csv.description.length > 0;
     const amountOk = isAmountMappingValid;
-    const accountOk = mapping.account.trim().length > 0;
+    const accountOk = mapping.account.trim().length > 0 || (mapping.csv.account ?? '').trim().length > 0;
     return dateOk && descriptionOk && amountOk && accountOk;
-  }, [mapping.csv.date, mapping.csv.description, mapping.account, isAmountMappingValid]);
+  }, [mapping.csv.date, mapping.csv.description, mapping.account, mapping.csv.account, isAmountMappingValid]);
 
   const removeHeaderEverywhere = (header: string) => {
     if (!header) return;
@@ -81,6 +82,7 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
       if (next.csv.date === header) next.csv.date = '';
       if (next.csv.amount === header) next.csv.amount = '';
       if (next.csv.owner === header) delete next.csv.owner;
+      if (next.csv.account === header) delete next.csv.account;
       if (next.csv.currency === header) delete next.csv.currency;
 
       // Clear from amountMapping
@@ -127,6 +129,7 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
         if (next.csv.date === h) next.csv.date = '';
         if (next.csv.amount === h) next.csv.amount = '';
         if (next.csv.owner === h) delete next.csv.owner;
+        if (next.csv.account === h) delete next.csv.account;
         if (next.csv.currency === h) delete next.csv.currency;
         next.csv.description = next.csv.description.filter((x: string) => x !== h);
         // Clear from amountMapping
@@ -180,6 +183,11 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
 
       if (field === 'owner') {
         next.csv.owner = header;
+        return next;
+      }
+
+      if (field === 'account') {
+        next.csv.account = header;
         return next;
       }
 

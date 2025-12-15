@@ -1,4 +1,4 @@
-export type CsvFieldKey = 'date' | 'description' | 'amount' | 'owner' | 'currency' | 'debit' | 'credit' | 'amountColumn' | 'typeColumn';
+export type CsvFieldKey = 'date' | 'description' | 'amount' | 'owner' | 'account' | 'currency' | 'debit' | 'credit' | 'amountColumn' | 'typeColumn';
 
 export type AmountMapping =
   | { type: 'single'; column: string }
@@ -12,6 +12,7 @@ export type ImportMapping = {
     amount: string; // legacy, keep for backward compatibility
     amountMapping?: AmountMapping;
     owner?: string;
+    account?: string;
     currency?: string;
   };
   account: string;

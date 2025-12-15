@@ -313,8 +313,17 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
 
             <AccountMapping
               account={mapping.account}
+              accountValue={mapping.csv.account}
               availableAccounts={availableAccounts}
               isMissing={attemptedNext && isMissing('account')}
+              activeDropKey={activeDropKey}
+              onDragOver={setActiveDropKey}
+              onDragLeave={() => setActiveDropKey(null)}
+              onDrop={(key, header) => {
+                setActiveDropKey(null);
+                assignHeaderToField(key, header);
+              }}
+              onClear={(header) => removeHeaderEverywhere(header)}
               onSetAccount={(account) => setMapping((prev) => ({ ...prev, account }))}
               onAddAccount={(account) => {
                 if (!availableAccounts.includes(account)) {
