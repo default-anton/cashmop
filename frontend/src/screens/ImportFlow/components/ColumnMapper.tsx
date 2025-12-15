@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, Save } from 'lucide-react';
-import { Button, Select, Input, Card } from '../../../components';
+import { Button, Select, Input, Card, Table } from '../../../components';
 import { SavedMapping, ImportMapping, CsvFieldKey } from './ColumnMapperTypes';
 import { SourceColumnList } from './SourceColumnList';
 import { useColumnMapping, defaultMapping } from './useColumnMapping';
@@ -17,12 +17,13 @@ const OWNERS_LOCAL_STORAGE_KEY = 'cashflow.owners';
 
 interface ColumnMapperProps {
   csvHeaders: string[];
+  rows: string[][];
   excelMock?: boolean;
   fileCount?: number;
   onComplete: (mapping: ImportMapping) => void;
 }
 
-const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, fileCount = 1, onComplete }) => {
+const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock, fileCount = 1, onComplete }) => {
   const {
     mapping,
     setMapping,
@@ -184,6 +185,13 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
     setSaveName('');
   };
 
+  const previewData = React.useMemo(() => rows.slice(0, 5), [rows]);
+  const previewColumns = React.useMemo(() => csvHeaders.map((h, i) => ({
+    key: i as any,
+    header: h,
+    className: 'whitespace-nowrap'
+  })), [csvHeaders]);
+
   return (
     <Card variant="glass" className="overflow-hidden animate-snap-in">
       <div className="bg-canvas-100 p-4 border-b border-canvas-200 flex justify-between items-center">
@@ -223,6 +231,15 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, excelMock, file
           Mapping will be applied to all {fileCount} files.
         </div>
       )}
+
+      <div className="px-6 py-4 border-b border-canvas-200 bg-canvas-50/50">
+        <h3 className="text-xs font-semibold text-canvas-500 uppercase tracking-wider mb-3">File Preview</h3>
+        <Table
+          columns={previewColumns}
+          data={previewData}
+          className="bg-white max-h-48 overflow-y-auto"
+        />
+      </div>
 
       <div className="flex h-[560px]">
         <SourceColumnList csvHeaders={csvHeaders} usedHeaders={usedHeaders} />
