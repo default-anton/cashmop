@@ -1,0 +1,3 @@
+Date,Description,Amount,Owner,Account,Currency
+2023-11-01,Test Transaction,100.00,Me,MyBank,USD
+2023-11-02,Another Txn,-50.00,You,YourBank,USD

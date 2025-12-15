@@ -60,6 +60,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
 
     const dateIdx = colIdx(mapping.csv.date);
     const ownerIdx = colIdx(mapping.csv.owner);
+    const accountIdx = colIdx(mapping.csv.account);
     const currencyIdx = colIdx(mapping.csv.currency);
     const descIdxs = mapping.csv.description.map((h: string) => headers.indexOf(h)).filter((i: number) => i !== -1);
 
@@ -93,7 +94,8 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
       date: dateIdx >= 0 ? row[dateIdx] : '',
       description: descIdxs.map(i => row[i]).filter(Boolean).join(' '),
       amount: amountFn(row),
-      owner: ownerIdx >= 0 ? row[ownerIdx] : '',
+      owner: ownerIdx >= 0 ? row[ownerIdx] : (mapping.defaultOwner || ''),
+      account: accountIdx >= 0 ? row[accountIdx] : (mapping.account || ''),
       currency: currencyIdx >= 0 ? row[currencyIdx] : mapping.currencyDefault,
     }));
   }, [parsed, mapping]);
@@ -112,6 +114,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
       )
     },
     { key: 'owner', header: 'Owner', className: 'whitespace-nowrap' },
+    { key: 'account', header: 'Account', className: 'whitespace-nowrap' },
     { key: 'currency', header: 'Currency', className: 'whitespace-nowrap' },
   ], []);
 
@@ -215,7 +218,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
             disabled={!canStart}
             variant="primary"
             size="lg"
-            className="min-w-[120px]"
+            className="min-w-[120px] justify-center"
           >
             Import
           </Button>
