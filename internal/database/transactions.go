@@ -25,7 +25,6 @@ func GetOrCreateAccount(name string) (int64, error) {
 	var id int64
 	err := DB.QueryRow("SELECT id FROM accounts WHERE name = ?", name).Scan(&id)
 	if err == sql.ErrNoRows {
-		// Create
 		res, err := DB.Exec("INSERT INTO accounts (name) VALUES (?)", name)
 		if err != nil {
 			return 0, err
@@ -40,8 +39,7 @@ func GetOrCreateAccount(name string) (int64, error) {
 
 func GetOrCreateUser(name string) (*int64, error) {
 	if name == "" {
-		return nil, nil // Valid, owner can be null if not specified? Or we enforce it? Plan said FindOrCreateUser.
-		// If empty name passed, maybe we just return nil because we can't create a user with empty name.
+		return nil, nil
 	}
 
 	var id int64
