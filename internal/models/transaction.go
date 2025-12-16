@@ -11,4 +11,3 @@ type Transaction struct {
 	Date        string  `json:"date"` // YYYY-MM-DD
 	Category    string  `json:"category"`
 }
-

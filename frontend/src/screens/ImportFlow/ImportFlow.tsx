@@ -47,10 +47,10 @@ function parseCSVLine(line: string): string[] {
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   // Remove BOM and normalize line endings
   const normalized = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  
+
   // Split lines, preserving empty lines for error detection
   const lines = normalized.split('\n');
-  
+
   // Find first non-empty line for header detection (skip leading empty lines)
   let firstLineIdx = -1;
   for (let i = 0; i < lines.length; i++) {
@@ -59,45 +59,45 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
       break;
     }
   }
-  
+
   if (firstLineIdx === -1) {
     throw new Error('File appears to be empty or contains only whitespace.');
   }
-  
+
   // Parse headers from first non-empty line
   const headers = parseCSVLine(lines[firstLineIdx]).filter(Boolean);
   if (headers.length === 0) {
     throw new Error('No columns detected in the first non-empty row. Ensure your CSV uses commas (,) as separators.');
   }
-  
+
   // Process remaining lines (skip empty lines but keep track)
   const rows: string[][] = [];
   let maxColumns = headers.length;
   let skippedEmpty = 0;
   let inconsistentColumns = 0;
-  
+
   for (let i = firstLineIdx + 1; i < lines.length; i++) {
     const line = lines[i];
     if (line.trim().length === 0) {
       skippedEmpty++;
       continue;
     }
-    
+
     const row = parseCSVLine(line);
     if (row.length > maxColumns) {
       maxColumns = row.length;
       inconsistentColumns++;
     }
-    
+
     // Ensure each row has exactly headers.length columns (pad or truncate)
     const padded = row.slice(0, headers.length);
     if (padded.length < headers.length) {
       padded.push(...Array(headers.length - padded.length).fill(''));
     }
-    
+
     rows.push(padded);
   }
-  
+
   // Warn about inconsistencies (could be logged)
   if (inconsistentColumns > 0) {
     console.warn(`${inconsistentColumns} rows have more columns than headers. Extra columns were truncated.`);
@@ -105,12 +105,12 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   if (skippedEmpty > 0) {
     console.warn(`Skipped ${skippedEmpty} empty lines.`);
   }
-  
+
   // Ensure we have at least one data row (optional)
   if (rows.length === 0) {
     console.warn('No data rows found after header.');
   }
-  
+
   return { headers, rows };
 }
 
@@ -281,20 +281,107 @@ export default function ImportFlow() {
     setStep(3);
   };
 
-  const handleMonthsComplete = (keys: string[]) => {
+  const normalizeTransactions = (
+    mapping: ImportMapping,
+    parsedFiles: ParsedFile[],
+    selectedKeys: string[]
+  ): any[] => {
+    const out: any[] = [];
+    const selectedSet = new Set(selectedKeys);
+
+    for (const pf of parsedFiles) {
+      // Find indices
+      const headers = pf.headers;
+      const dateIdx = headers.indexOf(mapping.csv.date);
+      const descIdxs = mapping.csv.description.map(d => headers.indexOf(d)).filter(i => i !== -1);
+
+      // Amount handling
+      let amountIdx = -1;
+      let debitIdx = -1;
+      let creditIdx = -1;
+
+      if (mapping.csv.amountMapping?.type === 'debitCredit') {
+        if (mapping.csv.amountMapping.debitColumn) debitIdx = headers.indexOf(mapping.csv.amountMapping.debitColumn);
+        if (mapping.csv.amountMapping.creditColumn) creditIdx = headers.indexOf(mapping.csv.amountMapping.creditColumn);
+      } else {
+        // Single column logic (default or explicit)
+        let col = mapping.csv.amount;
+        if (mapping.csv.amountMapping?.type === 'single') col = mapping.csv.amountMapping.column;
+        if (mapping.csv.amountMapping?.type === 'amountWithType') col = mapping.csv.amountMapping.amountColumn;
+        amountIdx = headers.indexOf(col);
+      }
+
+      // Owner/Account
+      const ownerIdx = mapping.csv.owner ? headers.indexOf(mapping.csv.owner) : -1;
+      const accountIdx = mapping.csv.account ? headers.indexOf(mapping.csv.account) : -1;
+
+      for (const row of pf.rows) {
+        // Date parse
+        const dStr = row[dateIdx];
+        const dateObj = parseDateLoose(dStr);
+        if (!dateObj) continue;
+
+        // Check if in selected months
+        const year = dateObj.getFullYear();
+        const month = dateObj.getMonth() + 1;
+        const key = `${year}-${String(month).padStart(2, '0')}`;
+        if (!selectedSet.has(key)) continue;
+
+        // Description
+        const desc = descIdxs.map(i => row[i]).filter(Boolean).join(' ');
+
+        // Amount calc
+        let amount = 0;
+        if (debitIdx !== -1 || creditIdx !== -1) {
+          const debitVal = debitIdx !== -1 ? parseFloat(row[debitIdx]?.replace(/[^0-9.-]/g, '') || '0') : 0;
+          const creditVal = creditIdx !== -1 ? parseFloat(row[creditIdx]?.replace(/[^0-9.-]/g, '') || '0') : 0;
+
+          if (debitVal !== 0) amount -= Math.abs(debitVal);
+          if (creditVal !== 0) amount += Math.abs(creditVal);
+
+        } else if (amountIdx !== -1) {
+          let valStr = row[amountIdx];
+          valStr = valStr?.replace(/[^0-9.-]/g, '') || '0';
+          amount = parseFloat(valStr);
+        }
+
+        out.push({
+          date: dateObj.toISOString().split('T')[0], // YYYY-MM-DD
+          description: desc,
+          amount: amount,
+          category: '', // TODO: auto-categorize later
+          account: accountIdx !== -1 ? row[accountIdx] : mapping.account,
+          owner: ownerIdx !== -1 ? row[ownerIdx] : (mapping.defaultOwner || 'Unassigned'),
+        });
+      }
+    }
+    return out;
+  };
+
+  const handleMonthsComplete = async (keys: string[]) => {
     setSelectedMonthKeys(keys);
+
+    if (!mapping) return;
 
     // Calculate selected months here since state update is async
     const selected = months.filter(m => keys.includes(m.key));
-    const totalSelected = selected.reduce((acc, m) => acc + m.count, 0);
 
-    console.log('Import Started', {
-      files: parsedFiles.map(pf => pf.file.name),
-      mapping: mapping!,
-      months: selected,
-      totalSelectedTxns: totalSelected,
-      totalTransactionsAllFiles,
-    });
+    // Normalize and send
+    const txs = normalizeTransactions(mapping, parsedFiles, keys);
+
+    console.log('Importing...', txs.length);
+
+    try {
+      await (window as any).go.main.App.ImportTransactions(txs);
+      // Show success / Navigate away? 
+      // For now just log and maybe alert (though alert is ugly, better UI needed but out of scope for "backend" task usually)
+      // I'll update the step to confirm
+      setStep(4);
+      alert(`Successfully imported ${txs.length} transactions!`);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to import transactions: ' + e);
+    }
   };
 
   return (
