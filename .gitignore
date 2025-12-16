@@ -3,3 +3,4 @@ node_modules
 frontend/dist
 cashflow.db
 .DS_Store
+*.log
