@@ -5,7 +5,6 @@ import FileDropZone from './components/FileDropZone';
 import ColumnMapper from './components/ColumnMapper';
 import { type ImportMapping } from './components/ColumnMapperTypes';
 import MonthSelector, { type MonthOption } from './components/MonthSelector';
-import ImportConfirmation from './components/ImportConfirmation';
 
 export type ParsedFile = {
   file: File;
@@ -208,7 +207,6 @@ export default function ImportFlow() {
     { id: 1, label: 'Upload File', icon: Upload },
     { id: 2, label: 'Map Columns', icon: Table },
     { id: 3, label: 'Select Range', icon: Calendar },
-    { id: 4, label: 'Confirm', icon: CheckCircle2 },
   ];
 
   const handleFilesSelected = async (files: File[]) => {
@@ -285,17 +283,16 @@ export default function ImportFlow() {
 
   const handleMonthsComplete = (keys: string[]) => {
     setSelectedMonthKeys(keys);
-    setStep(4);
-  };
 
-  const handleConfirm = () => {
-    if (parsedFiles.length === 0 || !mapping) return;
+    // Calculate selected months here since state update is async
+    const selected = months.filter(m => keys.includes(m.key));
+    const totalSelected = selected.reduce((acc, m) => acc + m.count, 0);
 
     console.log('Import Started', {
       files: parsedFiles.map(pf => pf.file.name),
-      mapping,
-      months: selectedMonths,
-      totalSelectedTxns,
+      mapping: mapping!,
+      months: selected,
+      totalSelectedTxns: totalSelected,
       totalTransactionsAllFiles,
     });
   };
@@ -367,23 +364,20 @@ export default function ImportFlow() {
           {step === 2 && (
             <ColumnMapper
               csvHeaders={parsed?.headers ?? []}
+              rows={parsed?.rows ?? []}
               excelMock={excelMock}
               fileCount={parsedFiles.length}
               onComplete={handleMappingComplete}
             />
           )}
 
-          {step === 3 && <MonthSelector months={months} onComplete={handleMonthsComplete} />}
-
-          {step === 4 && parsed && mapping && (
-            <ImportConfirmation
-              fileName={parsedFiles.length === 1 ? parsedFiles[0].file.name : `${parsedFiles.length} files`}
-              totalTransactions={totalTransactionsAllFiles}
-              selectedMonths={selectedMonths}
-              mapping={mapping}
+          {step === 3 && (
+            <MonthSelector
+              months={months}
+              onComplete={handleMonthsComplete}
+              onBack={() => setStep(2)}
               parsed={parsed}
-              onBack={() => setStep(3)}
-              onConfirm={handleConfirm}
+              mapping={mapping}
             />
           )}
         </div>
