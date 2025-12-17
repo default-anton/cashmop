@@ -3,6 +3,7 @@ import { Calendar, Check, ArrowLeft } from 'lucide-react';
 import { Button, Card, Table } from '../../../components';
 import { type ImportMapping } from './ColumnMapperTypes';
 import { type ParsedFile } from '../ImportFlow';
+import { parseDateLoose } from '../utils';
 
 export type MonthOption = {
   key: string;
@@ -40,21 +41,49 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
   const toggleMonth = (key: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
+      if (next.has(key)) {
+        // Prevent deselecting if it's the last one
+        if (next.size > 1) {
+          next.delete(key);
+        }
+      } else {
+        next.add(key);
+      }
       return next;
     });
   };
 
   const selectAll = () => setSelected(new Set(months.map((m) => m.key)));
-  const deselectAll = () => setSelected(new Set());
+
+  const deselectAll = () => {
+    if (months.length > 0) {
+      // Select only the last month
+      setSelected(new Set([months[months.length - 1].key]));
+    }
+  };
 
   const canStart = selected.size > 0;
 
   const previewRows = useMemo(() => {
     if (!parsed || !mapping) return [];
     const { headers, rows } = parsed;
-    const sample = rows.slice(0, 5);
+
+    const dateColIdx = headers.indexOf(mapping.csv.date);
+
+    // Filter rows based on selected months
+    const filteredRows = rows.filter(row => {
+      const dStr = row[dateColIdx];
+      const d = parseDateLoose(dStr || '');
+      if (!d) return false;
+
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const key = `${year}-${String(month).padStart(2, '0')}`;
+
+      return selected.has(key);
+    });
+
+    const sample = filteredRows.slice(0, 5);
 
     const colIdx = (col: string | undefined) => (col ? headers.indexOf(col) : -1);
 
@@ -98,7 +127,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
       account: accountIdx >= 0 ? row[accountIdx] : (mapping.account || ''),
       currency: currencyIdx >= 0 ? row[currencyIdx] : mapping.currencyDefault,
     }));
-  }, [parsed, mapping]);
+  }, [parsed, mapping, selected]);
 
   const previewColumns = useMemo(() => [
     { key: 'date', header: 'Date', className: 'whitespace-nowrap' },
