@@ -11,9 +11,15 @@ import { OwnerMapping } from './MappingFields/OwnerMapping';
 import { AccountMapping } from './MappingFields/AccountMapping';
 import { CurrencyMapping } from './MappingFields/CurrencyMapping';
 
-const LOCAL_STORAGE_KEY = 'cashflow.savedMappings';
 const ACCOUNTS_LOCAL_STORAGE_KEY = 'cashflow.accounts';
 const OWNERS_LOCAL_STORAGE_KEY = 'cashflow.owners';
+
+// Define DB Model shape (from Go)
+type DbColumnMapping = {
+  id: number;
+  name: string;
+  mapping_json: string;
+};
 
 interface ColumnMapperProps {
   csvHeaders: string[];
@@ -42,37 +48,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
   const [activeDropKey, setActiveDropKey] = useState<CsvFieldKey | null>(null);
   const [attemptedNext, setAttemptedNext] = useState(false);
 
-  const [savedMappings, setSavedMappings] = useState<SavedMapping[]>(() => [
-    {
-      id: 'rbc-bank',
-      name: 'RBC Bank (Saved)',
-      mapping: {
-        csv: {
-          date: 'Transaction Date',
-          description: ['Description 1'],
-          amount: 'Debit',
-          amountMapping: { type: 'single', column: 'Debit' },
-          owner: 'Card Member',
-        },
-        account: 'RBC Checking',
-        currencyDefault: 'CAD',
-      },
-    },
-    {
-      id: 'td-visa',
-      name: 'TD Visa (Saved)',
-      mapping: {
-        csv: {
-          date: 'Posting Date',
-          description: ['Description 1'],
-          amount: 'Credit',
-          amountMapping: { type: 'single', column: 'Credit' },
-        },
-        account: 'TD Visa',
-        currencyDefault: 'CAD',
-      },
-    },
-  ]);
+  const [savedMappings, setSavedMappings] = useState<SavedMapping[]>([]);
 
   const [availableAccounts, setAvailableAccounts] = useState<string[]>(() => {
     try {
@@ -100,30 +76,23 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
     return [];
   });
 
-  // Load saved mappings from localStorage on mount
+  // Load saved mappings from Backend on mount
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Validate structure? For now assume correct
-          setSavedMappings(parsed);
-        }
+    const loadMappings = async () => {
+      try {
+        const dbMappings: DbColumnMapping[] = await (window as any).go.main.App.GetColumnMappings();
+        const parsed = dbMappings.map(m => ({
+          id: m.id,
+          name: m.name,
+          mapping: JSON.parse(m.mapping_json) as ImportMapping,
+        }));
+        setSavedMappings(parsed);
+      } catch (e) {
+        console.error('Failed to load mappings from backend', e);
       }
-    } catch (e) {
-      console.warn('Failed to load saved mappings from localStorage', e);
-    }
+    };
+    loadMappings();
   }, []);
-
-  // Save saved mappings to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(savedMappings));
-    } catch (e) {
-      console.warn('Failed to save mappings to localStorage', e);
-    }
-  }, [savedMappings]);
 
   // Save accounts to localStorage whenever they change
   useEffect(() => {
@@ -152,37 +121,51 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
     onComplete(mapping);
   };
 
-  const handleSelectSavedMapping = (id: string) => {
-    setSelectedMappingId(id);
+  const handleSelectSavedMapping = (val: string) => {
+    setSelectedMappingId(val);
 
-    if (id === 'new') {
+    if (val === 'new') {
       setMapping(defaultMapping());
       setSaveName('');
       setAttemptedNext(false);
       return;
     }
 
+    const id = parseInt(val, 10);
     const found = savedMappings.find((m) => m.id === id);
     if (!found) return;
     setMapping(found.mapping);
-    setSaveName('');
+    setSaveName(''); // Clear save name when loading
     setAttemptedNext(false);
   };
 
-  const handleSaveMapping = () => {
+  const handleSaveMapping = async () => {
     const name = saveName.trim();
     if (!name) return;
 
-    const id = `saved-${Date.now()}`;
-    const entry: SavedMapping = {
-      id,
-      name: `${name} (Saved)`,
-      mapping,
-    };
+    try {
+      const id: number = await (window as any).go.main.App.SaveColumnMapping(name, mapping);
 
-    setSavedMappings((prev) => [entry, ...prev]);
-    setSelectedMappingId(id);
-    setSaveName('');
+      const newEntry: SavedMapping = {
+        id,
+        name: name, // We might want to format existing naming convention of appending "(Saved)" if desired, but clean name is better
+        mapping,
+      };
+
+      setSavedMappings((prev) => {
+        // Replace if exists (id check) or name check? Backend upserts by name.
+        // Let's filter out any with same id (update)
+        const others = prev.filter(p => p.id !== id);
+        return [...others, newEntry].sort((a, b) => a.name.localeCompare(b.name));
+      });
+
+      setSelectedMappingId(id.toString());
+      setSaveName('');
+      alert('Mapping saved!');
+    } catch (e) {
+      console.error('Failed to save mapping', e);
+      alert('Failed to save mapping: ' + e);
+    }
   };
 
   const previewData = React.useMemo(() => rows.slice(0, 5), [rows]);
@@ -203,7 +186,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
             onChange={(e) => handleSelectSavedMapping(e.target.value)}
             options={[
               { value: 'new', label: 'New Mapping...' },
-              ...savedMappings.map(m => ({ value: m.id, label: m.name }))
+              ...savedMappings.map(m => ({ value: m.id.toString(), label: m.name }))
             ]}
             className="bg-canvas-50"
           />
@@ -393,5 +376,4 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
     </Card>
   );
 };
-
 export default ColumnMapper;

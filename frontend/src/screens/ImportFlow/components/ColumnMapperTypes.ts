@@ -21,7 +21,7 @@ export type ImportMapping = {
 };
 
 export type SavedMapping = {
-  id: string;
+  id: number;
   name: string;
   mapping: ImportMapping;
 };

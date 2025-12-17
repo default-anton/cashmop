@@ -3,6 +3,7 @@ package main
 import (
 	"cashflow/internal/database"
 	"context"
+	"encoding/json"
 	"fmt"
 )
 
@@ -84,4 +85,23 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	}
 
 	return database.BatchInsertTransactions(txModels)
+}
+
+// GetColumnMappings returns all saved column mappings
+func (a *App) GetColumnMappings() ([]database.ColumnMappingModel, error) {
+	return database.GetColumnMappings()
+}
+
+// SaveColumnMapping saves a column mapping to the database
+func (a *App) SaveColumnMapping(name string, mapping interface{}) (int64, error) {
+	bytes, err := json.Marshal(mapping)
+	if err != nil {
+		return 0, fmt.Errorf("failed to marshal mapping: %w", err)
+	}
+	return database.SaveColumnMapping(name, string(bytes))
+}
+
+// DeleteColumnMapping deletes a column mapping by ID
+func (a *App) DeleteColumnMapping(id int64) error {
+	return database.DeleteColumnMapping(id)
 }
