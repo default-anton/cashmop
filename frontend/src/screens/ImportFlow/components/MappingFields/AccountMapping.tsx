@@ -82,7 +82,7 @@ export const AccountMapping: React.FC<AccountMappingProps> = ({
               options={[
                 { value: '', label: 'Select account...' },
                 ...availableAccounts.map(acc => ({ value: acc, label: acc })),
-                { value: '', label: '---', disabled: true },
+                { value: '__sep', label: '---', disabled: true },
                 { value: '__add_new', label: 'Add new account...' }
               ]}
               className="w-full"

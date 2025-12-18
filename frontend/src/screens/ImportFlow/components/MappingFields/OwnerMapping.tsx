@@ -70,7 +70,7 @@ export const OwnerMapping: React.FC<OwnerMappingProps> = ({
               options={[
                 { value: '', label: 'Select default owner...' },
                 ...availableOwners.map(owner => ({ value: owner, label: owner })),
-                { value: '', label: '---', disabled: true },
+                { value: '__sep', label: '---', disabled: true },
                 { value: '__add_new', label: 'Add new owner...' }
               ]}
               className="w-full"

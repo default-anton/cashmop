@@ -1,5 +1,27 @@
 export namespace database {
 	
+	export class CategorizationRule {
+	    id: number;
+	    match_type: string;
+	    match_value: string;
+	    category: string;
+	    amount_min?: number;
+	    amount_max?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new CategorizationRule(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.match_type = source["match_type"];
+	        this.match_value = source["match_value"];
+	        this.category = source["category"];
+	        this.amount_min = source["amount_min"];
+	        this.amount_max = source["amount_max"];
+	    }
+	}
 	export class ColumnMappingModel {
 	    id: number;
 	    name: string;
@@ -14,6 +36,34 @@ export namespace database {
 	        this.id = source["id"];
 	        this.name = source["name"];
 	        this.mapping_json = source["mapping_json"];
+	    }
+	}
+	export class TransactionModel {
+	    id: number;
+	    account_id: number;
+	    owner_id?: number;
+	    date: string;
+	    description: string;
+	    amount: number;
+	    category: string;
+	    currency: string;
+	    raw_metadata: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TransactionModel(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.account_id = source["account_id"];
+	        this.owner_id = source["owner_id"];
+	        this.date = source["date"];
+	        this.description = source["description"];
+	        this.amount = source["amount"];
+	        this.category = source["category"];
+	        this.currency = source["currency"];
+	        this.raw_metadata = source["raw_metadata"];
 	    }
 	}
 

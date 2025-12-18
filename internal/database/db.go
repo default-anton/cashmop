@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"log"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var DB *sql.DB
@@ -12,7 +12,7 @@ var DB *sql.DB
 func InitDB() {
 	// Check if db exists, if so, we might want to wipe it since we are in dev and changing schema
 	var err error
-	DB, err = sql.Open("sqlite3", "./cashflow.db")
+	DB, err = sql.Open("sqlite", "./cashflow.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -56,6 +56,36 @@ func InitDB() {
 		name TEXT NOT NULL UNIQUE,
 		mapping_json TEXT NOT NULL
 	);
+
+	CREATE TABLE IF NOT EXISTS categorization_rules (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		match_type TEXT NOT NULL, -- 'contains', 'starts_with', 'ends_with', 'exact'
+		match_value TEXT NOT NULL,
+		category TEXT NOT NULL,
+		amount_min REAL,
+		amount_max REAL,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+	);
+
+	-- FTS5 table for fast category and description search
+	CREATE VIRTUAL TABLE IF NOT EXISTS transactions_fts USING fts5(
+		description,
+		category,
+		content='transactions',
+		content_rowid='id'
+	);
+
+	-- Triggers to keep FTS index in sync
+	CREATE TRIGGER IF NOT EXISTS tx_after_insert AFTER INSERT ON transactions BEGIN
+		INSERT INTO transactions_fts(rowid, description, category) VALUES (new.id, new.description, new.category);
+	END;
+	CREATE TRIGGER IF NOT EXISTS tx_after_delete AFTER DELETE ON transactions BEGIN
+		INSERT INTO transactions_fts(transactions_fts, rowid, description, category) VALUES('delete', old.id, old.description, old.category);
+	END;
+	CREATE TRIGGER IF NOT EXISTS tx_after_update AFTER UPDATE ON transactions BEGIN
+		INSERT INTO transactions_fts(transactions_fts, rowid, description, category) VALUES('delete', old.id, old.description, old.category);
+		INSERT INTO transactions_fts(rowid, description, category) VALUES (new.id, new.description, new.category);
+	END;
 	`
 
 	_, err = DB.Exec(createTables)

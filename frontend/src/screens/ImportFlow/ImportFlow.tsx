@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Upload, Table, Calendar, Check, CheckCircle2 } from 'lucide-react';
 
+import { Button } from '../../components';
+
 import FileDropZone from './components/FileDropZone';
 import ColumnMapper from './components/ColumnMapper';
 import { type ImportMapping } from './components/ColumnMapperTypes';
@@ -115,8 +117,6 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   return { headers, rows };
 }
 
-
-
 async function parseFile(file: File): Promise<ParsedFile> {
   const name = file.name.toLowerCase();
   // Basic file validation
@@ -146,7 +146,11 @@ async function parseFile(file: File): Promise<ParsedFile> {
   throw new Error('Unsupported file type. Please upload a .csv or .xlsx file.');
 }
 
-export default function ImportFlow() {
+interface ImportFlowProps {
+  onImportComplete?: () => void;
+}
+
+export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   const [step, setStep] = useState(1); // 1: Upload, 2: Map, 3: Month Select, 4: Confirm
 
   const [parseBusy, setParseBusy] = useState(false);
@@ -334,9 +338,6 @@ export default function ImportFlow() {
 
     if (!mapping) return;
 
-    // Calculate selected months here since state update is async
-    const selected = months.filter(m => keys.includes(m.key));
-
     // Normalize and send
     const txs = normalizeTransactions(mapping, parsedFiles, keys);
 
@@ -344,11 +345,10 @@ export default function ImportFlow() {
 
     try {
       await (window as any).go.main.App.ImportTransactions(txs);
-      // Show success / Navigate away? 
-      // For now just log and maybe alert (though alert is ugly, better UI needed but out of scope for "backend" task usually)
-      // I'll update the step to confirm
-      setStep(4);
-      alert(`Successfully imported ${txs.length} transactions!`);
+
+      if (onImportComplete) {
+        onImportComplete();
+      }
     } catch (e) {
       console.error(e);
       alert('Failed to import transactions: ' + e);
@@ -363,7 +363,7 @@ export default function ImportFlow() {
             <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-canvas-200 rounded-full -z-10" />
             <div
               className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-brand transition-all duration-500 rounded-full -z-10"
-              style={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
+              style={{ width: `${Math.min(100, ((step - 1) / (steps.length - 1)) * 100)}%` }}
             />
 
             {steps.map((s) => {
@@ -437,6 +437,25 @@ export default function ImportFlow() {
               parsed={parsed}
               mapping={mapping}
             />
+          )}
+
+          {step === 4 && (
+            <div className="flex flex-col items-center justify-center py-12 animate-snap-in">
+              <div className="w-20 h-20 bg-finance-income/10 rounded-full flex items-center justify-center mb-6 text-finance-income">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+              <h2 className="text-3xl font-bold text-canvas-800 mb-2">Import Complete!</h2>
+              <p className="text-canvas-500 text-center max-w-md">
+                Your transactions have been successfully imported.
+              </p>
+              <Button
+                onClick={() => setStep(1)}
+                variant="primary"
+                className="mt-8"
+              >
+                Import More
+              </Button>
+            </div>
           )}
         </div>
       </div>

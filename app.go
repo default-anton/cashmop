@@ -105,3 +105,29 @@ func (a *App) SaveColumnMapping(name string, mapping interface{}) (int64, error)
 func (a *App) DeleteColumnMapping(id int64) error {
 	return database.DeleteColumnMapping(id)
 }
+
+// GetUncategorizedTransactions returns transactions that need categorization
+func (a *App) GetUncategorizedTransactions() ([]database.TransactionModel, error) {
+	return database.GetUncategorizedTransactions()
+}
+
+// CategorizeTransaction updates a single transaction's category
+func (a *App) CategorizeTransaction(id int64, category string) error {
+	return database.UpdateTransactionCategory(id, category)
+}
+
+// SaveCategorizationRule saves a new rule and applies it to existing uncategorized transactions
+func (a *App) SaveCategorizationRule(rule database.CategorizationRule) (int64, error) {
+	id, err := database.SaveRule(rule)
+	if err != nil {
+		return 0, err
+	}
+	// Auto-apply rule immediately
+	_, _ = database.ApplyRule(id)
+	return id, nil
+}
+
+// SearchCategories returns suggestions for categories based on FTS search
+func (a *App) SearchCategories(query string) ([]string, error) {
+	return database.SearchCategories(query)
+}

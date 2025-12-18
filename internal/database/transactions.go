@@ -7,14 +7,15 @@ import (
 
 // TransactionModel mirrors the database table structure
 type TransactionModel struct {
-	AccountID   int64
-	OwnerID     *int64 // Nullable
-	Date        string
-	Description string
-	Amount      float64
-	Category    string
-	Currency    string
-	RawMetadata string
+	ID          int64   `json:"id"`
+	AccountID   int64   `json:"account_id"`
+	OwnerID     *int64  `json:"owner_id"` // Nullable
+	Date        string  `json:"date"`
+	Description string  `json:"description"`
+	Amount      float64 `json:"amount"`
+	Category    string  `json:"category"`
+	Currency    string  `json:"currency"`
+	RawMetadata string  `json:"raw_metadata"`
 }
 
 func GetOrCreateAccount(name string) (int64, error) {
@@ -98,4 +99,31 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 	}
 
 	return tx.Commit()
+}
+func GetUncategorizedTransactions() ([]TransactionModel, error) {
+	rows, err := DB.Query(`
+		SELECT t.id, t.account_id, t.owner_id, t.date, t.description, t.amount, t.category, t.currency 
+		FROM transactions t
+		WHERE t.category IS NULL OR t.category = ''
+		ORDER BY t.date DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var txs []TransactionModel
+	for rows.Next() {
+		var t TransactionModel
+		if err := rows.Scan(&t.ID, &t.AccountID, &t.OwnerID, &t.Date, &t.Description, &t.Amount, &t.Category, &t.Currency); err != nil {
+			return nil, err
+		}
+		txs = append(txs, t)
+	}
+	return txs, nil
+}
+
+func UpdateTransactionCategory(id int64, category string) error {
+	_, err := DB.Exec("UPDATE transactions SET category = ? WHERE id = ?", category, id)
+	return err
 }
