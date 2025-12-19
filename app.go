@@ -84,7 +84,10 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 		})
 	}
 
-	return database.BatchInsertTransactions(txModels)
+	if err := database.BatchInsertTransactions(txModels); err != nil {
+		return err
+	}
+	return database.ApplyAllRules()
 }
 
 // GetColumnMappings returns all saved column mappings

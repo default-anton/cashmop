@@ -57,7 +57,10 @@ function App() {
       {screen === 'import' ? (
         <ImportFlow onImportComplete={handleImportComplete} />
       ) : (
-        <CategorizationLoop onFinish={() => setHasUncategorized(false)} />
+        <CategorizationLoop onFinish={() => {
+          setHasUncategorized(false);
+          setScreen('import');
+        }} />
       )}
     </div>
   );

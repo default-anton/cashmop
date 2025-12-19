@@ -115,3 +115,17 @@ func SearchCategories(query string) ([]string, error) {
 	}
 	return categories, nil
 }
+
+func ApplyAllRules() error {
+	rules, err := GetRules()
+	if err != nil {
+		return err
+	}
+	for _, r := range rules {
+		_, err = ApplyRule(r.ID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

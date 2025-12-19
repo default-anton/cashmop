@@ -346,6 +346,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     try {
       await (window as any).go.main.App.ImportTransactions(txs);
 
+      setStep(4);
       if (onImportComplete) {
         onImportComplete();
       }
