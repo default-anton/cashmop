@@ -25,31 +25,42 @@ interface CategorizationLoopProps {
 const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentTxId, setCurrentTxId] = useState<number | null>(null);
   const [categoryInput, setCategoryInput] = useState('');
   const [suggestions, setSuggestions] = useState<Category[]>([]);
   const [selectionRule, setSelectionRule] = useState<{ text: string; mode: 'contains' | 'starts_with' | 'ends_with' } | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const fetchTransactions = useCallback(async () => {
+  const fetchTransactions = useCallback(async (maintainPositionId?: number) => {
     try {
       const txs = await (window as any).go.main.App.GetUncategorizedTransactions();
-      const items = txs || [];
+      const items: Transaction[] = txs || [];
       setTransactions(items);
-      setCurrentIndex(0);
       setLoading(false);
+
+      if (items.length > 0) {
+        // If we want to maintain position, check if that ID still exists
+        if (maintainPositionId !== undefined && items.some(t => t.id === maintainPositionId)) {
+          setCurrentTxId(maintainPositionId);
+        } else if (!currentTxId || !items.some(t => t.id === currentTxId)) {
+          // Otherwise, if current ID is invalid or not set, pick the first
+          setCurrentTxId(items[0].id);
+        }
+      } else {
+        setCurrentTxId(null);
+      }
       return items;
     } catch (e) {
       console.error('Failed to fetch transactions', e);
       setLoading(false);
       return [];
     }
-  }, []);
+  }, [currentTxId]);
 
   useEffect(() => {
     fetchTransactions();
-  }, [fetchTransactions]);
+  }, []); // Only on mount
 
   useEffect(() => {
     if (categoryInput.length > 1) {
@@ -59,9 +70,19 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     }
   }, [categoryInput]);
 
+  const goToNext = useCallback((currentList: Transaction[], currentId: number | null) => {
+    if (currentList.length === 0) {
+      setCurrentTxId(null);
+      return;
+    }
+    const idx = currentList.findIndex(t => t.id === currentId);
+    // If not found or last item, wrap to 0
+    const nextIdx = (idx + 1) % currentList.length;
+    setCurrentTxId(currentList[nextIdx].id);
+  }, []);
+
   const handleCategorize = async (categoryName: string, categoryId?: number) => {
-    const tx = transactions[currentIndex];
-    if (!tx) return;
+    if (!currentTxId) return;
 
     try {
       if (selectionRule) {
@@ -72,19 +93,18 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           category_name: categoryName,
         });
         setSelectionRule(null);
-        // Rules auto-apply on backend, so refresh
+        // Rules auto-apply on backend, so refresh and try to stay at a sensible spot
         const updated = await fetchTransactions();
         if (updated.length === 0 && onFinish) onFinish();
       } else {
-        await (window as any).go.main.App.CategorizeTransaction(tx.id, categoryName);
+        await (window as any).go.main.App.CategorizeTransaction(currentTxId, categoryName);
 
-        // Move to next or finish
-        if (currentIndex < transactions.length - 1) {
-          setCurrentIndex(prev => prev + 1);
-        } else {
-          const updated = await fetchTransactions();
-          if (updated.length === 0 && onFinish) onFinish();
-        }
+        // Before we fetch and potentially lose the list order, determine the next ID
+        const idx = transactions.findIndex(t => t.id === currentTxId);
+        const nextId = transactions[(idx + 1) % transactions.length]?.id;
+
+        const updated = await fetchTransactions(nextId);
+        if (updated.length === 0 && onFinish) onFinish();
       }
       setCategoryInput('');
       setSuggestions([]);
@@ -93,24 +113,30 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     }
   };
 
+  const handleSkip = () => {
+    goToNext(transactions, currentTxId);
+    setCategoryInput('');
+    setSuggestions([]);
+    setSelectionRule(null);
+  };
+
   const handleTextSelection = () => {
-    const tx = transactions[currentIndex];
+    if (!currentTxId) return;
+    const tx = transactions.find(t => t.id === currentTxId);
     if (!tx) return;
 
     const selection = window.getSelection();
     const text = selection?.toString().trim();
 
-    // Only allow creating rules from strings that are actually in the description.
-    // This prevents the amount or other UI elements from triggering rule creation.
     if (text && text.length > 2 && tx.description.includes(text)) {
       setSelectionRule({ text, mode: 'contains' });
     } else if (text && text.length > 0) {
-      // If something else is selected (like the amount), clear the rule suggestion
       setSelectionRule(null);
     }
   };
 
-  const currentTx = transactions[currentIndex];
+  const currentTx = transactions.find(t => t.id === currentTxId);
+  const currentIndex = transactions.findIndex(t => t.id === currentTxId);
 
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
 
@@ -148,7 +174,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           </div>
 
           <Badge variant="default" className="font-mono">
-            {Math.round(((transactions.length - currentIndex) / transactions.length) * 100)}% to go
+            {Math.round(((transactions.length - (currentIndex >= 0 ? currentIndex : 0)) / transactions.length) * 100)}% to go
           </Badge>
         </div>
 
@@ -220,8 +246,12 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
                 value={categoryInput}
                 onChange={(e) => setCategoryInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter' && categoryInput) {
-                    handleCategorize(categoryInput);
+                  if (e.key === 'Enter') {
+                    if (categoryInput) {
+                      handleCategorize(categoryInput);
+                    } else {
+                      handleSkip();
+                    }
                   }
                 }}
                 placeholder={selectionRule ? "Set category for this rule..." : "Type a category..."}
@@ -248,7 +278,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
               size="lg"
               variant="primary"
               className={`px-8 rounded-2xl transition-all duration-300 ${selectionRule ? 'shadow-brand-glow scale-105' : 'shadow-brand/20'}`}
-              onClick={() => handleCategorize(categoryInput || 'Miscellaneous')}
+              onClick={() => categoryInput ? handleCategorize(categoryInput) : handleSkip()}
             >
               {selectionRule ? <CheckCircle2 className="w-6 h-6" /> : <FastForward className="w-6 h-6" />}
             </Button>
