@@ -35,11 +35,15 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const fetchTransactions = useCallback(async () => {
     try {
       const txs = await (window as any).go.main.App.GetUncategorizedTransactions();
-      setTransactions(txs || []);
+      const items = txs || [];
+      setTransactions(items);
+      setCurrentIndex(0);
       setLoading(false);
+      return items;
     } catch (e) {
       console.error('Failed to fetch transactions', e);
       setLoading(false);
+      return [];
     }
   }, []);
 
@@ -69,7 +73,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         });
         setSelectionRule(null);
         // Rules auto-apply on backend, so refresh
-        await fetchTransactions();
+        const updated = await fetchTransactions();
+        if (updated.length === 0 && onFinish) onFinish();
       } else {
         await (window as any).go.main.App.CategorizeTransaction(tx.id, categoryName);
 
@@ -77,9 +82,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         if (currentIndex < transactions.length - 1) {
           setCurrentIndex(prev => prev + 1);
         } else {
-          await fetchTransactions();
-          setCurrentIndex(0);
-          if (transactions.length === 0 && onFinish) onFinish();
+          const updated = await fetchTransactions();
+          if (updated.length === 0 && onFinish) onFinish();
         }
       }
       setCategoryInput('');
@@ -110,7 +114,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
 
-  if (transactions.length === 0) {
+  if (transactions.length === 0 || !currentTx) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center animate-snap-in">
         <div className="w-20 h-20 bg-finance-income/10 rounded-full flex items-center justify-center mb-6 text-finance-income">
