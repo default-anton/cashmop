@@ -92,6 +92,12 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   }, []);
 
   useEffect(() => {
+    if (currentTxId !== null && !loading) {
+      inputRef.current?.focus();
+    }
+  }, [currentTxId, loading]);
+
+  useEffect(() => {
     if (categoryInput.length > 1) {
       (window as any).go.main.App.SearchCategories(categoryInput).then((res: Category[] | null) => setSuggestions(res || []));
     } else {
@@ -148,6 +154,10 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
     if (text && text.length > 2 && tx.description.includes(text)) {
       setSelectionRule({ text, mode: 'contains' });
+      // Use setTimeout to ensure the focus happens after the selection event is fully processed
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
     } else if (text && text.length > 0) {
       setSelectionRule(null);
     }
