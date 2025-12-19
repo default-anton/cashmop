@@ -7,15 +7,16 @@ import (
 
 // TransactionModel mirrors the database table structure
 type TransactionModel struct {
-	ID          int64   `json:"id"`
-	AccountID   int64   `json:"account_id"`
-	OwnerID     *int64  `json:"owner_id"` // Nullable
-	Date        string  `json:"date"`
-	Description string  `json:"description"`
-	Amount      float64 `json:"amount"`
-	Category    string  `json:"category"`
-	Currency    string  `json:"currency"`
-	RawMetadata string  `json:"raw_metadata"`
+	ID           int64   `json:"id"`
+	AccountID    int64   `json:"account_id"`
+	OwnerID      *int64  `json:"owner_id"` // Nullable
+	Date         string  `json:"date"`
+	Description  string  `json:"description"`
+	Amount       float64 `json:"amount"`
+	CategoryID   *int64  `json:"category_id"` // Nullable
+	CategoryName string  `json:"category_name"`
+	Currency     string  `json:"currency"`
+	RawMetadata  string  `json:"raw_metadata"`
 }
 
 func GetOrCreateAccount(name string) (int64, error) {
@@ -75,7 +76,7 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 
 	stmt, err := tx.Prepare(`
 		INSERT INTO transactions 
-		(account_id, owner_id, date, description, amount, category, currency, raw_metadata)
+		(account_id, owner_id, date, description, amount, category_id, currency, raw_metadata)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
@@ -90,7 +91,7 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 			t.Date,
 			t.Description,
 			t.Amount,
-			t.Category,
+			t.CategoryID,
 			t.Currency,
 			t.RawMetadata,
 		); err != nil {
@@ -102,9 +103,9 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 }
 func GetUncategorizedTransactions() ([]TransactionModel, error) {
 	rows, err := DB.Query(`
-		SELECT t.id, t.account_id, t.owner_id, t.date, t.description, t.amount, t.category, t.currency 
+		SELECT t.id, t.account_id, t.owner_id, t.date, t.description, t.amount, t.category_id, t.currency 
 		FROM transactions t
-		WHERE t.category IS NULL OR t.category = ''
+		WHERE t.category_id IS NULL
 		ORDER BY t.date DESC
 	`)
 	if err != nil {
@@ -115,7 +116,7 @@ func GetUncategorizedTransactions() ([]TransactionModel, error) {
 	var txs []TransactionModel
 	for rows.Next() {
 		var t TransactionModel
-		if err := rows.Scan(&t.ID, &t.AccountID, &t.OwnerID, &t.Date, &t.Description, &t.Amount, &t.Category, &t.Currency); err != nil {
+		if err := rows.Scan(&t.ID, &t.AccountID, &t.OwnerID, &t.Date, &t.Description, &t.Amount, &t.CategoryID, &t.Currency); err != nil {
 			return nil, err
 		}
 		txs = append(txs, t)
@@ -123,7 +124,7 @@ func GetUncategorizedTransactions() ([]TransactionModel, error) {
 	return txs, nil
 }
 
-func UpdateTransactionCategory(id int64, category string) error {
-	_, err := DB.Exec("UPDATE transactions SET category = ? WHERE id = ?", category, id)
+func UpdateTransactionCategory(id int64, categoryID int64) error {
+	_, err := DB.Exec("UPDATE transactions SET category_id = ? WHERE id = ?", categoryID, id)
 	return err
 }

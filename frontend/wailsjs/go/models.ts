@@ -4,7 +4,8 @@ export namespace database {
 	    id: number;
 	    match_type: string;
 	    match_value: string;
-	    category: string;
+	    category_id: number;
+	    category_name: string;
 	    amount_min?: number;
 	    amount_max?: number;
 	
@@ -17,9 +18,24 @@ export namespace database {
 	        this.id = source["id"];
 	        this.match_type = source["match_type"];
 	        this.match_value = source["match_value"];
-	        this.category = source["category"];
+	        this.category_id = source["category_id"];
+	        this.category_name = source["category_name"];
 	        this.amount_min = source["amount_min"];
 	        this.amount_max = source["amount_max"];
+	    }
+	}
+	export class Category {
+	    id: number;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Category(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
 	    }
 	}
 	export class ColumnMappingModel {
@@ -45,7 +61,8 @@ export namespace database {
 	    date: string;
 	    description: string;
 	    amount: number;
-	    category: string;
+	    category_id?: number;
+	    category_name: string;
 	    currency: string;
 	    raw_metadata: string;
 	
@@ -61,7 +78,8 @@ export namespace database {
 	        this.date = source["date"];
 	        this.description = source["description"];
 	        this.amount = source["amount"];
-	        this.category = source["category"];
+	        this.category_id = source["category_id"];
+	        this.category_name = source["category_name"];
 	        this.currency = source["currency"];
 	        this.raw_metadata = source["raw_metadata"];
 	    }

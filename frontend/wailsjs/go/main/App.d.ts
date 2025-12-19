@@ -7,6 +7,8 @@ export function CategorizeTransaction(arg1:number,arg2:string):Promise<void>;
 
 export function DeleteColumnMapping(arg1:number):Promise<void>;
 
+export function GetCategories():Promise<Array<database.Category>>;
+
 export function GetColumnMappings():Promise<Array<database.ColumnMappingModel>>;
 
 export function GetUncategorizedTransactions():Promise<Array<database.TransactionModel>>;
@@ -15,8 +17,10 @@ export function Greet(arg1:string):Promise<string>;
 
 export function ImportTransactions(arg1:Array<main.TransactionInput>):Promise<void>;
 
+export function RenameCategory(arg1:number,arg2:string):Promise<void>;
+
 export function SaveCategorizationRule(arg1:database.CategorizationRule):Promise<number>;
 
 export function SaveColumnMapping(arg1:string,arg2:any):Promise<number>;
 
-export function SearchCategories(arg1:string):Promise<Array<string>>;
+export function SearchCategories(arg1:string):Promise<Array<database.Category>>;

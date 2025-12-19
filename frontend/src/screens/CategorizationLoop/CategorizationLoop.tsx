@@ -7,9 +7,15 @@ interface Transaction {
   date: string;
   description: string;
   amount: number;
-  category: string;
+  category_id: number | null;
+  category_name: string;
   account_id: number;
   owner_id: number | null;
+}
+
+interface Category {
+  id: number;
+  name: string;
 }
 
 interface CategorizationLoopProps {
@@ -21,7 +27,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [categoryInput, setCategoryInput] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<Category[]>([]);
   const [selectionRule, setSelectionRule] = useState<{ text: string; mode: 'contains' | 'starts_with' | 'ends_with' } | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -43,13 +49,13 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
   useEffect(() => {
     if (categoryInput.length > 1) {
-      (window as any).go.main.App.SearchCategories(categoryInput).then((res: string[] | null) => setSuggestions(res || []));
+      (window as any).go.main.App.SearchCategories(categoryInput).then((res: Category[] | null) => setSuggestions(res || []));
     } else {
       setSuggestions([]);
     }
   }, [categoryInput]);
 
-  const handleCategorize = async (category: string) => {
+  const handleCategorize = async (categoryName: string, categoryId?: number) => {
     const tx = transactions[currentIndex];
     if (!tx) return;
 
@@ -58,13 +64,14 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         await (window as any).go.main.App.SaveCategorizationRule({
           match_type: selectionRule.mode,
           match_value: selectionRule.text,
-          category: category,
+          category_id: categoryId || 0,
+          category_name: categoryName,
         });
         setSelectionRule(null);
         // Rules auto-apply on backend, so refresh
         await fetchTransactions();
       } else {
-        await (window as any).go.main.App.CategorizeTransaction(tx.id, category);
+        await (window as any).go.main.App.CategorizeTransaction(tx.id, categoryName);
 
         // Move to next or finish
         if (currentIndex < transactions.length - 1) {
@@ -210,13 +217,13 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
               {suggestions.length > 0 && (
                 <div className="absolute top-full mt-2 left-0 w-full bg-white rounded-xl shadow-xl border border-canvas-200 overflow-hidden z-20">
-                  {suggestions.map((s, i) => (
+                  {suggestions.map((s) => (
                     <button
-                      key={i}
-                      onClick={() => handleCategorize(s)}
+                      key={s.id}
+                      onClick={() => handleCategorize(s.name, s.id)}
                       className="w-full text-left px-6 py-3 hover:bg-brand/5 text-canvas-700 font-bold border-b border-canvas-100 last:border-0 transition-colors flex items-center justify-between group"
                     >
-                      {s}
+                      {s.name}
                       <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
                     </button>
                   ))}

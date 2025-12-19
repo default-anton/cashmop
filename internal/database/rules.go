@@ -1,19 +1,64 @@
 package database
 
+type Category struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
 type CategorizationRule struct {
-	ID         int64    `json:"id"`
-	MatchType  string   `json:"match_type"`
-	MatchValue string   `json:"match_value"`
-	Category   string   `json:"category"`
-	AmountMin  *float64 `json:"amount_min"`
-	AmountMax  *float64 `json:"amount_max"`
+	ID           int64    `json:"id"`
+	MatchType    string   `json:"match_type"`
+	MatchValue   string   `json:"match_value"`
+	CategoryID   int64    `json:"category_id"`
+	CategoryName string   `json:"category_name"` // For frontend convenience
+	AmountMin    *float64 `json:"amount_min"`
+	AmountMax    *float64 `json:"amount_max"`
+}
+
+func GetOrCreateCategory(name string) (int64, error) {
+	var id int64
+	err := DB.QueryRow("SELECT id FROM categories WHERE name = ?", name).Scan(&id)
+	if err == nil {
+		return id, nil
+	}
+	res, err := DB.Exec("INSERT INTO categories (name) VALUES (?)", name)
+	if err != nil {
+		return 0, err
+	}
+	return res.LastInsertId()
+}
+
+func RenameCategory(id int64, newName string) error {
+	var oldName string
+	err := DB.QueryRow("SELECT name FROM categories WHERE id = ?", id).Scan(&oldName)
+	if err != nil {
+		return err
+	}
+
+	tx, err := DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.Exec("UPDATE categories SET name = ? WHERE id = ?", newName, id)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec("UPDATE categories SET name = ? WHERE id = ?", newName, id)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func SaveRule(rule CategorizationRule) (int64, error) {
 	res, err := DB.Exec(`
-		INSERT INTO categorization_rules (match_type, match_value, category, amount_min, amount_max)
+		INSERT INTO categorization_rules (match_type, match_value, category_id, amount_min, amount_max)
 		VALUES (?, ?, ?, ?, ?)
-	`, rule.MatchType, rule.MatchValue, rule.Category, rule.AmountMin, rule.AmountMax)
+	`, rule.MatchType, rule.MatchValue, rule.CategoryID, rule.AmountMin, rule.AmountMax)
 	if err != nil {
 		return 0, err
 	}
@@ -21,7 +66,7 @@ func SaveRule(rule CategorizationRule) (int64, error) {
 }
 
 func GetRules() ([]CategorizationRule, error) {
-	rows, err := DB.Query("SELECT id, match_type, match_value, category, amount_min, amount_max FROM categorization_rules")
+	rows, err := DB.Query("SELECT id, match_type, match_value, category_id, amount_min, amount_max FROM categorization_rules")
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +75,7 @@ func GetRules() ([]CategorizationRule, error) {
 	var rules []CategorizationRule
 	for rows.Next() {
 		var r CategorizationRule
-		if err := rows.Scan(&r.ID, &r.MatchType, &r.MatchValue, &r.Category, &r.AmountMin, &r.AmountMax); err != nil {
+		if err := rows.Scan(&r.ID, &r.MatchType, &r.MatchValue, &r.CategoryID, &r.AmountMin, &r.AmountMax); err != nil {
 			return nil, err
 		}
 		rules = append(rules, r)
@@ -40,14 +85,14 @@ func GetRules() ([]CategorizationRule, error) {
 
 func ApplyRule(ruleID int64) (int64, error) {
 	var r CategorizationRule
-	err := DB.QueryRow("SELECT match_type, match_value, category, amount_min, amount_max FROM categorization_rules WHERE id = ?", ruleID).
-		Scan(&r.MatchType, &r.MatchValue, &r.Category, &r.AmountMin, &r.AmountMax)
+	err := DB.QueryRow("SELECT match_type, match_value, category_id, amount_min, amount_max FROM categorization_rules WHERE id = ?", ruleID).
+		Scan(&r.MatchType, &r.MatchValue, &r.CategoryID, &r.AmountMin, &r.AmountMax)
 	if err != nil {
 		return 0, err
 	}
 
-	query := "UPDATE transactions SET category = ? WHERE (category IS NULL OR category = '')"
-	args := []interface{}{r.Category}
+	query := "UPDATE transactions SET category_id = ? WHERE category_id IS NULL"
+	args := []interface{}{r.CategoryID}
 
 	var matchClause string
 	switch r.MatchType {
@@ -85,33 +130,47 @@ func ApplyRule(ruleID int64) (int64, error) {
 	return res.RowsAffected()
 }
 
-func SearchCategories(query string) ([]string, error) {
-	// Simple BM25-ish search using FTS5 breadcrumbs if available,
-	// but here we just use LIKE or FTS5 match for simplicity.
+func SearchCategories(query string) ([]Category, error) {
+	// Use BM25 ranking for better search results.
+	// FTS5 MATCH supports prefix search with *
 	rows, err := DB.Query(`
-		SELECT DISTINCT category
-		FROM transactions_fts
-		WHERE category MATCH ?
-		ORDER BY rank
-		LIMIT 10`, query+"*")
+		SELECT c.id, c.name 
+		FROM categories c
+		JOIN categories_fts f ON c.id = f.rowid
+		WHERE categories_fts MATCH ?
+		ORDER BY bm25(categories_fts)
+		LIMIT 10
+	`, query+"*")
 	if err != nil {
-		// Fallback to simple LIKE if FTS fails or no matches
-		rows, err = DB.Query("SELECT DISTINCT category FROM transactions WHERE category LIKE ? LIMIT 10", "%"+query+"%")
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 	defer rows.Close()
 
-	var categories []string
+	var categories []Category
 	for rows.Next() {
-		var c string
-		if err := rows.Scan(&c); err != nil {
+		var c Category
+		if err := rows.Scan(&c.ID, &c.Name); err != nil {
 			return nil, err
 		}
-		if c != "" {
-			categories = append(categories, c)
+		categories = append(categories, c)
+	}
+	return categories, nil
+}
+
+func GetAllCategories() ([]Category, error) {
+	rows, err := DB.Query("SELECT id, name FROM categories ORDER BY name ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var categories []Category
+	for rows.Next() {
+		var c Category
+		if err := rows.Scan(&c.ID, &c.Name); err != nil {
+			return nil, err
 		}
+		categories = append(categories, c)
 	}
 	return categories, nil
 }

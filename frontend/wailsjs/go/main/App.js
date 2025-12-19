@@ -10,6 +10,10 @@ export function DeleteColumnMapping(arg1) {
   return window['go']['main']['App']['DeleteColumnMapping'](arg1);
 }
 
+export function GetCategories() {
+  return window['go']['main']['App']['GetCategories']();
+}
+
 export function GetColumnMappings() {
   return window['go']['main']['App']['GetColumnMappings']();
 }
@@ -24,6 +28,10 @@ export function Greet(arg1) {
 
 export function ImportTransactions(arg1) {
   return window['go']['main']['App']['ImportTransactions'](arg1);
+}
+
+export function RenameCategory(arg1, arg2) {
+  return window['go']['main']['App']['RenameCategory'](arg1, arg2);
 }
 
 export function SaveCategorizationRule(arg1) {

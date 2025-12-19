@@ -41,9 +41,10 @@ type TransactionInput struct {
 func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	var txModels []database.TransactionModel
 
-	// Cache lookups to minimize DB hits if many rows share the same account/owner
+	// Cache lookups to minimize DB hits if many rows share the same account/owner/category
 	accountCache := make(map[string]int64)
 	userCache := make(map[string]*int64)
+	categoryCache := make(map[string]int64)
 
 	for _, t := range transactions {
 		// 1. Account
@@ -73,13 +74,28 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 			}
 		}
 
+		// 3. Category
+		var catID *int64
+		if t.Category != "" {
+			id, ok := categoryCache[t.Category]
+			if !ok {
+				var err error
+				id, err = database.GetOrCreateCategory(t.Category)
+				if err != nil {
+					return fmt.Errorf("failed to get/create category '%s': %w", t.Category, err)
+				}
+				categoryCache[t.Category] = id
+			}
+			catID = &id
+		}
+
 		txModels = append(txModels, database.TransactionModel{
 			AccountID:   accID,
 			OwnerID:     ownerID,
 			Date:        t.Date,
 			Description: t.Description,
 			Amount:      t.Amount,
-			Category:    t.Category,
+			CategoryID:  catID,
 			Currency:    "CAD", // Default or passed in? For now default as per plan/schema
 		})
 	}
@@ -115,12 +131,28 @@ func (a *App) GetUncategorizedTransactions() ([]database.TransactionModel, error
 }
 
 // CategorizeTransaction updates a single transaction's category
-func (a *App) CategorizeTransaction(id int64, category string) error {
-	return database.UpdateTransactionCategory(id, category)
+func (a *App) CategorizeTransaction(id int64, categoryName string) error {
+	catID, err := database.GetOrCreateCategory(categoryName)
+	if err != nil {
+		return err
+	}
+	return database.UpdateTransactionCategory(id, catID)
+}
+
+// RenameCategory renames an existing category
+func (a *App) RenameCategory(id int64, newName string) error {
+	return database.RenameCategory(id, newName)
 }
 
 // SaveCategorizationRule saves a new rule and applies it to existing uncategorized transactions
 func (a *App) SaveCategorizationRule(rule database.CategorizationRule) (int64, error) {
+	if rule.CategoryID == 0 && rule.CategoryName != "" {
+		id, err := database.GetOrCreateCategory(rule.CategoryName)
+		if err != nil {
+			return 0, err
+		}
+		rule.CategoryID = id
+	}
 	id, err := database.SaveRule(rule)
 	if err != nil {
 		return 0, err
@@ -130,7 +162,12 @@ func (a *App) SaveCategorizationRule(rule database.CategorizationRule) (int64, e
 	return id, nil
 }
 
-// SearchCategories returns suggestions for categories based on FTS search
-func (a *App) SearchCategories(query string) ([]string, error) {
+// SearchCategories returns suggestions for categories
+func (a *App) SearchCategories(query string) ([]database.Category, error) {
 	return database.SearchCategories(query)
+}
+
+// GetCategories returns all categories
+func (a *App) GetCategories() ([]database.Category, error) {
+	return database.GetAllCategories()
 }

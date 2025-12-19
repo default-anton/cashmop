@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import ImportFlow from './screens/ImportFlow/ImportFlow';
 import CategorizationLoop from './screens/CategorizationLoop/CategorizationLoop';
+import CategoryManager from './screens/CategoryManager/CategoryManager';
 
 function App() {
-  const [screen, setScreen] = useState<'import' | 'categorize'>('categorize');
+  const [screen, setScreen] = useState<'import' | 'categorize' | 'categories'>('categorize');
   const [hasUncategorized, setHasUncategorized] = useState(false);
 
   const checkUncategorized = async () => {
@@ -52,15 +53,24 @@ function App() {
         >
           Categorize {hasUncategorized && <span className="inline-block w-2 h-2 bg-finance-expense rounded-full ml-1" />}
         </button>
+        <button
+          onClick={() => setScreen('categories')}
+          className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'categories' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
+            }`}
+        >
+          Categories
+        </button>
       </nav>
 
       {screen === 'import' ? (
         <ImportFlow onImportComplete={handleImportComplete} />
-      ) : (
+      ) : screen === 'categorize' ? (
         <CategorizationLoop onFinish={() => {
           setHasUncategorized(false);
           setScreen('import');
         }} />
+      ) : (
+        <CategoryManager />
       )}
     </div>
   );

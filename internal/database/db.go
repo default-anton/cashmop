@@ -34,6 +34,11 @@ func InitDB() {
 		name TEXT NOT NULL UNIQUE
 	);
 
+	CREATE TABLE IF NOT EXISTS categories (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT NOT NULL UNIQUE
+	);
+
 	CREATE TABLE IF NOT EXISTS transactions (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		account_id INTEGER NOT NULL,
@@ -41,15 +46,16 @@ func InitDB() {
 		date TEXT NOT NULL,
 		description TEXT,
 		amount REAL NOT NULL,
-		category TEXT,
+		category_id INTEGER,
 		currency TEXT DEFAULT 'CAD',
 		raw_metadata TEXT,
 		FOREIGN KEY(account_id) REFERENCES accounts(id),
-		FOREIGN KEY(owner_id) REFERENCES users(id)
+		FOREIGN KEY(owner_id) REFERENCES users(id),
+		FOREIGN KEY(category_id) REFERENCES categories(id)
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
-	CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
+	CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
 
 	CREATE TABLE IF NOT EXISTS column_mappings (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -61,30 +67,30 @@ func InitDB() {
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
 		match_type TEXT NOT NULL, -- 'contains', 'starts_with', 'ends_with', 'exact'
 		match_value TEXT NOT NULL,
-		category TEXT NOT NULL,
+		category_id INTEGER NOT NULL,
 		amount_min REAL,
 		amount_max REAL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY(category_id) REFERENCES categories(id)
 	);
 
-	-- FTS5 table for fast category and description search
-	CREATE VIRTUAL TABLE IF NOT EXISTS transactions_fts USING fts5(
-		description,
-		category,
-		content='transactions',
+	-- Categories FTS for fast search and BM25 ranking
+	CREATE VIRTUAL TABLE IF NOT EXISTS categories_fts USING fts5(
+		name,
+		content='categories',
 		content_rowid='id'
 	);
 
-	-- Triggers to keep FTS index in sync
-	CREATE TRIGGER IF NOT EXISTS tx_after_insert AFTER INSERT ON transactions BEGIN
-		INSERT INTO transactions_fts(rowid, description, category) VALUES (new.id, new.description, new.category);
+	-- Triggers to keep categories_fts in sync
+	CREATE TRIGGER IF NOT EXISTS cat_after_insert AFTER INSERT ON categories BEGIN
+		INSERT INTO categories_fts(rowid, name) VALUES (new.id, new.name);
 	END;
-	CREATE TRIGGER IF NOT EXISTS tx_after_delete AFTER DELETE ON transactions BEGIN
-		INSERT INTO transactions_fts(transactions_fts, rowid, description, category) VALUES('delete', old.id, old.description, old.category);
+	CREATE TRIGGER IF NOT EXISTS cat_after_delete AFTER DELETE ON categories BEGIN
+		INSERT INTO categories_fts(categories_fts, rowid, name) VALUES ('delete', old.id, old.name);
 	END;
-	CREATE TRIGGER IF NOT EXISTS tx_after_update AFTER UPDATE ON transactions BEGIN
-		INSERT INTO transactions_fts(transactions_fts, rowid, description, category) VALUES('delete', old.id, old.description, old.category);
-		INSERT INTO transactions_fts(rowid, description, category) VALUES (new.id, new.description, new.category);
+	CREATE TRIGGER IF NOT EXISTS cat_after_update AFTER UPDATE ON categories BEGIN
+		INSERT INTO categories_fts(categories_fts, rowid, name) VALUES ('delete', old.id, old.name);
+		INSERT INTO categories_fts(rowid, name) VALUES (new.id, new.name);
 	END;
 	`
 
