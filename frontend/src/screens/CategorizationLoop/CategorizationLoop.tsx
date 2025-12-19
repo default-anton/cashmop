@@ -90,10 +90,19 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   };
 
   const handleTextSelection = () => {
+    const tx = transactions[currentIndex];
+    if (!tx) return;
+
     const selection = window.getSelection();
     const text = selection?.toString().trim();
-    if (text && text.length > 2) {
+
+    // Only allow creating rules from strings that are actually in the description.
+    // This prevents the amount or other UI elements from triggering rule creation.
+    if (text && text.length > 2 && tx.description.includes(text)) {
       setSelectionRule({ text, mode: 'contains' });
+    } else if (text && text.length > 0) {
+      // If something else is selected (like the amount), clear the rule suggestion
+      setSelectionRule(null);
     }
   };
 
@@ -127,9 +136,9 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
               <Layers className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-canvas-800">Categorization Loop</h1>
+              <h1 className="text-xl font-bold text-canvas-800">Review Inbox</h1>
               <p className="text-xs font-mono text-canvas-500 uppercase tracking-widest">
-                {currentIndex + 1} of {transactions.length} remaining
+                {currentIndex + 1} of {transactions.length} items
               </p>
             </div>
           </div>
