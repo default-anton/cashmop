@@ -29,38 +29,67 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [categoryInput, setCategoryInput] = useState('');
   const [suggestions, setSuggestions] = useState<Category[]>([]);
   const [selectionRule, setSelectionRule] = useState<{ text: string; mode: 'contains' | 'starts_with' | 'ends_with' } | null>(null);
+  const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const fetchTransactions = useCallback(async (maintainPositionId?: number) => {
+  const fetchTransactions = useCallback(async () => {
     try {
       const txs = await (window as any).go.main.App.GetUncategorizedTransactions();
       const items: Transaction[] = txs || [];
       setTransactions(items);
-      setLoading(false);
-
-      if (items.length > 0) {
-        // If we want to maintain position, check if that ID still exists
-        if (maintainPositionId !== undefined && items.some(t => t.id === maintainPositionId)) {
-          setCurrentTxId(maintainPositionId);
-        } else if (!currentTxId || !items.some(t => t.id === currentTxId)) {
-          // Otherwise, if current ID is invalid or not set, pick the first
-          setCurrentTxId(items[0].id);
-        }
-      } else {
-        setCurrentTxId(null);
-      }
       return items;
     } catch (e) {
       console.error('Failed to fetch transactions', e);
-      setLoading(false);
       return [];
     }
-  }, [currentTxId]);
+  }, []);
+
+  const goToNext = useCallback((currentList: Transaction[], currentId: number | null, isSkip: boolean) => {
+    if (currentList.length === 0) {
+      setCurrentTxId(null);
+      return;
+    }
+
+    const nextSkipped = new Set(skippedIds);
+    if (isSkip && currentId !== null) {
+      nextSkipped.add(currentId);
+    }
+
+    const currentIdx = currentList.findIndex(t => t.id === currentId);
+    let foundId: number | null = null;
+
+    // Search for the next unskipped item, starting from the item AFTER the current one.
+    // If currentId is not found (e.g. just categorized), currentIdx is -1, so search starts at 0.
+    for (let i = 1; i <= currentList.length; i++) {
+      const idx = (currentIdx + i) % currentList.length;
+      const t = currentList[idx];
+      if (!nextSkipped.has(t.id)) {
+        foundId = t.id;
+        break;
+      }
+    }
+
+    if (foundId !== null) {
+      setSkippedIds(nextSkipped);
+      setCurrentTxId(foundId);
+    } else {
+      // Loop finished! All items in currentList are in nextSkipped.
+      // We start a new "lap" by clearing skips and wrapping to the next logical item.
+      setSkippedIds(new Set());
+      const nextIdx = (currentIdx + 1) % currentList.length;
+      setCurrentTxId(currentList[nextIdx].id);
+    }
+  }, [skippedIds]);
 
   useEffect(() => {
-    fetchTransactions();
-  }, []); // Only on mount
+    fetchTransactions().then((items) => {
+      if (items.length > 0) {
+        setCurrentTxId(items[0].id);
+      }
+      setLoading(false);
+    });
+  }, []);
 
   useEffect(() => {
     if (categoryInput.length > 1) {
@@ -70,21 +99,11 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     }
   }, [categoryInput]);
 
-  const goToNext = useCallback((currentList: Transaction[], currentId: number | null) => {
-    if (currentList.length === 0) {
-      setCurrentTxId(null);
-      return;
-    }
-    const idx = currentList.findIndex(t => t.id === currentId);
-    // If not found or last item, wrap to 0
-    const nextIdx = (idx + 1) % currentList.length;
-    setCurrentTxId(currentList[nextIdx].id);
-  }, []);
-
   const handleCategorize = async (categoryName: string, categoryId?: number) => {
     if (!currentTxId) return;
 
     try {
+      const oldId = currentTxId;
       if (selectionRule) {
         await (window as any).go.main.App.SaveCategorizationRule({
           match_type: selectionRule.mode,
@@ -93,19 +112,18 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           category_name: categoryName,
         });
         setSelectionRule(null);
-        // Rules auto-apply on backend, so refresh and try to stay at a sensible spot
-        const updated = await fetchTransactions();
-        if (updated.length === 0 && onFinish) onFinish();
       } else {
-        await (window as any).go.main.App.CategorizeTransaction(currentTxId, categoryName);
-
-        // Before we fetch and potentially lose the list order, determine the next ID
-        const idx = transactions.findIndex(t => t.id === currentTxId);
-        const nextId = transactions[(idx + 1) % transactions.length]?.id;
-
-        const updated = await fetchTransactions(nextId);
-        if (updated.length === 0 && onFinish) onFinish();
+        await (window as any).go.main.App.CategorizeTransaction(oldId, categoryName);
       }
+
+      const updated = await fetchTransactions();
+      if (updated.length === 0) {
+        if (onFinish) onFinish();
+      } else {
+        // Find next item in the fresh list, relative to the one we just handled
+        goToNext(updated, oldId, false);
+      }
+
       setCategoryInput('');
       setSuggestions([]);
     } catch (e) {
@@ -114,7 +132,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   };
 
   const handleSkip = () => {
-    goToNext(transactions, currentTxId);
+    goToNext(transactions, currentTxId, true);
     setCategoryInput('');
     setSuggestions([]);
     setSelectionRule(null);
