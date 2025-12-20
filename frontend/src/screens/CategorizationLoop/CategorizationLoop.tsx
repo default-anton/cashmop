@@ -177,16 +177,53 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     if (!tx) return;
 
     const selection = window.getSelection();
-    const text = selection?.toString().trim();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
 
-    if (text && text.length > 2 && tx.description.includes(text)) {
-      setSelectionRule({ text, mode: 'contains' });
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 0);
-    } else if (text && text.length > 0) {
-      setSelectionRule(null);
+    const range = selection.getRangeAt(0);
+    const container = range.commonAncestorContainer;
+
+    // Ensure selection is within the description heading
+    const h2 = (container.nodeType === Node.TEXT_NODE ? container.parentElement : container) as HTMLElement;
+    if (!h2 || !h2.closest('h2')) return;
+
+    const rawText = selection.toString();
+    const trimmedText = rawText.trim();
+
+    if (trimmedText.length < 2) {
+      if (trimmedText.length > 0) setSelectionRule(null);
+      return;
     }
+
+    // Get offsets relative to the text node
+    let startOffset = Math.min(selection.anchorOffset, selection.focusOffset);
+    let endOffset = Math.max(selection.anchorOffset, selection.focusOffset);
+
+    // Adjust for trimmed whitespace
+    const leadingWhitespaceMatch = rawText.match(/^\s*/);
+    const leadingLen = leadingWhitespaceMatch ? leadingWhitespaceMatch[0].length : 0;
+    const trailingWhitespaceMatch = rawText.match(/\s*$/);
+    const trailingLen = trailingWhitespaceMatch ? trailingWhitespaceMatch[0].length : 0;
+
+    startOffset += leadingLen;
+    endOffset -= trailingLen;
+
+    const description = tx.description;
+    let mode: 'contains' | 'starts_with' | 'ends_with' = 'contains';
+
+    if (startOffset === 0 && endOffset === description.length) {
+      mode = 'contains';
+    } else if (startOffset === 0) {
+      mode = 'starts_with';
+    } else if (endOffset === description.length) {
+      mode = 'ends_with';
+    } else {
+      mode = 'contains';
+    }
+
+    setSelectionRule({ text: trimmedText, mode });
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
   };
 
   const currentTx = transactions.find((t) => t.id === currentTxId);

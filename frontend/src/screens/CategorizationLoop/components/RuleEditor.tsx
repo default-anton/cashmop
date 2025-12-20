@@ -45,7 +45,11 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                       Auto-Rule
                     </span>
                     <span className="text-sm font-bold text-canvas-800">
-                      Matching descriptions with{' '}
+                      Matching descriptions {
+                        selectionRule.mode === 'starts_with' ? 'starting with' :
+                          selectionRule.mode === 'ends_with' ? 'ending with' :
+                            'containing'
+                      }{' '}
                       <span className="text-brand underline underline-offset-4 decoration-2">
                         "{selectionRule.text}"
                       </span>
