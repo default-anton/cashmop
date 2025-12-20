@@ -1,5 +1,6 @@
 import React, { RefObject } from 'react';
-import { Wand2, X } from 'lucide-react';
+import { Wand2, X, MousePointer2 } from 'lucide-react';
+
 
 interface SelectionRule {
   text: string;
@@ -62,7 +63,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
               </div>
               <button
                 onClick={onClearRule}
-                className="p-2 hover:bg-brand/10 text-canvas-400 hover:text-brand rounded-xl transition-all"
+                className="p-2 hover:bg-brand/10 text-canvas-500 hover:text-brand rounded-xl transition-all"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -115,7 +116,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                   />
                   {amountFilter.operator === 'between' && (
                     <>
-                      <span className="text-xs text-canvas-400 font-bold">AND</span>
+                      <span className="text-xs text-canvas-500 font-bold">AND</span>
                       <input
                         type="number"
                         placeholder="Max"
@@ -133,8 +134,9 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
           </div>
         </div>
       ) : (
-        <div className="w-full h-full border-2 border-dashed border-canvas-200 rounded-2xl flex items-center justify-center text-canvas-400 opacity-50">
-          <span className="text-sm">Select text in the transaction card to create a rule</span>
+        <div className="w-full h-full border-2 border-dashed border-canvas-300 rounded-2xl flex flex-col items-center justify-center text-canvas-500 bg-canvas-200/20 gap-2">
+          <MousePointer2 className="w-5 h-5 opacity-40" />
+          <span className="text-sm font-medium">Select text in the transaction card to create a rule</span>
         </div>
       )}
     </div>

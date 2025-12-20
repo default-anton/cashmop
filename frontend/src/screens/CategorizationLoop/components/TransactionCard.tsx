@@ -23,7 +23,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, o
         onMouseUp={onMouseUp}
       >
         <div className="text-center">
-          <span className="text-xs font-bold text-canvas-400 uppercase tracking-widest mb-4 block">
+          <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest mb-4 block">
             {new Date(transaction.date).toLocaleDateString('en-US', {
               month: 'long',
               day: 'numeric',

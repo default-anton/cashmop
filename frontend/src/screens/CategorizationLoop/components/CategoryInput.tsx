@@ -30,7 +30,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
     <div className="relative">
       <div className="flex gap-4">
         <div className="relative flex-1">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-canvas-400">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-canvas-500">
             <Search className="w-5 h-5" />
           </div>
           <input
@@ -84,7 +84,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
         </Button>
       </div>
 
-      <p className="mt-4 text-center text-canvas-400 text-sm">
+      <p className="mt-4 text-center text-canvas-500 text-sm">
         {isRuleMode ? (
           <>
             Press{' '}
