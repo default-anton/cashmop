@@ -7,12 +7,12 @@
 ---
 
 ### 1. Data Ingestion (Import Flow)
-* Source: User exports CSV or Excel files from their banks.
+* Source: User exports CSV or Excel files from their banks. (Excel is currently mocked)
 * Mechanism: Drag-and-drop file import.
 * Column Mapping:
     * The system analyzes the first file dropped.
     * User maps the CSV columns to the app’s internal schema via a drag-and-drop interface.
-    * Mappings can be saved (e.g., named "RBC Bank") so future imports from the same source are automatic.
+    * Mappings can be saved (e.g., named "RBC Bank") so future imports from the same source are automatic. (Automation is pending; currently requires manual selection)
 * Required Data Schema:
     1.  Account: (To distinguish between multiple bank accounts).
     2.  Currency: (Default: CAD/Canadian Dollar).
