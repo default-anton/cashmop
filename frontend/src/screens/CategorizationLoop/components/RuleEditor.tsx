@@ -18,6 +18,7 @@ interface RuleEditorProps {
   amountFilter: AmountFilter;
   setAmountFilter: (filter: AmountFilter) => void;
   amountInputRef: RefObject<HTMLInputElement>;
+  currentAmount?: number;
 }
 
 export const RuleEditor: React.FC<RuleEditorProps> = ({
@@ -26,6 +27,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
   amountFilter,
   setAmountFilter,
   amountInputRef,
+  currentAmount,
 }) => {
   return (
     <div className="h-44 mb-4 relative w-full transition-all duration-300">
@@ -74,7 +76,12 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                   <button
                     key={op}
                     onClick={() => {
-                      setAmountFilter({ ...amountFilter, operator: op });
+                      const amountStr = currentAmount?.toString() || '';
+                      setAmountFilter({
+                        operator: op,
+                        value1: op !== 'none' ? amountStr : '',
+                        value2: op === 'between' ? amountStr : '',
+                      });
                       if (op !== 'none') {
                         setTimeout(() => amountInputRef.current?.focus(), 0);
                       }
@@ -85,8 +92,8 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                       }`}
                   >
                     {op === 'none' && 'Any'}
-                    {op === 'gt' && '> Greater'}
-                    {op === 'lt' && '< Less'}
+                    {op === 'gt' && '≥ More'}
+                    {op === 'lt' && '≤ Less'}
                     {op === 'between' && 'Between'}
                   </button>
                 ))}

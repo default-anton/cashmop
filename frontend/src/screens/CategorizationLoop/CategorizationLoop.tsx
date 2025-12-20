@@ -214,6 +214,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           amountFilter={amountFilter}
           setAmountFilter={setAmountFilter}
           amountInputRef={amountInputRef}
+          currentAmount={currentTx?.amount}
         />
 
         <CategoryInput
