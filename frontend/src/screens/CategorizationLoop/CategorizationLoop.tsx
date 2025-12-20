@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Layers, FastForward, CheckCircle2, Search, PlusCircle, ArrowRight, Wand2, X } from 'lucide-react';
+import { database } from '../../../wailsjs/go/models';
 import { Button, Card, Input, Badge } from '../../components';
 
 interface Transaction {
@@ -29,6 +30,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [categoryInput, setCategoryInput] = useState('');
   const [suggestions, setSuggestions] = useState<Category[]>([]);
   const [selectionRule, setSelectionRule] = useState<{ text: string; mode: 'contains' | 'starts_with' | 'ends_with' } | null>(null);
+  const [amountFilter, setAmountFilter] = useState<{ operator: 'none' | 'gt' | 'lt' | 'between'; value1: string; value2: string }>({ operator: 'none', value1: '', value2: '' });
   const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -111,13 +113,24 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     try {
       const oldId = currentTxId;
       if (selectionRule) {
-        await (window as any).go.main.App.SaveCategorizationRule({
-          match_type: selectionRule.mode,
-          match_value: selectionRule.text,
-          category_id: categoryId || 0,
-          category_name: categoryName,
-        });
+        const rule = new database.CategorizationRule();
+        rule.match_type = selectionRule.mode;
+        rule.match_value = selectionRule.text;
+        rule.category_id = categoryId || 0;
+        rule.category_name = categoryName;
+
+        if (amountFilter.operator === 'gt' && amountFilter.value1) {
+          rule.amount_min = parseFloat(amountFilter.value1);
+        } else if (amountFilter.operator === 'lt' && amountFilter.value1) {
+          rule.amount_max = parseFloat(amountFilter.value1);
+        } else if (amountFilter.operator === 'between' && amountFilter.value1 && amountFilter.value2) {
+          rule.amount_min = parseFloat(amountFilter.value1);
+          rule.amount_max = parseFloat(amountFilter.value2);
+        }
+
+        await (window as any).go.main.App.SaveCategorizationRule(rule);
         setSelectionRule(null);
+        setAmountFilter({ operator: 'none', value1: '', value2: '' });
       } else {
         await (window as any).go.main.App.CategorizeTransaction(oldId, categoryName);
       }
@@ -142,6 +155,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     setCategoryInput('');
     setSuggestions([]);
     setSelectionRule(null);
+    setAmountFilter({ operator: 'none', value1: '', value2: '' });
   };
 
   const handleTextSelection = () => {
@@ -237,27 +251,81 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           {/* Rule Info - Above Input */}
           {selectionRule && (
             <div className="absolute bottom-full left-0 w-full mb-4 animate-snap-in z-30">
-              <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex items-center justify-between text-brand shadow-lg backdrop-blur-sm">
-                <div className="flex items-center gap-4">
-                  <div className="bg-brand text-white p-2 rounded-lg shadow-brand-glow">
-                    <Wand2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-brand/10 px-2 py-0.5 rounded">Auto-Rule</span>
-                      <span className="text-sm font-bold text-canvas-800">
-                        Matching descriptions with <span className="text-brand underline underline-offset-4 decoration-2">"{selectionRule.text}"</span>
-                      </span>
+              <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex flex-col gap-4 text-brand shadow-lg backdrop-blur-sm">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-brand text-white p-2 rounded-lg shadow-brand-glow">
+                      <Wand2 className="w-5 h-5" />
                     </div>
-                    <p className="text-xs text-canvas-500 mt-0.5">Enter a category name below to save this rule.</p>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-brand/10 px-2 py-0.5 rounded">Auto-Rule</span>
+                        <span className="text-sm font-bold text-canvas-800">
+                          Matching descriptions with <span className="text-brand underline underline-offset-4 decoration-2">"{selectionRule.text}"</span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-canvas-500 mt-0.5">Enter a category name below to save this rule.</p>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      setSelectionRule(null);
+                      setAmountFilter({ operator: 'none', value1: '', value2: '' });
+                    }}
+                    className="p-2 hover:bg-brand/10 text-canvas-400 hover:text-brand rounded-xl transition-all"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setSelectionRule(null)}
-                  className="p-2 hover:bg-brand/10 text-canvas-400 hover:text-brand rounded-xl transition-all"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+
+                <div className="h-px bg-brand/10 w-full" />
+
+                <div className="flex items-center gap-2 w-full">
+                  <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest mr-2">Amount:</span>
+
+                  <div className="flex bg-white rounded-lg p-1 border border-brand/20">
+                    {(['none', 'gt', 'lt', 'between'] as const).map((op) => (
+                      <button
+                        key={op}
+                        onClick={() => setAmountFilter({ ...amountFilter, operator: op })}
+                        className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
+                          amountFilter.operator === op
+                            ? 'bg-brand text-white shadow-sm'
+                            : 'text-canvas-500 hover:text-brand hover:bg-brand/5'
+                        }`}
+                      >
+                        {op === 'none' && 'Any'}
+                        {op === 'gt' && '> Greater'}
+                        {op === 'lt' && '< Less'}
+                        {op === 'between' && 'Between'}
+                      </button>
+                    ))}
+                  </div>
+
+                  {amountFilter.operator !== 'none' && (
+                    <div className="flex items-center gap-2 animate-snap-in">
+                      <input
+                        type="number"
+                        placeholder={amountFilter.operator === 'between' ? "Min" : "Value"}
+                        value={amountFilter.value1}
+                        onChange={(e) => setAmountFilter({ ...amountFilter, value1: e.target.value })}
+                        className="w-20 px-2 py-1 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+                      />
+                      {amountFilter.operator === 'between' && (
+                        <>
+                          <span className="text-xs text-canvas-400 font-bold">AND</span>
+                          <input
+                            type="number"
+                            placeholder="Max"
+                            value={amountFilter.value2}
+                            onChange={(e) => setAmountFilter({ ...amountFilter, value2: e.target.value })}
+                            className="w-20 px-2 py-1 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+                          />
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
