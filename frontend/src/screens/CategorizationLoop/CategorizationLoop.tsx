@@ -16,7 +16,9 @@ interface Transaction {
   category_id: number | null;
   category_name: string;
   account_id: number;
+  account_name: string;
   owner_id: number | null;
+  owner_name: string;
 }
 
 interface Category {

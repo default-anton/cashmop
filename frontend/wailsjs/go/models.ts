@@ -57,7 +57,9 @@ export namespace database {
 	export class TransactionModel {
 	    id: number;
 	    account_id: number;
+	    account_name: string;
 	    owner_id?: number;
+	    owner_name: string;
 	    date: string;
 	    description: string;
 	    amount: number;
@@ -74,7 +76,9 @@ export namespace database {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.account_id = source["account_id"];
+	        this.account_name = source["account_name"];
 	        this.owner_id = source["owner_id"];
+	        this.owner_name = source["owner_name"];
 	        this.date = source["date"];
 	        this.description = source["description"];
 	        this.amount = source["amount"];

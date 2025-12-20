@@ -9,7 +9,9 @@ import (
 type TransactionModel struct {
 	ID           int64   `json:"id"`
 	AccountID    int64   `json:"account_id"`
+	AccountName  string  `json:"account_name"`
 	OwnerID      *int64  `json:"owner_id"` // Nullable
+	OwnerName    string  `json:"owner_name"`
 	Date         string  `json:"date"`
 	Description  string  `json:"description"`
 	Amount       float64 `json:"amount"`
@@ -139,8 +141,12 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 }
 func GetUncategorizedTransactions() ([]TransactionModel, error) {
 	rows, err := DB.Query(`
-		SELECT t.id, t.account_id, t.owner_id, t.date, t.description, t.amount, t.category_id, t.currency 
+		SELECT 
+			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''), 
+			t.date, t.description, t.amount, t.category_id, t.currency 
 		FROM transactions t
+		JOIN accounts a ON t.account_id = a.id
+		LEFT JOIN users u ON t.owner_id = u.id
 		WHERE t.category_id IS NULL
 		ORDER BY t.date DESC
 	`)
@@ -152,7 +158,10 @@ func GetUncategorizedTransactions() ([]TransactionModel, error) {
 	var txs []TransactionModel
 	for rows.Next() {
 		var t TransactionModel
-		if err := rows.Scan(&t.ID, &t.AccountID, &t.OwnerID, &t.Date, &t.Description, &t.Amount, &t.CategoryID, &t.Currency); err != nil {
+		if err := rows.Scan(
+			&t.ID, &t.AccountID, &t.AccountName, &t.OwnerID, &t.OwnerName,
+			&t.Date, &t.Description, &t.Amount, &t.CategoryID, &t.Currency,
+		); err != nil {
 			return nil, err
 		}
 		txs = append(txs, t)
