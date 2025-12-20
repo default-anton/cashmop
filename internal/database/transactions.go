@@ -63,6 +63,42 @@ func GetOrCreateUser(name string) (*int64, error) {
 	return &id, nil
 }
 
+func GetAccounts() ([]string, error) {
+	rows, err := DB.Query("SELECT name FROM accounts ORDER BY name ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var accounts []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, name)
+	}
+	return accounts, nil
+}
+
+func GetUsers() ([]string, error) {
+	rows, err := DB.Query("SELECT name FROM users ORDER BY name ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		users = append(users, name)
+	}
+	return users, nil
+}
+
 func BatchInsertTransactions(txs []TransactionModel) error {
 	if len(txs) == 0 {
 		return nil

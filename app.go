@@ -171,3 +171,30 @@ func (a *App) SearchCategories(query string) ([]database.Category, error) {
 func (a *App) GetCategories() ([]database.Category, error) {
 	return database.GetAllCategories()
 }
+
+// GetAccounts returns all accounts
+func (a *App) GetAccounts() ([]string, error) {
+	return database.GetAccounts()
+}
+
+// GetOwners returns all users/owners
+func (a *App) GetOwners() ([]string, error) {
+	return database.GetUsers()
+}
+
+// CreateAccount ensures an account exists
+func (a *App) CreateAccount(name string) (int64, error) {
+	return database.GetOrCreateAccount(name)
+}
+
+// CreateOwner ensures a user/owner exists
+func (a *App) CreateOwner(name string) (int64, error) {
+	res, err := database.GetOrCreateUser(name)
+	if err != nil {
+		return 0, err
+	}
+	if res == nil {
+		return 0, fmt.Errorf("failed to create owner")
+	}
+	return *res, nil
+}

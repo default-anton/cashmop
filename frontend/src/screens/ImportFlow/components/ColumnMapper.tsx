@@ -11,8 +11,7 @@ import { OwnerMapping } from './MappingFields/OwnerMapping';
 import { AccountMapping } from './MappingFields/AccountMapping';
 import { CurrencyMapping } from './MappingFields/CurrencyMapping';
 
-const ACCOUNTS_LOCAL_STORAGE_KEY = 'cashflow.accounts';
-const OWNERS_LOCAL_STORAGE_KEY = 'cashflow.owners';
+// Redundant local storage keys removed
 
 // Define DB Model shape (from Go)
 type DbColumnMapping = {
@@ -50,67 +49,40 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
 
   const [savedMappings, setSavedMappings] = useState<SavedMapping[]>([]);
 
-  const [availableAccounts, setAvailableAccounts] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(ACCOUNTS_LOCAL_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (e) {
-      console.warn('Failed to load accounts from localStorage', e);
-    }
-    return ['RBC Checking', 'TD Visa', 'Wealthsimple Cash'];
-  });
+  const [availableAccounts, setAvailableAccounts] = useState<string[]>([]);
+  const [availableOwners, setAvailableOwners] = useState<string[]>([]);
 
-  const [availableOwners, setAvailableOwners] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem(OWNERS_LOCAL_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (e) {
-      console.warn('Failed to load owners from localStorage', e);
-    }
-    return [];
-  });
-
-  // Load saved mappings from Backend on mount
+  // Load saved mappings, accounts and owners from Backend on mount
   useEffect(() => {
-    const loadMappings = async () => {
+    const loadInitialData = async () => {
       try {
-        const dbMappings: DbColumnMapping[] = await (window as any).go.main.App.GetColumnMappings();
+        const [dbMappings, dbAccounts, dbOwners]: [DbColumnMapping[], string[], string[]] = await Promise.all([
+          (window as any).go.main.App.GetColumnMappings(),
+          (window as any).go.main.App.GetAccounts(),
+          (window as any).go.main.App.GetOwners(),
+        ]);
+
         const parsed = dbMappings.map(m => ({
           id: m.id,
           name: m.name,
           mapping: JSON.parse(m.mapping_json) as ImportMapping,
         }));
         setSavedMappings(parsed);
+
+        if (dbAccounts && dbAccounts.length > 0) {
+          setAvailableAccounts(dbAccounts);
+        } else {
+          // Default fallback if DB is empty
+          setAvailableAccounts(['RBC Checking', 'TD Visa', 'Wealthsimple Cash']);
+        }
+
+        setAvailableOwners(dbOwners || []);
       } catch (e) {
-        console.error('Failed to load mappings from backend', e);
+        console.error('Failed to load data from backend', e);
       }
     };
-    loadMappings();
+    loadInitialData();
   }, []);
-
-  // Save accounts to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem(ACCOUNTS_LOCAL_STORAGE_KEY, JSON.stringify(availableAccounts));
-    } catch (e) {
-      console.warn('Failed to save accounts to localStorage', e);
-    }
-  }, [availableAccounts]);
-
-  // Save owners to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem(OWNERS_LOCAL_STORAGE_KEY, JSON.stringify(availableOwners));
-    } catch (e) {
-      console.warn('Failed to save owners to localStorage', e);
-    }
-  }, [availableOwners]);
 
   const [selectedMappingId, setSelectedMappingId] = useState<string>('new');
   const [saveName, setSaveName] = useState('');
@@ -304,9 +276,14 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
               }}
               onClear={(header) => removeHeaderEverywhere(header)}
               onSetDefaultOwner={(owner) => setMapping((prev) => ({ ...prev, defaultOwner: owner }))}
-              onAddOwner={(owner) => {
+              onAddOwner={async (owner) => {
                 if (!availableOwners.includes(owner)) {
-                  setAvailableOwners((prev) => [...prev, owner]);
+                  try {
+                    await (window as any).go.main.App.CreateOwner(owner);
+                    setAvailableOwners((prev) => [...prev, owner]);
+                  } catch (e) {
+                    console.error('Failed to create owner', e);
+                  }
                 }
               }}
             />
@@ -325,9 +302,14 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
               }}
               onClear={(header) => removeHeaderEverywhere(header)}
               onSetAccount={(account) => setMapping((prev) => ({ ...prev, account }))}
-              onAddAccount={(account) => {
+              onAddAccount={async (account) => {
                 if (!availableAccounts.includes(account)) {
-                  setAvailableAccounts((prev) => [...prev, account]);
+                  try {
+                    await (window as any).go.main.App.CreateAccount(account);
+                    setAvailableAccounts((prev) => [...prev, account]);
+                  } catch (e) {
+                    console.error('Failed to create account', e);
+                  }
                 }
               }}
             />
