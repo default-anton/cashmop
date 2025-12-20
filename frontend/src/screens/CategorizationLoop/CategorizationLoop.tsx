@@ -34,6 +34,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -287,12 +288,16 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
                     {(['none', 'gt', 'lt', 'between'] as const).map((op) => (
                       <button
                         key={op}
-                        onClick={() => setAmountFilter({ ...amountFilter, operator: op })}
-                        className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${
-                          amountFilter.operator === op
+                        onClick={() => {
+                          setAmountFilter({ ...amountFilter, operator: op });
+                          if (op !== 'none') {
+                            setTimeout(() => amountInputRef.current?.focus(), 0);
+                          }
+                        }}
+                        className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${amountFilter.operator === op
                             ? 'bg-brand text-white shadow-sm'
                             : 'text-canvas-500 hover:text-brand hover:bg-brand/5'
-                        }`}
+                          }`}
                       >
                         {op === 'none' && 'Any'}
                         {op === 'gt' && '> Greater'}
@@ -305,6 +310,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
                   {amountFilter.operator !== 'none' && (
                     <div className="flex items-center gap-2 animate-snap-in">
                       <input
+                        ref={amountInputRef}
                         type="number"
                         placeholder={amountFilter.operator === 'between' ? "Min" : "Value"}
                         value={amountFilter.value1}
@@ -329,9 +335,9 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
               </div>
             </div>
           ) : (
-             <div className="w-full h-full border-2 border-dashed border-canvas-200 rounded-2xl flex items-center justify-center text-canvas-400 opacity-50">
-                <span className="text-sm">Select text in the transaction card to create a rule</span>
-             </div>
+            <div className="w-full h-full border-2 border-dashed border-canvas-200 rounded-2xl flex items-center justify-center text-canvas-400 opacity-50">
+              <span className="text-sm">Select text in the transaction card to create a rule</span>
+            </div>
           )}
         </div>
 
