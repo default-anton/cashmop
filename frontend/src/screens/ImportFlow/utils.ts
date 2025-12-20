@@ -10,11 +10,12 @@ export function parseDateLoose(value: string): Date | null {
     }
 
     // Common bank formats: MM/DD/YYYY or DD/MM/YYYY
-    const slash = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    const slash = v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
     if (slash) {
         let a = Number(slash[1]);
         let b = Number(slash[2]);
-        const year = Number(slash[3]);
+        let year = Number(slash[3]);
+        if (year < 100) year += 2000;
 
         // If the first component can't be a month, treat as DD/MM.
         if (a > 12 && b <= 12) {
@@ -27,6 +28,9 @@ export function parseDateLoose(value: string): Date | null {
         return Number.isNaN(d.getTime()) ? null : d;
     }
 
+    // Handle "MMM DD, YYYY" or "DD MMM YYYY"
     const parsed = new Date(v);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+
+    return null;
 }

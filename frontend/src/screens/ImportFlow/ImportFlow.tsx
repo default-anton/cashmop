@@ -138,10 +138,25 @@ async function parseFile(file: File): Promise<ParsedFile> {
     return { file, kind: 'csv', headers, rows };
   }
   if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
-    // Placeholder: Excel parsing will be added later.
-    const headers = ['Transaction Date', 'Posting Date', 'Description 1', 'Debit', 'Credit', 'Card Member'];
-    const rows: string[][] = [];
-    return { file, kind: 'excel', headers, rows };
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    try {
+      const base64Data = await base64Promise;
+      const result = await (window as any).go.main.App.ParseExcel(base64Data);
+      return {
+        file,
+        kind: 'excel',
+        headers: result.headers,
+        rows: result.rows,
+      };
+    } catch (e) {
+      throw new Error('Failed to parse Excel file: ' + (e instanceof Error ? e.message : String(e)));
+    }
   }
   throw new Error('Unsupported file type. Please upload a .csv or .xlsx file.');
 }
@@ -159,9 +174,9 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   const [parsedFiles, setParsedFiles] = useState<ParsedFile[]>([]);
   const [fileErrors, setFileErrors] = useState<Map<string, string>>(new Map());
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
-  const [excelMock, setExcelMock] = useState(false);
 
   const [mapping, setMapping] = useState<ImportMapping | null>(null);
+  const [autoSelectedMappingId, setAutoSelectedMappingId] = useState<string | null>(null);
   const [months, setMonths] = useState<MonthOption[]>([]);
   const [selectedMonthKeys, setSelectedMonthKeys] = useState<string[]>([]);
 
@@ -211,8 +226,54 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     }
 
     // Use first file for mapping
-    setParsed(parsedResults[0]);
-    setExcelMock(parsedResults[0].kind === 'excel');
+    const firstFile = parsedResults[0];
+    setParsed(firstFile);
+
+    // Try to auto-select mapping
+    try {
+      const dbMappings: any[] = await (window as any).go.main.App.GetColumnMappings();
+      const savedMappings = dbMappings.map(m => ({
+        id: m.id,
+        name: m.name,
+        mapping: JSON.parse(m.mapping_json) as ImportMapping,
+      }));
+
+      let bestMapping: any = null;
+      let maxScore = -1;
+
+      for (const sm of savedMappings) {
+        let score = 0;
+        const m = sm.mapping;
+        const h = firstFile.headers;
+
+        if (h.includes(m.csv.date)) score++;
+        for (const d of m.csv.description) if (h.includes(d)) score++;
+
+        if (m.csv.amountMapping) {
+          if (m.csv.amountMapping.type === 'single' && h.includes(m.csv.amountMapping.column)) score++;
+          else if (m.csv.amountMapping.type === 'debitCredit') {
+            if (m.csv.amountMapping.debitColumn && h.includes(m.csv.amountMapping.debitColumn)) score++;
+            if (m.csv.amountMapping.creditColumn && h.includes(m.csv.amountMapping.creditColumn)) score++;
+          } else if (m.csv.amountMapping.type === 'amountWithType') {
+            if (h.includes(m.csv.amountMapping.amountColumn)) score++;
+            if (h.includes(m.csv.amountMapping.typeColumn)) score++;
+          }
+        } else if (h.includes(m.csv.amount)) score++;
+
+        if (score > maxScore) {
+          maxScore = score;
+          bestMapping = sm;
+        }
+      }
+
+      if (bestMapping && maxScore >= 3) { // Threshold for confidence
+        setMapping(bestMapping.mapping);
+        setAutoSelectedMappingId(bestMapping.id.toString());
+      }
+    } catch (e) {
+      console.error('Failed to auto-select mapping', e);
+    }
+
     setStep(2);
     setParseBusy(false);
   };
@@ -252,7 +313,15 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     setMapping(m);
     const computed = computeMonthsFromMappingAll(m);
     setMonths(computed);
-    setSelectedMonthKeys([]);
+
+    // Default to last month
+    if (computed.length > 0) {
+      const lastMonth = computed[computed.length - 1];
+      setSelectedMonthKeys([lastMonth.key]);
+    } else {
+      setSelectedMonthKeys([]);
+    }
+
     setStep(3);
   };
 
@@ -424,8 +493,9 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
             <ColumnMapper
               csvHeaders={parsed?.headers ?? []}
               rows={parsed?.rows ?? []}
-              excelMock={excelMock}
               fileCount={parsedFiles.length}
+              initialMapping={mapping}
+              initialMappingId={autoSelectedMappingId}
               onComplete={handleMappingComplete}
             />
           )}

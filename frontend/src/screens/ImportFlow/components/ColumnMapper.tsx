@@ -25,10 +25,12 @@ interface ColumnMapperProps {
   rows: string[][];
   excelMock?: boolean;
   fileCount?: number;
+  initialMapping?: ImportMapping | null;
+  initialMappingId?: string | null;
   onComplete: (mapping: ImportMapping) => void;
 }
 
-const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock, fileCount = 1, onComplete }) => {
+const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock, fileCount = 1, initialMapping, initialMappingId, onComplete }) => {
   const {
     mapping,
     setMapping,
@@ -42,7 +44,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
     handleAmountMappingTypeChange,
     assignAmountMappingColumn,
     updateAmountWithTypeValues,
-  } = useColumnMapping();
+  } = useColumnMapping(initialMapping || undefined);
 
   const [activeDropKey, setActiveDropKey] = useState<CsvFieldKey | null>(null);
   const [attemptedNext, setAttemptedNext] = useState(false);
@@ -84,7 +86,7 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
     loadInitialData();
   }, []);
 
-  const [selectedMappingId, setSelectedMappingId] = useState<string>('new');
+  const [selectedMappingId, setSelectedMappingId] = useState<string>(initialMappingId || 'new');
   const [saveName, setSaveName] = useState('');
 
   const handleNext = () => {

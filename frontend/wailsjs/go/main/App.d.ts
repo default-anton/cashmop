@@ -5,17 +5,27 @@ import {main} from '../models';
 
 export function CategorizeTransaction(arg1:number,arg2:string):Promise<void>;
 
+export function CreateAccount(arg1:string):Promise<number>;
+
+export function CreateOwner(arg1:string):Promise<number>;
+
 export function DeleteColumnMapping(arg1:number):Promise<void>;
+
+export function GetAccounts():Promise<Array<string>>;
 
 export function GetCategories():Promise<Array<database.Category>>;
 
 export function GetColumnMappings():Promise<Array<database.ColumnMappingModel>>;
+
+export function GetOwners():Promise<Array<string>>;
 
 export function GetUncategorizedTransactions():Promise<Array<database.TransactionModel>>;
 
 export function Greet(arg1:string):Promise<string>;
 
 export function ImportTransactions(arg1:Array<main.TransactionInput>):Promise<void>;
+
+export function ParseExcel(arg1:string):Promise<main.ExcelData>;
 
 export function RenameCategory(arg1:number,arg2:string):Promise<void>;
 

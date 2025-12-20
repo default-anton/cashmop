@@ -89,6 +89,20 @@ export namespace database {
 
 export namespace main {
 	
+	export class ExcelData {
+	    headers: string[];
+	    rows: string[][];
+	
+	    static createFrom(source: any = {}) {
+	        return new ExcelData(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.headers = source["headers"];
+	        this.rows = source["rows"];
+	    }
+	}
 	export class TransactionInput {
 	    date: string;
 	    description: string;

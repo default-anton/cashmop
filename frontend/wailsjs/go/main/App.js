@@ -6,8 +6,20 @@ export function CategorizeTransaction(arg1, arg2) {
   return window['go']['main']['App']['CategorizeTransaction'](arg1, arg2);
 }
 
+export function CreateAccount(arg1) {
+  return window['go']['main']['App']['CreateAccount'](arg1);
+}
+
+export function CreateOwner(arg1) {
+  return window['go']['main']['App']['CreateOwner'](arg1);
+}
+
 export function DeleteColumnMapping(arg1) {
   return window['go']['main']['App']['DeleteColumnMapping'](arg1);
+}
+
+export function GetAccounts() {
+  return window['go']['main']['App']['GetAccounts']();
 }
 
 export function GetCategories() {
@@ -16,6 +28,10 @@ export function GetCategories() {
 
 export function GetColumnMappings() {
   return window['go']['main']['App']['GetColumnMappings']();
+}
+
+export function GetOwners() {
+  return window['go']['main']['App']['GetOwners']();
 }
 
 export function GetUncategorizedTransactions() {
@@ -28,6 +44,10 @@ export function Greet(arg1) {
 
 export function ImportTransactions(arg1) {
   return window['go']['main']['App']['ImportTransactions'](arg1);
+}
+
+export function ParseExcel(arg1) {
+  return window['go']['main']['App']['ParseExcel'](arg1);
 }
 
 export function RenameCategory(arg1, arg2) {

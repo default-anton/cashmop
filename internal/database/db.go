@@ -51,7 +51,8 @@ func InitDB() {
 		raw_metadata TEXT,
 		FOREIGN KEY(account_id) REFERENCES accounts(id),
 		FOREIGN KEY(owner_id) REFERENCES users(id),
-		FOREIGN KEY(category_id) REFERENCES categories(id)
+		FOREIGN KEY(category_id) REFERENCES categories(id),
+		UNIQUE(account_id, date, description, amount)
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);

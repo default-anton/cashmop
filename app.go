@@ -3,8 +3,12 @@ package main
 import (
 	"cashflow/internal/database"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
+
+	"github.com/xuri/excelize/v2"
 )
 
 // App struct
@@ -197,4 +201,73 @@ func (a *App) CreateOwner(name string) (int64, error) {
 		return 0, fmt.Errorf("failed to create owner")
 	}
 	return *res, nil
+}
+
+type ExcelData struct {
+	Headers []string   `json:"headers"`
+	Rows    [][]string `json:"rows"`
+}
+
+// ParseExcel parses an Excel file from base64 string
+func (a *App) ParseExcel(base64Data string) (*ExcelData, error) {
+	// Remove data URL prefix if present
+	if idx := strings.Index(base64Data, ";base64,"); idx != -1 {
+		base64Data = base64Data[idx+8:]
+	}
+
+	data, err := base64.StdEncoding.DecodeString(base64Data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode base64: %w", err)
+	}
+
+	reader := strings.NewReader(string(data))
+	f, err := excelize.OpenReader(reader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open excel: %w", err)
+	}
+	defer f.Close()
+
+	// Get first sheet
+	sheetName := f.GetSheetName(0)
+	if sheetName == "" {
+		return nil, fmt.Errorf("no sheets found in excel file")
+	}
+
+	rows, err := f.GetRows(sheetName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get rows from sheet %s: %w", sheetName, err)
+	}
+
+	if len(rows) == 0 {
+		return nil, fmt.Errorf("excel file is empty")
+	}
+
+	headers := rows[0]
+	var dataRows [][]string
+	if len(rows) > 1 {
+		dataRows = rows[1:]
+	} else {
+		dataRows = [][]string{}
+	}
+
+	// Clean headers (remove leading/trailing whitespace)
+	for i, h := range headers {
+		headers[i] = strings.TrimSpace(h)
+	}
+
+	// Ensure all rows have the same length as headers
+	for i, row := range dataRows {
+		if len(row) < len(headers) {
+			newRow := make([]string, len(headers))
+			copy(newRow, row)
+			dataRows[i] = newRow
+		} else if len(row) > len(headers) {
+			dataRows[i] = row[:len(headers)]
+		}
+	}
+
+	return &ExcelData{
+		Headers: headers,
+		Rows:    dataRows,
+	}, nil
 }

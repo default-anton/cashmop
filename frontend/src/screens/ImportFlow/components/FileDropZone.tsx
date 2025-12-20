@@ -199,7 +199,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
       </div>
 
       <p className="mt-4 text-xs text-canvas-500 text-center">
-        CSV parsing runs locally. Excel parsing is mocked for now.
+        Transactions are parsed locally and never leave your device.
       </p>
     </div>
   );

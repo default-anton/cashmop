@@ -111,7 +111,7 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 	defer tx.Rollback()
 
 	stmt, err := tx.Prepare(`
-		INSERT INTO transactions 
+		INSERT OR IGNORE INTO transactions 
 		(account_id, owner_id, date, description, amount, category_id, currency, raw_metadata)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`)

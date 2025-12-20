@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ImportMapping, CsvFieldKey, AmountMapping } from './ColumnMapperTypes';
 
 export const defaultMapping = (): ImportMapping => ({
@@ -14,6 +14,13 @@ export const defaultMapping = (): ImportMapping => ({
 
 export const useColumnMapping = (initialMapping?: ImportMapping) => {
   const [mapping, setMapping] = useState<ImportMapping>(initialMapping || defaultMapping());
+
+  // Update mapping if initialMapping changes (e.g. from auto-selection)
+  useEffect(() => {
+    if (initialMapping) {
+      setMapping(initialMapping);
+    }
+  }, [initialMapping]);
 
   const usedHeaders = useMemo(() => {
     const used = new Set<string>();
