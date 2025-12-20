@@ -223,7 +223,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         <div className="relative group perspective-1000">
           <Card
             variant="glass"
-            className="p-12 mb-8 transform transition-all duration-500 hover:rotate-x-1 hover:shadow-2xl border-canvas-200/50"
+            className="p-12 mb-4 transform transition-all duration-500 hover:rotate-x-1 hover:shadow-2xl border-canvas-200/50"
             onMouseUp={handleTextSelection}
           >
             <div className="text-center">
@@ -247,11 +247,11 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           </Card>
         </div>
 
-        <div className="relative">
-          {/* Rule Info - Above Input */}
-          {selectionRule && (
-            <div className="absolute bottom-full left-0 w-full mb-4 animate-snap-in z-30">
-              <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex flex-col gap-4 text-brand shadow-lg backdrop-blur-sm">
+        {/* Rule Info / Reserved Space - Between Transaction & Input */}
+        <div className="h-44 mb-4 relative w-full transition-all duration-300">
+          {selectionRule ? (
+            <div className="w-full h-full animate-snap-in">
+              <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex flex-col justify-center gap-4 text-brand shadow-lg backdrop-blur-sm h-full">
                 <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-4">
                     <div className="bg-brand text-white p-2 rounded-lg shadow-brand-glow">
@@ -328,8 +328,14 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
                 </div>
               </div>
             </div>
+          ) : (
+             <div className="w-full h-full border-2 border-dashed border-canvas-200 rounded-2xl flex items-center justify-center text-canvas-400 opacity-50">
+                <span className="text-sm">Select text in the transaction card to create a rule</span>
+             </div>
           )}
+        </div>
 
+        <div className="relative">
           <div className="flex gap-4">
             <div className="relative flex-1">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 text-canvas-400">
