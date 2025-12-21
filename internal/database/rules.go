@@ -66,7 +66,27 @@ func SaveRule(rule CategorizationRule) (int64, error) {
 }
 
 func GetRules() ([]CategorizationRule, error) {
-	rows, err := DB.Query("SELECT id, match_type, match_value, category_id, amount_min, amount_max FROM categorization_rules")
+	rows, err := DB.Query(`
+		SELECT id, match_type, match_value, category_id, amount_min, amount_max 
+		FROM categorization_rules
+		ORDER BY 
+			-- Priority by amount specificity
+			CASE 
+				WHEN amount_min IS NOT NULL AND amount_max IS NOT NULL THEN 1
+				WHEN amount_min IS NOT NULL AND amount_max IS NULL THEN 2
+				WHEN amount_min IS NULL AND amount_max IS NOT NULL THEN 3
+				ELSE 4
+			END ASC,
+			-- Priority by match type specificity
+			CASE 
+				WHEN match_type = 'exact' THEN 1
+				WHEN match_type = 'starts_with' THEN 2
+				WHEN match_type = 'ends_with' THEN 2
+				WHEN match_type = 'contains' THEN 3
+				ELSE 4
+			END ASC,
+			id ASC -- Fallback to oldest rules first
+	`)
 	if err != nil {
 		return nil, err
 	}
