@@ -168,7 +168,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
     return (
       <>
         {before}
-        <span className="bg-brand/20 text-brand rounded-sm px-0.5">{match}</span>
+        <span className="bg-brand text-white shadow-brand-glow py-0.5">{match}</span>
         {after}
       </>
     );
