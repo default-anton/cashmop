@@ -1,6 +1,8 @@
 import React from 'react';
 import { Card } from '../../../components';
 
+import { Wand2 } from 'lucide-react';
+
 interface Transaction {
   id: number;
   date: string;
@@ -103,9 +105,24 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
             </div>
           </div>
 
-          <h2 className="text-4xl font-black text-canvas-800 mb-8 leading-tight select-text selection:bg-brand/20">
-            {renderDescription()}
-          </h2>
+          <div className="mb-8 flex flex-col items-center">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em]">
+                Description
+              </span>
+              {!selectionRule && (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-brand/10 text-brand text-[8px] font-black uppercase tracking-widest rounded-full animate-pulse border border-brand/20">
+                  <Wand2 className="w-2.5 h-2.5" />
+                  Select to create rule
+                </span>
+              )}
+            </div>
+            <div className="relative group/desc w-full">
+              <h2 className="text-4xl font-black text-canvas-800 leading-tight select-text selection:bg-brand/20 cursor-text hover:bg-brand/[0.03] rounded-2xl transition-all duration-300 p-4 -m-4">
+                {renderDescription()}
+              </h2>
+            </div>
+          </div>
 
           <div
             className={`text-6xl font-mono mb-4 ${transaction.amount < 0 ? 'text-finance-expense' : 'text-finance-income'

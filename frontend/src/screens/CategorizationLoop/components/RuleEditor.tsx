@@ -135,9 +135,21 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
           </div>
         </div>
       ) : (
-        <div className="w-full h-full border-2 border-dashed border-canvas-300 rounded-2xl flex flex-col items-center justify-center text-canvas-500 bg-canvas-200/20 gap-2">
-          <MousePointer2 className="w-5 h-5 opacity-40" />
-          <span className="text-sm font-medium">Select text in the transaction card to create a rule</span>
+        <div className="w-full h-full border-2 border-dashed border-canvas-300 rounded-2xl flex flex-col items-center justify-center text-canvas-500 bg-canvas-200/20 gap-3 group transition-colors hover:border-brand/30 hover:bg-brand/[0.02]">
+          <div className="relative">
+            <div className="bg-canvas-100 p-3 rounded-full group-hover:bg-brand/10 transition-colors">
+              <MousePointer2 className="w-6 h-6 opacity-40 group-hover:text-brand group-hover:opacity-100 transition-all duration-300" />
+            </div>
+            <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-brand opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
+              <span className="text-[20px] leading-none">↑</span>
+            </div>
+          </div>
+          <div className="text-center px-10">
+            <span className="text-sm font-bold block mb-1 text-canvas-700">Automation Rule Wizard</span>
+            <span className="text-xs font-medium text-canvas-500">
+              Select text in the description above to automatically match future transactions.
+            </span>
+          </div>
         </div>
       )}
     </div>
