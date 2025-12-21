@@ -81,7 +81,8 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                   <button
                     key={op}
                     onClick={() => {
-                      const amountStr = currentAmount?.toString() || '';
+                      const absAmount = currentAmount ? Math.abs(currentAmount) : 0;
+                      const amountStr = absAmount > 0 ? absAmount.toString() : '';
                       setAmountFilter({
                         operator: op,
                         value1: op !== 'none' ? amountStr : '',

@@ -135,13 +135,36 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         rule.category_id = categoryId || 0;
         rule.category_name = categoryName;
 
-        if (amountFilter.operator === 'gt' && amountFilter.value1) {
-          rule.amount_min = parseFloat(amountFilter.value1);
-        } else if (amountFilter.operator === 'lt' && amountFilter.value1) {
-          rule.amount_max = parseFloat(amountFilter.value1);
-        } else if (amountFilter.operator === 'between' && amountFilter.value1 && amountFilter.value2) {
-          rule.amount_min = parseFloat(amountFilter.value1);
-          rule.amount_max = parseFloat(amountFilter.value2);
+        if (amountFilter.operator !== 'none') {
+          let v1 = parseFloat(amountFilter.value1) || 0;
+          let v2 = parseFloat(amountFilter.value2) || 0;
+
+          if (amountFilter.operator === 'between' && v1 > v2) {
+            [v1, v2] = [v2, v1];
+          }
+
+          const currentTx = transactions.find(t => t.id === oldId);
+          const isExpense = currentTx && currentTx.amount < 0;
+
+          if (isExpense) {
+            if (amountFilter.operator === 'gt') {
+              rule.amount_max = -v1;
+            } else if (amountFilter.operator === 'lt') {
+              rule.amount_min = -v1;
+            } else if (amountFilter.operator === 'between') {
+              rule.amount_min = -v2;
+              rule.amount_max = -v1;
+            }
+          } else {
+            if (amountFilter.operator === 'gt') {
+              rule.amount_min = v1;
+            } else if (amountFilter.operator === 'lt') {
+              rule.amount_max = v1;
+            } else if (amountFilter.operator === 'between') {
+              rule.amount_min = v1;
+              rule.amount_max = v2;
+            }
+          }
         }
 
         await (window as any).go.main.App.SaveCategorizationRule(rule);
@@ -242,7 +265,11 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       <div className="w-full max-w-2xl">
         <ProgressHeader currentIndex={currentIndex} totalTransactions={transactions.length} />
 
-        <TransactionCard transaction={currentTx} onMouseUp={handleTextSelection} />
+        <TransactionCard
+          transaction={currentTx}
+          onMouseUp={handleTextSelection}
+          selectionRule={selectionRule}
+        />
 
         <RuleEditor
           selectionRule={selectionRule}

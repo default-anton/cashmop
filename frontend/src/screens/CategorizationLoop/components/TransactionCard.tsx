@@ -11,12 +11,54 @@ interface Transaction {
   owner_name?: string;
 }
 
+interface SelectionRule {
+  text: string;
+  mode: 'contains' | 'starts_with' | 'ends_with';
+}
+
 interface TransactionCardProps {
   transaction: Transaction;
   onMouseUp: () => void;
+  selectionRule?: SelectionRule | null;
 }
 
-export const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, onMouseUp }) => {
+export const TransactionCard: React.FC<TransactionCardProps> = ({
+  transaction,
+  onMouseUp,
+  selectionRule,
+}) => {
+  const renderDescription = () => {
+    if (!selectionRule || !transaction.description.toLowerCase().includes(selectionRule.text.toLowerCase())) {
+      return transaction.description;
+    }
+
+    const { text, mode } = selectionRule;
+    const desc = transaction.description;
+
+    // Find the actual index regardless of case
+    const index = desc.toLowerCase().indexOf(text.toLowerCase());
+    if (index === -1) return desc;
+
+    // Check if the match follows the mode rules
+    const matchesMode =
+      (mode === 'starts_with' && index === 0) ||
+      (mode === 'ends_with' && index + text.length === desc.length) ||
+      mode === 'contains';
+
+    if (!matchesMode) return desc;
+
+    const before = desc.substring(0, index);
+    const match = desc.substring(index, index + text.length);
+    const after = desc.substring(index + text.length);
+
+    return (
+      <>
+        {before}
+        <span className="bg-brand/20 text-brand rounded-sm px-0.5">{match}</span>
+        {after}
+      </>
+    );
+  };
   return (
     <div className="relative group perspective-1000">
       <Card
@@ -62,7 +104,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({ transaction, o
           </div>
 
           <h2 className="text-4xl font-black text-canvas-800 mb-8 leading-tight select-text selection:bg-brand/20">
-            {transaction.description}
+            {renderDescription()}
           </h2>
 
           <div
