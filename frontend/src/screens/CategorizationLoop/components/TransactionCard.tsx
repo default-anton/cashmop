@@ -184,7 +184,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
         <div className="text-center">
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-canvas-200/30">
             <div className="flex flex-col items-start text-left">
-              <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-1">
+              <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5">
                 Date
               </span>
               <span className="text-sm font-bold text-canvas-700">
@@ -200,7 +200,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
               <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-0.5 ${transaction.amount < 0 ? 'text-finance-expense/60' : 'text-finance-income/60'}`}>
                 {transaction.amount < 0 ? 'Expense' : 'Income'}
               </span>
-              <span className={`text-xl font-mono font-black tracking-tight ${transaction.amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
+              <span className={`text-sm font-mono font-black tracking-tight ${transaction.amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
                 ${Math.abs(transaction.amount).toFixed(2)}
               </span>
             </div>
