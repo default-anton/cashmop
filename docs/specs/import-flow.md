@@ -1,5 +1,7 @@
 # Import Flow Spec
 
+UI Location: `frontend/src/screens/ImportFlow/`
+
 ## Data Ingestion
 * Source: User exports CSV/Excel from banks.
 * Mechanism: Drag-and-drop.
