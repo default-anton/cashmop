@@ -83,6 +83,12 @@ func GetRules() ([]CategorizationRule, error) {
 	return rules, nil
 }
 
+func GetRulesCount() (int, error) {
+	var count int
+	err := DB.QueryRow("SELECT COUNT(*) FROM categorization_rules").Scan(&count)
+	return count, err
+}
+
 func ApplyRule(ruleID int64) (int64, error) {
 	var r CategorizationRule
 	err := DB.QueryRow("SELECT match_type, match_value, category_id, amount_min, amount_max FROM categorization_rules WHERE id = ?", ruleID).

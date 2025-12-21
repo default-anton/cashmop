@@ -168,11 +168,7 @@ func (a *App) SaveCategorizationRule(rule database.CategorizationRule) (int64, e
 
 // GetCategorizationRulesCount returns the number of existing categorization rules
 func (a *App) GetCategorizationRulesCount() (int, error) {
-	rules, err := database.GetRules()
-	if err != nil {
-		return 0, err
-	}
-	return len(rules), nil
+	return database.GetRulesCount()
 }
 
 // SearchCategories returns suggestions for categories
