@@ -110,7 +110,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       setLoading(false);
     });
 
-    // Check if user has any categorization rules already
     (window as any).go.main.App.GetCategorizationRulesCount().then((count: number) => {
       setHasRules(count > 0);
     });
@@ -270,35 +269,27 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     setAmountFilter({ operator: 'none', value1: '', value2: '' });
   };
 
-  const handleTextSelection = useCallback(() => {
+  /* 
+   * Replaced by manual selection from TransactionCard to support custom highlighting 
+   * without fighting browser selection behavior.
+   */
+  const handleManualSelection = useCallback((startIndex: number, endIndex: number) => {
     if (!currentTxId) return;
     const tx = transactions.find((t) => t.id === currentTxId);
     if (!tx) return;
 
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
-      // Only clear if we actually had a selection and it's now collapsed within the same element
-      // but usually we just want to keep the rule until explicitly cleared or a new selection starts
-      return;
+    if (startIndex > endIndex) {
+      [startIndex, endIndex] = [endIndex, startIndex];
     }
 
-    const range = selection.getRangeAt(0);
-    const container = range.commonAncestorContainer;
+    startIndex = Math.max(0, startIndex);
+    endIndex = Math.min(tx.description.length, endIndex);
 
-    const h2 = (container.nodeType === Node.TEXT_NODE ? container.parentElement : container) as HTMLElement;
-    const h2Element = h2?.closest('h2');
-    if (!h2Element) return;
-
-    const preSelectionRange = range.cloneRange();
-    preSelectionRange.selectNodeContents(h2Element);
-    preSelectionRange.setEnd(range.startContainer, range.startOffset);
-
-    let startOffset = preSelectionRange.toString().length;
-    const rawText = range.toString();
-    let endOffset = startOffset + rawText.length;
-
+    const rawText = tx.description.substring(startIndex, endIndex);
     const trimmedText = rawText.trim();
-    if (trimmedText.length < 2) {
+
+    if (trimmedText.length < 1) {
+      if (rawText.length === 0) setSelectionRule(null);
       return;
     }
 
@@ -307,23 +298,23 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     const trailingWhitespaceMatch = rawText.match(/\s*$/);
     const trailingLen = trailingWhitespaceMatch ? trailingWhitespaceMatch[0].length : 0;
 
-    startOffset += leadingLen;
-    endOffset -= trailingLen;
+    const finalStart = startIndex + leadingLen;
+    const finalEnd = endIndex - trailingLen;
 
     const description = tx.description;
     let mode: 'contains' | 'starts_with' | 'ends_with' = 'contains';
 
-    if (startOffset === 0 && endOffset === description.length) {
+    if (finalStart === 0 && finalEnd === description.length) {
       mode = 'contains';
-    } else if (startOffset === 0) {
+    } else if (finalStart === 0) {
       mode = 'starts_with';
-    } else if (endOffset === description.length) {
+    } else if (finalEnd === description.length) {
       mode = 'ends_with';
     } else {
       mode = 'contains';
     }
 
-    setSelectionRule({ text: trimmedText, mode, startIndex: startOffset });
+    setSelectionRule({ text: trimmedText, mode, startIndex: finalStart });
   }, [currentTxId, transactions]);
 
   const handleSelectionMouseUp = useCallback(() => {
@@ -333,15 +324,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       }, 0);
     }
   }, [selectionRule]);
-
-  useEffect(() => {
-    const handleSelectionChange = () => {
-      handleTextSelection();
-    };
-
-    document.addEventListener('selectionchange', handleSelectionChange);
-    return () => document.removeEventListener('selectionchange', handleSelectionChange);
-  }, [handleTextSelection]);
 
 
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -358,6 +340,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         <TransactionCard
           transaction={currentTx}
           onMouseUp={handleSelectionMouseUp}
+          onSelectionChange={handleManualSelection}
           selectionRule={selectionRule}
           showOnboardingHint={hasRules === false}
         />

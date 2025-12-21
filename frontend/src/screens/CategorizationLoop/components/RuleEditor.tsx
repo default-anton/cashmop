@@ -37,7 +37,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
     <div className={`mb-4 relative w-full transition-all duration-300 ${selectionRule ? 'min-h-[220px]' : 'h-44'}`}>
       {selectionRule ? (
         <div className="w-full h-full animate-snap-in">
-          <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex flex-col justify-center gap-4 text-brand shadow-lg backdrop-blur-sm h-full">
+          <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex flex-col justify-center gap-4 text-brand shadow-lg backdrop-blur-sm h-full select-none">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center gap-4">
                 <div className="bg-brand text-white p-2 rounded-lg shadow-brand-glow">
@@ -175,7 +175,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
           </div>
         </div>
       ) : (
-        <div className="w-full h-full border-2 border-dashed border-canvas-300 rounded-2xl flex flex-col items-center justify-center text-canvas-500 bg-canvas-200/20 gap-3 group transition-colors hover:border-brand/30 hover:bg-brand/[0.02]">
+        <div className="w-full h-full border-2 border-dashed border-canvas-300 rounded-2xl flex flex-col items-center justify-center text-canvas-500 bg-canvas-200/20 gap-3 group transition-colors hover:border-brand/30 hover:bg-brand/[0.02] select-none">
           <div className="relative">
             <div className="bg-canvas-100 p-3 rounded-full group-hover:bg-brand/10 transition-colors">
               <MousePointer2 className="w-6 h-6 opacity-40 group-hover:text-brand group-hover:opacity-100 transition-all duration-300" />
