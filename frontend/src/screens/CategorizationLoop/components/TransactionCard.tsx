@@ -16,6 +16,7 @@ interface Transaction {
 interface SelectionRule {
   text: string;
   mode: 'contains' | 'starts_with' | 'ends_with';
+  startIndex?: number;
 }
 
 interface TransactionCardProps {
@@ -36,11 +37,22 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
       return transaction.description;
     }
 
-    const { text, mode } = selectionRule;
+    const { text, mode, startIndex } = selectionRule;
     const desc = transaction.description;
 
-    // Find the actual index regardless of case
-    const index = desc.toLowerCase().indexOf(text.toLowerCase());
+    // Use startIndex if available and valid, otherwise fallback to first occurrence
+    let index = -1;
+    if (startIndex !== undefined && startIndex >= 0) {
+      const actualTextAtStart = desc.substring(startIndex, startIndex + text.length).toLowerCase();
+      if (actualTextAtStart === text.toLowerCase()) {
+        index = startIndex;
+      }
+    }
+
+    if (index === -1) {
+      index = desc.toLowerCase().indexOf(text.toLowerCase());
+    }
+
     if (index === -1) return desc;
 
     // Check if the match follows the mode rules

@@ -5,6 +5,7 @@ import { Wand2, X, MousePointer2 } from 'lucide-react';
 interface SelectionRule {
   text: string;
   mode: 'contains' | 'starts_with' | 'ends_with';
+  startIndex?: number;
 }
 
 interface AmountFilter {

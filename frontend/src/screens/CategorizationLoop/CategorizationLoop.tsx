@@ -39,6 +39,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [selectionRule, setSelectionRule] = useState<{
     text: string;
     mode: 'contains' | 'starts_with' | 'ends_with';
+    startIndex?: number;
   } | null>(null);
   const [amountFilter, setAmountFilter] = useState<{
     operator: 'none' | 'gt' | 'lt' | 'between';
@@ -270,19 +271,24 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
     // Ensure selection is within the description heading
     const h2 = (container.nodeType === Node.TEXT_NODE ? container.parentElement : container) as HTMLElement;
-    if (!h2 || !h2.closest('h2')) return;
+    const h2Element = h2?.closest('h2');
+    if (!h2Element) return;
 
-    const rawText = selection.toString();
+    // Calculate global character offsets within the h2, ignoring tags
+    const preSelectionRange = range.cloneRange();
+    preSelectionRange.selectNodeContents(h2Element);
+    preSelectionRange.setEnd(range.startContainer, range.startOffset);
+
+    let startOffset = preSelectionRange.toString().length;
+    const rawText = range.toString();
+    let endOffset = startOffset + rawText.length;
+
     const trimmedText = rawText.trim();
 
     if (trimmedText.length < 2) {
       if (trimmedText.length > 0) setSelectionRule(null);
       return;
     }
-
-    // Get offsets relative to the text node
-    let startOffset = Math.min(selection.anchorOffset, selection.focusOffset);
-    let endOffset = Math.max(selection.anchorOffset, selection.focusOffset);
 
     // Adjust for trimmed whitespace
     const leadingWhitespaceMatch = rawText.match(/^\s*/);
@@ -306,7 +312,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       mode = 'contains';
     }
 
-    setSelectionRule({ text: trimmedText, mode });
+    setSelectionRule({ text: trimmedText, mode, startIndex: startOffset });
     setTimeout(() => {
       inputRef.current?.focus();
     }, 0);
