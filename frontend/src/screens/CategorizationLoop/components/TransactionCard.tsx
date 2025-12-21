@@ -132,7 +132,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
                   <div className="w-2 h-2 bg-brand rotate-45 -mt-1 shadow-brand-glow"></div>
                 </div>
               )}
-              <h2 className="text-xl font-black text-canvas-800 leading-tight select-text selection:bg-brand/20 cursor-text hover:bg-brand/[0.03] rounded-2xl transition-all duration-300 p-3 -m-3">
+              <h2 className="text-xl font-black text-canvas-800 leading-tight select-text selection:bg-brand/20 cursor-text border-2 border-dashed border-canvas-300 bg-canvas-200/20 hover:bg-brand/[0.02] hover:border-brand/30 rounded-2xl transition-all duration-300 p-5 w-full">
                 {renderDescription()}
               </h2>
             </div>
