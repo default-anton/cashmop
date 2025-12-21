@@ -13,9 +13,13 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 * ORM: Standard library `database/sql` with `modernc.org/sqlite` driver
 * Build: Wails CLI, npm scripts
 
+## Feature Specifications
+
+- [Data Ingestion (Import Flow)](./docs/specs/import-flow.md)
+- [The Categorization Loop](./docs/specs/categorization-loop.md)
+
 ## Project Rules You MUST Follow
 
 - Always read `frontend/tailwind.config.js` when creating or editing UI components to ensure consistency with the design system (colors, fonts, shadows, animations, etc.).
 - Check types with `npx tsc --noEmit` in the `frontend/` directory after editing .ts, .tsx files.
 - Feature specs are located in `docs/specs/`. When updating them, keep formatting simple and token-efficient (bullet points, concise text, no inline formatting).
-
