@@ -34,3 +34,25 @@ export function parseDateLoose(value: string): Date | null {
 
     return null;
 }
+
+export function sampleUniqueRows<T>(
+    rows: T[],
+    max: number,
+    keyFn: (row: T) => string = (row) => JSON.stringify(row)
+): T[] {
+    if (max <= 0) return [];
+
+    const out: T[] = [];
+    const seen = new Set<string>();
+
+    for (const row of rows) {
+        if (out.length >= max) break;
+        const key = keyFn(row);
+        if (!key) continue;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(row);
+    }
+
+    return out;
+}

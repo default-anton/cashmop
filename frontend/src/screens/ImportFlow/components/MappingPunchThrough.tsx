@@ -1,0 +1,780 @@
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Calendar,
+  DollarSign,
+  FileText,
+  CreditCard,
+  User,
+  Globe,
+  ArrowRight,
+  ChevronLeft,
+} from 'lucide-react';
+
+import { Button, Card, Input, Select } from '../../../components';
+import { type ImportMapping, type AmountMapping } from './ColumnMapperTypes';
+import { useColumnMapping } from './useColumnMapping';
+import { sampleUniqueRows } from '../utils';
+
+interface MappingPunchThroughProps {
+  csvHeaders: string[];
+  rows: string[][];
+  fileCount: number;
+  onComplete: (mapping: ImportMapping) => void;
+  initialMapping?: ImportMapping | null;
+}
+
+type StepKey = 'date' | 'amount' | 'description' | 'account' | 'owner' | 'currency';
+
+type Step = {
+  key: StepKey;
+  label: string;
+  instruction: string;
+  icon: React.ElementType;
+  optional?: boolean;
+};
+
+const STEPS: Step[] = [
+  {
+    key: 'date',
+    label: 'Date',
+    instruction: 'Click the column that contains the transaction date.',
+    icon: Calendar,
+  },
+  {
+    key: 'amount',
+    label: 'Amount',
+    instruction: 'Click the amount column (or map Debit/Credit).',
+    icon: DollarSign,
+  },
+  {
+    key: 'description',
+    label: 'Description',
+    instruction: 'Click one or more columns to build the transaction description.',
+    icon: FileText,
+  },
+  {
+    key: 'account',
+    label: 'Account',
+    instruction: 'Pick a static account (fast) or map an Account column (flexible).',
+    icon: CreditCard,
+  },
+  {
+    key: 'owner',
+    label: 'Owner',
+    instruction: 'Optional: pick a default owner or map an Owner column.',
+    icon: User,
+    optional: true,
+  },
+  {
+    key: 'currency',
+    label: 'Currency',
+    instruction: 'Optional: keep a default currency or map a Currency column.',
+    icon: Globe,
+    optional: true,
+  },
+];
+
+const CURRENCY_OPTIONS = [
+  { value: 'CAD', label: 'CAD' },
+  { value: 'USD', label: 'USD' },
+  { value: 'EUR', label: 'EUR' },
+  { value: 'GBP', label: 'GBP' },
+];
+
+export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
+  csvHeaders,
+  rows,
+  fileCount,
+  onComplete,
+  initialMapping,
+}) => {
+  const {
+    mapping,
+    setMapping,
+    assignHeaderToField,
+    removeHeaderEverywhere,
+    canProceed,
+    isMissing,
+    isAmountMappingValid,
+    handleAmountMappingTypeChange,
+    assignAmountMappingColumn,
+  } = useColumnMapping(initialMapping || undefined);
+
+  const mappingRef = useRef(mapping);
+  useEffect(() => {
+    mappingRef.current = mapping;
+  }, [mapping]);
+
+  const getStartStepIdx = (m: ImportMapping) => {
+    const idx = (key: StepKey) => Math.max(0, STEPS.findIndex((s) => s.key === key));
+
+    if (!m.csv.date) return idx('date');
+
+    const am = m.csv.amountMapping;
+    const amountOk = (() => {
+      if (!am) return m.csv.amount.trim().length > 0;
+      if (am.type === 'single') return am.column.trim().length > 0;
+      if (am.type === 'debitCredit') return !!(am.debitColumn || am.creditColumn);
+      return !!(am.amountColumn && am.typeColumn);
+    })();
+
+    if (!amountOk) return idx('amount');
+    if (m.csv.description.length === 0) return idx('description');
+
+    const hasAccount = m.account.trim().length > 0 || (m.csv.account ?? '').trim().length > 0;
+    if (!hasAccount) return idx('account');
+
+    return idx('owner');
+  };
+
+  const [currentStepIdx, setCurrentStepIdx] = useState(0);
+
+  useEffect(() => {
+    if (!initialMapping) return;
+    setCurrentStepIdx(getStartStepIdx(initialMapping));
+  }, [initialMapping]);
+
+  const currentStep = STEPS[currentStepIdx];
+
+  const previewRows = useMemo(() => {
+    const unique = sampleUniqueRows(rows, 5, (r) => r.join('\u0000'));
+    return unique.map((r) => {
+      if (r.length >= csvHeaders.length) return r;
+      return [...r, ...Array(csvHeaders.length - r.length).fill('')];
+    });
+  }, [rows, csvHeaders.length]);
+
+  const [amountAssignTarget, setAmountAssignTarget] = useState<
+    'single' | 'debitColumn' | 'creditColumn' | 'amountColumn' | 'typeColumn'
+  >('single');
+
+  useEffect(() => {
+    if (currentStep.key !== 'amount') return;
+
+    const am = mapping.csv.amountMapping ?? { type: 'single', column: '' };
+    if (am.type === 'single') {
+      setAmountAssignTarget('single');
+      return;
+    }
+
+    if (am.type === 'debitCredit') {
+      if (!am.debitColumn) setAmountAssignTarget('debitColumn');
+      else if (!am.creditColumn) setAmountAssignTarget('creditColumn');
+      else setAmountAssignTarget('debitColumn');
+      return;
+    }
+
+    if (am.type === 'amountWithType') {
+      if (!am.amountColumn) setAmountAssignTarget('amountColumn');
+      else if (!am.typeColumn) setAmountAssignTarget('typeColumn');
+      else setAmountAssignTarget('amountColumn');
+    }
+  }, [currentStep.key, mapping.csv.amountMapping]);
+
+  const [availableAccounts, setAvailableAccounts] = useState<string[]>([]);
+  const [availableOwners, setAvailableOwners] = useState<string[]>([]);
+
+  const [accountInput, setAccountInput] = useState('');
+  const [ownerInput, setOwnerInput] = useState('');
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [dbAccounts, dbOwners]: [string[], string[]] = await Promise.all([
+          (window as any).go.main.App.GetAccounts(),
+          (window as any).go.main.App.GetOwners(),
+        ]);
+        setAvailableAccounts(dbAccounts || []);
+        setAvailableOwners(dbOwners || []);
+      } catch (e) {
+        console.error('Failed to load accounts/owners', e);
+      }
+    };
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (currentStep.key === 'account') {
+      setAccountInput(mapping.account || '');
+    }
+    if (currentStep.key === 'owner') {
+      setOwnerInput(mapping.defaultOwner || '');
+    }
+  }, [currentStep.key, mapping.account, mapping.defaultOwner]);
+
+  const handleAdvance = () => {
+    if (currentStepIdx >= STEPS.length - 1) {
+      onComplete(mappingRef.current);
+      return;
+    }
+    setCurrentStepIdx((prev) => prev + 1);
+  };
+
+  const handleBack = () => {
+    if (currentStepIdx > 0) setCurrentStepIdx((prev) => prev - 1);
+  };
+
+  const handleSkip = () => {
+    handleAdvance();
+  };
+
+  const isSelected = (header: string) => {
+    if (mapping.csv.date === header) return 'bg-brand/20 border-brand text-brand';
+
+    const am = mapping.csv.amountMapping;
+    if (am?.type === 'single' && am.column === header) return 'bg-brand/20 border-brand text-brand';
+    if (am?.type === 'debitCredit' && (am.debitColumn === header || am.creditColumn === header))
+      return 'bg-brand/20 border-brand text-brand';
+    if (am?.type === 'amountWithType' && (am.amountColumn === header || am.typeColumn === header))
+      return 'bg-brand/20 border-brand text-brand';
+
+    if (mapping.csv.description.includes(header)) return 'bg-brand/20 border-brand text-brand';
+    if (mapping.csv.account === header) return 'bg-brand/20 border-brand text-brand';
+    if (mapping.csv.owner === header) return 'bg-brand/20 border-brand text-brand';
+    if (mapping.csv.currency === header) return 'bg-brand/20 border-brand text-brand';
+
+    return '';
+  };
+
+  const getHeaderLabel = (header: string) => {
+    if (mapping.csv.date === header) return 'Date';
+
+    const am = mapping.csv.amountMapping;
+    if (am?.type === 'single' && am.column === header) return 'Amount';
+    if (am?.type === 'debitCredit') {
+      if (am.debitColumn === header) return 'Debit';
+      if (am.creditColumn === header) return 'Credit';
+    }
+    if (am?.type === 'amountWithType') {
+      if (am.amountColumn === header) return 'Amount';
+      if (am.typeColumn === header) return 'Type';
+    }
+
+    if (mapping.csv.description.includes(header)) return 'Desc';
+    if (mapping.csv.account === header) return 'Account';
+    if (mapping.csv.owner === header) return 'Owner';
+    if (mapping.csv.currency === header) return 'Currency';
+
+    return null;
+  };
+
+  const handleHeaderClick = (header: string) => {
+    if (!header) return;
+
+    if (currentStep.key === 'date') {
+      assignHeaderToField('date', header);
+      handleAdvance();
+      return;
+    }
+
+    if (currentStep.key === 'amount') {
+      const am: AmountMapping = mapping.csv.amountMapping ?? { type: 'single', column: '' };
+
+      if (am.type === 'single') {
+        assignHeaderToField('amount', header);
+        handleAdvance();
+        return;
+      }
+
+      if (am.type === 'debitCredit') {
+        const target = amountAssignTarget === 'creditColumn' ? 'creditColumn' : 'debitColumn';
+        assignAmountMappingColumn(target, header);
+
+        const nextDebit = target === 'debitColumn' ? header : am.debitColumn;
+        const nextCredit = target === 'creditColumn' ? header : am.creditColumn;
+        if (nextDebit && nextCredit) handleAdvance();
+
+        return;
+      }
+
+      if (am.type === 'amountWithType') {
+        const target = amountAssignTarget === 'typeColumn' ? 'typeColumn' : 'amountColumn';
+        assignAmountMappingColumn(target, header);
+
+        const nextAmount = target === 'amountColumn' ? header : am.amountColumn;
+        const nextType = target === 'typeColumn' ? header : am.typeColumn;
+        if (nextAmount && nextType) handleAdvance();
+
+        return;
+      }
+
+      return;
+    }
+
+    if (currentStep.key === 'description') {
+      if (mapping.csv.description.includes(header)) {
+        setMapping((prev) => ({
+          ...prev,
+          csv: { ...prev.csv, description: prev.csv.description.filter((h) => h !== header) },
+        }));
+      } else {
+        setMapping((prev) => ({
+          ...prev,
+          csv: { ...prev.csv, description: [...prev.csv.description, header] },
+        }));
+      }
+      return;
+    }
+
+    if (currentStep.key === 'account') {
+      assignHeaderToField('account', header);
+      handleAdvance();
+      return;
+    }
+
+    if (currentStep.key === 'owner') {
+      assignHeaderToField('owner', header);
+      handleAdvance();
+      return;
+    }
+
+    if (currentStep.key === 'currency') {
+      assignHeaderToField('currency', header);
+      handleAdvance();
+    }
+  };
+
+
+  const canGoNext = useMemo(() => {
+    if (currentStep.key === 'date') return !isMissing('date');
+    if (currentStep.key === 'amount') return isAmountMappingValid;
+    if (currentStep.key === 'description') return !isMissing('description');
+    if (currentStep.key === 'account') return !isMissing('account');
+    if (currentStep.key === 'owner' || currentStep.key === 'currency') return canProceed;
+    return true;
+  }, [currentStep.key, isAmountMappingValid, isMissing, canProceed]);
+
+  const handleUseStaticAccount = async () => {
+    const name = accountInput.trim();
+    if (!name) return;
+
+    try {
+      await (window as any).go.main.App.CreateAccount(name);
+      if (!availableAccounts.includes(name)) {
+        setAvailableAccounts((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
+      }
+      setMapping((prev) => ({ ...prev, account: name, csv: { ...prev.csv, account: undefined } }));
+      handleAdvance();
+    } catch (e) {
+      console.error('Failed to create account', e);
+    }
+  };
+
+  const handleUseStaticOwner = async () => {
+    const name = ownerInput.trim();
+    if (!name) return;
+
+    try {
+      await (window as any).go.main.App.CreateOwner(name);
+      if (!availableOwners.includes(name)) {
+        setAvailableOwners((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
+      }
+      setMapping((prev) => ({ ...prev, defaultOwner: name, csv: { ...prev.csv, owner: undefined } }));
+      handleAdvance();
+    } catch (e) {
+      console.error('Failed to create owner', e);
+    }
+  };
+
+  const amountMappingType = mapping.csv.amountMapping?.type ?? 'single';
+
+  return (
+    <div className="flex flex-col gap-6 animate-snap-in">
+      <Card variant="glass" className="p-6">
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-brand/10 text-brand rounded-xl">
+              <currentStep.icon className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-canvas-800">{currentStep.label}</h2>
+                <span className="text-xs font-mono text-canvas-500 uppercase tracking-widest">
+                  {currentStepIdx + 1} / {STEPS.length}
+                </span>
+              </div>
+              <p className="text-canvas-500">{currentStep.instruction}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={handleBack} disabled={currentStepIdx === 0}>
+              <ChevronLeft className="w-4 h-4" /> Back
+            </Button>
+
+            {currentStep.optional && (
+              <Button variant="secondary" size="sm" onClick={handleSkip} disabled={!canProceed}>
+                Skip
+              </Button>
+            )}
+
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleAdvance}
+              disabled={!canGoNext}
+            >
+              {currentStepIdx === STEPS.length - 1 ? 'Continue' : 'Next'} <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {currentStep.key === 'amount' && (
+          <div className="mt-6 space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={
+                  'px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors ' +
+                  (amountMappingType === 'single'
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-canvas-50 text-canvas-700 border-canvas-300 hover:border-canvas-600')
+                }
+                onClick={() => handleAmountMappingTypeChange('single')}
+                type="button"
+              >
+                Single column
+              </button>
+              <button
+                className={
+                  'px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors ' +
+                  (amountMappingType === 'debitCredit'
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-canvas-50 text-canvas-700 border-canvas-300 hover:border-canvas-600')
+                }
+                onClick={() => handleAmountMappingTypeChange('debitCredit')}
+                type="button"
+              >
+                Debit / Credit
+              </button>
+              <button
+                className={
+                  'px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors ' +
+                  (amountMappingType === 'amountWithType'
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-canvas-50 text-canvas-700 border-canvas-300 hover:border-canvas-600')
+                }
+                onClick={() => handleAmountMappingTypeChange('amountWithType')}
+                type="button"
+              >
+                Amount + Type
+              </button>
+            </div>
+
+            {amountMappingType === 'debitCredit' && (
+              <div className="grid gap-3 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAmountAssignTarget('debitColumn')}
+                    className={
+                      'px-3 py-1.5 rounded-lg border text-sm font-semibold transition-colors ' +
+                      (amountAssignTarget === 'debitColumn'
+                        ? 'bg-brand/10 border-brand text-brand'
+                        : 'bg-canvas-50 border-canvas-300 text-canvas-700 hover:border-canvas-600')
+                    }
+                  >
+                    Debit column
+                  </button>
+                  <span className="text-sm text-canvas-600 font-mono">
+                    {mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.debitColumn || '—' : '—'}
+                  </span>
+                  {mapping.csv.amountMapping?.type === 'debitCredit' && mapping.csv.amountMapping.debitColumn && (
+                    <button
+                      type="button"
+                      onClick={() => removeHeaderEverywhere(mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.debitColumn || '' : '')}
+                      className="text-xs font-semibold text-canvas-500 hover:text-canvas-800"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAmountAssignTarget('creditColumn')}
+                    className={
+                      'px-3 py-1.5 rounded-lg border text-sm font-semibold transition-colors ' +
+                      (amountAssignTarget === 'creditColumn'
+                        ? 'bg-brand/10 border-brand text-brand'
+                        : 'bg-canvas-50 border-canvas-300 text-canvas-700 hover:border-canvas-600')
+                    }
+                  >
+                    Credit column
+                  </button>
+                  <span className="text-sm text-canvas-600 font-mono">
+                    {mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.creditColumn || '—' : '—'}
+                  </span>
+                  {mapping.csv.amountMapping?.type === 'debitCredit' && mapping.csv.amountMapping.creditColumn && (
+                    <button
+                      type="button"
+                      onClick={() => removeHeaderEverywhere(mapping.csv.amountMapping?.type === 'debitCredit' ? mapping.csv.amountMapping.creditColumn || '' : '')}
+                      className="text-xs font-semibold text-canvas-500 hover:text-canvas-800"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="text-xs text-canvas-500">
+                  Tip: you can proceed with just one of these mapped. Use Next when you're happy.
+                </div>
+              </div>
+            )}
+
+            {amountMappingType === 'amountWithType' && (
+              <div className="grid gap-3 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAmountAssignTarget('amountColumn')}
+                    className={
+                      'px-3 py-1.5 rounded-lg border text-sm font-semibold transition-colors ' +
+                      (amountAssignTarget === 'amountColumn'
+                        ? 'bg-brand/10 border-brand text-brand'
+                        : 'bg-canvas-50 border-canvas-300 text-canvas-700 hover:border-canvas-600')
+                    }
+                  >
+                    Amount column
+                  </button>
+                  <span className="text-sm text-canvas-600 font-mono">
+                    {mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.amountColumn || '—' : '—'}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setAmountAssignTarget('typeColumn')}
+                    className={
+                      'px-3 py-1.5 rounded-lg border text-sm font-semibold transition-colors ' +
+                      (amountAssignTarget === 'typeColumn'
+                        ? 'bg-brand/10 border-brand text-brand'
+                        : 'bg-canvas-50 border-canvas-300 text-canvas-700 hover:border-canvas-600')
+                    }
+                  >
+                    Type column
+                  </button>
+                  <span className="text-sm text-canvas-600 font-mono">
+                    {mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.typeColumn || '—' : '—'}
+                  </span>
+                </div>
+
+                {mapping.csv.amountMapping?.type === 'amountWithType' && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1">Negative value</div>
+                      <Input
+                        value={mapping.csv.amountMapping.negativeValue ?? 'debit'}
+                        onChange={(e) =>
+                          setMapping((prev) => {
+                            const am = prev.csv.amountMapping;
+                            if (!am || am.type !== 'amountWithType') return prev;
+                            return {
+                              ...prev,
+                              csv: {
+                                ...prev.csv,
+                                amountMapping: { ...am, negativeValue: e.target.value },
+                              },
+                            };
+                          })
+                        }
+                        placeholder="debit"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1">Positive value</div>
+                      <Input
+                        value={mapping.csv.amountMapping.positiveValue ?? 'credit'}
+                        onChange={(e) =>
+                          setMapping((prev) => {
+                            const am = prev.csv.amountMapping;
+                            if (!am || am.type !== 'amountWithType') return prev;
+                            return {
+                              ...prev,
+                              csv: {
+                                ...prev.csv,
+                                amountMapping: { ...am, positiveValue: e.target.value },
+                              },
+                            };
+                          })
+                        }
+                        placeholder="credit"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {currentStep.key === 'description' && mapping.csv.description.length > 0 && (
+          <div className="mt-6 flex flex-wrap gap-2">
+            {mapping.csv.description.map((h) => (
+              <button
+                key={h}
+                type="button"
+                onClick={() => removeHeaderEverywhere(h)}
+                className="px-2 py-1 rounded-lg bg-brand/10 text-brand border border-brand/20 text-xs font-semibold"
+              >
+                {h}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {currentStep.key === 'account' && (
+          <div className="mt-6 grid gap-4 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
+            <div>
+              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2">Static account (fast)</div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1">
+                  <datalist id="account-suggestions">
+                    {availableAccounts.map((a) => (
+                      <option key={a} value={a} />
+                    ))}
+                  </datalist>
+                  <Input
+                    value={accountInput}
+                    onChange={(e) => setAccountInput(e.target.value)}
+                    placeholder="e.g. RBC Checking"
+                    list="account-suggestions"
+                  />
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleUseStaticAccount}
+                  disabled={!accountInput.trim()}
+                >
+                  Use
+                </Button>
+              </div>
+              {mapping.csv.account && (
+                <div className="mt-2 text-xs text-canvas-500">
+                  Currently mapped from file: <span className="font-mono">{mapping.csv.account}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-canvas-200 pt-3 text-xs text-canvas-500">
+              Or click a column header to map account per-row.
+            </div>
+          </div>
+        )}
+
+        {currentStep.key === 'owner' && (
+          <div className="mt-6 grid gap-4 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
+            <div>
+              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2">Default owner</div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1">
+                  <datalist id="owner-suggestions">
+                    {availableOwners.map((o) => (
+                      <option key={o} value={o} />
+                    ))}
+                  </datalist>
+                  <Input
+                    value={ownerInput}
+                    onChange={(e) => setOwnerInput(e.target.value)}
+                    placeholder="e.g. Alex"
+                    list="owner-suggestions"
+                  />
+                </div>
+                <Button variant="secondary" size="sm" onClick={handleUseStaticOwner} disabled={!ownerInput.trim()}>
+                  Use
+                </Button>
+              </div>
+              {mapping.csv.owner && (
+                <div className="mt-2 text-xs text-canvas-500">
+                  Currently mapped from file: <span className="font-mono">{mapping.csv.owner}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-canvas-200 pt-3 text-xs text-canvas-500">Or click a column header to map owner per-row.</div>
+          </div>
+        )}
+
+        {currentStep.key === 'currency' && (
+          <div className="mt-6 grid gap-3 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
+            <div>
+              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2">Default currency</div>
+              <Select
+                value={mapping.currencyDefault}
+                onChange={(e) => setMapping((prev) => ({ ...prev, currencyDefault: e.target.value }))}
+                options={CURRENCY_OPTIONS}
+              />
+              {mapping.csv.currency && (
+                <div className="mt-2 text-xs text-canvas-500">
+                  Currently mapped from file: <span className="font-mono">{mapping.csv.currency}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-canvas-200 pt-3 text-xs text-canvas-500">Or click a column header to map currency per-row.</div>
+          </div>
+        )}
+
+        {!canProceed && currentStepIdx >= STEPS.findIndex((s) => s.key === 'account') && (
+          <div className="mt-6 text-xs text-canvas-500">
+            Required to continue: Date, Amount, Description, and Account.
+          </div>
+        )}
+      </Card>
+
+      <div className="bg-canvas-50 rounded-2xl border border-canvas-200 overflow-hidden shadow-sm">
+        <div className="px-6 py-3 bg-canvas-100 border-b border-canvas-200 flex justify-between items-center">
+          <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest">
+            File preview ({fileCount} file{fileCount === 1 ? '' : 's'})
+          </span>
+          <span className="text-[10px] text-canvas-400 font-mono italic">Click column headers to map</span>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-canvas-100/50">
+                {csvHeaders.map((header) => {
+                  const selectedClass = isSelected(header);
+                  const label = getHeaderLabel(header);
+                  return (
+                    <th
+                      key={header}
+                      onClick={() => handleHeaderClick(header)}
+                      className={
+                        'px-4 py-4 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 border-b-2 min-w-[150px] relative ' +
+                        (selectedClass || 'text-canvas-600 border-transparent hover:bg-canvas-200 hover:text-canvas-800')
+                      }
+                    >
+                      {label && (
+                        <span className="absolute -top-1 left-4 px-1.5 py-0.5 bg-brand text-[8px] text-white rounded-b-sm animate-in fade-in slide-in-from-top-1">
+                          {label}
+                        </span>
+                      )}
+                      <span>{header}</span>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-canvas-200">
+              {previewRows.map((row, i) => (
+                <tr key={i} className="hover:bg-canvas-100/30 transition-colors">
+                  {csvHeaders.map((_, j) => {
+                    const header = csvHeaders[j];
+                    const selectedClass = isSelected(header) ? 'bg-brand/5' : '';
+                    const cell = row[j] ?? '';
+                    return (
+                      <td key={j} className={`px-4 py-3 text-sm text-canvas-600 truncate max-w-[240px] ${selectedClass}`}>
+                        {cell}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};

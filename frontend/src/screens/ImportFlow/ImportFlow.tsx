@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { Upload, Table, Calendar, Check, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { CheckCircle2 } from 'lucide-react';
 
 import { Button } from '../../components';
 
 import FileDropZone from './components/FileDropZone';
-import ColumnMapper from './components/ColumnMapper';
+import { MappingPunchThrough } from './components/MappingPunchThrough';
 import { type ImportMapping } from './components/ColumnMapperTypes';
 import MonthSelector, { type MonthOption } from './components/MonthSelector';
 import { parseDateLoose } from './utils';
@@ -166,7 +166,7 @@ interface ImportFlowProps {
 }
 
 export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
-  const [step, setStep] = useState(1); // 1: Upload, 2: Map, 3: Month Select, 4: Confirm
+  const [step, setStep] = useState(1); // 1: Choose file(s), 2: Map, 3: Month Select, 4: Done
 
   const [parseBusy, setParseBusy] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -176,28 +176,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   const [parsed, setParsed] = useState<ParsedFile | null>(null);
 
   const [mapping, setMapping] = useState<ImportMapping | null>(null);
-  const [autoSelectedMappingId, setAutoSelectedMappingId] = useState<string | null>(null);
   const [months, setMonths] = useState<MonthOption[]>([]);
-  const [selectedMonthKeys, setSelectedMonthKeys] = useState<string[]>([]);
-
-  const selectedMonths = useMemo(() => {
-    const selected = new Set(selectedMonthKeys);
-    return months.filter((m) => selected.has(m.key));
-  }, [months, selectedMonthKeys]);
-
-  const totalTransactionsAllFiles = useMemo(() => {
-    return parsedFiles.reduce((acc, pf) => acc + pf.rows.length, 0);
-  }, [parsedFiles]);
-
-  const totalSelectedTxns = useMemo(() => {
-    return selectedMonths.reduce((acc, m) => acc + m.count, 0);
-  }, [selectedMonths]);
-
-  const steps = [
-    { id: 1, label: 'Upload File', icon: Upload },
-    { id: 2, label: 'Map Columns', icon: Table },
-    { id: 3, label: 'Select Range', icon: Calendar },
-  ];
 
   const handleFilesSelected = async (files: File[]) => {
     setParseError(null);
@@ -268,7 +247,6 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
       if (bestMapping && maxScore >= 3) { // Threshold for confidence
         setMapping(bestMapping.mapping);
-        setAutoSelectedMappingId(bestMapping.id.toString());
       }
     } catch (e) {
       console.error('Failed to auto-select mapping', e);
@@ -314,14 +292,6 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     const computed = computeMonthsFromMappingAll(m);
     setMonths(computed);
 
-    // Default to last month
-    if (computed.length > 0) {
-      const lastMonth = computed[computed.length - 1];
-      setSelectedMonthKeys([lastMonth.key]);
-    } else {
-      setSelectedMonthKeys([]);
-    }
-
     setStep(3);
   };
 
@@ -341,17 +311,23 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
       // Amount handling
       let amountIdx = -1;
+      let amountTypeIdx = -1;
+      let amountTypeNeg = 'debit';
+      let amountTypePos = 'credit';
       let debitIdx = -1;
       let creditIdx = -1;
 
       if (mapping.csv.amountMapping?.type === 'debitCredit') {
         if (mapping.csv.amountMapping.debitColumn) debitIdx = headers.indexOf(mapping.csv.amountMapping.debitColumn);
         if (mapping.csv.amountMapping.creditColumn) creditIdx = headers.indexOf(mapping.csv.amountMapping.creditColumn);
+      } else if (mapping.csv.amountMapping?.type === 'amountWithType') {
+        amountIdx = headers.indexOf(mapping.csv.amountMapping.amountColumn);
+        amountTypeIdx = headers.indexOf(mapping.csv.amountMapping.typeColumn);
+        amountTypeNeg = mapping.csv.amountMapping.negativeValue || 'debit';
+        amountTypePos = mapping.csv.amountMapping.positiveValue || 'credit';
       } else {
         // Single column logic (default or explicit)
-        let col = mapping.csv.amount;
-        if (mapping.csv.amountMapping?.type === 'single') col = mapping.csv.amountMapping.column;
-        if (mapping.csv.amountMapping?.type === 'amountWithType') col = mapping.csv.amountMapping.amountColumn;
+        const col = mapping.csv.amountMapping?.type === 'single' ? mapping.csv.amountMapping.column : mapping.csv.amount;
         amountIdx = headers.indexOf(col);
       }
 
@@ -382,7 +358,19 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
           if (debitVal !== 0) amount -= Math.abs(debitVal);
           if (creditVal !== 0) amount += Math.abs(creditVal);
+        } else if (amountIdx !== -1 && amountTypeIdx !== -1) {
+          const raw = row[amountIdx];
+          const parsed = parseFloat(raw?.replace(/[^0-9.-]/g, '') || '0') || 0;
+          const abs = Math.abs(parsed);
 
+          const typeRaw = row[amountTypeIdx] ?? '';
+          const typeVal = typeRaw.trim().toLowerCase();
+          const neg = amountTypeNeg.trim().toLowerCase();
+          const pos = amountTypePos.trim().toLowerCase();
+
+          if (typeVal && neg && typeVal === neg) amount = -abs;
+          else if (typeVal && pos && typeVal === pos) amount = abs;
+          else amount = parsed;
         } else if (amountIdx !== -1) {
           let valStr = row[amountIdx];
           valStr = valStr?.replace(/[^0-9.-]/g, '') || '0';
@@ -403,8 +391,6 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   };
 
   const handleMonthsComplete = async (keys: string[]) => {
-    setSelectedMonthKeys(keys);
-
     if (!mapping) return;
 
     // Normalize and send
@@ -426,109 +412,65 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   };
 
   return (
-    <div className="min-h-screen bg-canvas-100 texture-delight flex items-center justify-center p-8 font-sans text-canvas-800">
-      <div className="w-full max-w-4xl">
-        <div className="mb-12">
-          <div className="flex items-center justify-between relative px-8">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-canvas-200 rounded-full -z-10" />
-            <div
-              className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-brand transition-all duration-500 rounded-full -z-10"
-              style={{ width: `${Math.min(100, ((step - 1) / (steps.length - 1)) * 100)}%` }}
-            />
-
-            {steps.map((s) => {
-              const isActive = step === s.id;
-              const isCompleted = step > s.id;
-              const Icon = isCompleted ? Check : s.icon;
-
-              return (
-                <div key={s.id} className="flex flex-col items-center gap-2 bg-canvas-100 px-2">
-                  <div
-                    className={
-                      'w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ' +
-                      (isActive
-                        ? 'border-brand bg-brand/10 text-brand shadow-[0_0_15px_rgba(13,148,136,0.5)] scale-110'
-                        : isCompleted
-                          ? 'border-finance-income bg-finance-income text-canvas-800 scale-100'
-                          : 'border-canvas-200 bg-canvas-50 text-canvas-600')
-                    }
-                  >
-                    <Icon className="w-5 h-5" strokeWidth={isCompleted ? 3 : 2} />
-                  </div>
-
-                  <span
-                    className={
-                      'text-xs font-bold tracking-wider uppercase transition-colors duration-300 absolute -bottom-8 ' +
-                      (isActive ? 'text-canvas-800' : 'text-canvas-600')
-                    }
-                  >
-                    {s.label}
-                  </span>
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100 texture-delight font-sans text-canvas-800">
+      <div className="w-full max-w-3xl">
+        {step === 1 && (
+          <div className="bg-canvas-50/30 border border-canvas-200/50 rounded-2xl p-8 backdrop-blur-sm shadow-card">
+            <h2 className="text-2xl font-bold mb-6 text-center">Import Transactions</h2>
+            <FileDropZone busy={parseBusy} error={parseError} multiple={true} onFilesSelected={handleFilesSelected} />
+            {fileErrors.size > 0 && (
+              <div className="mt-6">
+                <h4 className="text-sm font-semibold text-finance-expense mb-2">File Errors</h4>
+                <div className="space-y-2">
+                  {Array.from(fileErrors.entries()).map(([fileName, error]) => (
+                    <div key={fileName} className="text-xs text-canvas-600 bg-canvas-300/60 border border-canvas-400 rounded-lg px-3 py-2">
+                      <span className="font-mono">{fileName}</span>: {error}
+                    </div>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="bg-canvas-50/30 border border-canvas-200/50 rounded-2xl p-8 backdrop-blur-sm shadow-card hover:scale-[1.01] hover:shadow-card-hover transition-all duration-200">
-          {step === 1 && (
-            <>
-              <FileDropZone busy={parseBusy} error={parseError} multiple={true} onFilesSelected={handleFilesSelected} />
-              {fileErrors.size > 0 && (
-                <div className="mt-6">
-                  <h4 className="text-sm font-semibold text-finance-expense mb-2">File Errors</h4>
-                  <div className="space-y-2">
-                    {Array.from(fileErrors.entries()).map(([fileName, error]) => (
-                      <div key={fileName} className="text-xs text-canvas-600 bg-canvas-300/60 border border-canvas-400 rounded-lg px-3 py-2">
-                        <span className="font-mono">{fileName}</span>: {error}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {step === 2 && (
-            <ColumnMapper
-              csvHeaders={parsed?.headers ?? []}
-              rows={parsed?.rows ?? []}
-              fileCount={parsedFiles.length}
-              initialMapping={mapping}
-              initialMappingId={autoSelectedMappingId}
-              onComplete={handleMappingComplete}
-            />
-          )}
-
-          {step === 3 && (
-            <MonthSelector
-              months={months}
-              onComplete={handleMonthsComplete}
-              onBack={() => setStep(2)}
-              parsed={parsed}
-              mapping={mapping}
-            />
-          )}
-
-          {step === 4 && (
-            <div className="flex flex-col items-center justify-center py-12 animate-snap-in">
-              <div className="w-20 h-20 bg-finance-income/10 rounded-full flex items-center justify-center mb-6 text-finance-income">
-                <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h2 className="text-3xl font-bold text-canvas-800 mb-2">Import Complete!</h2>
-              <p className="text-canvas-500 text-center max-w-md">
-                Your transactions have been successfully imported.
-              </p>
-              <Button
-                onClick={() => setStep(1)}
-                variant="primary"
-                className="mt-8"
-              >
-                Import More
-              </Button>
+            )}
+          </div>
+        )}
+
+        {step === 2 && (
+          <MappingPunchThrough
+            csvHeaders={parsed?.headers ?? []}
+            rows={parsed?.rows ?? []}
+            fileCount={parsedFiles.length}
+            initialMapping={mapping}
+            onComplete={handleMappingComplete}
+          />
+        )}
+
+        {step === 3 && (
+          <MonthSelector
+            months={months}
+            onComplete={handleMonthsComplete}
+            onBack={() => setStep(2)}
+            parsed={parsed}
+            mapping={mapping}
+          />
+        )}
+
+        {step === 4 && (
+          <div className="bg-canvas-50/30 border border-canvas-200/50 rounded-2xl p-8 backdrop-blur-sm shadow-card flex flex-col items-center justify-center py-12 animate-snap-in">
+            <div className="w-20 h-20 bg-finance-income/10 rounded-full flex items-center justify-center mb-6 text-finance-income">
+              <CheckCircle2 className="w-10 h-10" />
             </div>
-          )}
-        </div>
+            <h2 className="text-3xl font-bold text-canvas-800 mb-2">Import Complete!</h2>
+            <p className="text-canvas-500 text-center max-w-md">
+              Your transactions have been successfully imported.
+            </p>
+            <Button
+              onClick={() => setStep(1)}
+              variant="primary"
+              className="mt-8"
+            >
+              Import More
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

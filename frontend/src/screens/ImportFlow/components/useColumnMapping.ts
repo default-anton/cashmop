@@ -190,11 +190,13 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
 
       if (field === 'owner') {
         next.csv.owner = header;
+        next.defaultOwner = '';
         return next;
       }
 
       if (field === 'account') {
         next.csv.account = header;
+        next.account = '';
         return next;
       }
 
