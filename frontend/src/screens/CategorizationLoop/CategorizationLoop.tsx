@@ -41,6 +41,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     mode: 'contains' | 'starts_with' | 'ends_with';
     startIndex?: number;
   } | null>(null);
+  const [debouncedRule, setDebouncedRule] = useState(selectionRule);
   const [amountFilter, setAmountFilter] = useState<{
     operator: 'none' | 'gt' | 'lt' | 'between';
     value1: string;
@@ -136,6 +137,17 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
   useEffect(() => {
     if (!selectionRule) {
+      setDebouncedRule(null);
+      return;
+    }
+    const timeout = setTimeout(() => {
+      setDebouncedRule(selectionRule);
+    }, 250);
+    return () => clearTimeout(timeout);
+  }, [selectionRule]);
+
+  useEffect(() => {
+    if (!debouncedRule) {
       setMatchingTransactions([]);
       return;
     }
@@ -170,8 +182,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         }
 
         const res = await (window as any).go.main.App.SearchTransactions(
-          selectionRule.text,
-          selectionRule.mode,
+          debouncedRule.text,
+          debouncedRule.mode,
           amountMin,
           amountMax
         );
@@ -182,7 +194,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     };
 
     fetchMatching();
-  }, [selectionRule, amountFilter, currentTx?.id]);
+  }, [debouncedRule, amountFilter, currentTx?.id]);
 
   const handleCategorize = async (categoryName: string, categoryId?: number) => {
     if (!currentTxId) return;
@@ -258,23 +270,25 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     setAmountFilter({ operator: 'none', value1: '', value2: '' });
   };
 
-  const handleTextSelection = () => {
+  const handleTextSelection = useCallback(() => {
     if (!currentTxId) return;
     const tx = transactions.find((t) => t.id === currentTxId);
     if (!tx) return;
 
     const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      // Only clear if we actually had a selection and it's now collapsed within the same element
+      // but usually we just want to keep the rule until explicitly cleared or a new selection starts
+      return;
+    }
 
     const range = selection.getRangeAt(0);
     const container = range.commonAncestorContainer;
 
-    // Ensure selection is within the description heading
     const h2 = (container.nodeType === Node.TEXT_NODE ? container.parentElement : container) as HTMLElement;
     const h2Element = h2?.closest('h2');
     if (!h2Element) return;
 
-    // Calculate global character offsets within the h2, ignoring tags
     const preSelectionRange = range.cloneRange();
     preSelectionRange.selectNodeContents(h2Element);
     preSelectionRange.setEnd(range.startContainer, range.startOffset);
@@ -284,13 +298,10 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     let endOffset = startOffset + rawText.length;
 
     const trimmedText = rawText.trim();
-
     if (trimmedText.length < 2) {
-      if (trimmedText.length > 0) setSelectionRule(null);
       return;
     }
 
-    // Adjust for trimmed whitespace
     const leadingWhitespaceMatch = rawText.match(/^\s*/);
     const leadingLen = leadingWhitespaceMatch ? leadingWhitespaceMatch[0].length : 0;
     const trailingWhitespaceMatch = rawText.match(/\s*$/);
@@ -313,10 +324,24 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     }
 
     setSelectionRule({ text: trimmedText, mode, startIndex: startOffset });
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 0);
-  };
+  }, [currentTxId, transactions]);
+
+  const handleSelectionMouseUp = useCallback(() => {
+    if (selectionRule) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 0);
+    }
+  }, [selectionRule]);
+
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      handleTextSelection();
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => document.removeEventListener('selectionchange', handleSelectionChange);
+  }, [handleTextSelection]);
 
 
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -326,13 +351,13 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-canvas-100 texture-delight">
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100 texture-delight">
       <div className="w-full max-w-2xl">
         <ProgressHeader currentIndex={currentIndex} totalTransactions={transactions.length} />
 
         <TransactionCard
           transaction={currentTx}
-          onMouseUp={handleTextSelection}
+          onMouseUp={handleSelectionMouseUp}
           selectionRule={selectionRule}
           showOnboardingHint={hasRules === false}
         />
