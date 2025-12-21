@@ -111,7 +111,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
             className={`text-6xl font-mono mb-4 ${transaction.amount < 0 ? 'text-finance-expense' : 'text-finance-income'
               }`}
           >
-            {transaction.amount < 0 ? '-' : ''}${Math.abs(transaction.amount).toFixed(2)}
+            ${Math.abs(transaction.amount).toFixed(2)}
           </div>
 
           <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] ${transaction.amount < 0
