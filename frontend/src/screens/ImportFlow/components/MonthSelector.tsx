@@ -138,7 +138,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
       className: 'whitespace-nowrap text-right',
       render: (val: number) => (
         <span className={val < 0 ? 'text-finance-expense' : 'text-finance-income'}>
-          {val < 0 ? '-' : ''}{Math.abs(val).toFixed(2)}
+          {Math.abs(val).toFixed(2)}
         </span>
       )
     },
