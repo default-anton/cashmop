@@ -1,6 +1,6 @@
 import React from 'react';
 import { Layers } from 'lucide-react';
-import { Badge } from '../../../components';
+
 
 interface ProgressHeaderProps {
   currentIndex: number;
@@ -8,10 +8,6 @@ interface ProgressHeaderProps {
 }
 
 export const ProgressHeader: React.FC<ProgressHeaderProps> = ({ currentIndex, totalTransactions }) => {
-  const progressPercent = Math.round(
-    ((totalTransactions - (currentIndex >= 0 ? currentIndex : 0)) / totalTransactions) * 100
-  );
-
   return (
     <div className="flex items-center justify-between mb-8">
       <div className="flex items-center gap-3">
@@ -25,10 +21,6 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({ currentIndex, to
           </p>
         </div>
       </div>
-
-      <Badge variant="default" className="font-mono">
-        {progressPercent}% to go
-      </Badge>
     </div>
   );
 };

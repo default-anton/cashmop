@@ -71,7 +71,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
         onMouseUp={onMouseUp}
       >
         <div className="text-center">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-canvas-200/30">
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-canvas-200/30">
             <div className="flex flex-col items-start text-left">
               <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-1">
                 Date
@@ -82,6 +82,15 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
                   day: 'numeric',
                   year: 'numeric',
                 })}
+              </span>
+            </div>
+
+            <div className="flex flex-col items-center">
+              <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-0.5 ${transaction.amount < 0 ? 'text-finance-expense/60' : 'text-finance-income/60'}`}>
+                {transaction.amount < 0 ? 'Expense' : 'Income'}
+              </span>
+              <span className={`text-xl font-mono font-black tracking-tight ${transaction.amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
+                ${Math.abs(transaction.amount).toFixed(2)}
               </span>
             </div>
 
@@ -107,7 +116,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
             </div>
           </div>
 
-          <div className="mb-8 flex flex-col items-center">
+          <div className="mb-4 flex flex-col items-center">
             <div className="flex items-center gap-3 mb-2">
               <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em]">
                 Description
@@ -123,24 +132,10 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
                   <div className="w-2 h-2 bg-brand rotate-45 -mt-1 shadow-brand-glow"></div>
                 </div>
               )}
-              <h2 className="text-2xl font-black text-canvas-800 leading-tight select-text selection:bg-brand/20 cursor-text hover:bg-brand/[0.03] rounded-2xl transition-all duration-300 p-3 -m-3">
+              <h2 className="text-xl font-black text-canvas-800 leading-tight select-text selection:bg-brand/20 cursor-text hover:bg-brand/[0.03] rounded-2xl transition-all duration-300 p-3 -m-3">
                 {renderDescription()}
               </h2>
             </div>
-          </div>
-
-          <div
-            className={`text-4xl font-mono mb-3 ${transaction.amount < 0 ? 'text-finance-expense' : 'text-finance-income'
-              }`}
-          >
-            ${Math.abs(transaction.amount).toFixed(2)}
-          </div>
-
-          <div className={`inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] ${transaction.amount < 0
-            ? 'bg-finance-expense/10 text-finance-expense'
-            : 'bg-finance-income/10 text-finance-income'
-            }`}>
-            {transaction.amount < 0 ? 'Expense' : 'Income'}
           </div>
         </div>
       </Card>

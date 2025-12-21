@@ -49,7 +49,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
               }
             }}
             placeholder={isRuleMode ? 'Set category for this rule...' : 'Type a category...'}
-            className={`w-full bg-white border-2 rounded-2xl py-5 pl-12 pr-6 text-xl font-bold text-canvas-800 placeholder-canvas-300 focus:ring-0 transition-all shadow-sm ${isRuleMode ? 'border-brand ring-4 ring-brand/5' : 'border-canvas-200 focus:border-brand'
+            className={`w-full bg-white border-2 rounded-2xl py-3 pl-12 pr-6 text-lg font-bold text-canvas-800 placeholder-canvas-300 focus:ring-0 transition-all shadow-sm ${isRuleMode ? 'border-brand ring-4 ring-brand/5' : 'border-canvas-200 focus:border-brand'
               }`}
           />
 
@@ -70,7 +70,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
         </div>
 
         <Button
-          size="lg"
+          size="md"
           variant="primary"
           className={`px-8 rounded-2xl transition-all duration-300 ${isRuleMode ? 'shadow-brand-glow scale-105' : 'shadow-brand/20'
             }`}

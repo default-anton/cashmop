@@ -115,7 +115,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                     placeholder={amountFilter.operator === 'between' ? 'Min' : 'Value'}
                     value={amountFilter.value1}
                     onChange={(e) => setAmountFilter({ ...amountFilter, value1: e.target.value })}
-                    className="w-20 px-2 py-1 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+                    className="w-28 px-3 py-1.5 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
                   />
                   {amountFilter.operator === 'between' && (
                     <>
@@ -127,7 +127,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                         onChange={(e) =>
                           setAmountFilter({ ...amountFilter, value2: e.target.value })
                         }
-                        className="w-20 px-2 py-1 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
+                        className="w-28 px-3 py-1.5 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
                       />
                     </>
                   )}
