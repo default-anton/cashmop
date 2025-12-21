@@ -107,6 +107,17 @@ export const AccountMapping: React.FC<AccountMappingProps> = ({
                   variant="mono"
                   value={newAccountInput}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewAccountInput(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter') {
+                      const trimmed = newAccountInput.trim().slice(0, 25);
+                      if (trimmed) {
+                        onAddAccount(trimmed);
+                        onSetAccount(trimmed);
+                        setNewAccountInput('');
+                        setIsAddingNewAccount(false);
+                      }
+                    }
+                  }}
                   placeholder="New account name"
                   maxLength={25}
                   className="flex-1"

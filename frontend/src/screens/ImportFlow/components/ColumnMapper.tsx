@@ -343,6 +343,11 @@ const ColumnMapper: React.FC<ColumnMapperProps> = ({ csvHeaders, rows, excelMock
               type="text"
               value={saveName}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSaveName(e.target.value)}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter') {
+                  handleSaveMapping();
+                }
+              }}
               placeholder="Name this mapping (e.g., RBC Checking)"
               className="bg-transparent text-sm text-canvas-800 placeholder-canvas-500 focus:outline-none w-full border-0"
             />

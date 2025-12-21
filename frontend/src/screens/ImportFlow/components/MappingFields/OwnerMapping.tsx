@@ -95,6 +95,17 @@ export const OwnerMapping: React.FC<OwnerMappingProps> = ({
                   variant="mono"
                   value={newOwnerInput}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewOwnerInput(e.target.value)}
+                  onKeyDown={(e: React.KeyboardEvent) => {
+                    if (e.key === 'Enter') {
+                      const trimmed = newOwnerInput.trim().slice(0, 25);
+                      if (trimmed) {
+                        onAddOwner(trimmed);
+                        onSetDefaultOwner(trimmed);
+                        setNewOwnerInput('');
+                        setIsAddingNewOwner(false);
+                      }
+                    }
+                  }}
                   placeholder="New owner name"
                   maxLength={25}
                   className="flex-1"
