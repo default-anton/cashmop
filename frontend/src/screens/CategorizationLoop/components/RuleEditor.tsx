@@ -20,6 +20,7 @@ interface RuleEditorProps {
   setAmountFilter: (filter: AmountFilter) => void;
   amountInputRef: RefObject<HTMLInputElement>;
   currentAmount?: number;
+  matchingTransactions?: any[];
 }
 
 export const RuleEditor: React.FC<RuleEditorProps> = ({
@@ -29,9 +30,10 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
   setAmountFilter,
   amountInputRef,
   currentAmount,
+  matchingTransactions = [],
 }) => {
   return (
-    <div className="h-44 mb-4 relative w-full transition-all duration-300">
+    <div className={`mb-4 relative w-full transition-all duration-300 ${selectionRule ? 'min-h-[220px]' : 'h-44'}`}>
       {selectionRule ? (
         <div className="w-full h-full animate-snap-in">
           <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex flex-col justify-center gap-4 text-brand shadow-lg backdrop-blur-sm h-full">
@@ -132,6 +134,43 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                 </div>
               )}
             </div>
+            {matchingTransactions.length > 0 && (
+              <div className="mt-2 animate-snap-in">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em]">
+                    {matchingTransactions.length} Matching Transaction{matchingTransactions.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="bg-white/50 rounded-xl border border-brand/10 overflow-hidden">
+                  <div className="max-h-32 overflow-y-auto custom-scrollbar">
+                    <table className="w-full text-left border-collapse">
+                      <thead className="sticky top-0 bg-canvas-100/80 backdrop-blur-sm shadow-sm">
+                        <tr>
+                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">Date</th>
+                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">Description</th>
+                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest text-right">Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-canvas-200/30">
+                        {matchingTransactions.map((tx) => (
+                          <tr key={tx.id} className="hover:bg-brand/5 transition-colors group">
+                            <td className="px-3 py-1.5 text-[10px] font-medium text-canvas-500 whitespace-nowrap">
+                              {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            </td>
+                            <td className="px-3 py-1.5 text-[11px] font-bold text-canvas-700 truncate max-w-[200px]">
+                              {tx.description}
+                            </td>
+                            <td className={`px-3 py-1.5 text-[10px] font-black text-right ${tx.amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
+                              ${Math.abs(tx.amount).toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       ) : (

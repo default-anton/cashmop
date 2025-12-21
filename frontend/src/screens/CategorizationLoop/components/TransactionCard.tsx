@@ -67,11 +67,11 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
     <div className="relative group perspective-1000">
       <Card
         variant="glass"
-        className="p-10 mb-6 transform transition-all duration-500 hover:rotate-x-1 hover:shadow-2xl border-canvas-200/50"
+        className="p-6 mb-4 transform transition-all duration-500 hover:rotate-x-1 hover:shadow-2xl border-canvas-200/50"
         onMouseUp={onMouseUp}
       >
         <div className="text-center">
-          <div className="flex items-center justify-between mb-10 pb-6 border-b border-canvas-200/30">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-canvas-200/30">
             <div className="flex flex-col items-start text-left">
               <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-1">
                 Date
@@ -85,21 +85,21 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
               </span>
             </div>
 
-            <div className="flex gap-10">
+            <div className="flex gap-6">
               <div className="flex flex-col items-end text-right">
-                <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-1">
+                <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5">
                   Account
                 </span>
-                <span className="text-base font-black text-brand tracking-tight">
+                <span className="text-sm font-black text-brand tracking-tight">
                   {transaction.account_name}
                 </span>
               </div>
               {transaction.owner_name && (
-                <div className="flex flex-col items-end text-right border-l border-canvas-200/50 pl-10">
-                  <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-1">
+                <div className="flex flex-col items-end text-right border-l border-canvas-200/50 pl-6">
+                  <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5">
                     Owner
                   </span>
-                  <span className="text-base font-black text-canvas-800 tracking-tight">
+                  <span className="text-sm font-black text-canvas-800 tracking-tight">
                     {transaction.owner_name}
                   </span>
                 </div>
@@ -107,36 +107,36 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
             </div>
           </div>
 
-          <div className="mb-12 flex flex-col items-center">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em]">
+          <div className="mb-8 flex flex-col items-center">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em]">
                 Description
               </span>
             </div>
             <div className="relative group/desc w-full">
               {showOnboardingHint && !selectionRule && (
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center animate-snap-in pointer-events-none">
-                  <div className="bg-brand text-white text-[10px] font-black px-3 py-1.5 rounded-lg shadow-brand-glow uppercase tracking-widest flex items-center gap-2 border border-brand/20 backdrop-blur-sm">
+                <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center animate-snap-in pointer-events-none">
+                  <div className="bg-brand text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg shadow-brand-glow uppercase tracking-widest flex items-center gap-2 border border-brand/20 backdrop-blur-sm">
                     <Wand2 className="w-3 h-3" />
                     Select text to create rule
                   </div>
-                  <div className="w-2.5 h-2.5 bg-brand rotate-45 -mt-1 shadow-brand-glow"></div>
+                  <div className="w-2 h-2 bg-brand rotate-45 -mt-1 shadow-brand-glow"></div>
                 </div>
               )}
-              <h2 className="text-4xl font-black text-canvas-800 leading-tight select-text selection:bg-brand/20 cursor-text hover:bg-brand/[0.03] rounded-2xl transition-all duration-300 p-4 -m-4">
+              <h2 className="text-2xl font-black text-canvas-800 leading-tight select-text selection:bg-brand/20 cursor-text hover:bg-brand/[0.03] rounded-2xl transition-all duration-300 p-3 -m-3">
                 {renderDescription()}
               </h2>
             </div>
           </div>
 
           <div
-            className={`text-6xl font-mono mb-4 ${transaction.amount < 0 ? 'text-finance-expense' : 'text-finance-income'
+            className={`text-4xl font-mono mb-3 ${transaction.amount < 0 ? 'text-finance-expense' : 'text-finance-income'
               }`}
           >
             ${Math.abs(transaction.amount).toFixed(2)}
           </div>
 
-          <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] ${transaction.amount < 0
+          <div className={`inline-flex items-center px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] ${transaction.amount < 0
             ? 'bg-finance-expense/10 text-finance-expense'
             : 'bg-finance-income/10 text-finance-income'
             }`}>

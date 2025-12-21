@@ -173,3 +173,61 @@ func UpdateTransactionCategory(id int64, categoryID int64) error {
 	_, err := DB.Exec("UPDATE transactions SET category_id = ? WHERE id = ?", categoryID, id)
 	return err
 }
+
+func SearchTransactions(descriptionMatch string, matchType string, amountMin *float64, amountMax *float64) ([]TransactionModel, error) {
+	query := `
+		SELECT 
+			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''), 
+			t.date, t.description, t.amount, t.category_id, COALESCE(c.name, ''), t.currency 
+		FROM transactions t
+		JOIN accounts a ON t.account_id = a.id
+		LEFT JOIN users u ON t.owner_id = u.id
+		LEFT JOIN categories c ON t.category_id = c.id
+		WHERE 1=1
+	`
+	args := []interface{}{}
+
+	if descriptionMatch != "" {
+		switch matchType {
+		case "starts_with":
+			query += " AND t.description LIKE ?"
+			args = append(args, descriptionMatch+"%")
+		case "ends_with":
+			query += " AND t.description LIKE ?"
+			args = append(args, "%"+descriptionMatch)
+		case "contains":
+			query += " AND t.description LIKE ?"
+			args = append(args, "%"+descriptionMatch+"%")
+		}
+	}
+
+	if amountMin != nil {
+		query += " AND t.amount >= ?"
+		args = append(args, *amountMin)
+	}
+	if amountMax != nil {
+		query += " AND t.amount <= ?"
+		args = append(args, *amountMax)
+	}
+
+	query += " ORDER BY t.date DESC LIMIT 50"
+
+	rows, err := DB.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var txs []TransactionModel
+	for rows.Next() {
+		var t TransactionModel
+		if err := rows.Scan(
+			&t.ID, &t.AccountID, &t.AccountName, &t.OwnerID, &t.OwnerName,
+			&t.Date, &t.Description, &t.Amount, &t.CategoryID, &t.CategoryName, &t.Currency,
+		); err != nil {
+			return nil, err
+		}
+		txs = append(txs, t)
+	}
+	return txs, nil
+}

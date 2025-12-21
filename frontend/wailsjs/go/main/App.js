@@ -69,3 +69,7 @@ export function SaveColumnMapping(arg1, arg2) {
 export function SearchCategories(arg1) {
   return window['go']['main']['App']['SearchCategories'](arg1);
 }
+
+export function SearchTransactions(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SearchTransactions'](arg1, arg2, arg3, arg4);
+}

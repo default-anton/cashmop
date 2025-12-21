@@ -208,6 +208,11 @@ func (a *App) CreateOwner(name string) (int64, error) {
 	return *res, nil
 }
 
+// SearchTransactions returns transactions matching the criteria
+func (a *App) SearchTransactions(descriptionMatch string, matchType string, amountMin *float64, amountMax *float64) ([]database.TransactionModel, error) {
+	return database.SearchTransactions(descriptionMatch, matchType, amountMin, amountMax)
+}
+
 type ExcelData struct {
 	Headers []string   `json:"headers"`
 	Rows    [][]string `json:"rows"`

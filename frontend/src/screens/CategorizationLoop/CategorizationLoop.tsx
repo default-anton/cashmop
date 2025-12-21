@@ -45,6 +45,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     value1: string;
     value2: string;
   }>({ operator: 'none', value1: '', value2: '' });
+  const [matchingTransactions, setMatchingTransactions] = useState<Transaction[]>([]);
   const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
   const [hasRules, setHasRules] = useState<boolean | null>(null);
 
@@ -128,6 +129,59 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       setSuggestions([]);
     }
   }, [categoryInput]);
+
+  const currentTx = transactions.find((t) => t.id === currentTxId);
+  const currentIndex = transactions.findIndex((t) => t.id === currentTxId);
+
+  useEffect(() => {
+    if (!selectionRule) {
+      setMatchingTransactions([]);
+      return;
+    }
+
+    const fetchMatching = async () => {
+      try {
+        let amountMin: number | null = null;
+        let amountMax: number | null = null;
+
+        if (amountFilter.operator !== 'none') {
+          let v1 = parseFloat(amountFilter.value1) || 0;
+          let v2 = parseFloat(amountFilter.value2) || 0;
+          if (amountFilter.operator === 'between' && v1 > v2) [v1, v2] = [v2, v1];
+
+          const isExpense = currentTx && currentTx.amount < 0;
+
+          if (isExpense) {
+            if (amountFilter.operator === 'gt') amountMax = -v1;
+            else if (amountFilter.operator === 'lt') amountMin = -v1;
+            else if (amountFilter.operator === 'between') {
+              amountMin = -v2;
+              amountMax = -v1;
+            }
+          } else {
+            if (amountFilter.operator === 'gt') amountMin = v1;
+            else if (amountFilter.operator === 'lt') amountMax = v1;
+            else if (amountFilter.operator === 'between') {
+              amountMin = v1;
+              amountMax = v2;
+            }
+          }
+        }
+
+        const res = await (window as any).go.main.App.SearchTransactions(
+          selectionRule.text,
+          selectionRule.mode,
+          amountMin,
+          amountMax
+        );
+        setMatchingTransactions(res || []);
+      } catch (e) {
+        console.error('Failed to fetch matching transactions', e);
+      }
+    };
+
+    fetchMatching();
+  }, [selectionRule, amountFilter, currentTx?.id]);
 
   const handleCategorize = async (categoryName: string, categoryId?: number) => {
     if (!currentTxId) return;
@@ -258,8 +312,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     }, 0);
   };
 
-  const currentTx = transactions.find((t) => t.id === currentTxId);
-  const currentIndex = transactions.findIndex((t) => t.id === currentTxId);
 
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
 
@@ -289,6 +341,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           setAmountFilter={setAmountFilter}
           amountInputRef={amountInputRef}
           currentAmount={currentTx?.amount}
+          matchingTransactions={matchingTransactions}
         />
 
         <CategoryInput
