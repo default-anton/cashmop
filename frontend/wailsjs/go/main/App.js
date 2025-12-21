@@ -26,6 +26,10 @@ export function GetCategories() {
   return window['go']['main']['App']['GetCategories']();
 }
 
+export function GetCategorizationRulesCount() {
+  return window['go']['main']['App']['GetCategorizationRulesCount']();
+}
+
 export function GetColumnMappings() {
   return window['go']['main']['App']['GetColumnMappings']();
 }

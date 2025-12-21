@@ -46,6 +46,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     value2: string;
   }>({ operator: 'none', value1: '', value2: '' });
   const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
+  const [hasRules, setHasRules] = useState<boolean | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const amountInputRef = useRef<HTMLInputElement>(null);
@@ -104,6 +105,11 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         setCurrentTxId(items[0].id);
       }
       setLoading(false);
+    });
+
+    // Check if user has any categorization rules already
+    (window as any).go.main.App.GetCategorizationRulesCount().then((count: number) => {
+      setHasRules(count > 0);
     });
   }, []);
 
@@ -170,6 +176,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         await (window as any).go.main.App.SaveCategorizationRule(rule);
         setSelectionRule(null);
         setAmountFilter({ operator: 'none', value1: '', value2: '' });
+        setHasRules(true); // Don't show hint again after first rule is created
       } else {
         await (window as any).go.main.App.CategorizeTransaction(oldId, categoryName);
       }
@@ -269,6 +276,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           transaction={currentTx}
           onMouseUp={handleTextSelection}
           selectionRule={selectionRule}
+          showOnboardingHint={hasRules === false}
         />
 
         <RuleEditor

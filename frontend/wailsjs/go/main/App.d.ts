@@ -15,6 +15,8 @@ export function GetAccounts():Promise<Array<string>>;
 
 export function GetCategories():Promise<Array<database.Category>>;
 
+export function GetCategorizationRulesCount():Promise<number>;
+
 export function GetColumnMappings():Promise<Array<database.ColumnMappingModel>>;
 
 export function GetOwners():Promise<Array<string>>;
