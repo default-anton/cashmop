@@ -76,7 +76,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
             }`}
           onClick={() => (categoryInput ? onCategorize(categoryInput) : onSkip())}
         >
-          {isRuleMode ? (
+          {categoryInput ? (
             <CheckCircle2 className="w-6 h-6" />
           ) : (
             <FastForward className="w-6 h-6" />
@@ -85,22 +85,14 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
       </div>
 
       <p className="mt-4 text-center text-canvas-500 text-sm">
-        {isRuleMode ? (
-          <>
-            Press{' '}
-            <kbd className="px-2 py-1 bg-canvas-200 rounded text-xs font-mono text-canvas-800">
-              ENTER
-            </kbd>{' '}
-            to save rule & categorize
-          </>
+        Press{' '}
+        <kbd className="px-2 py-1 bg-canvas-200 rounded text-xs font-mono text-canvas-800">
+          ENTER
+        </kbd>{' '}
+        {!categoryInput ? (
+          isRuleMode ? 'to skip rule & punch through' : 'to punch through'
         ) : (
-          <>
-            Press{' '}
-            <kbd className="px-2 py-1 bg-canvas-200 rounded text-xs font-mono text-canvas-800">
-              ENTER
-            </kbd>{' '}
-            to punch through
-          </>
+          isRuleMode ? 'to save rule & categorize' : 'to categorize'
         )}
       </p>
     </div>
