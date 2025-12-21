@@ -113,7 +113,7 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 	defer tx.Rollback()
 
 	stmt, err := tx.Prepare(`
-		INSERT OR IGNORE INTO transactions 
+		INSERT OR IGNORE INTO transactions
 		(account_id, owner_id, date, description, amount, category_id, currency, raw_metadata)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`)
@@ -141,9 +141,9 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 }
 func GetUncategorizedTransactions() ([]TransactionModel, error) {
 	rows, err := DB.Query(`
-		SELECT 
-			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''), 
-			t.date, t.description, t.amount, t.category_id, t.currency 
+		SELECT
+			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
+			t.date, t.description, t.amount, t.category_id, t.currency
 		FROM transactions t
 		JOIN accounts a ON t.account_id = a.id
 		LEFT JOIN users u ON t.owner_id = u.id
@@ -176,14 +176,14 @@ func UpdateTransactionCategory(id int64, categoryID int64) error {
 
 func SearchTransactions(descriptionMatch string, matchType string, amountMin *float64, amountMax *float64) ([]TransactionModel, error) {
 	query := `
-		SELECT 
-			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''), 
-			t.date, t.description, t.amount, t.category_id, COALESCE(c.name, ''), t.currency 
+		SELECT
+			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
+			t.date, t.description, t.amount, t.category_id, COALESCE(c.name, ''), t.currency
 		FROM transactions t
 		JOIN accounts a ON t.account_id = a.id
 		LEFT JOIN users u ON t.owner_id = u.id
 		LEFT JOIN categories c ON t.category_id = c.id
-		WHERE 1=1
+		WHERE t.category_id IS NULL
 	`
 	args := []interface{}{}
 
