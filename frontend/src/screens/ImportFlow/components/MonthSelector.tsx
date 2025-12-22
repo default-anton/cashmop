@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Calendar, Check, ArrowLeft, ArrowRight, Table as TableIcon } from 'lucide-react';
-import { Button, Card, Table } from '../../../components';
+import { Button, Card } from '../../../components';
 import { type ImportMapping } from './ColumnMapperTypes';
 import { type ParsedFile } from '../ImportFlow';
 import { parseDateLoose, sampleUniqueRows } from '../utils';
@@ -144,12 +144,14 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
       className: 'whitespace-nowrap text-right font-mono text-xs',
       render: (val: number) => (
         <span className={val < 0 ? 'text-finance-expense' : 'text-finance-income'}>
-          {val.toFixed(2)}
+          {val < 0 ? '-' : '+'}{Math.abs(val).toFixed(2)}
         </span>
       )
     },
     { key: 'account', header: 'Account', className: 'whitespace-nowrap text-xs' },
-  ], []);
+    { key: 'owner', header: 'Owner', className: 'whitespace-nowrap text-xs' },
+    { key: 'currency', header: 'Currency', className: 'whitespace-nowrap text-xs text-center' },
+  ] as const, []);
 
   return (
     <div className="flex flex-col gap-8 animate-snap-in">
@@ -230,11 +232,37 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
           </div>
         </div>
         <div className="overflow-x-auto">
-          <Table
-            columns={previewColumns as any}
-            data={previewRows}
-            className="border-none rounded-none"
-          />
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-canvas-100/50">
+                {previewColumns.map((col: any) => (
+                  <th
+                    key={col.key}
+                    className={`px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-canvas-600 border-b border-canvas-200 ${col.className}`}
+                  >
+                    {col.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-canvas-200">
+              {previewRows.map((row, i) => (
+                <tr key={i} className="hover:bg-canvas-100/30 transition-colors">
+                  {previewColumns.map((col: any) => {
+                    const val = (row as any)[col.key];
+                    return (
+                      <td
+                        key={col.key}
+                        className={`px-4 py-3 text-sm text-canvas-600 ${col.className}`}
+                      >
+                        {col.render ? col.render(val) : val}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
