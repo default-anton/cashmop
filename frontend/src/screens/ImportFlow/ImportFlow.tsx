@@ -7,7 +7,7 @@ import FileDropZone from './components/FileDropZone';
 import { MappingPunchThrough } from './components/MappingPunchThrough';
 import { type ImportMapping } from './components/ColumnMapperTypes';
 import MonthSelector, { type MonthOption } from './components/MonthSelector';
-import { parseDateLoose } from './utils';
+import { createAmountParser, parseDateLoose } from './utils';
 
 export type ParsedFile = {
   file: File;
@@ -309,27 +309,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
       const dateIdx = headers.indexOf(mapping.csv.date);
       const descIdxs = mapping.csv.description.map(d => headers.indexOf(d)).filter(i => i !== -1);
 
-      // Amount handling
-      let amountIdx = -1;
-      let amountTypeIdx = -1;
-      let amountTypeNeg = 'debit';
-      let amountTypePos = 'credit';
-      let debitIdx = -1;
-      let creditIdx = -1;
-
-      if (mapping.csv.amountMapping?.type === 'debitCredit') {
-        if (mapping.csv.amountMapping.debitColumn) debitIdx = headers.indexOf(mapping.csv.amountMapping.debitColumn);
-        if (mapping.csv.amountMapping.creditColumn) creditIdx = headers.indexOf(mapping.csv.amountMapping.creditColumn);
-      } else if (mapping.csv.amountMapping?.type === 'amountWithType') {
-        amountIdx = headers.indexOf(mapping.csv.amountMapping.amountColumn);
-        amountTypeIdx = headers.indexOf(mapping.csv.amountMapping.typeColumn);
-        amountTypeNeg = mapping.csv.amountMapping.negativeValue || 'debit';
-        amountTypePos = mapping.csv.amountMapping.positiveValue || 'credit';
-      } else {
-        // Single column logic (default or explicit)
-        const col = mapping.csv.amountMapping?.type === 'single' ? mapping.csv.amountMapping.column : mapping.csv.amount;
-        amountIdx = headers.indexOf(col);
-      }
+      const amountFn = createAmountParser(mapping, headers);
 
       // Owner/Account
       const ownerIdx = mapping.csv.owner ? headers.indexOf(mapping.csv.owner) : -1;
@@ -350,32 +330,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
         // Description
         const desc = descIdxs.map(i => row[i]).filter(Boolean).join(' ');
 
-        // Amount calc
-        let amount = 0;
-        if (debitIdx !== -1 || creditIdx !== -1) {
-          const debitVal = debitIdx !== -1 ? parseFloat(row[debitIdx]?.replace(/[^0-9.-]/g, '') || '0') : 0;
-          const creditVal = creditIdx !== -1 ? parseFloat(row[creditIdx]?.replace(/[^0-9.-]/g, '') || '0') : 0;
-
-          if (debitVal !== 0) amount -= Math.abs(debitVal);
-          if (creditVal !== 0) amount += Math.abs(creditVal);
-        } else if (amountIdx !== -1 && amountTypeIdx !== -1) {
-          const raw = row[amountIdx];
-          const parsed = parseFloat(raw?.replace(/[^0-9.-]/g, '') || '0') || 0;
-          const abs = Math.abs(parsed);
-
-          const typeRaw = row[amountTypeIdx] ?? '';
-          const typeVal = typeRaw.trim().toLowerCase();
-          const neg = amountTypeNeg.trim().toLowerCase();
-          const pos = amountTypePos.trim().toLowerCase();
-
-          if (typeVal && neg && typeVal === neg) amount = -abs;
-          else if (typeVal && pos && typeVal === pos) amount = abs;
-          else amount = parsed;
-        } else if (amountIdx !== -1) {
-          let valStr = row[amountIdx];
-          valStr = valStr?.replace(/[^0-9.-]/g, '') || '0';
-          amount = parseFloat(valStr);
-        }
+        const amount = amountFn(row);
 
         out.push({
           date: dateObj.toISOString().split('T')[0], // YYYY-MM-DD

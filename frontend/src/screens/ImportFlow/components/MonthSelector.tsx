@@ -3,7 +3,7 @@ import { Calendar, Check, ArrowLeft, ArrowRight, Table as TableIcon } from 'luci
 import { Button, Card } from '../../../components';
 import { type ImportMapping } from './ColumnMapperTypes';
 import { type ParsedFile } from '../ImportFlow';
-import { parseDateLoose, sampleUniqueRows } from '../utils';
+import { createAmountParser, parseDateLoose, sampleUniqueRows } from '../utils';
 
 export type MonthOption = {
   key: string;
@@ -89,41 +89,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
     const currencyIdx = colIdx(mapping.csv.currency);
     const descIdxs = mapping.csv.description.map((h: string) => headers.indexOf(h)).filter((i: number) => i !== -1);
 
-    const am = mapping.csv.amountMapping;
-    let amountFn: (row: string[]) => number;
-
-    if (am?.type === 'single') {
-      const idx = colIdx(am.column);
-      amountFn = (row) => idx >= 0 ? parseFloat(row[idx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
-    } else if (am?.type === 'debitCredit') {
-      const debitIdx = colIdx(am.debitColumn);
-      const creditIdx = colIdx(am.creditColumn);
-      amountFn = (row) => {
-        const debit = debitIdx >= 0 ? parseFloat(row[debitIdx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
-        const credit = creditIdx >= 0 ? parseFloat(row[creditIdx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
-        return Math.abs(credit) - Math.abs(debit);
-      };
-    } else if (am?.type === 'amountWithType') {
-      const amountIdx = colIdx(am.amountColumn);
-      const typeIdx = colIdx(am.typeColumn);
-      const neg = (am.negativeValue ?? 'debit').trim().toLowerCase();
-      const pos = (am.positiveValue ?? 'credit').trim().toLowerCase();
-
-      amountFn = (row) => {
-        const raw = amountIdx >= 0 ? row[amountIdx] : '';
-        const val = parseFloat(raw?.replace(/[^0-9.-]/g, '') || '0') || 0;
-        const typeVal = typeIdx >= 0 ? (row[typeIdx] ?? '').trim().toLowerCase() : '';
-        const abs = Math.abs(val);
-
-        if (typeVal && neg && typeVal === neg) return -abs;
-        if (typeVal && pos && typeVal === pos) return abs;
-
-        return val;
-      };
-    } else {
-      const idx = colIdx(mapping.csv.amount);
-      amountFn = (row) => idx >= 0 ? parseFloat(row[idx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
-    }
+    const amountFn = createAmountParser(mapping, headers);
 
     return sample.map(row => ({
       date: dateIdx >= 0 ? row[dateIdx] : '',
@@ -172,10 +138,10 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
             <Button variant="secondary" size="sm" onClick={onBack}>
               <ArrowLeft className="w-4 h-4 mr-1" /> Back
             </Button>
-            <Button 
-              variant="primary" 
-              size="sm" 
-              onClick={() => onComplete(Array.from(selected))} 
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => onComplete(Array.from(selected))}
               disabled={!canStart}
             >
               Start Import <ArrowRight className="w-4 h-4 ml-1" />

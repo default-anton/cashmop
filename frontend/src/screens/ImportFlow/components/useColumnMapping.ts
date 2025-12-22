@@ -6,7 +6,7 @@ export const defaultMapping = (): ImportMapping => ({
     date: '',
     description: [],
     amount: '',
-    amountMapping: { type: 'single', column: '' },
+    amountMapping: { type: 'single', column: '', invertSign: false },
   },
   account: '',
   currencyDefault: 'CAD',
@@ -98,7 +98,8 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
         switch (am.type) {
           case 'single':
             if (am.column === header) {
-              next.csv.amountMapping = { type: 'single', column: '' };
+              const invertSign = am.invertSign ?? false;
+              next.csv.amountMapping = { type: 'single', column: '', invertSign };
               next.csv.amount = '';
             }
             break;
@@ -145,7 +146,8 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
           switch (am.type) {
             case 'single':
               if (am.column === h) {
-                next.csv.amountMapping = { type: 'single', column: '' };
+                const invertSign = am.invertSign ?? false;
+                next.csv.amountMapping = { type: 'single', column: '', invertSign };
                 next.csv.amount = '';
               }
               break;
@@ -183,8 +185,9 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
 
       if (field === 'amount') {
         // Update amountMapping to single column
+        const invertSign = prev.csv.amountMapping?.invertSign ?? false;
         next.csv.amount = header;
-        next.csv.amountMapping = { type: 'single', column: header };
+        next.csv.amountMapping = { type: 'single', column: header, invertSign };
         return next;
       }
 
@@ -228,24 +231,25 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
   const handleAmountMappingTypeChange = (newType: AmountMapping['type']) => {
     setMapping((prev) => {
       const prevAm = prev.csv.amountMapping;
+      const invertSign = prevAm?.invertSign ?? false;
       let newAm: AmountMapping;
       // Preserve existing columns where applicable
       switch (newType) {
         case 'single':
-          const column = prevAm?.type === 'single' ? prevAm.column : '';
-          newAm = { type: 'single', column };
+          const column = prevAm?.type === 'single' ? prevAm.column : prev.csv.amount;
+          newAm = { type: 'single', column, invertSign };
           break;
         case 'debitCredit':
           const debitColumn = prevAm?.type === 'debitCredit' ? prevAm.debitColumn : undefined;
           const creditColumn = prevAm?.type === 'debitCredit' ? prevAm.creditColumn : undefined;
-          newAm = { type: 'debitCredit', debitColumn, creditColumn };
+          newAm = { type: 'debitCredit', debitColumn, creditColumn, invertSign };
           break;
         case 'amountWithType':
           const amountColumn = prevAm?.type === 'amountWithType' ? prevAm.amountColumn : '';
           const typeColumn = prevAm?.type === 'amountWithType' ? prevAm.typeColumn : '';
           const negativeValue = prevAm?.type === 'amountWithType' ? prevAm.negativeValue ?? 'debit' : 'debit';
           const positiveValue = prevAm?.type === 'amountWithType' ? prevAm.positiveValue ?? 'credit' : 'credit';
-          newAm = { type: 'amountWithType', amountColumn, typeColumn, negativeValue, positiveValue };
+          newAm = { type: 'amountWithType', amountColumn, typeColumn, negativeValue, positiveValue, invertSign };
           break;
       }
       return {
@@ -263,7 +267,7 @@ export const useColumnMapping = (initialMapping?: ImportMapping) => {
   const assignAmountMappingColumn = (field: 'column' | 'debitColumn' | 'creditColumn' | 'amountColumn' | 'typeColumn', header: string) => {
     if (!header) return;
     setMapping((prev) => {
-      const prevAm = prev.csv.amountMapping ?? { type: 'single', column: '' };
+      const prevAm: AmountMapping = prev.csv.amountMapping ?? { type: 'single', column: prev.csv.amount || '', invertSign: false };
       let newAm: AmountMapping;
       switch (prevAm.type) {
         case 'single':

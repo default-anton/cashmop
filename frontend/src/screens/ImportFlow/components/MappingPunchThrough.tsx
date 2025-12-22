@@ -8,6 +8,7 @@ import {
   Globe,
   ArrowRight,
   ChevronLeft,
+  ArrowUpDown,
 } from 'lucide-react';
 
 import { Button, Card, Input, Select, AutocompleteInput } from '../../../components';
@@ -400,6 +401,22 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     }
   };
 
+  const toggleInvertSign = () => {
+    setMapping((prev) => {
+      const fallbackColumn = prev.csv.amount || '';
+      const prevAm: AmountMapping = prev.csv.amountMapping ?? { type: 'single', column: fallbackColumn, invertSign: false };
+      const nextAm: AmountMapping = { ...prevAm, invertSign: !prevAm.invertSign };
+      return {
+        ...prev,
+        csv: {
+          ...prev.csv,
+          amountMapping: nextAm,
+          amount: nextAm.type === 'single' ? nextAm.column : prev.csv.amount,
+        },
+      };
+    });
+  };
+
 
   const canGoNext = useMemo(() => {
     if (currentStep.key === 'date') return !isMissing('date');
@@ -411,6 +428,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
   }, [currentStep.key, isAmountMappingValid, isMissing, canProceed]);
 
   const amountMappingType = mapping.csv.amountMapping?.type ?? 'single';
+  const invertSignEnabled = mapping.csv.amountMapping?.invertSign ?? false;
 
   return (
     <div className="flex flex-col gap-6 animate-snap-in">
@@ -486,6 +504,25 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
               >
                 Amount + Type
               </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={toggleInvertSign}
+                className={
+                  'inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-semibold border transition-colors ' +
+                  (invertSignEnabled
+                    ? 'bg-brand text-white border-brand'
+                    : 'bg-canvas-50 text-canvas-700 border-canvas-300 hover:border-canvas-600')
+                }
+              >
+                <ArrowUpDown className="w-4 h-4" />
+                {invertSignEnabled ? 'Flip sign: On' : 'Flip sign: Off'}
+              </button>
+              <span className="text-xs text-canvas-500">
+                Turn on if your file shows expenses as positive numbers.
+              </span>
             </div>
 
             {amountMappingType === 'debitCredit' && (
