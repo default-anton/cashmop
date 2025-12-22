@@ -8,9 +8,10 @@ import {
   Globe,
   ArrowRight,
   ChevronLeft,
+  Check,
 } from 'lucide-react';
 
-import { Button, Card, Input, Select } from '../../../components';
+import { Button, Card, Input, Select, AutocompleteInput } from '../../../components';
 import { type ImportMapping, type AmountMapping } from './ColumnMapperTypes';
 import { useColumnMapping } from './useColumnMapping';
 import { sampleUniqueRows } from '../utils';
@@ -216,6 +217,8 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
   const [accountInput, setAccountInput] = useState('');
   const [ownerInput, setOwnerInput] = useState('');
+  const [showAccountSuccess, setShowAccountSuccess] = useState(false);
+  const [showOwnerSuccess, setShowOwnerSuccess] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -258,22 +261,44 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     handleAdvance();
   };
 
-  const isSelected = (header: string) => {
-    if (mapping.csv.date === header) return 'bg-brand/20 border-brand text-brand';
+  const getColumnStatus = (header: string): 'current' | 'other' | 'none' => {
+    if (!header) return 'none';
 
-    const am = mapping.csv.amountMapping;
-    if (am?.type === 'single' && am.column === header) return 'bg-brand/20 border-brand text-brand';
-    if (am?.type === 'debitCredit' && (am.debitColumn === header || am.creditColumn === header))
-      return 'bg-brand/20 border-brand text-brand';
-    if (am?.type === 'amountWithType' && (am.amountColumn === header || am.typeColumn === header))
-      return 'bg-brand/20 border-brand text-brand';
+    const { csv } = mapping;
 
-    if (mapping.csv.description.includes(header)) return 'bg-brand/20 border-brand text-brand';
-    if (mapping.csv.account === header) return 'bg-brand/20 border-brand text-brand';
-    if (mapping.csv.owner === header) return 'bg-brand/20 border-brand text-brand';
-    if (mapping.csv.currency === header) return 'bg-brand/20 border-brand text-brand';
+    const isMappedTo = (step: StepKey): boolean => {
+      if (step === 'date') return csv.date === header;
+      if (step === 'description') return csv.description.includes(header);
+      if (step === 'account') return csv.account === header;
+      if (step === 'owner') return csv.owner === header;
+      if (step === 'currency') return csv.currency === header;
+      if (step === 'amount') {
+        const am = csv.amountMapping;
+        if (!am || am.type === 'single') return csv.amount === header || am?.column === header;
+        if (am.type === 'debitCredit') return am.debitColumn === header || am.creditColumn === header;
+        if (am.type === 'amountWithType') return am.amountColumn === header || am.typeColumn === header;
+      }
+      return false;
+    };
 
-    return '';
+    const isTarget = (): boolean => {
+      if (currentStep.key === 'amount') {
+        const am = csv.amountMapping;
+        if (!am || am.type === 'single') return am?.column === header || csv.amount === header;
+        if (am.type === 'debitCredit') {
+          return amountAssignTarget === 'debitColumn' ? am.debitColumn === header : am.creditColumn === header;
+        }
+        if (am.type === 'amountWithType') {
+          return amountAssignTarget === 'amountColumn' ? am.amountColumn === header : am.typeColumn === header;
+        }
+      }
+      return isMappedTo(currentStep.key);
+    };
+
+    if (isTarget()) return 'current';
+    if (STEPS.some((s) => isMappedTo(s.key))) return 'other';
+
+    return 'none';
   };
 
   const getHeaderLabel = (header: string) => {
@@ -300,6 +325,9 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
   const handleHeaderClick = (header: string) => {
     if (!header) return;
+
+    const status = getColumnStatus(header);
+    if (status === 'other') return;
 
     if (currentStep.key === 'date') {
       assignHeaderToField('date', header);
@@ -373,14 +401,18 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     const name = accountInput.trim();
     if (!name) return;
 
+    const exists = availableAccounts.includes(name);
+
     try {
-      await (window as any).go.main.App.CreateAccount(name);
-      if (!availableAccounts.includes(name)) {
+      if (!exists) {
+        await (window as any).go.main.App.CreateAccount(name);
         setAvailableAccounts((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
       }
       setMapping((prev) => ({ ...prev, account: name, csv: { ...prev.csv, account: undefined } }));
+      setShowAccountSuccess(true);
+      setTimeout(() => setShowAccountSuccess(false), 2000);
     } catch (e) {
-      console.error('Failed to create account', e);
+      console.error('Failed to handle static account', e);
     }
   };
 
@@ -388,14 +420,18 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     const name = ownerInput.trim();
     if (!name) return;
 
+    const exists = availableOwners.includes(name);
+
     try {
-      await (window as any).go.main.App.CreateOwner(name);
-      if (!availableOwners.includes(name)) {
+      if (!exists) {
+        await (window as any).go.main.App.CreateOwner(name);
         setAvailableOwners((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
       }
       setMapping((prev) => ({ ...prev, defaultOwner: name, csv: { ...prev.csv, owner: undefined } }));
+      setShowOwnerSuccess(true);
+      setTimeout(() => setShowOwnerSuccess(false), 2000);
     } catch (e) {
-      console.error('Failed to create owner', e);
+      console.error('Failed to handle static owner', e);
     }
   };
 
@@ -649,27 +685,34 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
           <div className="mt-6 grid gap-4 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
             <div>
               <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2">Static account (fast)</div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex-1">
-                  <datalist id="account-suggestions">
-                    {availableAccounts.map((a) => (
-                      <option key={a} value={a} />
-                    ))}
-                  </datalist>
-                  <Input
+              <div className="flex items-center gap-2">
+                <div className="w-full max-w-sm">
+                  <AutocompleteInput
                     value={accountInput}
-                    onChange={(e) => setAccountInput(e.target.value)}
+                    onChange={(val) => {
+                      setAccountInput(val);
+                      if (mapping.csv.account) {
+                        removeHeaderEverywhere(mapping.csv.account);
+                      }
+                    }}
+                    options={availableAccounts}
                     placeholder="e.g. RBC Checking"
-                    list="account-suggestions"
+                    className="w-full"
                   />
                 </div>
                 <Button
-                  variant="secondary"
+                  variant={showAccountSuccess ? 'primary' : 'secondary'}
                   size="sm"
                   onClick={handleUseStaticAccount}
                   disabled={!accountInput.trim()}
                 >
-                  Use
+                  {showAccountSuccess ? (
+                    <>
+                      <Check className="w-4 h-4" /> Done
+                    </>
+                  ) : (
+                    availableAccounts.includes(accountInput.trim()) ? 'Use' : 'Create'
+                  )}
                 </Button>
               </div>
               {mapping.csv.account && (
@@ -689,22 +732,34 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
           <div className="mt-6 grid gap-4 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
             <div>
               <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2">Default owner</div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex-1">
-                  <datalist id="owner-suggestions">
-                    {availableOwners.map((o) => (
-                      <option key={o} value={o} />
-                    ))}
-                  </datalist>
-                  <Input
+              <div className="flex items-center gap-2">
+                <div className="w-full max-w-sm">
+                  <AutocompleteInput
                     value={ownerInput}
-                    onChange={(e) => setOwnerInput(e.target.value)}
+                    onChange={(val) => {
+                      setOwnerInput(val);
+                      if (mapping.csv.owner) {
+                        removeHeaderEverywhere(mapping.csv.owner);
+                      }
+                    }}
+                    options={availableOwners}
                     placeholder="e.g. Alex"
-                    list="owner-suggestions"
+                    className="w-full"
                   />
                 </div>
-                <Button variant="secondary" size="sm" onClick={handleUseStaticOwner} disabled={!ownerInput.trim()}>
-                  Use
+                <Button
+                  variant={showOwnerSuccess ? 'primary' : 'secondary'}
+                  size="sm"
+                  onClick={handleUseStaticOwner}
+                  disabled={!ownerInput.trim()}
+                >
+                  {showOwnerSuccess ? (
+                    <>
+                      <Check className="w-4 h-4" /> Done
+                    </>
+                  ) : (
+                    availableOwners.includes(ownerInput.trim()) ? 'Use' : 'Create'
+                  )}
                 </Button>
               </div>
               {mapping.csv.owner && (
@@ -757,19 +812,28 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
             <thead>
               <tr className="bg-canvas-100/50">
                 {visibleColumns.map(({ header, index }) => {
-                  const selectedClass = isSelected(header);
+                  const status = getColumnStatus(header);
                   const label = getHeaderLabel(header);
                   return (
                     <th
                       key={header || index}
                       onClick={() => handleHeaderClick(header)}
                       className={
-                        'px-4 py-4 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 border-b-2 min-w-[150px] relative ' +
-                        (selectedClass || 'text-canvas-600 border-transparent hover:bg-canvas-200 hover:text-canvas-800')
+                        'px-4 py-4 text-left text-xs font-bold uppercase tracking-wider transition-all duration-200 border-b-2 min-w-[150px] relative ' +
+                        (status === 'current'
+                          ? 'bg-brand/20 border-brand text-brand cursor-pointer '
+                          : status === 'other'
+                          ? 'bg-brand/5 border-brand/20 text-brand/40 cursor-not-allowed '
+                          : 'text-canvas-600 border-transparent hover:bg-canvas-200 hover:text-canvas-800 cursor-pointer ')
                       }
                     >
                       {label && (
-                        <span className="absolute -top-1 left-4 px-1.5 py-0.5 bg-brand text-[8px] text-white rounded-b-sm animate-in fade-in slide-in-from-top-1">
+                        <span
+                          className={
+                            'absolute -top-1 left-4 px-1.5 py-0.5 text-[8px] text-white rounded-b-sm animate-in fade-in slide-in-from-top-1 ' +
+                            (status === 'current' ? 'bg-brand' : 'bg-brand/40')
+                          }
+                        >
                           {label}
                         </span>
                       )}
@@ -783,10 +847,15 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
               {previewRows.map((row, i) => (
                 <tr key={i} className="hover:bg-canvas-100/30 transition-colors">
                   {visibleColumns.map(({ header }, j) => {
-                    const selectedClass = isSelected(header) ? 'bg-brand/5' : '';
+                    const status = getColumnStatus(header);
+                    const cellClass =
+                      status === 'current' ? 'bg-brand/5' : status === 'other' ? 'bg-brand/[0.02]' : '';
                     const cell = row[j] ?? '';
                     return (
-                      <td key={header || j} className={`px-4 py-3 text-sm text-canvas-600 whitespace-nowrap ${selectedClass}`}>
+                      <td
+                        key={header || j}
+                        className={`px-4 py-3 text-sm text-canvas-600 whitespace-nowrap ${cellClass}`}
+                      >
                         {cell}
                       </td>
                     );
