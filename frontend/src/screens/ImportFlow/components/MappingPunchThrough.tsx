@@ -563,12 +563,12 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                     Amount column
                   </button>
                   <span className="text-sm text-canvas-600 font-mono">
-                    {mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.amountColumn || '—' : '—'}
+                    {mapping.csv.amountMapping?.type === 'amountWithType' ? (mapping.csv.amountMapping as any).amountColumn || '—' : '—'}
                   </span>
-                  {mapping.csv.amountMapping?.type === 'amountWithType' && mapping.csv.amountMapping.amountColumn && (
+                  {mapping.csv.amountMapping?.type === 'amountWithType' && (mapping.csv.amountMapping as any).amountColumn && (
                     <button
                       type="button"
-                      onClick={() => removeHeaderEverywhere(mapping.csv.amountMapping.amountColumn)}
+                      onClick={() => removeHeaderEverywhere((mapping.csv.amountMapping as any).amountColumn)}
                       className="text-xs font-semibold text-canvas-500 hover:text-canvas-800"
                     >
                       Clear
@@ -590,12 +590,12 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                     Type column
                   </button>
                   <span className="text-sm text-canvas-600 font-mono">
-                    {mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.typeColumn || '—' : '—'}
+                    {mapping.csv.amountMapping?.type === 'amountWithType' ? (mapping.csv.amountMapping as any).typeColumn || '—' : '—'}
                   </span>
-                  {mapping.csv.amountMapping?.type === 'amountWithType' && mapping.csv.amountMapping.typeColumn && (
+                  {mapping.csv.amountMapping?.type === 'amountWithType' && (mapping.csv.amountMapping as any).typeColumn && (
                     <button
                       type="button"
-                      onClick={() => removeHeaderEverywhere(mapping.csv.amountMapping.typeColumn)}
+                      onClick={() => removeHeaderEverywhere((mapping.csv.amountMapping as any).typeColumn)}
                       className="text-xs font-semibold text-canvas-500 hover:text-canvas-800"
                     >
                       Clear
@@ -824,12 +824,17 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                   {visibleColumns.map(({ header }, j) => {
                     const status = getColumnStatus(header);
                     const cellClass =
-                      status === 'current' ? 'bg-brand/5' : status === 'other' ? 'bg-brand/[0.02]' : '';
+                      status === 'current'
+                        ? 'bg-brand/10 text-brand cursor-pointer'
+                        : status === 'other'
+                        ? 'bg-brand/[0.02] text-brand/40 cursor-not-allowed'
+                        : 'text-canvas-600 cursor-pointer hover:bg-canvas-200/50';
                     const cell = row[j] ?? '';
                     return (
                       <td
                         key={header || j}
-                        className={`px-4 py-3 text-sm text-canvas-600 whitespace-nowrap ${cellClass}`}
+                        onClick={() => handleHeaderClick(header)}
+                        className={`px-4 py-3 text-sm whitespace-nowrap transition-colors ${cellClass}`}
                       >
                         {cell}
                       </td>

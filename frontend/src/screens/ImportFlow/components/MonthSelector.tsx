@@ -208,7 +208,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
               >
                 <div className="flex flex-col items-start">
                   <span className={`text-sm font-bold ${isSelected ? 'text-canvas-800' : 'text-canvas-600'}`}>{m.label}</span>
-                  <span className="text-[10px] font-mono text-canvas-400">{m.count} items</span>
+                  <span className={`text-[10px] font-mono ${isSelected ? 'text-brand' : 'text-canvas-500'}`}>{m.count} items</span>
                 </div>
                 <div className={`
                   w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all
