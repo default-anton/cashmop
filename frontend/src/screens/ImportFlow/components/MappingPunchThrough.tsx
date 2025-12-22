@@ -8,7 +8,6 @@ import {
   Globe,
   ArrowRight,
   ChevronLeft,
-  Check,
 } from 'lucide-react';
 
 import { Button, Card, Input, Select, AutocompleteInput } from '../../../components';
@@ -217,8 +216,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
   const [accountInput, setAccountInput] = useState('');
   const [ownerInput, setOwnerInput] = useState('');
-  const [showAccountSuccess, setShowAccountSuccess] = useState(false);
-  const [showOwnerSuccess, setShowOwnerSuccess] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -245,7 +242,31 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     }
   }, [currentStep.key, mapping.account, mapping.defaultOwner]);
 
-  const handleAdvance = () => {
+  const handleAdvance = async () => {
+    if (currentStep.key === 'account') {
+      const name = accountInput.trim();
+      if (name && !availableAccounts.includes(name)) {
+        try {
+          await (window as any).go.main.App.CreateAccount(name);
+          setAvailableAccounts((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
+        } catch (e) {
+          console.error('Failed to create account', e);
+        }
+      }
+    }
+
+    if (currentStep.key === 'owner') {
+      const name = ownerInput.trim();
+      if (name && !availableOwners.includes(name)) {
+        try {
+          await (window as any).go.main.App.CreateOwner(name);
+          setAvailableOwners((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
+        } catch (e) {
+          console.error('Failed to create owner', e);
+        }
+      }
+    }
+
     if (currentStepIdx >= STEPS.length - 1) {
       onComplete(mappingRef.current);
       return;
@@ -255,10 +276,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
   const handleBack = () => {
     if (currentStepIdx > 0) setCurrentStepIdx((prev) => prev - 1);
-  };
-
-  const handleSkip = () => {
-    handleAdvance();
   };
 
   const getColumnStatus = (header: string): 'current' | 'other' | 'none' => {
@@ -329,6 +346,11 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     const status = getColumnStatus(header);
     if (status === 'other') return;
 
+    if (status === 'current') {
+      removeHeaderEverywhere(header);
+      return;
+    }
+
     if (currentStep.key === 'date') {
       assignHeaderToField('date', header);
       return;
@@ -358,17 +380,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     }
 
     if (currentStep.key === 'description') {
-      if (mapping.csv.description.includes(header)) {
-        setMapping((prev) => ({
-          ...prev,
-          csv: { ...prev.csv, description: prev.csv.description.filter((h) => h !== header) },
-        }));
-      } else {
-        setMapping((prev) => ({
-          ...prev,
-          csv: { ...prev.csv, description: [...prev.csv.description, header] },
-        }));
-      }
+      assignHeaderToField('description', header);
       return;
     }
 
@@ -397,44 +409,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     return true;
   }, [currentStep.key, isAmountMappingValid, isMissing, canProceed]);
 
-  const handleUseStaticAccount = async () => {
-    const name = accountInput.trim();
-    if (!name) return;
-
-    const exists = availableAccounts.includes(name);
-
-    try {
-      if (!exists) {
-        await (window as any).go.main.App.CreateAccount(name);
-        setAvailableAccounts((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
-      }
-      setMapping((prev) => ({ ...prev, account: name, csv: { ...prev.csv, account: undefined } }));
-      setShowAccountSuccess(true);
-      setTimeout(() => setShowAccountSuccess(false), 2000);
-    } catch (e) {
-      console.error('Failed to handle static account', e);
-    }
-  };
-
-  const handleUseStaticOwner = async () => {
-    const name = ownerInput.trim();
-    if (!name) return;
-
-    const exists = availableOwners.includes(name);
-
-    try {
-      if (!exists) {
-        await (window as any).go.main.App.CreateOwner(name);
-        setAvailableOwners((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
-      }
-      setMapping((prev) => ({ ...prev, defaultOwner: name, csv: { ...prev.csv, owner: undefined } }));
-      setShowOwnerSuccess(true);
-      setTimeout(() => setShowOwnerSuccess(false), 2000);
-    } catch (e) {
-      console.error('Failed to handle static owner', e);
-    }
-  };
-
   const amountMappingType = mapping.csv.amountMapping?.type ?? 'single';
 
   return (
@@ -460,12 +434,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
             <Button variant="secondary" size="sm" onClick={handleBack} disabled={currentStepIdx === 0}>
               <ChevronLeft className="w-4 h-4" /> Back
             </Button>
-
-            {currentStep.optional && (
-              <Button variant="secondary" size="sm" onClick={handleSkip} disabled={!canProceed}>
-                Skip
-              </Button>
-            )}
 
             <Button
               variant="primary"
@@ -597,6 +565,15 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                   <span className="text-sm text-canvas-600 font-mono">
                     {mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.amountColumn || '—' : '—'}
                   </span>
+                  {mapping.csv.amountMapping?.type === 'amountWithType' && mapping.csv.amountMapping.amountColumn && (
+                    <button
+                      type="button"
+                      onClick={() => removeHeaderEverywhere(mapping.csv.amountMapping.amountColumn)}
+                      className="text-xs font-semibold text-canvas-500 hover:text-canvas-800"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
@@ -615,6 +592,15 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                   <span className="text-sm text-canvas-600 font-mono">
                     {mapping.csv.amountMapping?.type === 'amountWithType' ? mapping.csv.amountMapping.typeColumn || '—' : '—'}
                   </span>
+                  {mapping.csv.amountMapping?.type === 'amountWithType' && mapping.csv.amountMapping.typeColumn && (
+                    <button
+                      type="button"
+                      onClick={() => removeHeaderEverywhere(mapping.csv.amountMapping.typeColumn)}
+                      className="text-xs font-semibold text-canvas-500 hover:text-canvas-800"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </div>
 
                 {mapping.csv.amountMapping?.type === 'amountWithType' && (
@@ -691,33 +677,24 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                     value={accountInput}
                     onChange={(val) => {
                       setAccountInput(val);
-                      if (mapping.csv.account) {
-                        removeHeaderEverywhere(mapping.csv.account);
-                      }
+                      setMapping(prev => ({ ...prev, account: val, csv: { ...prev.csv, account: undefined } }));
                     }}
                     options={availableAccounts}
                     placeholder="e.g. RBC Checking"
                     className="w-full"
                   />
                 </div>
-                <Button
-                  variant={showAccountSuccess ? 'primary' : 'secondary'}
-                  size="sm"
-                  onClick={handleUseStaticAccount}
-                  disabled={!accountInput.trim()}
-                >
-                  {showAccountSuccess ? (
-                    <>
-                      <Check className="w-4 h-4" /> Done
-                    </>
-                  ) : (
-                    availableAccounts.includes(accountInput.trim()) ? 'Use' : 'Create'
-                  )}
-                </Button>
               </div>
               {mapping.csv.account && (
-                <div className="mt-2 text-xs text-canvas-500">
+                <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2">
                   Currently mapped from file: <span className="font-mono">{mapping.csv.account}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeHeaderEverywhere(mapping.csv.account || '')}
+                    className="text-[10px] font-semibold text-brand hover:underline"
+                  >
+                    Clear
+                  </button>
                 </div>
               )}
             </div>
@@ -738,33 +715,24 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                     value={ownerInput}
                     onChange={(val) => {
                       setOwnerInput(val);
-                      if (mapping.csv.owner) {
-                        removeHeaderEverywhere(mapping.csv.owner);
-                      }
+                      setMapping(prev => ({ ...prev, defaultOwner: val, csv: { ...prev.csv, owner: undefined } }));
                     }}
                     options={availableOwners}
                     placeholder="e.g. Alex"
                     className="w-full"
                   />
                 </div>
-                <Button
-                  variant={showOwnerSuccess ? 'primary' : 'secondary'}
-                  size="sm"
-                  onClick={handleUseStaticOwner}
-                  disabled={!ownerInput.trim()}
-                >
-                  {showOwnerSuccess ? (
-                    <>
-                      <Check className="w-4 h-4" /> Done
-                    </>
-                  ) : (
-                    availableOwners.includes(ownerInput.trim()) ? 'Use' : 'Create'
-                  )}
-                </Button>
               </div>
               {mapping.csv.owner && (
-                <div className="mt-2 text-xs text-canvas-500">
+                <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2">
                   Currently mapped from file: <span className="font-mono">{mapping.csv.owner}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeHeaderEverywhere(mapping.csv.owner || '')}
+                    className="text-[10px] font-semibold text-brand hover:underline"
+                  >
+                    Clear
+                  </button>
                 </div>
               )}
             </div>
@@ -783,8 +751,15 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                 options={CURRENCY_OPTIONS}
               />
               {mapping.csv.currency && (
-                <div className="mt-2 text-xs text-canvas-500">
+                <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2">
                   Currently mapped from file: <span className="font-mono">{mapping.csv.currency}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeHeaderEverywhere(mapping.csv.currency || '')}
+                    className="text-[10px] font-semibold text-brand hover:underline"
+                  >
+                    Clear
+                  </button>
                 </div>
               )}
             </div>
