@@ -136,13 +136,53 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
   const currentStep = STEPS[currentStepIdx];
 
+  const mappedHeaders = useMemo(() => {
+    const set = new Set<string>();
+    const { csv } = mapping;
+    if (csv.date) set.add(csv.date);
+    if (csv.amount) set.add(csv.amount);
+    if (csv.account) set.add(csv.account);
+    if (csv.owner) set.add(csv.owner);
+    if (csv.currency) set.add(csv.currency);
+    csv.description.forEach((h) => set.add(h));
+    const am = csv.amountMapping;
+    if (am) {
+      if (am.type === 'single' && am.column) set.add(am.column);
+      if (am.type === 'debitCredit') {
+        if (am.debitColumn) set.add(am.debitColumn);
+        if (am.creditColumn) set.add(am.creditColumn);
+      }
+      if (am.type === 'amountWithType') {
+        if (am.amountColumn) set.add(am.amountColumn);
+        if (am.typeColumn) set.add(am.typeColumn);
+      }
+    }
+    return set;
+  }, [mapping]);
+
+  const visibleColumnIndexes = useMemo(() => {
+    if (csvHeaders.length === 0) return [];
+    if (rows.length === 0) return csvHeaders.map((_, idx) => idx);
+
+    return csvHeaders
+      .map((header, idx) => ({ header, idx }))
+      .filter(({ header, idx }) => {
+        const hasValue = rows.some((row) => (row[idx] ?? '').trim().length > 0);
+        const isMapped = header ? mappedHeaders.has(header) : false;
+        return hasValue || isMapped;
+      })
+      .map(({ idx }) => idx);
+  }, [csvHeaders, rows, mappedHeaders]);
+
+  const visibleColumns = useMemo(
+    () => visibleColumnIndexes.map((idx) => ({ header: csvHeaders[idx], index: idx })),
+    [visibleColumnIndexes, csvHeaders]
+  );
+
   const previewRows = useMemo(() => {
     const unique = sampleUniqueRows(rows, 5, (r) => r.join('\u0000'));
-    return unique.map((r) => {
-      if (r.length >= csvHeaders.length) return r;
-      return [...r, ...Array(csvHeaders.length - r.length).fill('')];
-    });
-  }, [rows, csvHeaders.length]);
+    return unique.map((r) => visibleColumnIndexes.map((idx) => r[idx] ?? ''));
+  }, [rows, visibleColumnIndexes]);
 
   const [amountAssignTarget, setAmountAssignTarget] = useState<
     'single' | 'debitColumn' | 'creditColumn' | 'amountColumn' | 'typeColumn'
@@ -263,7 +303,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
     if (currentStep.key === 'date') {
       assignHeaderToField('date', header);
-      handleAdvance();
       return;
     }
 
@@ -272,29 +311,18 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
       if (am.type === 'single') {
         assignHeaderToField('amount', header);
-        handleAdvance();
         return;
       }
 
       if (am.type === 'debitCredit') {
         const target = amountAssignTarget === 'creditColumn' ? 'creditColumn' : 'debitColumn';
         assignAmountMappingColumn(target, header);
-
-        const nextDebit = target === 'debitColumn' ? header : am.debitColumn;
-        const nextCredit = target === 'creditColumn' ? header : am.creditColumn;
-        if (nextDebit && nextCredit) handleAdvance();
-
         return;
       }
 
       if (am.type === 'amountWithType') {
         const target = amountAssignTarget === 'typeColumn' ? 'typeColumn' : 'amountColumn';
         assignAmountMappingColumn(target, header);
-
-        const nextAmount = target === 'amountColumn' ? header : am.amountColumn;
-        const nextType = target === 'typeColumn' ? header : am.typeColumn;
-        if (nextAmount && nextType) handleAdvance();
-
         return;
       }
 
@@ -318,19 +346,16 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
     if (currentStep.key === 'account') {
       assignHeaderToField('account', header);
-      handleAdvance();
       return;
     }
 
     if (currentStep.key === 'owner') {
       assignHeaderToField('owner', header);
-      handleAdvance();
       return;
     }
 
     if (currentStep.key === 'currency') {
       assignHeaderToField('currency', header);
-      handleAdvance();
     }
   };
 
@@ -354,7 +379,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
         setAvailableAccounts((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
       }
       setMapping((prev) => ({ ...prev, account: name, csv: { ...prev.csv, account: undefined } }));
-      handleAdvance();
     } catch (e) {
       console.error('Failed to create account', e);
     }
@@ -370,7 +394,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
         setAvailableOwners((prev) => [...prev, name].sort((a, b) => a.localeCompare(b)));
       }
       setMapping((prev) => ({ ...prev, defaultOwner: name, csv: { ...prev.csv, owner: undefined } }));
-      handleAdvance();
     } catch (e) {
       console.error('Failed to create owner', e);
     }
@@ -733,12 +756,12 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-canvas-100/50">
-                {csvHeaders.map((header) => {
+                {visibleColumns.map(({ header, index }) => {
                   const selectedClass = isSelected(header);
                   const label = getHeaderLabel(header);
                   return (
                     <th
-                      key={header}
+                      key={header || index}
                       onClick={() => handleHeaderClick(header)}
                       className={
                         'px-4 py-4 text-left text-xs font-bold uppercase tracking-wider cursor-pointer transition-all duration-200 border-b-2 min-w-[150px] relative ' +
@@ -759,12 +782,11 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
             <tbody className="divide-y divide-canvas-200">
               {previewRows.map((row, i) => (
                 <tr key={i} className="hover:bg-canvas-100/30 transition-colors">
-                  {csvHeaders.map((_, j) => {
-                    const header = csvHeaders[j];
+                  {visibleColumns.map(({ header }, j) => {
                     const selectedClass = isSelected(header) ? 'bg-brand/5' : '';
                     const cell = row[j] ?? '';
                     return (
-                      <td key={j} className={`px-4 py-3 text-sm text-canvas-600 truncate max-w-[240px] ${selectedClass}`}>
+                      <td key={header || j} className={`px-4 py-3 text-sm text-canvas-600 whitespace-nowrap ${selectedClass}`}>
                         {cell}
                       </td>
                     );

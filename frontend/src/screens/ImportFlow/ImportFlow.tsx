@@ -413,7 +413,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100 texture-delight font-sans text-canvas-800">
-      <div className="w-full max-w-3xl">
+      <div className="w-full max-w-5xl">
         {step === 1 && (
           <div className="bg-canvas-50/30 border border-canvas-200/50 rounded-2xl p-8 backdrop-blur-sm shadow-card">
             <h2 className="text-2xl font-bold mb-6 text-center">Import Transactions</h2>
