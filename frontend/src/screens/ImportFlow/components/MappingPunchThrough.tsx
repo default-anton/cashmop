@@ -128,6 +128,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
   };
 
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
+  const [hoveredColIdx, setHoveredColIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (!initialMapping) return;
@@ -652,18 +653,22 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
           </div>
         )}
 
-        {currentStep.key === 'description' && mapping.csv.description.length > 0 && (
-          <div className="mt-6 flex flex-wrap gap-2">
-            {mapping.csv.description.map((h) => (
-              <button
-                key={h}
-                type="button"
-                onClick={() => removeHeaderEverywhere(h)}
-                className="px-2 py-1 rounded-lg bg-brand/10 text-brand border border-brand/20 text-xs font-semibold"
-              >
-                {h}
-              </button>
-            ))}
+        {currentStep.key === 'description' && (
+          <div className="mt-6 min-h-[44px] flex flex-wrap gap-2 items-center border-t border-canvas-100 pt-4">
+            {mapping.csv.description.length === 0 ? (
+              <span className="text-xs text-canvas-400 italic">No columns selected yet...</span>
+            ) : (
+              mapping.csv.description.map((h) => (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => removeHeaderEverywhere(h)}
+                  className="px-2 py-1 rounded-lg bg-brand/10 text-brand border border-brand/20 text-xs font-semibold animate-in zoom-in-95 duration-200"
+                >
+                  {h}
+                </button>
+              ))
+            )}
           </div>
         )}
 
@@ -775,34 +780,44 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
         )}
       </Card>
 
-      <div className="bg-canvas-50 rounded-2xl border border-canvas-200 overflow-hidden shadow-sm">
+      <div className={`bg-canvas-50 rounded-2xl border transition-all duration-300 overflow-hidden shadow-sm ${hoveredColIdx !== null ? 'border-brand/40 ring-1 ring-brand/10' : 'border-canvas-200'}`}>
         <div className="px-6 py-3 bg-canvas-100 border-b border-canvas-200 flex justify-between items-center">
           <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest">
             File preview ({fileCount} file{fileCount === 1 ? '' : 's'})
           </span>
-          <span className="text-[10px] text-canvas-400 font-mono italic">Click column headers to map</span>
+          <div className="flex items-center gap-2 px-2 py-1 bg-brand/10 border border-brand/20 rounded-lg animate-in fade-in slide-in-from-right-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
+            <span className="text-[10px] text-brand font-bold uppercase tracking-tight">
+              Click any column to map {currentStep.label}
+            </span>
+          </div>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" onMouseLeave={() => setHoveredColIdx(null)}>
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-canvas-100/50">
-                {visibleColumns.map(({ header, index }) => {
+                {visibleColumns.map(({ header, index }, idx) => {
                   const status = getColumnStatus(header);
                   const label = getHeaderLabel(header);
+                  const isHovered = hoveredColIdx === index;
+                  
                   return (
                     <th
                       key={header || index}
                       onClick={() => handleHeaderClick(header)}
+                      onMouseEnter={() => setHoveredColIdx(index)}
                       className={
                         'px-4 py-4 text-left text-xs font-bold uppercase tracking-wider transition-all duration-200 border-b-2 min-w-[150px] relative ' +
                         (status === 'current'
                           ? 'bg-brand/20 border-brand text-brand cursor-pointer '
                           : status === 'other'
                           ? 'bg-brand/5 border-brand/20 text-brand/40 cursor-not-allowed '
+                          : isHovered
+                          ? 'bg-canvas-200 border-canvas-400 text-canvas-800 cursor-pointer '
                           : 'text-canvas-600 border-transparent hover:bg-canvas-200 hover:text-canvas-800 cursor-pointer ')
                       }
                     >
-                      {label && (
+                      {label ? (
                         <span
                           className={
                             'absolute -top-1 left-4 px-1.5 py-0.5 text-[8px] text-white rounded-b-sm animate-in fade-in slide-in-from-top-1 ' +
@@ -811,6 +826,12 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                         >
                           {label}
                         </span>
+                      ) : (
+                        isHovered && status === 'none' && (
+                          <span className="absolute -top-1 left-4 px-1.5 py-0.5 text-[8px] bg-brand/60 text-white rounded-b-sm animate-in fade-in slide-in-from-top-1">
+                            Map as {currentStep.label}
+                          </span>
+                        )
                       )}
                       <span>{header}</span>
                     </th>
@@ -821,19 +842,25 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
             <tbody className="divide-y divide-canvas-200">
               {previewRows.map((row, i) => (
                 <tr key={i} className="hover:bg-canvas-100/30 transition-colors">
-                  {visibleColumns.map(({ header }, j) => {
+                  {visibleColumns.map(({ header, index }, j) => {
                     const status = getColumnStatus(header);
+                    const isHovered = hoveredColIdx === index;
+                    
                     const cellClass =
                       status === 'current'
                         ? 'bg-brand/10 text-brand cursor-pointer'
                         : status === 'other'
                         ? 'bg-brand/[0.02] text-brand/40 cursor-not-allowed'
+                        : isHovered
+                        ? 'bg-brand/5 text-brand/80 cursor-pointer'
                         : 'text-canvas-600 cursor-pointer hover:bg-canvas-200/50';
+                        
                     const cell = row[j] ?? '';
                     return (
                       <td
                         key={header || j}
                         onClick={() => handleHeaderClick(header)}
+                        onMouseEnter={() => setHoveredColIdx(index)}
                         className={`px-4 py-3 text-sm whitespace-nowrap transition-colors ${cellClass}`}
                       >
                         {cell}
