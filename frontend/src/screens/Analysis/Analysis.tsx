@@ -6,14 +6,14 @@ import {
 } from './components';
 import { database } from '../../../wailsjs/go/models';
 
-type GroupBy = 'Owner' | 'Category' | 'Account';
+type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
 const Analysis: React.FC = () => {
   const [months, setMonths] = useState<string[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [categories, setCategories] = useState<database.Category[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
-  const [groupBy, setGroupBy] = useState<GroupBy>('Category');
+  const [groupBy, setGroupBy] = useState<GroupBy>('All');
   const [transactions, setTransactions] = useState<database.TransactionModel[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,7 +64,7 @@ const Analysis: React.FC = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  const groupingOptions: GroupBy[] = ['Category', 'Owner', 'Account'];
+  const groupingOptions: GroupBy[] = ['All', 'Category', 'Owner', 'Account'];
 
   return (
     <div className="min-h-screen bg-canvas-100 texture-delight pt-24 pb-12 px-8">

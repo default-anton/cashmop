@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { database } from '../../../../wailsjs/go/models';
-import { User, Tag, Landmark, ChevronRight } from 'lucide-react';
+import { User, Tag, Landmark, ChevronRight, List } from 'lucide-react';
 
-type GroupBy = 'Owner' | 'Category' | 'Account';
+type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
 interface GroupedTransactionListProps {
   transactions: database.TransactionModel[];
@@ -21,6 +21,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       if (groupBy === 'Owner') key = tx.owner_name || 'No Owner';
       else if (groupBy === 'Category') key = tx.category_name || 'Uncategorized';
       else if (groupBy === 'Account') key = tx.account_name;
+      else if (groupBy === 'All') key = 'All Transactions';
 
       const group = grouped.get(key) || { transactions: [], total: 0 };
       group.transactions.push(tx);
@@ -35,6 +36,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   const getIcon = () => {
     if (groupBy === 'Owner') return <User className="w-4 h-4" />;
     if (groupBy === 'Category') return <Tag className="w-4 h-4" />;
+    if (groupBy === 'All') return <List className="w-4 h-4" />;
     return <Landmark className="w-4 h-4" />;
   };
 
