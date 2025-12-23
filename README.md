@@ -16,10 +16,13 @@
 * Grouping:
     * Group by Owner (e.g., Wife vs. Husband).
     * Group by Categories.
+    * Group by Account.
 * Metrics:
     * Subtotals per group.
     * Net Total (Cash positive vs. Cash negative).
-* Filtering: Multi-select categories to isolate specific spending (e.g., view only "Groceries" and "Utilities").
+* Filtering:
+    * Date Filter: Always active. Defaults to the latest month found in the transactions table (based on Max Date). High-efficiency month selector (e.g., a single-click dropdown or list to jump between months).
+    * Multi-select: Categories to isolate specific spending (e.g., view only "Groceries" and "Utilities").
 
 ---
 
