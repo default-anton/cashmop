@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 // TransactionModel mirrors the database table structure
@@ -185,7 +186,7 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *fl
 		LEFT JOIN categories c ON t.category_id = c.id
 		WHERE t.category_id IS NULL
 	`
-	args := []interface{}{}
+	args := []any{}
 
 	if descriptionMatch != "" {
 		switch matchType {
@@ -211,6 +212,72 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *fl
 	}
 
 	query += " ORDER BY t.date DESC LIMIT 50"
+
+	rows, err := DB.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var txs []TransactionModel
+	for rows.Next() {
+		var t TransactionModel
+		if err := rows.Scan(
+			&t.ID, &t.AccountID, &t.AccountName, &t.OwnerID, &t.OwnerName,
+			&t.Date, &t.Description, &t.Amount, &t.CategoryID, &t.CategoryName, &t.Currency,
+		); err != nil {
+			return nil, err
+		}
+		txs = append(txs, t)
+	}
+	return txs, nil
+}
+
+func GetMonthList() ([]string, error) {
+	rows, err := DB.Query(`
+		SELECT DISTINCT strftime('%Y-%m', date) as month
+		FROM transactions
+		ORDER BY month DESC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var months []string
+	for rows.Next() {
+		var month string
+		if err := rows.Scan(&month); err != nil {
+			return nil, err
+		}
+		months = append(months, month)
+	}
+	return months, nil
+}
+
+func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int64) ([]TransactionModel, error) {
+	query := `
+		SELECT
+			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
+			t.date, t.description, t.amount, t.category_id, COALESCE(c.name, ''), t.currency
+		FROM transactions t
+		JOIN accounts a ON t.account_id = a.id
+		LEFT JOIN users u ON t.owner_id = u.id
+		LEFT JOIN categories c ON t.category_id = c.id
+		WHERE t.date >= ? AND t.date <= ?
+	`
+	args := []any{startDate, endDate}
+
+	if len(categoryIDs) > 0 {
+		placeholders := make([]string, len(categoryIDs))
+		for i := range categoryIDs {
+			placeholders[i] = "?"
+			args = append(args, categoryIDs[i])
+		}
+		query += fmt.Sprintf(" AND t.category_id IN (%s)", strings.Join(placeholders, ","))
+	}
+
+	query += " ORDER BY t.date DESC"
 
 	rows, err := DB.Query(query, args...)
 	if err != nil {

@@ -213,6 +213,16 @@ func (a *App) SearchTransactions(descriptionMatch string, matchType string, amou
 	return database.SearchTransactions(descriptionMatch, matchType, amountMin, amountMax)
 }
 
+// GetMonthList returns unique year-month strings
+func (a *App) GetMonthList() ([]string, error) {
+	return database.GetMonthList()
+}
+
+// GetAnalysisTransactions returns transactions for a date range and optional category filter
+func (a *App) GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int64) ([]database.TransactionModel, error) {
+	return database.GetAnalysisTransactions(startDate, endDate, categoryIDs)
+}
+
 type ExcelData struct {
 	Headers []string   `json:"headers"`
 	Rows    [][]string `json:"rows"`

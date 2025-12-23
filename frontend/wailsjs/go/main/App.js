@@ -22,6 +22,10 @@ export function GetAccounts() {
   return window['go']['main']['App']['GetAccounts']();
 }
 
+export function GetAnalysisTransactions(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetAnalysisTransactions'](arg1, arg2, arg3);
+}
+
 export function GetCategories() {
   return window['go']['main']['App']['GetCategories']();
 }
@@ -32,6 +36,10 @@ export function GetCategorizationRulesCount() {
 
 export function GetColumnMappings() {
   return window['go']['main']['App']['GetColumnMappings']();
+}
+
+export function GetMonthList() {
+  return window['go']['main']['App']['GetMonthList']();
 }
 
 export function GetOwners() {

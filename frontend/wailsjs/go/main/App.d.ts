@@ -13,11 +13,15 @@ export function DeleteColumnMapping(arg1:number):Promise<void>;
 
 export function GetAccounts():Promise<Array<string>>;
 
+export function GetAnalysisTransactions(arg1:string,arg2:string,arg3:Array<number>):Promise<Array<database.TransactionModel>>;
+
 export function GetCategories():Promise<Array<database.Category>>;
 
 export function GetCategorizationRulesCount():Promise<number>;
 
 export function GetColumnMappings():Promise<Array<database.ColumnMappingModel>>;
+
+export function GetMonthList():Promise<Array<string>>;
 
 export function GetOwners():Promise<Array<string>>;
 

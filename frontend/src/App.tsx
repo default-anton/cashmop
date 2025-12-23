@@ -2,43 +2,68 @@ import React, { useState, useEffect } from 'react';
 import ImportFlow from './screens/ImportFlow/ImportFlow';
 import CategorizationLoop from './screens/CategorizationLoop/CategorizationLoop';
 import CategoryManager from './screens/CategoryManager/CategoryManager';
+import Analysis from './screens/Analysis/Analysis';
 
 function App() {
-  const [screen, setScreen] = useState<'import' | 'categorize' | 'categories'>('categorize');
+  const [screen, setScreen] = useState<'import' | 'categorize' | 'categories' | 'analysis'>('analysis');
   const [hasUncategorized, setHasUncategorized] = useState(false);
+  const [hasData, setHasData] = useState(false);
 
-  const checkUncategorized = async () => {
+  const checkStatus = async () => {
     try {
+      const months = await (window as any).go.main.App.GetMonthList();
+      const anyData = months && months.length > 0;
+      setHasData(anyData);
+
       const txs = await (window as any).go.main.App.GetUncategorizedTransactions();
-      const hasAny = txs && txs.length > 0;
-      setHasUncategorized(hasAny);
-      return hasAny;
+      const anyUncategorized = txs && txs.length > 0;
+      setHasUncategorized(anyUncategorized);
+
+      return { anyData, anyUncategorized };
     } catch (e) {
-      console.error('Failed to check uncategorized transactions', e);
-      return false;
+      console.error('Failed to check app status', e);
+      return { anyData: false, anyUncategorized: false };
     }
   };
 
   useEffect(() => {
-    checkUncategorized().then((hasAny) => {
-      if (hasAny) {
+    checkStatus().then(({ anyData, anyUncategorized }) => {
+      if (!anyData) {
+        setScreen('import');
+      } else if (anyUncategorized) {
         setScreen('categorize');
       } else {
-        setScreen('import');
+        setScreen('analysis');
       }
     });
   }, []);
 
   const handleImportComplete = async () => {
-    const hasAny = await checkUncategorized();
-    if (hasAny) {
+    const { anyUncategorized } = await checkStatus();
+    if (anyUncategorized) {
       setScreen('categorize');
+    } else {
+      setScreen('analysis');
     }
+  };
+
+  const handleCategorizationFinish = async () => {
+    await checkStatus();
+    setScreen('analysis');
   };
 
   return (
     <div className="min-h-screen bg-canvas-100">
       <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 bg-canvas-50/80 backdrop-blur-md border border-canvas-200 rounded-full shadow-lg">
+        {hasData && (
+          <button
+            onClick={() => setScreen('analysis')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'analysis' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
+              }`}
+          >
+            Analysis
+          </button>
+        )}
         <button
           onClick={() => setScreen('import')}
           className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'import' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
@@ -46,13 +71,15 @@ function App() {
         >
           Import
         </button>
-        <button
-          onClick={() => setScreen('categorize')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'categorize' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
-            }`}
-        >
-          Categorize {hasUncategorized && <span className="inline-block w-2 h-2 bg-finance-expense rounded-full ml-1" />}
-        </button>
+        {hasData && (
+          <button
+            onClick={() => setScreen('categorize')}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'categorize' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
+              }`}
+          >
+            Categorize {hasUncategorized && <span className="inline-block w-2 h-2 bg-finance-expense rounded-full ml-1" />}
+          </button>
+        )}
         <button
           onClick={() => setScreen('categories')}
           className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'categories' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
@@ -65,15 +92,15 @@ function App() {
       {screen === 'import' ? (
         <ImportFlow onImportComplete={handleImportComplete} />
       ) : screen === 'categorize' ? (
-        <CategorizationLoop onFinish={() => {
-          setHasUncategorized(false);
-          setScreen('import');
-        }} />
-      ) : (
+        <CategorizationLoop onFinish={handleCategorizationFinish} />
+      ) : screen === 'categories' ? (
         <CategoryManager />
+      ) : (
+        <Analysis />
       )}
     </div>
   );
 }
+
 
 export default App;
