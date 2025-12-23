@@ -23,3 +23,4 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 - Always read `frontend/tailwind.config.js` when creating or editing UI components to ensure consistency with the design system (colors, fonts, shadows, animations, etc.).
 - Check types with `npx tsc --noEmit` in the `frontend/` directory after editing .ts, .tsx files.
 - Feature specs are located in `docs/specs/`. When updating them, keep formatting simple and token-efficient (bullet points, concise text, no inline formatting).
+- `wails dev` is always running. Use the browser skill to verify and test UI changes. The DevServer URL is http://localhost:34115.
