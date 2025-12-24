@@ -1,17 +1,20 @@
 import React, { useMemo } from 'react';
 import { database } from '../../../../wailsjs/go/models';
 import { User, Tag, Landmark, ChevronRight, List } from 'lucide-react';
+import { Card } from '../../../components';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
 interface GroupedTransactionListProps {
   transactions: database.TransactionModel[];
   groupBy: GroupBy;
+  showSummary?: boolean;
 }
 
 const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   transactions,
   groupBy,
+  showSummary = true,
 }) => {
   const groups = useMemo(() => {
     const grouped = new Map<string, { transactions: database.TransactionModel[]; total: number }>();
@@ -53,38 +56,40 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   return (
     <div className="w-full space-y-6 animate-snap-in">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-canvas-50 p-6 rounded-3xl border border-canvas-200 shadow-sm">
-          <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Income</div>
-          <div className="text-2xl font-mono font-bold text-finance-income">
-            {formatCurrency(transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0))}
-          </div>
+      {showSummary && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card variant="elevated" className="p-6">
+            <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Income</div>
+            <div className="text-2xl font-mono font-bold text-finance-income">
+              {formatCurrency(transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0))}
+            </div>
+          </Card>
+          <Card variant="elevated" className="p-6">
+            <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Expenses</div>
+            <div className="text-2xl font-mono font-bold text-finance-expense">
+              {formatCurrency(Math.abs(transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)))}
+            </div>
+          </Card>
+          <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
+            <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">Net Flow</div>
+            <div className={`text-2xl font-mono font-bold ${netTotal >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
+              {formatCurrency(netTotal)}
+            </div>
+          </Card>
         </div>
-        <div className="bg-canvas-50 p-6 rounded-3xl border border-canvas-200 shadow-sm">
-          <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Expenses</div>
-          <div className="text-2xl font-mono font-bold text-finance-expense">
-            {formatCurrency(Math.abs(transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)))}
-          </div>
-        </div>
-        <div className="bg-canvas-50 p-6 rounded-3xl border border-brand/20 shadow-brand-glow">
-          <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">Net Flow</div>
-          <div className={`text-2xl font-mono font-bold ${netTotal >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-            {formatCurrency(netTotal)}
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Grouped Lists */}
       <div className="space-y-4">
         {groups.map(([name, data]) => (
-          <div key={name} className="bg-canvas-50 rounded-3xl border border-canvas-200 overflow-hidden shadow-sm">
+          <Card key={name} variant="elevated">
             <div className="px-6 py-4 bg-canvas-100/50 border-b border-canvas-200 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400">
                   {getIcon()}
                 </div>
                 <h3 className="font-bold text-canvas-800">{name}</h3>
-                <span className="text-xs font-mono text-canvas-400 bg-canvas-200/50 px-2 py-0.5 rounded-full">
+                <span className="text-xs font-mono text-canvas-600 bg-canvas-200 px-2 py-0.5 rounded-full">
                   {data.transactions.length} txns
                 </span>
               </div>
@@ -99,7 +104,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                   <div className="flex flex-col">
                     <span className="text-sm text-canvas-800 font-medium">{tx.description}</span>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-mono text-canvas-400">{tx.date}</span>
+                      <span className="text-[10px] font-mono text-canvas-500 font-bold tracking-tight">{tx.date}</span>
                       <span className="text-canvas-300">·</span>
                       <span className="text-[10px] text-canvas-500 uppercase tracking-tighter">{tx.account_name}</span>
                     </div>
@@ -113,7 +118,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         ))}
 
         {groups.length === 0 && (

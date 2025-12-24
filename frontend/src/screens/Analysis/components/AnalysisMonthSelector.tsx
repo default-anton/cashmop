@@ -40,7 +40,7 @@ const AnalysisMonthSelector: React.FC<AnalysisMonthSelectorProps> = ({
       <button
         onClick={handlePrevious}
         disabled={currentIndex >= months.length - 1}
-        className="p-2 rounded-xl hover:bg-canvas-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-canvas-600"
+        className="p-2 rounded-lg hover:bg-canvas-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-canvas-600"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
@@ -55,7 +55,7 @@ const AnalysisMonthSelector: React.FC<AnalysisMonthSelectorProps> = ({
       <button
         onClick={handleNext}
         disabled={currentIndex <= 0}
-        className="p-2 rounded-xl hover:bg-canvas-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-canvas-600"
+        className="p-2 rounded-lg hover:bg-canvas-200 disabled:opacity-30 disabled:hover:bg-transparent transition-colors text-canvas-600"
       >
         <ChevronRight className="w-5 h-5" />
       </button>

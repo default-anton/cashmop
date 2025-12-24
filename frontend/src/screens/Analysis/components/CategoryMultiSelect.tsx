@@ -46,31 +46,33 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
 
   return (
     <div className="relative" ref={containerRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`
-          flex items-center gap-2 px-4 py-2 rounded-2xl border transition-all duration-200
-          ${isOpen
-            ? 'bg-canvas-50 border-brand shadow-focus-ring'
-            : 'bg-canvas-50 border-canvas-200 hover:border-canvas-300 shadow-sm'}
-        `}
-      >
-        <Filter className={`w-4 h-4 ${selectedCount > 0 ? 'text-brand' : 'text-canvas-400'}`} />
-        <span className="text-sm font-bold text-canvas-700">
-          {selectedCount === 0
-            ? 'All Categories'
-            : `${selectedCount} Categor${selectedCount === 1 ? 'y' : 'ies'}`}
-        </span>
-        {selectedCount > 0 && (
-          <div
-            onClick={clearSelection}
-            className="ml-1 p-0.5 rounded-full hover:bg-canvas-200 text-canvas-400 hover:text-canvas-600 transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-          </div>
-        )}
-        <ChevronDown className={`w-4 h-4 text-canvas-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
+      <div className="bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`
+            flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200
+            ${isOpen
+              ? 'bg-canvas-100 text-brand'
+              : 'hover:bg-canvas-100 text-canvas-700'}
+          `}
+        >
+          <Filter className={`w-4 h-4 ${selectedCount > 0 ? 'text-brand' : 'text-canvas-400'}`} />
+          <span className="text-sm font-bold">
+            {selectedCount === 0
+              ? 'All Categories'
+              : `${selectedCount} Categor${selectedCount === 1 ? 'y' : 'ies'}`}
+          </span>
+          {selectedCount > 0 && (
+            <div
+              onClick={clearSelection}
+              className="ml-1 p-0.5 rounded-full hover:bg-canvas-200 text-canvas-400 hover:text-canvas-600 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </div>
+          )}
+          <ChevronDown className={`w-4 h-4 text-canvas-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
 
       {isOpen && (
         <div className="absolute top-full mt-2 left-0 w-64 bg-canvas-50 border border-canvas-200 rounded-2xl shadow-glass z-50 py-2 max-h-80 overflow-y-auto animate-snap-in">
