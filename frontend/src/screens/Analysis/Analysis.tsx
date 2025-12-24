@@ -100,7 +100,7 @@ const Analysis: React.FC = () => {
             <Card variant="elevated" className="p-6">
               <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Income</div>
               <div className="text-2xl font-mono font-bold text-finance-income">
-                {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0))}
+                {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(Math.abs(transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)))}
               </div>
             </Card>
             <Card variant="elevated" className="p-6">
@@ -112,7 +112,7 @@ const Analysis: React.FC = () => {
             <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
               <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">Net Flow</div>
               <div className={`text-2xl font-mono font-bold ${transactions.reduce((s, t) => s + t.amount, 0) >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-                {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(transactions.reduce((s, t) => s + t.amount, 0))}
+                {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(Math.abs(transactions.reduce((s, t) => s + t.amount, 0)))}
               </div>
             </Card>
           </div>

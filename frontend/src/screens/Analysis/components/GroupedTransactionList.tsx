@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import { database } from '../../../../wailsjs/go/models';
-import { User, Tag, Landmark, ChevronRight, List } from 'lucide-react';
+import { User, Tag, Landmark, List } from 'lucide-react';
 import { Card } from '../../../components';
+import Table from '../../../components/Table';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
@@ -16,6 +17,68 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   groupBy,
   showSummary = true,
 }) => {
+  const formatCurrency = (amount: number) => {
+    const formatter = new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: 'CAD',
+    });
+    return formatter.format(Math.abs(amount));
+  };
+
+  const columns = useMemo(() => {
+    const cols: any[] = [
+      {
+        key: 'date',
+        header: 'Date',
+        className: 'w-32 whitespace-nowrap font-mono text-[10px] font-bold tracking-tight text-canvas-500',
+      },
+      {
+        key: 'description',
+        header: 'Description',
+        className: 'font-medium text-canvas-800',
+      },
+    ];
+
+    if (groupBy !== 'Account') {
+      cols.push({
+        key: 'account_name',
+        header: 'Account',
+        className: 'text-[10px] text-canvas-500 tracking-tight',
+      });
+    }
+
+    if (groupBy !== 'Category') {
+      cols.push({
+        key: 'category_name',
+        header: 'Category',
+        render: (val: string) => val || 'Uncategorized',
+        className: 'text-[10px] text-canvas-500 tracking-tight',
+      });
+    }
+
+    if (groupBy !== 'Owner') {
+      cols.push({
+        key: 'owner_name',
+        header: 'Owner',
+        render: (val: string) => val || 'No Owner',
+        className: 'text-[10px] text-canvas-500 tracking-tight',
+      });
+    }
+
+    cols.push({
+      key: 'amount',
+      header: 'Amount',
+      className: 'text-right font-mono font-bold w-40 whitespace-nowrap',
+      render: (amount: number) => (
+        <span className={amount >= 0 ? 'text-finance-income' : 'text-finance-expense'}>
+          {formatCurrency(amount)}
+        </span>
+      ),
+    });
+
+    return cols;
+  }, [groupBy]);
+
   const groups = useMemo(() => {
     const grouped = new Map<string, { transactions: database.TransactionModel[]; total: number }>();
 
@@ -43,14 +106,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     return <Landmark className="w-4 h-4" />;
   };
 
-  const formatCurrency = (amount: number) => {
-    const formatter = new Intl.NumberFormat('en-CA', {
-      style: 'currency',
-      currency: 'CAD',
-    });
-    return formatter.format(amount);
-  };
-
   const netTotal = transactions.reduce((sum, tx) => sum + tx.amount, 0);
 
   return (
@@ -67,7 +122,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
           <Card variant="elevated" className="p-6">
             <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Expenses</div>
             <div className="text-2xl font-mono font-bold text-finance-expense">
-              {formatCurrency(Math.abs(transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)))}
+              {formatCurrency(transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0))}
             </div>
           </Card>
           <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
@@ -82,7 +137,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       {/* Grouped Lists */}
       <div className="space-y-4">
         {groups.map(([name, data]) => (
-          <Card key={name} variant="elevated">
+          <Card key={name} variant="elevated" className="overflow-hidden">
             <div className="px-6 py-4 bg-canvas-100/50 border-b border-canvas-200 flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400">
@@ -98,26 +153,11 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
               </div>
             </div>
 
-            <div className="divide-y divide-canvas-100">
-              {data.transactions.map((tx) => (
-                <div key={tx.id} className="px-6 py-3 flex items-center justify-between hover:bg-canvas-100/30 transition-colors group">
-                  <div className="flex flex-col">
-                    <span className="text-sm text-canvas-800 font-medium">{tx.description}</span>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-mono text-canvas-500 font-bold tracking-tight">{tx.date}</span>
-                      <span className="text-canvas-300">·</span>
-                      <span className="text-[10px] text-canvas-500 uppercase tracking-tighter">{tx.account_name}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span className={`text-sm font-mono font-bold ${tx.amount >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-                      {formatCurrency(tx.amount)}
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-canvas-200 group-hover:text-canvas-400 transition-colors" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Table
+              columns={columns}
+              data={data.transactions}
+              className="!border-none !rounded-none shadow-none"
+            />
           </Card>
         ))}
 
