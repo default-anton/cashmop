@@ -1,5 +1,5 @@
 import React, { RefObject } from 'react';
-import { Wand2, X, MousePointer2 } from 'lucide-react';
+import { Wand2, X, MousePointer2, Calendar, FileText, DollarSign } from 'lucide-react';
 
 
 interface SelectionRule {
@@ -147,9 +147,24 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                     <table className="w-full text-left border-collapse">
                       <thead className="sticky top-0 bg-canvas-100/80 backdrop-blur-sm shadow-sm">
                         <tr>
-                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">Date</th>
-                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">Description</th>
-                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest text-right">Amount</th>
+                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-2.5 h-2.5 opacity-70" />
+                              <span>Date</span>
+                            </div>
+                          </th>
+                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
+                            <div className="flex items-center gap-1">
+                              <FileText className="w-2.5 h-2.5 opacity-70" />
+                              <span>Description</span>
+                            </div>
+                          </th>
+                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest text-right">
+                            <div className="flex items-center gap-1 justify-end">
+                              <DollarSign className="w-2.5 h-2.5 opacity-70" />
+                              <span>Amount</span>
+                            </div>
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-canvas-200/30">

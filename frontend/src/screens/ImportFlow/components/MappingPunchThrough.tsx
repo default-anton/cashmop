@@ -342,6 +342,26 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     return null;
   };
 
+  const getHeaderIcon = (header: string) => {
+    if (mapping.csv.date === header) return <Calendar className="w-2 h-2" />;
+
+    const am = mapping.csv.amountMapping;
+    if (am?.type === 'single' && am.column === header) return <DollarSign className="w-2 h-2" />;
+    if (am?.type === 'debitCredit') {
+      if (am.debitColumn === header || am.creditColumn === header) return <DollarSign className="w-2 h-2" />;
+    }
+    if (am?.type === 'amountWithType') {
+      if (am.amountColumn === header || am.typeColumn === header) return <DollarSign className="w-2 h-2" />;
+    }
+
+    if (mapping.csv.description.includes(header)) return <FileText className="w-2 h-2" />;
+    if (mapping.csv.account === header) return <CreditCard className="w-2 h-2" />;
+    if (mapping.csv.owner === header) return <User className="w-2 h-2" />;
+    if (mapping.csv.currency === header) return <Globe className="w-2 h-2" />;
+
+    return null;
+  };
+
   const handleHeaderClick = (header: string) => {
     if (!header) return;
 
@@ -855,19 +875,21 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                       }
                     >
                       {label ? (
-                        <span
+                        <div
                           className={
-                            'absolute -top-1 left-4 px-1.5 py-0.5 text-[8px] text-white rounded-b-sm animate-in fade-in slide-in-from-top-1 ' +
+                            'absolute -top-1 left-4 px-1.5 py-0.5 text-[8px] text-white rounded-b-sm animate-in fade-in slide-in-from-top-1 flex items-center gap-1 ' +
                             (status === 'current' ? 'bg-brand' : 'bg-brand/40')
                           }
                         >
-                          {label}
-                        </span>
+                          {getHeaderIcon(header)}
+                          <span>{label}</span>
+                        </div>
                       ) : (
                         isHovered && status === 'none' && (
-                          <span className="absolute -top-1 left-4 px-1.5 py-0.5 text-[8px] bg-brand/60 text-white rounded-b-sm animate-in fade-in slide-in-from-top-1">
-                            Map as {currentStep.label}
-                          </span>
+                          <div className="absolute -top-1 left-4 px-1.5 py-0.5 text-[8px] bg-brand/60 text-white rounded-b-sm animate-in fade-in slide-in-from-top-1 flex items-center gap-1">
+                            <currentStep.icon className="w-2 h-2" />
+                            <span>Map as {currentStep.label}</span>
+                          </div>
                         )
                       )}
                       <span>{header}</span>

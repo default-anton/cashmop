@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { database } from '../../../../wailsjs/go/models';
-import { User, Tag, Landmark, List } from 'lucide-react';
+import { User, Tag, Landmark, List, Calendar, FileText, DollarSign } from 'lucide-react';
 import { Card } from '../../../components';
 import Table from '../../../components/Table';
 
@@ -25,55 +25,97 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     return formatter.format(Math.abs(amount));
   };
 
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr + 'T00:00:00'); // Ensure local timezone
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+    return { day, month };
+  };
+
   const columns = useMemo(() => {
+    const renderHeader = (label: string, Icon: React.ElementType, alignment: string = 'justify-start') => (
+      <div className={`flex items-center gap-1.5 ${alignment}`}>
+        <Icon className="w-3 h-3 opacity-70" />
+        <span>{label}</span>
+      </div>
+    );
+
     const cols: any[] = [
       {
         key: 'date',
-        header: 'Date',
-        className: 'w-32 whitespace-nowrap font-mono text-[10px] font-bold tracking-tight text-canvas-500',
+        header: renderHeader('Date', Calendar),
+        className: 'w-24',
+        render: (dateStr: string) => {
+          const { day, month } = formatDate(dateStr);
+          return (
+            <div className="flex items-center gap-2 group/date">
+              <div className="flex flex-col items-center justify-center min-w-[36px] h-[38px] rounded-lg bg-canvas-100 border border-canvas-200 group-hover/date:border-brand/30 group-hover/date:bg-brand/[0.02] transition-colors">
+                <span className="text-[10px] font-bold text-canvas-400 leading-none mb-0.5">{month}</span>
+                <span className="text-sm font-black text-canvas-700 leading-none">{day}</span>
+              </div>
+            </div>
+          );
+        }
       },
       {
         key: 'description',
-        header: 'Description',
-        className: 'font-medium text-canvas-800',
+        header: renderHeader('Description', FileText),
       },
     ];
 
     if (groupBy !== 'Account') {
       cols.push({
         key: 'account_name',
-        header: 'Account',
-        className: 'text-[10px] text-canvas-500 tracking-tight',
+        header: renderHeader('Account', Landmark),
+        className: 'w-40',
+        render: (val: string) => (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-100 text-[10px] font-bold text-canvas-600 border border-canvas-200 uppercase tracking-tight">
+            {val}
+          </span>
+        ),
       });
     }
 
     if (groupBy !== 'Category') {
       cols.push({
         key: 'category_name',
-        header: 'Category',
-        render: (val: string) => val || 'Uncategorized',
-        className: 'text-[10px] text-canvas-500 tracking-tight',
+        header: renderHeader('Category', Tag),
+        className: 'w-40',
+        render: (val: string) => (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-brand/5 text-[10px] font-bold text-brand border border-brand/10 uppercase tracking-tight">
+            {val || 'Uncategorized'}
+          </span>
+        ),
       });
     }
 
     if (groupBy !== 'Owner') {
       cols.push({
         key: 'owner_name',
-        header: 'Owner',
-        render: (val: string) => val || 'No Owner',
-        className: 'text-[10px] text-canvas-500 tracking-tight',
+        header: renderHeader('Owner', User),
+        className: 'w-32',
+        render: (val: string) => (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-200/50 text-[10px] font-bold text-canvas-500 uppercase tracking-tight">
+            {val || 'No Owner'}
+          </span>
+        ),
       });
     }
 
     cols.push({
       key: 'amount',
-      header: 'Amount',
-      className: 'text-right font-mono font-bold w-40 whitespace-nowrap',
-      render: (amount: number) => (
-        <span className={amount >= 0 ? 'text-finance-income' : 'text-finance-expense'}>
-          {formatCurrency(amount)}
-        </span>
-      ),
+      header: renderHeader('Amount', DollarSign, 'justify-end'),
+      className: 'text-right font-mono font-bold w-32 whitespace-nowrap',
+      render: (amount: number) => {
+        const formatted = formatCurrency(amount);
+        const [symbol, value] = [formatted.slice(0, 1), formatted.slice(1)];
+        return (
+          <div className={`flex items-baseline justify-end gap-0.5 ${amount >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
+            <span className="text-[10px] opacity-40 font-sans tracking-tighter">{symbol}</span>
+            <span className="text-sm tracking-tight">{value}</span>
+          </div>
+        );
+      },
     });
 
     return cols;
