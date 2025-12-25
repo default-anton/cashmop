@@ -6,7 +6,7 @@ import {
 } from './components';
 import { database } from '../../../wailsjs/go/models';
 import { Card } from '../../components';
-import { BarChart3, ArrowUpDown } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 export type SortOrder = 'asc' | 'desc';
@@ -74,6 +74,24 @@ const Analysis: React.FC = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
+  const handleSortGroup = (field: GroupSortField) => {
+    if (groupSortField === field) {
+      setGroupSortOrder(groupSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setGroupSortField(field);
+      setGroupSortOrder(field === 'amount' ? 'desc' : 'asc');
+    }
+  };
+
+  const handleSortTransaction = (field: TransactionSortField) => {
+    if (transactionSortField === field) {
+      setTransactionSortOrder(transactionSortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setTransactionSortField(field);
+      setTransactionSortOrder(field === 'date' ? 'desc' : 'asc');
+    }
+  };
+
   const groupingOptions: GroupBy[] = ['All', 'Category', 'Owner', 'Account'];
 
   return (
@@ -90,6 +108,19 @@ const Analysis: React.FC = () => {
               <h1 className="text-3xl font-black text-canvas-800 tracking-tight">Financial Analysis</h1>
               <p className="text-canvas-600 font-medium">Deep dive into your cash flow and spending habits.</p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <AnalysisMonthSelector
+              months={months}
+              selectedMonth={selectedMonth}
+              onChange={setSelectedMonth}
+            />
+            <CategoryMultiSelect
+              categories={categories}
+              selectedCategoryIds={selectedCategoryIds}
+              onChange={setSelectedCategoryIds}
+            />
           </div>
         </div>
 
@@ -126,9 +157,8 @@ const Analysis: React.FC = () => {
           </div>
         )}
 
-        {/* Filters & Grouping Toggle */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Grouping Toggle */}
+        {/* Grouping Toggle */}
+        <div className="flex items-center justify-between pb-2 border-b border-canvas-200">
           <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
             {groupingOptions.map((option) => (
               <button
@@ -145,85 +175,9 @@ const Analysis: React.FC = () => {
               </button>
             ))}
           </div>
-
-          <AnalysisMonthSelector
-            months={months}
-            selectedMonth={selectedMonth}
-            onChange={setSelectedMonth}
-          />
-          <CategoryMultiSelect
-            categories={categories}
-            selectedCategoryIds={selectedCategoryIds}
-            onChange={setSelectedCategoryIds}
-          />
-        </div>
-
-        {/* Sorting Controls */}
-        <div className="flex flex-wrap items-center gap-6 pb-2 border-b border-canvas-200">
-          {groupBy !== 'All' && (
-            <div className="flex items-center gap-3">
-              <span className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest">Group Sort</span>
-              <div className="flex items-center gap-1 bg-canvas-50 p-1 rounded-xl border border-canvas-200 shadow-sm">
-                <button
-                  onClick={() => {
-                    if (groupSortField === 'name') setGroupSortOrder(groupSortOrder === 'asc' ? 'desc' : 'asc');
-                    else setGroupSortField('name');
-                  }}
-                  className={`
-                    flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
-                    ${groupSortField === 'name' ? 'bg-brand text-white' : 'text-canvas-600 hover:bg-canvas-100'}
-                  `}
-                >
-                  Name
-                  {groupSortField === 'name' && <ArrowUpDown className={`w-3 h-3 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
-                </button>
-                <button
-                  onClick={() => {
-                    if (groupSortField === 'amount') setGroupSortOrder(groupSortOrder === 'asc' ? 'desc' : 'asc');
-                    else setGroupSortField('amount');
-                  }}
-                  className={`
-                    flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
-                    ${groupSortField === 'amount' ? 'bg-brand text-white' : 'text-canvas-600 hover:bg-canvas-100'}
-                  `}
-                >
-                  Total
-                  {groupSortField === 'amount' && <ArrowUpDown className={`w-3 h-3 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest">Txn Sort</span>
-            <div className="flex items-center gap-1 bg-canvas-50 p-1 rounded-xl border border-canvas-200 shadow-sm">
-              <button
-                onClick={() => {
-                  if (transactionSortField === 'date') setTransactionSortOrder(transactionSortOrder === 'asc' ? 'desc' : 'asc');
-                  else setTransactionSortField('date');
-                }}
-                className={`
-                  flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
-                  ${transactionSortField === 'date' ? 'bg-brand text-white' : 'text-canvas-600 hover:bg-canvas-100'}
-                `}
-              >
-                Date
-                {transactionSortField === 'date' && <ArrowUpDown className={`w-3 h-3 transition-transform ${transactionSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
-              </button>
-              <button
-                onClick={() => {
-                  if (transactionSortField === 'amount') setTransactionSortOrder(transactionSortOrder === 'asc' ? 'desc' : 'asc');
-                  else setTransactionSortField('amount');
-                }}
-                className={`
-                  flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
-                  ${transactionSortField === 'amount' ? 'bg-brand text-white' : 'text-canvas-600 hover:bg-canvas-100'}
-                `}
-              >
-                Amount
-                {transactionSortField === 'amount' && <ArrowUpDown className={`w-3 h-3 transition-transform ${transactionSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
-              </button>
-            </div>
+          
+          <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest">
+            {transactions.length} Transactions Found
           </div>
         </div>
 
@@ -242,6 +196,8 @@ const Analysis: React.FC = () => {
             groupSortOrder={groupSortOrder}
             transactionSortField={transactionSortField}
             transactionSortOrder={transactionSortOrder}
+            onSortGroup={handleSortGroup}
+            onSortTransaction={handleSortTransaction}
           />
         )}
       </div>
