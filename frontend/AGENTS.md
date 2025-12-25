@@ -10,3 +10,4 @@
     - "ONLY" button on item hover to quickly isolate a single selection
     - Clear typography showing current selection count (or "All selected")
     - Reference: `frontend/src/screens/Analysis/components/CategoryMultiSelect.tsx`
+- **Master-Detail Sorting**: Use interactive headers (tables, card groups) instead of dedicated control rows to save space. Sortable labels must provide visual affordance (e.g., hover effects, ghost icons) to signal clickability. Reference: `frontend/src/screens/Analysis/components/GroupedTransactionList.tsx`.
