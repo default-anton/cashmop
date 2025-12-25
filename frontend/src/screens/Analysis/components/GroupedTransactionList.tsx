@@ -3,6 +3,7 @@ import { database } from '../../../../wailsjs/go/models';
 import { User, Tag, Landmark, List, Calendar, FileText, DollarSign } from 'lucide-react';
 import { Card } from '../../../components';
 import Table from '../../../components/Table';
+import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
@@ -10,12 +11,20 @@ interface GroupedTransactionListProps {
   transactions: database.TransactionModel[];
   groupBy: GroupBy;
   showSummary?: boolean;
+  groupSortField?: GroupSortField;
+  groupSortOrder?: SortOrder;
+  transactionSortField?: TransactionSortField;
+  transactionSortOrder?: SortOrder;
 }
 
 const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   transactions,
   groupBy,
   showSummary = true,
+  groupSortField = 'name',
+  groupSortOrder = 'asc',
+  transactionSortField = 'date',
+  transactionSortOrder = 'desc',
 }) => {
   const formatCurrency = (amount: number) => {
     const formatter = new Intl.NumberFormat('en-CA', {
@@ -137,9 +146,35 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       grouped.set(key, group);
     });
 
-    // Sort groups by total amount (descending for expense-heavy groups, or just by name)
-    return Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [transactions, groupBy]);
+    // Sort transactions within each group
+    grouped.forEach((data) => {
+      data.transactions.sort((a, b) => {
+        let comparison = 0;
+        if (transactionSortField === 'date') {
+          comparison = a.date.localeCompare(b.date);
+        } else {
+          comparison = Math.abs(a.amount) - Math.abs(b.amount);
+        }
+        return transactionSortOrder === 'asc' ? comparison : -comparison;
+      });
+    });
+
+    // Convert to array and sort groups
+    const result = Array.from(grouped.entries());
+
+    result.sort((a, b) => {
+      let comparison = 0;
+      if (groupSortField === 'name') {
+        comparison = a[0].localeCompare(b[0]);
+      } else {
+        // Sort by absolute total amount (usually what people want for expenses)
+        comparison = Math.abs(a[1].total) - Math.abs(b[1].total);
+      }
+      return groupSortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return result;
+  }, [transactions, groupBy, groupSortField, groupSortOrder, transactionSortField, transactionSortOrder]);
 
   const getIcon = () => {
     if (groupBy === 'Owner') return <User className="w-4 h-4" />;
