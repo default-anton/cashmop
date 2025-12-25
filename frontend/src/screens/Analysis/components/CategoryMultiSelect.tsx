@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Filter, Check, ChevronDown, X } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Filter, Check, ChevronDown, X, Search } from 'lucide-react';
 
 interface Category {
   id: number;
@@ -18,7 +18,9 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
   onChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -30,6 +32,12 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isOpen]);
+
   const toggleCategory = (id: number) => {
     const newSelection = selectedCategoryIds.includes(id)
       ? selectedCategoryIds.filter((sid) => sid !== id)
@@ -37,12 +45,28 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
     onChange(newSelection);
   };
 
-  const clearSelection = (e: React.MouseEvent) => {
+  const selectOnly = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
+    onChange([id]);
+  };
+
+  const selectAll = () => {
+    onChange(categories.map(c => c.id));
+  };
+
+  const clearSelection = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     onChange([]);
   };
 
+  const filteredCategories = useMemo(() => {
+    return categories.filter((c) =>
+      c.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [categories, searchTerm]);
+
   const selectedCount = selectedCategoryIds.length;
+  const isAllSelected = selectedCount === categories.length && categories.length > 0;
 
   return (
     <div className="relative" ref={containerRef}>
@@ -60,7 +84,9 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
           <span className="text-sm font-bold">
             {selectedCount === 0
               ? 'All Categories'
-              : `${selectedCount} Categor${selectedCount === 1 ? 'y' : 'ies'}`}
+              : selectedCount === categories.length
+                ? 'All Categories Selected'
+                : `${selectedCount} Categor${selectedCount === 1 ? 'y' : 'ies'}`}
           </span>
           {selectedCount > 0 && (
             <div
@@ -75,43 +101,86 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
       </div>
 
       {isOpen && (
-        <div className="absolute top-full mt-2 left-0 w-64 bg-canvas-50 border border-canvas-200 rounded-2xl shadow-glass z-50 py-2 max-h-80 overflow-y-auto animate-snap-in">
-          <div className="px-4 py-2 mb-1 border-b border-canvas-100 flex justify-between items-center">
-             <span className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest">Select Categories</span>
-             {selectedCount > 0 && (
-                <button
-                  onClick={() => onChange([])}
-                  className="text-[10px] font-bold text-brand uppercase hover:underline"
-                >
-                  Reset
-                </button>
-             )}
-          </div>
-          {categories.map((category) => {
-            const isSelected = selectedCategoryIds.includes(category.id);
-            return (
-              <button
-                key={category.id}
-                onClick={() => toggleCategory(category.id)}
-                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-canvas-100 transition-colors group"
-              >
-                <span className={`text-sm ${isSelected ? 'font-bold text-canvas-800' : 'text-canvas-600'}`}>
-                  {category.name}
-                </span>
-                <div className={`
-                  w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all
-                  ${isSelected ? 'bg-brand border-brand text-white' : 'border-canvas-200 bg-white group-hover:border-canvas-300'}
-                `}>
-                  {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
-                </div>
-              </button>
-            );
-          })}
-          {categories.length === 0 && (
-            <div className="px-4 py-8 text-center text-canvas-400 text-sm italic">
-              No categories found
+        <div className="absolute top-full mt-2 left-0 w-72 bg-canvas-50 border border-canvas-200 rounded-2xl shadow-glass z-50 overflow-hidden animate-snap-in flex flex-col max-h-96">
+          {/* Header & Search */}
+          <div className="p-3 border-b border-canvas-100 space-y-3">
+            <div className="flex justify-between items-center px-1">
+               <span className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest">Select Categories</span>
+               <div className="flex gap-3">
+                 <button
+                    onClick={isAllSelected ? () => clearSelection() : selectAll}
+                    className="text-[10px] font-bold text-brand uppercase hover:underline"
+                  >
+                    {isAllSelected ? 'Deselect All' : 'Select All'}
+                  </button>
+                  {selectedCount > 0 && !isAllSelected && (
+                    <button
+                      onClick={() => clearSelection()}
+                      className="text-[10px] font-bold text-canvas-400 uppercase hover:text-canvas-600 hover:underline"
+                    >
+                      Reset
+                    </button>
+                  )}
+               </div>
             </div>
-          )}
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-canvas-400" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search categories..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-canvas-100 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-brand/20 placeholder:text-canvas-400 outline-none"
+              />
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="overflow-y-auto flex-1 py-1">
+            {filteredCategories.map((category) => {
+              const isSelected = selectedCategoryIds.includes(category.id);
+              return (
+                <div
+                  key={category.id}
+                  className="group relative flex items-center px-2"
+                >
+                  <button
+                    onClick={() => toggleCategory(category.id)}
+                    className="flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-canvas-100 transition-colors"
+                  >
+                    <span className={`text-sm ${isSelected ? 'font-bold text-canvas-800' : 'text-canvas-600'}`}>
+                      {category.name}
+                    </span>
+                    <div className={`
+                      w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all
+                      ${isSelected ? 'bg-brand border-brand text-white' : 'border-canvas-200 bg-white'}
+                    `}>
+                      {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                    </div>
+                  </button>
+
+                  {/* "Only" button visible on hover */}
+                  <button
+                    onClick={(e) => selectOnly(category.id, e)}
+                    className="absolute right-12 opacity-0 group-hover:opacity-100 px-2 py-1 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 hover:bg-canvas-300 transition-all z-10"
+                  >
+                    ONLY
+                  </button>
+                </div>
+              );
+            })}
+
+            {filteredCategories.length === 0 && (
+              <div className="px-4 py-8 text-center text-canvas-400 text-sm italic">
+                {searchTerm ? 'No matches found' : 'No categories found'}
+              </div>
+            )}
+          </div>
+
+          {/* Footer for quick summary if needed or just padding */}
+          <div className="h-2" />
         </div>
       )}
     </div>
