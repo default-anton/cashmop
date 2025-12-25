@@ -35,8 +35,8 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   const columns = useMemo(() => {
     const renderHeader = (label: string, Icon: React.ElementType, alignment: string = 'justify-start') => (
       <div className={`flex items-center gap-1.5 ${alignment}`}>
-        <Icon className="w-3 h-3 opacity-70" />
-        <span>{label}</span>
+        <Icon className="w-3 h-3 opacity-90 text-canvas-500" />
+        <span className="text-canvas-600">{label}</span>
       </div>
     );
 
@@ -50,7 +50,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
           return (
             <div className="flex items-center gap-2 group/date">
               <div className="flex flex-col items-center justify-center min-w-[36px] h-[38px] rounded-lg bg-canvas-100 border border-canvas-200 group-hover/date:border-brand/30 group-hover/date:bg-brand/[0.02] transition-colors">
-                <span className="text-[10px] font-bold text-canvas-400 leading-none mb-0.5">{month}</span>
+                <span className="text-[10px] font-bold text-canvas-600 leading-none mb-0.5">{month}</span>
                 <span className="text-sm font-black text-canvas-700 leading-none">{day}</span>
               </div>
             </div>
@@ -95,7 +95,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         header: renderHeader('Owner', User),
         className: 'w-32',
         render: (val: string) => (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-200/50 text-[10px] font-bold text-canvas-500 uppercase tracking-tight">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 uppercase tracking-tight">
             {val || 'No Owner'}
           </span>
         ),
@@ -156,13 +156,13 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       {showSummary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card variant="elevated" className="p-6">
-            <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Income</div>
+            <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Income</div>
             <div className="text-2xl font-mono font-bold text-finance-income">
               {formatCurrency(transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0))}
             </div>
           </Card>
           <Card variant="elevated" className="p-6">
-            <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Expenses</div>
+            <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Expenses</div>
             <div className="text-2xl font-mono font-bold text-finance-expense">
               {formatCurrency(transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0))}
             </div>

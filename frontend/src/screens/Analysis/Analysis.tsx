@@ -80,7 +80,7 @@ const Analysis: React.FC = () => {
             </div>
             <div>
               <h1 className="text-3xl font-black text-canvas-800 tracking-tight">Financial Analysis</h1>
-              <p className="text-canvas-500 font-medium">Deep dive into your cash flow and spending habits.</p>
+              <p className="text-canvas-600 font-medium">Deep dive into your cash flow and spending habits.</p>
             </div>
           </div>
         </div>
@@ -98,13 +98,13 @@ const Analysis: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card variant="elevated" className="p-6">
-              <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Income</div>
+              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Income</div>
               <div className="text-2xl font-mono font-bold text-finance-income">
                 {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(Math.abs(transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)))}
               </div>
             </Card>
             <Card variant="elevated" className="p-6">
-              <div className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest mb-1">Total Expenses</div>
+              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Expenses</div>
               <div className="text-2xl font-mono font-bold text-finance-expense">
                 {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(Math.abs(transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)))}
               </div>
@@ -130,7 +130,7 @@ const Analysis: React.FC = () => {
                   px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200
                   ${groupBy === option
                     ? 'bg-brand text-white shadow-brand-glow'
-                    : 'text-canvas-500 hover:text-canvas-700 hover:bg-canvas-100'}
+                    : 'text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100'}
                 `}
               >
                 {option}
@@ -154,7 +154,7 @@ const Analysis: React.FC = () => {
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center space-y-4">
             <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>
-            <p className="text-canvas-500 font-medium animate-pulse">Analyzing your finances...</p>
+            <p className="text-canvas-600 font-medium animate-pulse">Analyzing your finances...</p>
           </div>
         ) : (
           <GroupedTransactionList

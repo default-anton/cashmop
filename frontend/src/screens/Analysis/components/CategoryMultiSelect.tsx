@@ -91,7 +91,7 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
           {selectedCount > 0 && (
             <div
               onClick={clearSelection}
-              className="ml-1 p-0.5 rounded-full hover:bg-canvas-200 text-canvas-400 hover:text-canvas-600 transition-colors"
+              className="ml-1 p-0.5 rounded-full hover:bg-canvas-200 text-canvas-500 hover:text-canvas-800 transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </div>
@@ -105,7 +105,7 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
           {/* Header & Search */}
           <div className="p-3 border-b border-canvas-100 space-y-3">
             <div className="flex justify-between items-center px-1">
-               <span className="text-[10px] font-bold text-canvas-400 uppercase tracking-widest">Select Categories</span>
+               <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest">Select Categories</span>
                <div className="flex gap-3">
                  <button
                     onClick={isAllSelected ? () => clearSelection() : selectAll}
@@ -116,7 +116,7 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
                   {selectedCount > 0 && !isAllSelected && (
                     <button
                       onClick={() => clearSelection()}
-                      className="text-[10px] font-bold text-canvas-400 uppercase hover:text-canvas-600 hover:underline"
+                      className="text-[10px] font-bold text-canvas-600 uppercase hover:text-canvas-800 hover:underline"
                     >
                       Reset
                     </button>
@@ -125,14 +125,14 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
             </div>
 
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-canvas-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-canvas-500" />
               <input
                 ref={searchInputRef}
                 type="text"
                 placeholder="Search categories..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-canvas-100 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-brand/20 placeholder:text-canvas-400 outline-none"
+                className="w-full bg-canvas-100 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-brand/20 placeholder:text-canvas-500 outline-none"
               />
             </div>
           </div>
@@ -173,7 +173,7 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
             })}
 
             {filteredCategories.length === 0 && (
-              <div className="px-4 py-8 text-center text-canvas-400 text-sm italic">
+              <div className="px-4 py-8 text-center text-canvas-500 text-sm italic">
                 {searchTerm ? 'No matches found' : 'No categories found'}
               </div>
             )}
