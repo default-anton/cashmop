@@ -171,7 +171,11 @@ func GetUncategorizedTransactions() ([]TransactionModel, error) {
 }
 
 func UpdateTransactionCategory(id int64, categoryID int64) error {
-	_, err := DB.Exec("UPDATE transactions SET category_id = ? WHERE id = ?", categoryID, id)
+	var cid interface{} = categoryID
+	if categoryID == 0 {
+		cid = nil
+	}
+	_, err := DB.Exec("UPDATE transactions SET category_id = ? WHERE id = ?", cid, id)
 	return err
 }
 

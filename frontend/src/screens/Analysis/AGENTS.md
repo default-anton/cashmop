@@ -12,8 +12,12 @@ Transactions can be re-categorized directly in the table.
 - **Component**: `EditableCategoryCell` using `CategoryGhostInput`.
 - **Interaction**:
     - Click category tag to edit.
-    - `Enter` or `Blur`: Save and exit.
+    - `Enter`: Save and exit. If suggestions are present, selects the first or highlighted one.
+    - `Tab`/`Shift+Tab`: Navigate suggestions (wraps around).
+    - `ArrowUp`/`ArrowDown`: Navigate suggestions (wraps around).
+    - `Blur`: Cancel and exit.
     - `Escape`: Cancel and exit.
+    - **Empty Input**: Saving an empty or whitespace-only value makes the transaction uncategorized (sets `category_id` to `NULL` in DB).
 - **Data Refresh**: Trigger both transaction and category refreshes after save.
 
 ## Reference Examples

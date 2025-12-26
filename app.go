@@ -136,6 +136,9 @@ func (a *App) GetUncategorizedTransactions() ([]database.TransactionModel, error
 
 // CategorizeTransaction updates a single transaction's category
 func (a *App) CategorizeTransaction(id int64, categoryName string) error {
+	if strings.TrimSpace(categoryName) == "" {
+		return database.UpdateTransactionCategory(id, 0)
+	}
 	catID, err := database.GetOrCreateCategory(categoryName)
 	if err != nil {
 		return err

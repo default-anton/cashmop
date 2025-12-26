@@ -30,6 +30,14 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
   }, [categories, value]);
 
   useEffect(() => {
+    if (suggestions.length > 0) {
+      setSelectedIndex(0);
+    } else {
+      setSelectedIndex(-1);
+    }
+  }, [suggestions]);
+
+  useEffect(() => {
     inputRef.current?.focus();
     inputRef.current?.select();
     
@@ -49,12 +57,25 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
       onSave(finalValue);
     } else if (e.key === 'Escape') {
       onCancel();
+    } else if (e.key === 'Tab') {
+      if (suggestions.length > 0) {
+        e.preventDefault();
+        if (e.shiftKey) {
+          setSelectedIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+        } else {
+          setSelectedIndex(prev => (prev >= suggestions.length - 1 ? 0 : prev + 1));
+        }
+      }
     } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex(prev => Math.min(prev + 1, suggestions.length - 1));
+      if (suggestions.length > 0) {
+        e.preventDefault();
+        setSelectedIndex(prev => (prev >= suggestions.length - 1 ? 0 : prev + 1));
+      }
     } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex(prev => Math.max(prev - 1, -1));
+      if (suggestions.length > 0) {
+        e.preventDefault();
+        setSelectedIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+      }
     }
   };
 
@@ -63,7 +84,7 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
     if (dropdownRef.current?.contains(e.relatedTarget as Node)) {
       return;
     }
-    onSave(value);
+    onCancel();
   };
 
   const dropdown = (
