@@ -8,7 +8,8 @@
 - **UI/UX**: 
     - Keep Category column visible even when grouping by Category to allow re-categorization.
     - **No Caps for Names**: Do not use `uppercase` for names/metadata (Categories, Accounts, Owners). Use normal casing.
-    - **Visual Stability**: Use **Optimistic Updates** for categorization. Never trigger a global loading state that unmounts the list. Use `framer-motion` (layout prop) to animate transactions moving between cards and `AnimatePresence` for cards appearing/disappearing.
+    - **Visual Stability**: Use **Optimistic Updates** for categorization. Never trigger a global loading state that unmounts the list. Use `framer-motion` (layout prop) to animate transactions moving between cards and `AnimatePresence` (mode="popLayout") for cards appearing/disappearing to prevent layout jumps.
+    - **Subtle Animations**: Prefer subtle (4-8px) vertical offsets and simple `easeOut` or high-damping springs for a professional, purposeful feel. Avoid scaling on exit.
     - **Success Feedback**: Provide immediate in-place feedback (e.g., success flash on the tag) after a save, while syncing the backend in the background.
 
 ## Common Patterns

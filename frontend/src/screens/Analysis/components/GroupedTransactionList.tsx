@@ -247,7 +247,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   const netTotal = transactions.reduce((sum, tx) => sum + tx.amount, 0);
 
   return (
-    <div className="w-full space-y-6 animate-snap-in">
+    <div className="w-full space-y-6">
       {/* Summary Cards */}
       {showSummary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -274,20 +274,21 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
 
       {/* Grouped Lists */}
       <div className="space-y-4 relative">
-        <AnimatePresence initial={false}>
+        <AnimatePresence mode="popLayout" initial={false}>
           {groups.map(([name, data]) => (
             <motion.div
               key={name}
               layout
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+              exit={{ opacity: 0, transition: { duration: 0.1 } }}
               transition={{ 
                 type: "spring",
-                stiffness: 500,
+                stiffness: 400,
                 damping: 40,
                 mass: 1,
-                layout: { duration: 0.3 }
+                opacity: { duration: 0.15 },
+                layout: { duration: 0.25 }
               }}
             >
               <Card variant="elevated" className="overflow-hidden">
