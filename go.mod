@@ -3,6 +3,7 @@ module cashflow
 go 1.25
 
 require (
+	github.com/junegunn/fzf v0.67.0
 	github.com/wailsapp/wails/v2 v2.11.0
 	github.com/xuri/excelize/v2 v2.10.0
 	modernc.org/sqlite v1.40.1

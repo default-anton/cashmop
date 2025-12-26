@@ -2,6 +2,7 @@ package main
 
 import (
 	"cashflow/internal/database"
+	"cashflow/internal/fuzzy"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -172,6 +173,11 @@ func (a *App) SaveCategorizationRule(rule database.CategorizationRule) (int64, e
 // GetCategorizationRulesCount returns the number of existing categorization rules
 func (a *App) GetCategorizationRulesCount() (int, error) {
 	return database.GetRulesCount()
+}
+
+// FuzzySearch ranks items based on the query using fzf algorithm
+func (a *App) FuzzySearch(query string, items []string) []string {
+	return fuzzy.Match(query, items)
 }
 
 // SearchCategories returns suggestions for categories

@@ -28,3 +28,10 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 ## Database Conventions
 
 - **Uncategorized state**: Use `NULL` in the database to represent uncategorized items (transactions, rules, etc.). In Go helpers, allow passing `0` to signify `NULL` for foreign keys where appropriate.
+
+## Fuzzy Matching
+
+- **Implementation**: All fuzzy searching uses `internal/fuzzy` (encapsulating the `fzf` algorithm).
+- **Ranking Priority**: Matches at string/word starts > middle-string fuzzy matches. Tie-break: shorter strings first.
+- **Hard Rule**: Avoid client-side `.includes()` or JS fuzzy libraries for lists. Always use Wails bindings to `internal/fuzzy` to ensure consistent ranking and behavior across the UI.
+- **Reference**: `internal/fuzzy/fuzzy_test.go` for ranking verification.

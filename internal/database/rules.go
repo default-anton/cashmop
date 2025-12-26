@@ -1,5 +1,9 @@
 package database
 
+import (
+	"cashflow/internal/fuzzy"
+)
+
 type Category struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
@@ -157,30 +161,37 @@ func ApplyRule(ruleID int64) (int64, error) {
 }
 
 func SearchCategories(query string) ([]Category, error) {
-	// Use BM25 ranking for better search results.
-	// FTS5 MATCH supports prefix search with *
-	rows, err := DB.Query(`
-		SELECT c.id, c.name 
-		FROM categories c
-		JOIN categories_fts f ON c.id = f.rowid
-		WHERE categories_fts MATCH ?
-		ORDER BY bm25(categories_fts)
-		LIMIT 10
-	`, query+"*")
+	all, err := GetAllCategories()
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	var categories []Category
-	for rows.Next() {
-		var c Category
-		if err := rows.Scan(&c.ID, &c.Name); err != nil {
-			return nil, err
+	if query == "" {
+		if len(all) > 10 {
+			return all[:10], nil
 		}
-		categories = append(categories, c)
+		return all, nil
 	}
-	return categories, nil
+
+	names := make([]string, len(all))
+	nameToCat := make(map[string]Category)
+	for i, c := range all {
+		names[i] = c.Name
+		nameToCat[c.Name] = c
+	}
+
+	rankedNames := fuzzy.Match(query, names)
+
+	limit := 10
+	if len(rankedNames) < limit {
+		limit = len(rankedNames)
+	}
+
+	res := make([]Category, 0, limit)
+	for i := 0; i < limit; i++ {
+		res = append(res, nameToCat[rankedNames[i]])
+	}
+	return res, nil
 }
 
 func GetAllCategories() ([]Category, error) {

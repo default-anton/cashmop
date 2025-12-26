@@ -17,16 +17,26 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
   onCancel,
 }) => {
   const [value, setValue] = useState(initialValue || '');
+  const [suggestions, setSuggestions] = useState<database.Category[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const suggestions = useMemo(() => {
-    if (!value.trim()) return [];
-    return categories
-      .filter(c => c.name.toLowerCase().includes(value.toLowerCase()) && c.name.toLowerCase() !== value.toLowerCase())
-      .slice(0, 5);
+  useEffect(() => {
+    if (!value.trim()) {
+      setSuggestions([]);
+      return;
+    }
+
+    const names = categories.map(c => c.name);
+    (window as any).go.main.App.FuzzySearch(value, names).then((rankedNames: string[]) => {
+      const ranked = rankedNames
+        .map(name => categories.find(c => c.name === name))
+        .filter((c): c is database.Category => !!c && c.name.toLowerCase() !== value.toLowerCase())
+        .slice(0, 5);
+      setSuggestions(ranked);
+    });
   }, [categories, value]);
 
   useEffect(() => {

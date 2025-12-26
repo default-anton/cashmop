@@ -11,6 +11,8 @@ export function CreateOwner(arg1:string):Promise<number>;
 
 export function DeleteColumnMapping(arg1:number):Promise<void>;
 
+export function FuzzySearch(arg1:string,arg2:Array<string>):Promise<Array<string>>;
+
 export function GetAccounts():Promise<Array<string>>;
 
 export function GetAnalysisTransactions(arg1:string,arg2:string,arg3:Array<number>):Promise<Array<database.TransactionModel>>;

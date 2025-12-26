@@ -59,10 +59,21 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
     onChange([]);
   };
 
-  const filteredCategories = useMemo(() => {
-    return categories.filter((c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>(categories);
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredCategories(categories);
+      return;
+    }
+
+    const names = categories.map(c => c.name);
+    (window as any).go.main.App.FuzzySearch(searchTerm, names).then((rankedNames: string[]) => {
+      const ranked = rankedNames
+        .map(name => categories.find(c => c.name === name))
+        .filter((c): c is Category => !!c);
+      setFilteredCategories(ranked);
+    });
   }, [categories, searchTerm]);
 
   const selectedCount = selectedCategoryIds.length;

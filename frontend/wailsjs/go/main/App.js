@@ -18,6 +18,10 @@ export function DeleteColumnMapping(arg1) {
   return window['go']['main']['App']['DeleteColumnMapping'](arg1);
 }
 
+export function FuzzySearch(arg1, arg2) {
+  return window['go']['main']['App']['FuzzySearch'](arg1, arg2);
+}
+
 export function GetAccounts() {
   return window['go']['main']['App']['GetAccounts']();
 }
