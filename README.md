@@ -10,19 +10,7 @@
 
 - [Data Ingestion (Import Flow)](./docs/specs/import-flow.md)
 - [The Categorization Loop](./docs/specs/categorization-loop.md)
-
-### 3. Data Analysis & View (TO BE IMPLEMENTED)
-* Philosophy: "Charts are overrated." Focus on raw numbers and clear grouping.
-* Grouping:
-    * Group by Owner (e.g., Wife vs. Husband).
-    * Group by Categories.
-    * Group by Account.
-* Metrics:
-    * Subtotals per group.
-    * Net Total (Cash positive vs. Cash negative).
-* Filtering:
-    * Date Filter: Always active. Defaults to the latest month found in the transactions table (based on Max Date). High-efficiency month selector (e.g., a single-click dropdown or list to jump between months).
-    * Multi-select: Categories to isolate specific spending (e.g., view only "Groceries" and "Utilities").
+- [Analysis Screen](./docs/specs/analysis.md)
 
 ---
 

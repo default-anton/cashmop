@@ -17,6 +17,7 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 
 - [Data Ingestion (Import Flow)](./docs/specs/import-flow.md)
 - [The Categorization Loop](./docs/specs/categorization-loop.md)
+- [Analysis Screen](./docs/specs/analysis.md)
 
 ## Project Rules You MUST Follow
 
