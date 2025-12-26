@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { database } from '../../../../wailsjs/go/models';
-import { User, Tag, Landmark, List, Calendar, FileText, DollarSign, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { User, Tag, Landmark, List, Calendar, FileText, DollarSign } from 'lucide-react';
 import { Card } from '../../../components';
 import Table from '../../../components/Table';
 import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
@@ -17,7 +17,6 @@ interface GroupedTransactionListProps {
   groupSortOrder: SortOrder;
   transactionSortField: TransactionSortField;
   transactionSortOrder: SortOrder;
-  onSortGroup: (field: GroupSortField) => void;
   onSortTransaction: (field: TransactionSortField) => void;
   onCategorize: (txId: number, categoryName: string) => Promise<void>;
 }
@@ -64,7 +63,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   groupSortOrder,
   transactionSortField,
   transactionSortOrder,
-  onSortGroup,
   onSortTransaction,
   onCategorize,
 }) => {
@@ -229,13 +227,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
 
   const netTotal = transactions.reduce((sum, tx) => sum + tx.amount, 0);
 
-  const SortAffordance = ({ active, order }: { active: boolean, order: SortOrder }) => {
-    if (active) {
-      return order === 'asc' ? <ArrowUp className="w-3 h-3 text-brand" /> : <ArrowDown className="w-3 h-3 text-brand" />;
-    }
-    return <ArrowUpDown className="w-3 h-3 opacity-60 group-hover:opacity-100 transition-opacity" />;
-  };
-
   return (
     <div className="w-full space-y-6 animate-snap-in">
       {/* Summary Cards */}
@@ -267,33 +258,21 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         {groups.map(([name, data]) => (
           <Card key={name} variant="elevated" className="overflow-hidden">
             <div className="px-6 py-4 bg-canvas-100/50 border-b border-canvas-200 flex justify-between items-center">
-              <div 
-                className={`flex items-center gap-3 ${groupBy !== 'All' ? 'cursor-pointer group' : ''}`}
-                onClick={() => groupBy !== 'All' && onSortGroup('name')}
-                title={groupBy !== 'All' ? "Sort by Group Name" : undefined}
-              >
+              <div className="flex items-center gap-3">
                 <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400">
                   {getIcon()}
                 </div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-canvas-800">{name}</h3>
-                  {groupBy !== 'All' && (
-                    <SortAffordance active={groupSortField === 'name'} order={groupSortOrder} />
-                  )}
                 </div>
                 <span className="text-xs font-mono text-canvas-600 bg-canvas-200 px-2 py-0.5 rounded-full">
                   {data.transactions.length} txns
                 </span>
               </div>
-              <div 
-                className={`flex items-center gap-3 cursor-pointer group`}
-                onClick={() => onSortGroup('amount')}
-                title="Sort by Group Total"
-              >
+              <div>
                 <div className={`font-mono font-bold ${data.total >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
                   {formatCurrency(data.total)}
                 </div>
-                <SortAffordance active={groupSortField === 'amount'} order={groupSortOrder} />
               </div>
             </div>
 

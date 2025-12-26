@@ -1,6 +1,6 @@
 # Analysis Screen
 
-This directory contains the Analysis screen, which provides a detailed breakdown of transactions grouped by various criteria.
+The analysis screen provides deep dives into financial data with flexible grouping and multi-level sorting.
 
 ## Common Patterns
 
@@ -18,7 +18,15 @@ Transactions can be re-categorized directly within the list table using a "Ghost
 - **Backend**: Updates are handled via `CategorizeTransaction` Wails binding in `Analysis.tsx`.
 - **Data Refresh**: After saving, the UI triggers both transaction and category refreshes to ensure all views (including filters and groupings) are up-to-date.
 
+## Sorting & Grouping Rules
+
+- **Group-level Sorting**: Sort controls for groups (e.g., sort by Name or Total) must be placed in the main controls area, next to the grouping buttons (`All`, `Category`, `Owner`, `Account`).
+- **Transaction-level Sorting**: Sort controls for individual transactions must be integrated into the `Table` headers.
+- **Terminology**: Use "Owner" to refer to the transaction owner/entity in the UI (corresponds to `owner_name` in the database).
+- **Icons**: Use `User` icon for the "Owner" category and the `ArrowUpDown` icon for sort affordances.
+
 ## Reference Examples
+
+- `frontend/src/screens/Analysis/Analysis.tsx`: Main screen and group sort controls.
+- `frontend/src/screens/Analysis/components/GroupedTransactionList.tsx`: Transaction lists and table sorting integration.
 - `frontend/src/screens/Analysis/components/CategoryGhostInput.tsx`: The minimal search/input component.
-- `frontend/src/screens/Analysis/components/GroupedTransactionList.tsx`: Implements the `EditableCategoryCell`.
-- `frontend/src/screens/Analysis/Analysis.tsx`: Handles the categorization logic and data flow.

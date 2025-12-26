@@ -6,7 +6,7 @@ import {
 } from './components';
 import { database } from '../../../wailsjs/go/models';
 import { Card } from '../../components';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, ArrowUpDown } from 'lucide-react';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 export type SortOrder = 'asc' | 'desc';
@@ -169,21 +169,48 @@ const Analysis: React.FC = () => {
 
         {/* Grouping Toggle */}
         <div className="flex items-center justify-between pb-2 border-b border-canvas-200">
-          <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
-            {groupingOptions.map((option) => (
-              <button
-                key={option}
-                onClick={() => setGroupBy(option)}
-                className={`
-                  px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200
-                  ${groupBy === option
-                    ? 'bg-brand text-white shadow-brand-glow'
-                    : 'text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100'}
-                `}
-              >
-                {option}
-              </button>
-            ))}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
+              {groupingOptions.map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setGroupBy(option)}
+                  className={`
+                    px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200
+                    ${groupBy === option
+                      ? 'bg-brand text-white shadow-brand-glow'
+                      : 'text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100'}
+                  `}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+
+            {groupBy !== 'All' && (
+              <div className="flex items-center gap-1 bg-canvas-50 p-1 rounded-xl border border-canvas-200 shadow-sm">
+                <button
+                  onClick={() => handleSortGroup('name')}
+                  className={`
+                    flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+                    ${groupSortField === 'name' ? 'bg-brand text-white shadow-brand-glow' : 'text-canvas-600 hover:bg-canvas-100'}
+                  `}
+                >
+                  Name
+                  {groupSortField === 'name' && <ArrowUpDown className={`w-3 h-3 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
+                </button>
+                <button
+                  onClick={() => handleSortGroup('amount')}
+                  className={`
+                    flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+                    ${groupSortField === 'amount' ? 'bg-brand text-white shadow-brand-glow' : 'text-canvas-600 hover:bg-canvas-100'}
+                  `}
+                >
+                  Total
+                  {groupSortField === 'amount' && <ArrowUpDown className={`w-3 h-3 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
+                </button>
+              </div>
+            )}
           </div>
           
           <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest">
@@ -207,7 +234,6 @@ const Analysis: React.FC = () => {
             groupSortOrder={groupSortOrder}
             transactionSortField={transactionSortField}
             transactionSortOrder={transactionSortOrder}
-            onSortGroup={handleSortGroup}
             onSortTransaction={handleSortTransaction}
             onCategorize={handleCategorize}
           />
