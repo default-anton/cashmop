@@ -1,14 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { database } from '../../../../wailsjs/go/models';
 import { User, Tag, Landmark, List, Calendar, FileText, DollarSign, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { Card } from '../../../components';
 import Table from '../../../components/Table';
 import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
+import CategoryGhostInput from './CategoryGhostInput';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
 interface GroupedTransactionListProps {
   transactions: database.TransactionModel[];
+  categories: database.Category[];
   groupBy: GroupBy;
   showSummary?: boolean;
   groupSortField: GroupSortField;
@@ -17,10 +19,45 @@ interface GroupedTransactionListProps {
   transactionSortOrder: SortOrder;
   onSortGroup: (field: GroupSortField) => void;
   onSortTransaction: (field: TransactionSortField) => void;
+  onCategorize: (txId: number, categoryName: string) => Promise<void>;
 }
+
+const EditableCategoryCell: React.FC<{
+  transaction: database.TransactionModel;
+  categories: database.Category[];
+  onSave: (txId: number, categoryName: string) => Promise<void>;
+}> = ({ transaction, categories, onSave }) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  if (isEditing) {
+    return (
+      <CategoryGhostInput
+        categories={categories}
+        initialValue={transaction.category_name}
+        onSave={async (val) => {
+          if (val !== transaction.category_name) {
+            await onSave(transaction.id, val);
+          }
+          setIsEditing(false);
+        }}
+        onCancel={() => setIsEditing(false)}
+      />
+    );
+  }
+
+  return (
+    <span 
+      onClick={() => setIsEditing(true)}
+      className="inline-flex items-center px-2 py-0.5 rounded-md bg-brand/5 text-[10px] font-bold text-brand border border-brand/10 uppercase tracking-tight cursor-pointer hover:bg-brand/10 hover:border-brand/20 transition-all group/tag"
+    >
+      {transaction.category_name || 'Uncategorized'}
+    </span>
+  );
+};
 
 const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   transactions,
+  categories,
   groupBy,
   showSummary = true,
   groupSortField,
@@ -29,6 +66,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   transactionSortOrder,
   onSortGroup,
   onSortTransaction,
+  onCategorize,
 }) => {
   const formatCurrency = (amount: number) => {
     const formatter = new Intl.NumberFormat('en-CA', {
@@ -95,10 +133,12 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         key: 'category_name',
         header: renderHeader('Category', Tag),
         className: 'w-40',
-        render: (val: string) => (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-brand/5 text-[10px] font-bold text-brand border border-brand/10 uppercase tracking-tight">
-            {val || 'Uncategorized'}
-          </span>
+        render: (_val: string, tx: database.TransactionModel) => (
+          <EditableCategoryCell 
+            transaction={tx} 
+            categories={categories} 
+            onSave={onCategorize} 
+          />
         ),
       });
     }
@@ -134,7 +174,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     });
 
     return cols;
-  }, [groupBy]);
+  }, [groupBy, categories, onCategorize]);
 
   const groups = useMemo(() => {
     const grouped = new Map<string, { transactions: database.TransactionModel[]; total: number }>();

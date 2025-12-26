@@ -92,6 +92,16 @@ const Analysis: React.FC = () => {
     }
   };
 
+  const handleCategorize = async (txId: number, categoryName: string) => {
+    try {
+      await (window as any).go.main.App.CategorizeTransaction(txId, categoryName);
+      fetchTransactions();
+      fetchData();
+    } catch (e) {
+      console.error('Failed to categorize transaction', e);
+    }
+  };
+
   const groupingOptions: GroupBy[] = ['All', 'Category', 'Owner', 'Account'];
 
   return (
@@ -190,6 +200,7 @@ const Analysis: React.FC = () => {
         ) : (
           <GroupedTransactionList
             transactions={transactions}
+            categories={categories}
             groupBy={groupBy}
             showSummary={false}
             groupSortField={groupSortField}
@@ -198,6 +209,7 @@ const Analysis: React.FC = () => {
             transactionSortOrder={transactionSortOrder}
             onSortGroup={handleSortGroup}
             onSortTransaction={handleSortTransaction}
+            onCategorize={handleCategorize}
           />
         )}
       </div>
