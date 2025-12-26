@@ -22,4 +22,5 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 ## Project Rules You MUST Follow
 
 - Feature specs are located in `docs/specs/`. When updating them, keep formatting simple and token-efficient (bullet points, concise text, no inline formatting).
+- Frontend dependencies belong in `frontend/package.json`. Never install npm packages in the root directory.
 - `wails dev` is always running. Use the browser skill to verify and test UI changes. The DevServer URL is http://localhost:34115.

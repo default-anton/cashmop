@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { database } from '../../../../wailsjs/go/models';
-import { User, Tag, Landmark, List, Calendar, FileText, DollarSign } from 'lucide-react';
+import { User, Tag, Landmark, List, Calendar, FileText, DollarSign, Check } from 'lucide-react';
 import { Card } from '../../../components';
 import Table from '../../../components/Table';
 import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
 import CategoryGhostInput from './CategoryGhostInput';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
@@ -27,6 +28,14 @@ const EditableCategoryCell: React.FC<{
   onSave: (txId: number, categoryName: string) => Promise<void>;
 }> = ({ transaction, categories, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  useEffect(() => {
+    if (showSuccess) {
+      const timer = setTimeout(() => setShowSuccess(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccess]);
 
   if (isEditing) {
     return (
@@ -36,6 +45,7 @@ const EditableCategoryCell: React.FC<{
         onSave={async (val) => {
           if (val !== transaction.category_name) {
             await onSave(transaction.id, val);
+            setShowSuccess(true);
           }
           setIsEditing(false);
         }}
@@ -45,12 +55,21 @@ const EditableCategoryCell: React.FC<{
   }
 
   return (
-    <span 
-      onClick={() => setIsEditing(true)}
-      className="inline-flex items-center px-2 py-0.5 rounded-md bg-brand/5 text-[10px] font-bold text-brand border border-brand/10 tracking-tight cursor-pointer hover:bg-brand/10 hover:border-brand/20 transition-all group/tag"
-    >
-      {transaction.category_name || 'Uncategorized'}
-    </span>
+    <div className="relative inline-flex">
+      <span 
+        onClick={() => setIsEditing(true)}
+        className={`
+          inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-tight cursor-pointer transition-all duration-300
+          ${showSuccess 
+            ? 'bg-finance-income/10 text-finance-income border border-finance-income/30' 
+            : 'bg-brand/5 text-brand border border-brand/10 hover:bg-brand/10 hover:border-brand/20'
+          }
+        `}
+      >
+        {showSuccess && <Check className="w-2 h-2 mr-1" />}
+        {transaction.category_name || 'Uncategorized'}
+      </span>
+    </div>
   );
 };
 
@@ -254,46 +273,67 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       )}
 
       {/* Grouped Lists */}
-      <div className="space-y-4">
-        {groups.map(([name, data]) => (
-          <Card key={name} variant="elevated" className="overflow-hidden">
-            <div className="px-6 py-4 bg-canvas-100/50 border-b border-canvas-200 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400">
-                  {getIcon()}
+      <div className="space-y-4 relative">
+        <AnimatePresence initial={false}>
+          {groups.map(([name, data]) => (
+            <motion.div
+              key={name}
+              layout
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+              transition={{ 
+                type: "spring",
+                stiffness: 500,
+                damping: 40,
+                mass: 1,
+                layout: { duration: 0.3 }
+              }}
+            >
+              <Card variant="elevated" className="overflow-hidden">
+                <div className="px-6 py-4 bg-canvas-100/50 border-b border-canvas-200 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400">
+                      {getIcon()}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-canvas-800">{name}</h3>
+                    </div>
+                    <span className="text-xs font-mono text-canvas-600 bg-canvas-200 px-2 py-0.5 rounded-full">
+                      {data.transactions.length} txns
+                    </span>
+                  </div>
+                  <div>
+                    <div className={`font-mono font-bold ${data.total >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
+                      {formatCurrency(data.total)}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-canvas-800">{name}</h3>
-                </div>
-                <span className="text-xs font-mono text-canvas-600 bg-canvas-200 px-2 py-0.5 rounded-full">
-                  {data.transactions.length} txns
-                </span>
-              </div>
-              <div>
-                <div className={`font-mono font-bold ${data.total >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-                  {formatCurrency(data.total)}
-                </div>
-              </div>
-            </div>
 
-            <Table
-              columns={columns}
-              data={data.transactions}
-              className="!border-none !rounded-none shadow-none"
-              sortField={transactionSortField}
-              sortOrder={transactionSortOrder}
-              onSort={(field) => onSortTransaction(field as TransactionSortField)}
-            />
-          </Card>
-        ))}
+                <Table
+                  columns={columns}
+                  data={data.transactions}
+                  className="!border-none !rounded-none shadow-none"
+                  sortField={transactionSortField}
+                  sortOrder={transactionSortOrder}
+                  onSort={(field) => onSortTransaction(field as TransactionSortField)}
+                />
+              </Card>
+            </motion.div>
+          ))}
+        </AnimatePresence>
 
         {groups.length === 0 && (
-          <div className="py-20 text-center">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="py-20 text-center"
+          >
             <div className="inline-flex p-6 bg-canvas-100 rounded-full mb-4">
               <Tag className="w-8 h-8 text-canvas-300" />
             </div>
             <p className="text-canvas-500">No transactions found for this selection.</p>
-          </div>
+          </motion.div>
         )}
       </div>
     </div>

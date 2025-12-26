@@ -17,6 +17,7 @@ interface TableProps<T> {
   sortField?: string;
   sortOrder?: 'asc' | 'desc';
   onSort?: (key: string) => void;
+  rowKey?: (row: T) => string | number;
 }
 
 const Table = <T,>({ 
@@ -26,7 +27,8 @@ const Table = <T,>({
   className = '',
   sortField,
   sortOrder,
-  onSort
+  onSort,
+  rowKey
 }: TableProps<T>) => {
   if (data.length === 0) {
     return (
@@ -35,6 +37,12 @@ const Table = <T,>({
       </div>
     );
   }
+
+  const getRowKey = (row: T, index: number) => {
+    if (rowKey) return rowKey(row);
+    if ((row as any).id !== undefined) return (row as any).id;
+    return index;
+  };
 
   return (
     <div className={`overflow-x-auto rounded-lg border border-canvas-200 ${className}`}>
@@ -78,7 +86,7 @@ const Table = <T,>({
         <tbody className="divide-y divide-canvas-200/50">
           {data.map((row, rowIndex) => (
             <tr
-              key={rowIndex}
+              key={getRowKey(row, rowIndex)}
               className="hover:bg-brand/[0.02] even:bg-canvas-100/30 transition-colors group"
             >
               {columns.map((column) => {

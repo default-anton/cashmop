@@ -43,10 +43,10 @@ const Analysis: React.FC = () => {
     }
   }, [selectedMonth]);
 
-  const fetchTransactions = useCallback(async () => {
+  const fetchTransactions = useCallback(async (silent = false) => {
     if (!selectedMonth) return;
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       // Create date range for the selected month
       const [year, month] = selectedMonth.split('-');
@@ -62,7 +62,7 @@ const Analysis: React.FC = () => {
     } catch (e) {
       console.error('Failed to fetch transactions', e);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [selectedMonth, selectedCategoryIds]);
 
@@ -93,12 +93,20 @@ const Analysis: React.FC = () => {
   };
 
   const handleCategorize = async (txId: number, categoryName: string) => {
+    // Optimistic update
+    setTransactions(prev => prev.map(tx => 
+      tx.id === txId ? { ...tx, category_name: categoryName } : tx
+    ));
+
     try {
       await (window as any).go.main.App.CategorizeTransaction(txId, categoryName);
-      fetchTransactions();
+      // Silent refresh in background to ensure consistency
+      fetchTransactions(true);
       fetchData();
     } catch (e) {
       console.error('Failed to categorize transaction', e);
+      // Revert on error if necessary, though fetchTransactions will also fix it
+      fetchTransactions(true);
     }
   };
 

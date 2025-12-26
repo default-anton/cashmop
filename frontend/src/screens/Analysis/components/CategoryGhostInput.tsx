@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { database } from '../../../../wailsjs/go/models';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CategoryGhostInputProps {
   categories: database.Category[];
@@ -65,34 +66,45 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
     onSave(value);
   };
 
-  const dropdown = suggestions.length > 0 && (
-    <div 
-      ref={dropdownRef}
-      style={{
-        position: 'absolute',
-        top: coords.top,
-        left: coords.left,
-        width: coords.width,
-      }}
-      className="mt-1 bg-white border border-canvas-200 rounded-lg shadow-lg z-[100] overflow-hidden"
-      onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking dropdown
-    >
-      {suggestions.map((suggestion, index) => (
-        <div
-          key={suggestion.id}
-          className={`px-3 py-1.5 text-[10px] font-bold tracking-tight cursor-pointer transition-colors ${
-            index === selectedIndex ? 'bg-brand/10 text-brand' : 'text-canvas-600 hover:bg-canvas-50'
-          }`}
-          onClick={() => onSave(suggestion.name)}
+  const dropdown = (
+    <AnimatePresence>
+      {suggestions.length > 0 && (
+        <motion.div 
+          ref={dropdownRef}
+          initial={{ opacity: 0, y: -4, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -4, scale: 0.98 }}
+          style={{
+            position: 'absolute',
+            top: coords.top,
+            left: coords.left,
+            width: coords.width,
+          }}
+          className="mt-1 bg-white border border-canvas-200 rounded-lg shadow-xl z-[100] overflow-hidden"
+          onMouseDown={(e: React.MouseEvent) => e.preventDefault()} // Prevent blur when clicking dropdown
         >
-          {suggestion.name}
-        </div>
-      ))}
-    </div>
+          {suggestions.map((suggestion, index) => (
+            <div
+              key={suggestion.id}
+              className={`px-3 py-1.5 text-[10px] font-bold tracking-tight cursor-pointer transition-colors ${
+                index === selectedIndex ? 'bg-brand/10 text-brand' : 'text-canvas-600 hover:bg-canvas-50'
+              }`}
+              onClick={() => onSave(suggestion.name)}
+            >
+              {suggestion.name}
+            </div>
+          ))}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 
   return (
-    <div className="relative w-full">
+    <motion.div 
+      initial={{ scale: 0.95, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      className="relative w-full"
+    >
       <input
         ref={inputRef}
         type="text"
@@ -106,8 +118,8 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
         className="w-full h-7 px-2 py-0.5 text-[10px] font-bold text-brand bg-brand/5 border border-brand/30 rounded-md tracking-tight outline-none focus:ring-2 focus:ring-brand/20 transition-all"
         placeholder="Category..."
       />
-      {suggestions.length > 0 && createPortal(dropdown, document.body)}
-    </div>
+      {createPortal(dropdown, document.body)}
+    </motion.div>
   );
 };
 
