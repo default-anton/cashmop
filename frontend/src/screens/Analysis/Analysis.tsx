@@ -188,26 +188,26 @@ const Analysis: React.FC = () => {
             </div>
 
             {groupBy !== 'All' && (
-              <div className="flex items-center gap-1 bg-canvas-50 p-1 rounded-xl border border-canvas-200 shadow-sm">
+              <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
                 <button
                   onClick={() => handleSortGroup('name')}
                   className={`
-                    flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
                     ${groupSortField === 'name' ? 'bg-brand text-white shadow-brand-glow' : 'text-canvas-600 hover:bg-canvas-100'}
                   `}
                 >
                   Name
-                  {groupSortField === 'name' && <ArrowUpDown className={`w-3 h-3 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
+                  {groupSortField === 'name' && <ArrowUpDown className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
                 </button>
                 <button
                   onClick={() => handleSortGroup('amount')}
                   className={`
-                    flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all
+                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
                     ${groupSortField === 'amount' ? 'bg-brand text-white shadow-brand-glow' : 'text-canvas-600 hover:bg-canvas-100'}
                   `}
                 >
                   Total
-                  {groupSortField === 'amount' && <ArrowUpDown className={`w-3 h-3 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
+                  {groupSortField === 'amount' && <ArrowUpDown className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
                 </button>
               </div>
             )}
