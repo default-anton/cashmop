@@ -5,7 +5,9 @@
 - **Transaction-level Sorting**: Integrated into `Table` headers.
 - **Terminology**: Use "Owner" (corresponds to `owner_name` in DB).
 - **Icons**: `User` for Owner, `ArrowUpDown` for sort.
-- **UI/UX**: Keep Category column visible even when grouping by Category to allow re-categorization.
+- **UI/UX**: 
+    - Keep Category column visible even when grouping by Category to allow re-categorization.
+    - **No Caps for Names**: Do not use `uppercase` for names/metadata (Categories, Accounts, Owners). Use normal casing.
 
 ## Common Patterns
 
@@ -16,9 +18,10 @@ Transactions can be re-categorized directly in the table.
     - Click category tag to edit.
     - `Enter` or `Blur`: Save and exit.
     - `Escape`: Cancel and exit.
+- **Dropdowns in Tables**: Use **React Portals** (`createPortal`) for suggestions/dropdowns in table cells to prevent clipping by `overflow-hidden` or causing unwanted table height changes.
 - **Data Refresh**: Trigger both transaction and category refreshes after save.
 
 ## Reference Examples
 - `frontend/src/screens/Analysis/Analysis.tsx`: Main screen, sorting logic, and data orchestration.
 - `frontend/src/screens/Analysis/components/GroupedTransactionList.tsx`: Table integration and `EditableCategoryCell`.
-- `frontend/src/screens/Analysis/components/CategoryGhostInput.tsx`: Search/input component.
+- `frontend/src/screens/Analysis/components/CategoryGhostInput.tsx`: Search/input component with portal-based suggestions.

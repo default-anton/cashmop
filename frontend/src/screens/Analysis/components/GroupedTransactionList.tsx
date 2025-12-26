@@ -47,7 +47,7 @@ const EditableCategoryCell: React.FC<{
   return (
     <span 
       onClick={() => setIsEditing(true)}
-      className="inline-flex items-center px-2 py-0.5 rounded-md bg-brand/5 text-[10px] font-bold text-brand border border-brand/10 uppercase tracking-tight cursor-pointer hover:bg-brand/10 hover:border-brand/20 transition-all group/tag"
+      className="inline-flex items-center px-2 py-0.5 rounded-md bg-brand/5 text-[10px] font-bold text-brand border border-brand/10 tracking-tight cursor-pointer hover:bg-brand/10 hover:border-brand/20 transition-all group/tag"
     >
       {transaction.category_name || 'Uncategorized'}
     </span>
@@ -119,7 +119,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         header: renderHeader('Account', Landmark),
         className: 'w-40',
         render: (val: string) => (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-100 text-[10px] font-bold text-canvas-600 border border-canvas-200 uppercase tracking-tight">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-100 text-[10px] font-bold text-canvas-600 border border-canvas-200 tracking-tight">
             {val}
           </span>
         ),
@@ -145,7 +145,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         header: renderHeader('Owner', User),
         className: 'w-32',
         render: (val: string) => (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 uppercase tracking-tight">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 tracking-tight">
             {val || 'No Owner'}
           </span>
         ),

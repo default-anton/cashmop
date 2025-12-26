@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { database } from '../../../../wailsjs/go/models';
 
 interface CategoryGhostInputProps {
@@ -16,6 +17,7 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
 }) => {
   const [value, setValue] = useState(initialValue || '');
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -29,6 +31,15 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
   useEffect(() => {
     inputRef.current?.focus();
     inputRef.current?.select();
+    
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -54,6 +65,32 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
     onSave(value);
   };
 
+  const dropdown = suggestions.length > 0 && (
+    <div 
+      ref={dropdownRef}
+      style={{
+        position: 'absolute',
+        top: coords.top,
+        left: coords.left,
+        width: coords.width,
+      }}
+      className="mt-1 bg-white border border-canvas-200 rounded-lg shadow-lg z-[100] overflow-hidden"
+      onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking dropdown
+    >
+      {suggestions.map((suggestion, index) => (
+        <div
+          key={suggestion.id}
+          className={`px-3 py-1.5 text-[10px] font-bold tracking-tight cursor-pointer transition-colors ${
+            index === selectedIndex ? 'bg-brand/10 text-brand' : 'text-canvas-600 hover:bg-canvas-50'
+          }`}
+          onClick={() => onSave(suggestion.name)}
+        >
+          {suggestion.name}
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="relative w-full">
       <input
@@ -66,28 +103,10 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
         }}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
-        className="w-full h-7 px-2 py-0.5 text-[10px] font-bold text-brand bg-brand/5 border border-brand/30 rounded-md uppercase tracking-tight outline-none focus:ring-2 focus:ring-brand/20 transition-all"
+        className="w-full h-7 px-2 py-0.5 text-[10px] font-bold text-brand bg-brand/5 border border-brand/30 rounded-md tracking-tight outline-none focus:ring-2 focus:ring-brand/20 transition-all"
         placeholder="Category..."
       />
-      {suggestions.length > 0 && (
-        <div 
-          ref={dropdownRef}
-          className="absolute top-full left-0 w-full mt-1 bg-white border border-canvas-200 rounded-lg shadow-lg z-50 overflow-hidden"
-          onMouseDown={(e) => e.preventDefault()} // Prevent blur when clicking dropdown
-        >
-          {suggestions.map((suggestion, index) => (
-            <div
-              key={suggestion.id}
-              className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-tight cursor-pointer transition-colors ${
-                index === selectedIndex ? 'bg-brand/10 text-brand' : 'text-canvas-600 hover:bg-canvas-50'
-              }`}
-              onClick={() => onSave(suggestion.name)}
-            >
-              {suggestion.name}
-            </div>
-          ))}
-        </div>
-      )}
+      {suggestions.length > 0 && createPortal(dropdown, document.body)}
     </div>
   );
 };
