@@ -128,20 +128,18 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       });
     }
 
-    if (groupBy !== 'Category') {
-      cols.push({
-        key: 'category_name',
-        header: renderHeader('Category', Tag),
-        className: 'w-40',
-        render: (_val: string, tx: database.TransactionModel) => (
-          <EditableCategoryCell 
-            transaction={tx} 
-            categories={categories} 
-            onSave={onCategorize} 
-          />
-        ),
-      });
-    }
+    cols.push({
+      key: 'category_name',
+      header: renderHeader('Category', Tag),
+      className: 'w-40',
+      render: (_val: string, tx: database.TransactionModel) => (
+        <EditableCategoryCell 
+          transaction={tx} 
+          categories={categories} 
+          onSave={onCategorize} 
+        />
+      ),
+    });
 
     if (groupBy !== 'Owner') {
       cols.push({

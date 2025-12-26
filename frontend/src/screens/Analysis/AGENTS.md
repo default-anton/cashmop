@@ -14,6 +14,7 @@ Transactions can be re-categorized directly within the list table using a "Ghost
     - `Enter`: Saves the category and exits edit mode.
     - `Escape`: Cancels and exits edit mode.
     - `Blur`: Saves the category and exits edit mode.
+- **UI/UX**: The Category column is always visible in `GroupedTransactionList` (even when grouping by Category) to ensure transactions can be re-categorized in any view.
 - **Backend**: Updates are handled via `CategorizeTransaction` Wails binding in `Analysis.tsx`.
 - **Data Refresh**: After saving, the UI triggers both transaction and category refreshes to ensure all views (including filters and groupings) are up-to-date.
 
