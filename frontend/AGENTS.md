@@ -1,9 +1,22 @@
 ## Frontend Rules You MUST Follow
 
 - Check types with `npx tsc --noEmit` in this directory after editing .ts, .tsx files.
-- When rendering negative currency amounts, never show the minus sign. Use the absolute value and indicate the negative state using red text (e.g., `text-finance-expense`).
-- Always read `./tailwind.config.js` when creating or editing UI components to ensure consistency with the design system (colors, fonts, shadows, animations, etc.).
-- When using tables, add icons (`opacity-90`, `w-3 h-3`) to headers for better scannability. Use `text-canvas-600` for small uppercase labels/metadata to ensure readability. For "Amount" columns, use `DollarSign` and ensure the header content is right-aligned (e.g., `justify-end`). The `Table` component supports `React.ReactNode` in its `header` property.
+- **Terminology & Icons**:
+    - Use "Owner" (corresponds to `owner_name` in DB).
+    - Icons: `User` for Owner, `ArrowUpDown` for sort.
+- **Visual Stability & Motion**:
+    - Use **Optimistic Updates** for data changes. Never trigger a global loading state that unmounts the list.
+    - Use `framer-motion` (`layout` prop) to animate items moving and `AnimatePresence` (mode="popLayout") for items appearing/disappearing to prevent layout jumps.
+    - **Subtle Animations**: Prefer subtle (4-8px) vertical offsets and simple `easeOut` or high-damping springs for a professional, purposeful feel. Avoid scaling on exit.
+    - **Success Feedback**: Provide immediate in-place feedback (e.g., success flash on a tag) after a save, while syncing the backend in the background.
+- **Typography & Casing**:
+    - Use `text-canvas-600` and `uppercase` for small labels/metadata (e.g. table headers like DATE, OWNER) to ensure readability.
+    - **No Caps for Data Names**: Do NOT use `uppercase` for actual names (Categories, Accounts, Owners). Use normal sentence or title casing.
+- **Finance Formatting**: When rendering negative currency amounts, never show the minus sign. Use the absolute value and indicate the negative state using red text (e.g., `text-finance-expense`).
+- **Design System**: Always read `./tailwind.config.js` when creating or editing UI components to ensure consistency (colors, fonts, shadows, animations, etc.).
+- **Tables & Dropdowns**:
+    - When using tables, add icons (`opacity-90`, `w-3 h-3`) to headers for better scannability. For "Amount" columns, use `DollarSign` and ensure the header content is right-aligned (e.g., `justify-end`).
+    - Use **React Portals** (`createPortal`) for suggestions/dropdowns in table cells to prevent clipping by `overflow-hidden` or causing unwanted table height changes.
 - **Snappy Multi-selects**: All dropdown filters with >5 items MUST include:
     - Search input (auto-focused on open)
     - "Select All" / "Deselect All" bulk toggles
