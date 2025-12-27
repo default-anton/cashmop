@@ -31,7 +31,7 @@ Enable automated, black-box, browser-based integration testing of the Cashflow T
 
 ## Fixture Coverage
 Fixtures must cover the following scenarios:
-- **Import Flow**: 
+- **Import Flow**:
   - New account creation via import.
   - Column mapping persistence (pre-configured mappings).
   - Multi-account imports.
@@ -52,12 +52,13 @@ Fixtures must cover the following scenarios:
   - `beforeEach` must invoke the DB reset/seed helper.
 
 ## Implementation Plan
-1. **Schema Verification**: Verify extracted DDL in `internal/database/schema.sql` matches the code's intent.
+1. **Schema Update**: Use `internal/database/schema.sql` in `internal/database/db.go` and tests.
 2. **Environment Support**: Update `internal/database/db.go` to support configurable DB paths based on `APP_ENV`.
 3. **CLI Test Helper**: Create `cmd/test-helper/main.go` to handle DB wipe, schema application, and YAML seeding (supporting named keys).
 4. **Playwright Setup**: Install Playwright in `frontend/`, configure `playwright.config.ts`.
 
-## Example Fixture (`frontend/tests/fixtures/accounts.yml`)
+## Example Fixture Format
+`frontend/tests/fixtures/accounts.yml`:
 ```yaml
 main_checking:
   name: "Checking"
@@ -67,7 +68,7 @@ travel_card:
   type: "credit_card"
 ```
 
-## Example Fixture (`frontend/tests/fixtures/transactions.yml`)
+`frontend/tests/fixtures/transactions.yml`:
 ```yaml
 grocery_bill:
   account: "Checking"
