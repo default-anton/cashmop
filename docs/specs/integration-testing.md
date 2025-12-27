@@ -12,7 +12,7 @@ Enable automated, black-box, browser-based integration testing of the Cashflow T
 - **Runner**: [Playwright](https://playwright.dev/) (TypeScript)
 - **Environment**: Wails Dev mode (Web)
 - **Database**: SQLite (Temporary file `./cashflow_test.db`)
-- **Fixtures**: YAML files per table
+- **Fixtures**: YAML files per table with named keys
 
 ## Environment Configuration
 - **Wails Test Mode**: Triggered by `APP_ENV=test` environment variable.
@@ -21,6 +21,7 @@ Enable automated, black-box, browser-based integration testing of the Cashflow T
 
 ## Fixture Management (Rails-style)
 - **Organization**: `frontend/tests/fixtures/{table_name}.yml`
+- **Format**: Each file contains a map of unique, human-readable keys to record attributes.
 - **Orchestration**: Playwright `beforeEach` hook calls a CLI helper to reset the DB.
 - **CLI Helper**: `go run ./cmd/test-helper reset`
   - Wipes `./cashflow_test.db`.
@@ -51,23 +52,25 @@ Fixtures must cover the following scenarios:
   - `beforeEach` must invoke the DB reset/seed helper.
 
 ## Implementation Plan
-1. **Schema Extraction**: (Done) Extracted DDL into `internal/database/schema.sql`.
+1. **Schema Verification**: Verify extracted DDL in `internal/database/schema.sql` matches the code's intent.
 2. **Environment Support**: Update `internal/database/db.go` to support configurable DB paths based on `APP_ENV`.
-3. **CLI Test Helper**: Create `cmd/test-helper/main.go` to handle DB wipe, schema application, and YAML seeding.
+3. **CLI Test Helper**: Create `cmd/test-helper/main.go` to handle DB wipe, schema application, and YAML seeding (supporting named keys).
 4. **Playwright Setup**: Install Playwright in `frontend/`, configure `playwright.config.ts`.
-5. **CI Integration**: Add `npm run test:e2e` to GitHub Actions.
 
 ## Example Fixture (`frontend/tests/fixtures/accounts.yml`)
 ```yaml
-- name: "Checking"
+main_checking:
+  name: "Checking"
   type: "checking"
-- name: "Credit Card"
+travel_card:
+  name: "Credit Card"
   type: "credit_card"
 ```
 
 ## Example Fixture (`frontend/tests/fixtures/transactions.yml`)
 ```yaml
-- account: "Checking"
+grocery_bill:
+  account: "Checking"
   date: "2023-10-01"
   description: "Safeway"
   amount: -54.20
