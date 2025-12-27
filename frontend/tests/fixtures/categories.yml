@@ -1,0 +1,10 @@
+groceries:
+  name: "Groceries"
+dining:
+  name: "Dining Out"
+transport:
+  name: "Transport"
+income:
+  name: "Income"
+uncategorized:
+  name: "Uncategorized"

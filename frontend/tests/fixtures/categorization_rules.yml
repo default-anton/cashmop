@@ -1,0 +1,4 @@
+starbucks_rule:
+  match_type: "contains"
+  match_value: "Starbucks"
+  category: "Dining Out"

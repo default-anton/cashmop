@@ -1,0 +1,6 @@
+main_checking:
+  name: "Checking"
+  type: "checking"
+travel_card:
+  name: "Credit Card"
+  type: "credit_card"

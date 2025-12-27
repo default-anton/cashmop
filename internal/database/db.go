@@ -2,101 +2,31 @@ package database
 
 import (
 	"database/sql"
+	_ "embed"
 	"log"
+	"os"
 
 	_ "modernc.org/sqlite"
 )
 
+//go:embed schema.sql
+var SchemaSQL string
+
 var DB *sql.DB
 
 func InitDB() {
-	// Check if db exists, if so, we might want to wipe it since we are in dev and changing schema
+	dbPath := "./cashflow.db"
+	if os.Getenv("APP_ENV") == "test" {
+		dbPath = "./cashflow_test.db"
+	}
+
 	var err error
-	DB, err = sql.Open("sqlite", "./cashflow.db")
+	DB, err = sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if _, err := DB.Exec("PRAGMA foreign_keys = ON;"); err != nil {
-		log.Fatal(err)
-	}
-
-	createTables := `
-	CREATE TABLE IF NOT EXISTS accounts (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL UNIQUE,
-		currency TEXT DEFAULT 'CAD',
-		type TEXT -- 'credit_card', 'checking', etc.
-	);
-
-	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL UNIQUE
-	);
-
-	CREATE TABLE IF NOT EXISTS categories (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL UNIQUE
-	);
-
-	CREATE TABLE IF NOT EXISTS transactions (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		account_id INTEGER NOT NULL,
-		owner_id INTEGER,
-		date TEXT NOT NULL,
-		description TEXT,
-		amount REAL NOT NULL,
-		category_id INTEGER,
-		currency TEXT DEFAULT 'CAD',
-		raw_metadata TEXT,
-		FOREIGN KEY(account_id) REFERENCES accounts(id),
-		FOREIGN KEY(owner_id) REFERENCES users(id),
-		FOREIGN KEY(category_id) REFERENCES categories(id),
-		UNIQUE(account_id, date, description, amount)
-	);
-
-	CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
-	CREATE INDEX IF NOT EXISTS idx_transactions_category_id ON transactions(category_id);
-
-	CREATE TABLE IF NOT EXISTS column_mappings (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		name TEXT NOT NULL UNIQUE,
-		mapping_json TEXT NOT NULL
-	);
-
-	CREATE TABLE IF NOT EXISTS categorization_rules (
-		id INTEGER PRIMARY KEY AUTOINCREMENT,
-		match_type TEXT NOT NULL, -- 'contains', 'starts_with', 'ends_with', 'exact'
-		match_value TEXT NOT NULL,
-		category_id INTEGER NOT NULL,
-		amount_min REAL,
-		amount_max REAL,
-		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-		FOREIGN KEY(category_id) REFERENCES categories(id)
-	);
-
-	-- Categories FTS for fast search and BM25 ranking
-	CREATE VIRTUAL TABLE IF NOT EXISTS categories_fts USING fts5(
-		name,
-		content='categories',
-		content_rowid='id'
-	);
-
-	-- Triggers to keep categories_fts in sync
-	CREATE TRIGGER IF NOT EXISTS cat_after_insert AFTER INSERT ON categories BEGIN
-		INSERT INTO categories_fts(rowid, name) VALUES (new.id, new.name);
-	END;
-	CREATE TRIGGER IF NOT EXISTS cat_after_delete AFTER DELETE ON categories BEGIN
-		INSERT INTO categories_fts(categories_fts, rowid, name) VALUES ('delete', old.id, old.name);
-	END;
-	CREATE TRIGGER IF NOT EXISTS cat_after_update AFTER UPDATE ON categories BEGIN
-		INSERT INTO categories_fts(categories_fts, rowid, name) VALUES ('delete', old.id, old.name);
-		INSERT INTO categories_fts(rowid, name) VALUES (new.id, new.name);
-	END;
-	`
-
-	_, err = DB.Exec(createTables)
-	if err != nil {
+	if _, err := DB.Exec(SchemaSQL); err != nil {
 		log.Fatalf("Failed to init db: %q", err)
 	}
 }

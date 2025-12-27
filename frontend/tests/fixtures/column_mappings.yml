@@ -1,0 +1,3 @@
+standard_bank:
+  name: "Standard Bank"
+  mapping_json: '{"date": "Date", "description": "Description", "amount": "Amount"}'

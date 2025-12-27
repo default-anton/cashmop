@@ -1,0 +1,24 @@
+grocery_bill:
+  account: "Checking"
+  date: "2023-10-01"
+  description: "Safeway"
+  amount: -54.20
+  category: "Groceries"
+lunch:
+  account: "Credit Card"
+  date: "2023-10-02"
+  description: "Subway"
+  amount: -12.50
+  category: "Dining Out"
+salary:
+  account: "Checking"
+  date: "2023-10-01"
+  description: "Employer Inc"
+  amount: 3000.00
+  category: "Income"
+uncategorized_amazon:
+  account: "Credit Card"
+  date: "2023-10-05"
+  description: "Amazon.ca"
+  amount: -45.00
+  category: null
