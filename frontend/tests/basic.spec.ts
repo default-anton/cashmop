@@ -14,6 +14,6 @@ test('should show uncategorized transactions and allow categorization', async ({
 });
 
 test('should show analysis screen when no uncategorized transactions', async ({ categorizationPage, analysisPage }) => {
-    await categorizationPage.goto();
-    await analysisPage.expectAnalysisButtonVisible();
+  await categorizationPage.goto();
+  await analysisPage.expectAnalysisButtonVisible();
 });
