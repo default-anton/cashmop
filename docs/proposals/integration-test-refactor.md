@@ -2,32 +2,24 @@
 
 ## Goals
 - Reduce boilerplate in tests.
-- Enable scenario-specific database seeding.
 - Decouple test logic from CSS selectors using POM (Page Object Model).
 - Make tests more readable and expressive (User Story style).
+- Automate database resets so tests don't have to manage them manually.
 
 ## Proposed Changes
 
-### 1. Enhanced `test-helper`
-Modify the Go test-helper to support:
-```bash
-./test-helper reset [scenario]
-```
-- Scenarios will be subdirectories in `frontend/tests/fixtures/`.
-- If no scenario is provided, it uses the root `fixtures/` directory (default).
-
-### 2. Custom Playwright Fixtures
+### 1. Custom Playwright Fixtures
 Introduce `frontend/tests/lib/fixtures.ts` to extend the standard `test` object.
-- `db`: Provides a `reset(scenario?: string)` method.
+- **Automatic Reset**: A fixture that automatically executes `./build/bin/test-helper reset` before every test.
 - `categorizationPage`: Automatically instantiated POM.
 - `analysisPage`: Automatically instantiated POM.
 
-### 3. Page Object Models
+### 2. Page Object Models
 Create POMs in `frontend/tests/lib/pom/`:
 - `CategorizationPage.ts`: Methods like `categorize(categoryName)`, `expectTransaction(description)`.
 - `AnalysisPage.ts`: Methods like `expectVisible()`, `selectDateRange(range)`.
 
-### 4. Example Transformation
+### 3. Example Transformation
 
 **Before:**
 ```typescript
@@ -43,8 +35,9 @@ test('should categorize', async ({ page }) => {
 
 **After:**
 ```typescript
-test('should categorize', async ({ page, db, categorizationPage, analysisPage }) => {
-  db.reset();
+import { test } from './lib/fixtures';
+
+test('should categorize', async ({ page, categorizationPage, analysisPage }) => {
   await page.goto('/');
   await categorizationPage.expectTransaction('Amazon.ca');
   await categorizationPage.categorize('Shopping');
@@ -53,7 +46,6 @@ test('should categorize', async ({ page, db, categorizationPage, analysisPage })
 ```
 
 ## Verification Plan
-1. Update `test-helper` and verify it can load from a subdirectory.
-2. Implement `fixtures.ts` and POMs.
-3. Migrate `basic.spec.ts` to the new structure.
-4. Run `./scripts/run-integration-tests.sh` to ensure everything still passes.
+1. Implement `fixtures.ts` and POMs.
+2. Migrate `basic.spec.ts` to the new structure and remove manual `beforeEach` and `execSync`.
+3. Run `./scripts/run-integration-tests.sh` to ensure everything still passes.
