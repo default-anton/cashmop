@@ -17,8 +17,8 @@ From the project root:
 
 ## Conventions
 
-- **POM**: Use Page Object Models for complex screens (TODO).
-- **Locators**: Use explicit `aria-label` and `page.getByLabel()` for primary actions. Avoid brittle CSS selectors.
+- **POM**: Use Page Object Models for complex screens (located in `frontend/tests/lib/pom/`).
+- **Fixtures**: Use custom fixtures from `frontend/tests/lib/fixtures.ts` which include automatic database reset.
 - **Timing**: Use `await page.goto('/')` in each test to ensure a fresh React mount and status check.
 
 ## Reference Examples
