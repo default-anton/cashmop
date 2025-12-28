@@ -50,11 +50,6 @@ func RenameCategory(id int64, newName string) error {
 		return err
 	}
 
-	_, err = tx.Exec("UPDATE categories SET name = ? WHERE id = ?", newName, id)
-	if err != nil {
-		return err
-	}
-
 	return tx.Commit()
 }
 

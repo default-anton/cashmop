@@ -25,7 +25,7 @@ UI Location: `frontend/src/screens/CategorizationLoop/`
 ## Categorization Action
 * Manual Categorization: If no text is selected, applies category to the single current transaction.
 * Rule-based Categorization: If text is selected, creates a `CategorizationRule` and applies it to all matching uncategorized transactions.
-* Category Suggestions: Search-as-you-type for existing categories to prevent duplicates (BM25 backed).
+* Category Suggestions: Search-as-you-type for existing categories to prevent duplicates (fzf backed).
 
 ## Navigation
 * Skip: Moves the current transaction to the end of the queue.
