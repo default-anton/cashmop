@@ -18,6 +18,7 @@ From the project root:
 ## Conventions
 
 - **POM**: Use Page Object Models for complex screens (located in `frontend/tests/lib/pom/`).
+- **Selectors**: Prefer `aria-label` selectors in POMs. Always use `{ exact: true }` (e.g., `page.getByLabel('Categorize', { exact: true })`) to avoid ambiguity when labels share substrings (e.g., "Navigate to Categorize" vs "Categorize").
 - **Fixtures**: Use custom fixtures from `frontend/tests/lib/fixtures.ts` which include automatic database reset.
 - **Timing**: Use `await page.goto('/')` in each test to ensure a fresh React mount and status check.
 

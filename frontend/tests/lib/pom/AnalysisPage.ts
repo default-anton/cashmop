@@ -11,10 +11,10 @@ export class AnalysisPage {
   constructor(page: Page) {
     this.page = page;
     this.heading = page.getByRole('heading', { name: 'Financial Analysis' });
-    this.analysisButton = page.locator('button:has-text("Analysis")');
-    this.prevMonthButton = page.locator('button:has(.lucide-chevron-left)');
-    this.nextMonthButton = page.locator('button:has(.lucide-chevron-right)');
-    this.currentMonthLabel = page.locator('.lucide-calendar + span');
+    this.analysisButton = page.getByLabel('Navigate to Analysis', { exact: true });
+    this.prevMonthButton = page.getByLabel('Previous Month', { exact: true });
+    this.nextMonthButton = page.getByLabel('Next Month', { exact: true });
+    this.currentMonthLabel = page.getByLabel('Current Month', { exact: true });
   }
 
   async expectVisible() {

@@ -7,8 +7,8 @@ export class CategorizationPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.categoryInput = page.getByPlaceholder('Type a category...');
-    this.categorizeButton = page.getByLabel('Categorize');
+    this.categoryInput = page.getByLabel('Category', { exact: true });
+    this.categorizeButton = page.getByLabel('Categorize', { exact: true });
   }
 
   async goto() {
@@ -16,7 +16,7 @@ export class CategorizationPage {
   }
 
   async expectTransaction(description: string) {
-    await expect(this.page.locator(`text=${description}`)).toBeVisible({ timeout: 10000 });
+    await expect(this.page.getByLabel('Transaction Description', { exact: true })).toHaveText(description, { timeout: 10000 });
   }
 
   async categorize(categoryName: string) {

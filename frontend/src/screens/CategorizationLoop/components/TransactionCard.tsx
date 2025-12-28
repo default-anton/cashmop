@@ -246,6 +246,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
               <h2
                 ref={descriptionRef}
                 onMouseDown={handleMouseDown}
+                aria-label="Transaction Description"
                 className="text-xl font-black text-canvas-800 leading-tight select-none cursor-text border-2 border-dashed border-canvas-300 bg-canvas-200/20 hover:bg-brand/[0.02] hover:border-brand/30 rounded-2xl transition-all duration-300 p-5 w-full"
               >
                 {renderDescription()}

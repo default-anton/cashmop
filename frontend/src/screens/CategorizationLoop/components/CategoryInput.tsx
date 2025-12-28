@@ -49,6 +49,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
               }
             }}
             placeholder={isRuleMode ? 'Set category for this rule...' : 'Type a category...'}
+            aria-label={isRuleMode ? 'Category for rule' : 'Category'}
             className={`w-full bg-white border-2 rounded-2xl py-3 pl-12 pr-6 text-lg font-bold text-canvas-800 placeholder-canvas-300 focus:ring-0 transition-all shadow-sm ${isRuleMode ? 'border-brand ring-4 ring-brand/5' : 'border-canvas-200 focus:border-brand'
               }`}
           />
