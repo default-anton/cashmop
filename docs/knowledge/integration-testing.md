@@ -24,6 +24,10 @@ Implemented full integration testing suite per `docs/specs/integration-testing.m
 - **Dynamic Reset**: Querying `sqlite_master` for tables to drop prevents the test helper from becoming stale as the schema evolves.
 - **Pre-built Binary**: Using `go run` in `beforeEach` is slow. Build the test helper once in the orchestration script and run the binary for a ~10x speedup in test setup.
 - **Wait Loop**: Use `curl -s http://localhost:34115` instead of `lsof` to ensure the server is actually responding, not just opening a port.
+- **Port**: Wails DevServer in test mode (from `run-integration-tests.sh`) serves on `http://localhost:34115`.
+- **File Uploads**: `page.setInputFiles()` paths are relative to the `frontend/` directory when running from the root or via `run-integration-tests.sh`. Avoid `__dirname` in ESM tests.
+- **Auto-navigation**: `ImportFlow` may auto-navigate to categorization on completion if uncategorized transactions exist. Tests should handle both the "Import Complete!" screen and immediate navigation.
+- **Orchestration**: `scripts/run-integration-tests.sh` supports arguments for passing specific test files to Playwright (e.g., `./scripts/run-integration-tests.sh tests/import.spec.ts`).
 - **Headless Mode**: `wails dev -browser` combined with `StartHidden: os.Getenv("APP_ENV") == "test"` in `main.go` allows running integration tests without a native window popping up. This provides a "web-only" environment for Playwright while keeping the Wails dev server features.
 - **Locator Strictness**: Use Page Object Models (POM) in `frontend/tests/lib/pom/` to encapsulate selectors and interaction logic. Favor `page.getByLabel()` and other explicit ARIA locators within POMs.
 - **Custom Fixtures**: Use custom Playwright fixtures from `frontend/tests/lib/fixtures.ts` to automate setup (like database reset) and provide pre-instantiated POMs to tests.

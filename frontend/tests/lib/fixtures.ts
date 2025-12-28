@@ -1,12 +1,14 @@
 import { test as base } from '@playwright/test';
 import { CategorizationPage } from './pom/CategorizationPage';
 import { AnalysisPage } from './pom/AnalysisPage';
+import { ImportFlowPage } from './pom/ImportFlowPage';
 import { execSync } from 'child_process';
 
 type MyFixtures = {
   dbReset: void;
   categorizationPage: CategorizationPage;
   analysisPage: AnalysisPage;
+  importFlowPage: ImportFlowPage;
 };
 
 export const test = base.extend<MyFixtures>({
@@ -22,6 +24,10 @@ export const test = base.extend<MyFixtures>({
 
   analysisPage: async ({ page }, use) => {
     await use(new AnalysisPage(page));
+  },
+
+  importFlowPage: async ({ page }, use) => {
+    await use(new ImportFlowPage(page));
   },
 });
 

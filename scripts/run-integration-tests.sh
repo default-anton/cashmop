@@ -42,4 +42,4 @@ done
 
 echo "Server is ready! Running Playwright tests..."
 cd frontend
-npm run test:integration
+npm run test:integration -- "$@"
