@@ -1,7 +1,5 @@
 # Persist Knowledge: Integration Testing
 
-Implemented full integration testing suite per `docs/specs/integration-testing.md`.
-
 ## Key Components
 
 ### Database Support
