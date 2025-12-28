@@ -25,5 +25,6 @@ Implemented full integration testing suite per `docs/specs/integration-testing.m
 - **Pre-built Binary**: Using `go run` in `beforeEach` is slow. Build the test helper once in the orchestration script and run the binary for a ~10x speedup in test setup.
 - **Wait Loop**: Use `curl -s http://localhost:34115` instead of `lsof` to ensure the server is actually responding, not just opening a port.
 - **Headless Mode**: `wails dev -browser` combined with `StartHidden: os.Getenv("APP_ENV") == "test"` in `main.go` allows running integration tests without a native window popping up. This provides a "web-only" environment for Playwright while keeping the Wails dev server features.
-- **Locator Strictness**: Use explicit `aria-label` on primary action buttons (e.g., `aria-label="Categorize"`) and `page.getByLabel('...')` in Playwright for robust, unambiguous locators.
+- **Locator Strictness**: Use Page Object Models (POM) in `frontend/tests/lib/pom/` to encapsulate selectors and interaction logic. Favor `page.getByLabel()` and other explicit ARIA locators within POMs.
+- **Custom Fixtures**: Use custom Playwright fixtures from `frontend/tests/lib/fixtures.ts` to automate setup (like database reset) and provide pre-instantiated POMs to tests.
 - **App Mounting**: Navigation via `page.goto('/')` in Playwright ensures a fresh React mount and triggers the application's initial status checks.

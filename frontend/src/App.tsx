@@ -58,6 +58,7 @@ function App() {
         {hasData && (
           <button
             onClick={() => setScreen('analysis')}
+            aria-label="Navigate to Analysis"
             className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'analysis' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
               }`}
           >
@@ -66,6 +67,7 @@ function App() {
         )}
         <button
           onClick={() => setScreen('import')}
+          aria-label="Navigate to Import"
           className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'import' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
             }`}
         >
@@ -74,6 +76,7 @@ function App() {
         {hasData && (
           <button
             onClick={() => setScreen('categorize')}
+            aria-label="Navigate to Categorize"
             className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'categorize' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
               }`}
           >
@@ -82,6 +85,7 @@ function App() {
         )}
         <button
           onClick={() => setScreen('categories')}
+          aria-label="Navigate to Categories"
           className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'categories' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
             }`}
         >
