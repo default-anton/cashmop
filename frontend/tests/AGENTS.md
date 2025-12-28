@@ -11,14 +11,14 @@ From the project root:
 
 ## Database State & Fixtures
 
-- **Reset**: Database is reset `beforeEach` test via `go run ./cmd/test-helper reset`.
+- **Reset**: Database is reset `beforeEach` test via `./build/bin/test-helper reset`.
 - **Fixtures**: Located in `./fixtures/*.yml`. 
-- **DB Reset Gotcha**: `test-helper` uses `DROP TABLE` + `SchemaSQL` instead of deleting the file to avoid stale file handle/inode issues with the running Wails process.
+- **DB Reset Gotcha**: `test-helper` uses `DROP TABLE` + `SchemaSQL` instead of deleting the file to avoid stale file handle/inode issues with the running Wails process. Tables are found dynamically via `sqlite_master`.
 
 ## Conventions
 
 - **POM**: Use Page Object Models for complex screens (TODO).
-- **Locators**: Prefer user-facing attributes (labels, placeholders, roles) over CSS classes.
+- **Locators**: Use explicit `aria-label` and `page.getByLabel()` for primary actions. Avoid brittle CSS selectors.
 - **Timing**: Use `await page.goto('/')` in each test to ensure a fresh React mount and status check.
 
 ## Reference Examples

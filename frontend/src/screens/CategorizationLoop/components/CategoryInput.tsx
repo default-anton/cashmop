@@ -72,6 +72,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
         <Button
           size="md"
           variant="primary"
+          aria-label={categoryInput ? 'Categorize' : 'Skip'}
           className={`px-8 rounded-2xl transition-all duration-300 ${isRuleMode ? 'shadow-brand-glow scale-105' : 'shadow-brand/20'
             }`}
           onClick={() => (categoryInput ? onCategorize(categoryInput) : onSkip())}

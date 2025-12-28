@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -26,6 +27,7 @@ func main() {
 		Bind: []interface{}{
 			app,
 		},
+		StartHidden: os.Getenv("APP_ENV") == "test",
 	})
 
 	if err != nil {

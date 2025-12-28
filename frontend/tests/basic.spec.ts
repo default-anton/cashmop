@@ -3,9 +3,9 @@ import { execSync } from 'child_process';
 
 test.beforeEach(async () => {
   // Reset database before each test
-  // Use a slightly longer timeout for go run
   test.setTimeout(30000);
-  execSync('go run ./cmd/test-helper reset', { cwd: '..' });
+  // Use pre-built binary for speed
+  execSync('./build/bin/test-helper reset', { cwd: '..' });
 });
 
 test('should show uncategorized transactions and allow categorization', async ({ page }) => {
@@ -20,8 +20,8 @@ test('should show uncategorized transactions and allow categorization', async ({
   await input.waitFor({ state: 'visible', timeout: 10000 });
   await input.fill('Shopping');
   
-  // Click the categorize button (the one with the check or arrow)
-  await page.locator('button.bg-brand.px-8').click();
+  // Click the categorize button - using a more robust selector
+  await page.getByLabel('Categorize').click();
 
   // After categorization, it should navigate to Analysis screen
   await expect(page.getByRole('heading', { name: 'Financial Analysis' })).toBeVisible({ timeout: 15000 });

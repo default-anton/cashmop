@@ -34,20 +34,37 @@ func resetDB() error {
 	os.Setenv("APP_ENV", "test")
 	database.InitDB()
 
-	// Wipe all tables
-	tables := []string{
-		"transactions",
-		"categorization_rules",
-		"column_mappings",
-		"accounts",
-		"categories",
-		"users",
-		"categories_fts",
+	// Dynamically find all tables to drop
+	rows, err := database.DB.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+	if err != nil {
+		return fmt.Errorf("failed to fetch tables: %w", err)
 	}
+	defer rows.Close()
+
+	var tables []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return err
+		}
+		tables = append(tables, name)
+	}
+
+	// Disable foreign keys temporarily to drop everything without order issues
+	if _, err := database.DB.Exec("PRAGMA foreign_keys = OFF"); err != nil {
+		return err
+	}
+
 	for _, table := range tables {
-		_, _ = database.DB.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", table))
+		if _, err := database.DB.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", table)); err != nil {
+			return fmt.Errorf("failed to drop table %s: %w", table, err)
+		}
 	}
-	// Re-run schema
+
+	// Re-enable and re-run schema
+	if _, err := database.DB.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		return err
+	}
 	if _, err := database.DB.Exec(database.SchemaSQL); err != nil {
 		return fmt.Errorf("failed to re-run schema: %w", err)
 	}
