@@ -133,13 +133,24 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   }, [currentTxId, loading]);
 
   useEffect(() => {
-    if (categoryInput.length > 1) {
-      (window as any).go.main.App.SearchCategories(categoryInput).then((res: Category[] | null) =>
-        setSuggestions(res || [])
-      );
-    } else {
+    if (categoryInput.length <= 1) {
       setSuggestions([]);
+      return;
     }
+
+    let cancelled = false;
+    const timeout = setTimeout(() => {
+      (window as any).go.main.App.SearchCategories(categoryInput).then((res: Category[] | null) => {
+        if (!cancelled) {
+          setSuggestions(res || []);
+        }
+      });
+    }, 200);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
   }, [categoryInput]);
 
   const currentTx = transactions.find((t) => t.id === currentTxId);
