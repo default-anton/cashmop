@@ -7,12 +7,16 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -361,4 +365,234 @@ func (a *App) SearchWeb(query string) ([]WebSearchResult, error) {
 	a.searchCache.Store(cacheKey, webResults)
 
 	return webResults, nil
+}
+
+// ExportTransactionsWithDialog exports filtered transactions with native file dialog
+// Takes filter parameters and format, shows native save dialog, and exports
+// Returns the number of rows exported or an error
+func (a *App) ExportTransactionsWithDialog(startDate, endDate string, categoryIDs []int64, format string) (int, error) {
+	// Generate default filename based on date range
+	defaultFilename := generateDefaultFilename(startDate, endDate, format)
+
+	// Show native save dialog
+	destinationPath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Export Transactions",
+		DefaultFilename: defaultFilename,
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: format + " Files",
+				Pattern:     "*." + format,
+			},
+			{
+				DisplayName: "All Files",
+				Pattern:     "*.*",
+			},
+		},
+	})
+	if err != nil {
+		return 0, fmt.Errorf("dialog cancelled or failed: %w", err)
+	}
+
+	if destinationPath == "" {
+		return 0, fmt.Errorf("no destination selected")
+	}
+
+	// Perform export
+	return a.ExportTransactions(startDate, endDate, categoryIDs, format, destinationPath)
+}
+
+// generateDefaultFilename creates a filename based on the spec convention
+func generateDefaultFilename(startDate, endDate, format string) string {
+	// Check if it's a single month (same month in start and end)
+	isSingleMonth := strings.HasPrefix(endDate, startDate[0:7])
+
+	var datePart string
+	if isSingleMonth {
+		// Single month: cashflow_2025-01.csv
+		datePart = startDate[0:7] // YYYY-MM
+	} else {
+		// Date range: cashflow_2025-01-01_to_2025-03-31.csv
+		datePart = startDate + "_to_" + endDate
+	}
+
+	return fmt.Sprintf("cashflow_%s.%s", datePart, format)
+}
+
+// ExportTransactions exports filtered transactions to CSV or XLSX format
+// Returns the number of rows exported or an error
+func (a *App) ExportTransactions(startDate, endDate string, categoryIDs []int64, format, destinationPath string) (int, error) {
+	// Fetch transactions using existing filter logic
+	transactions, err := database.GetAnalysisTransactions(startDate, endDate, categoryIDs)
+	if err != nil {
+		return 0, fmt.Errorf("failed to fetch transactions: %w", err)
+	}
+
+	if len(transactions) == 0 {
+		return 0, fmt.Errorf("no transactions to export")
+	}
+
+	switch strings.ToLower(format) {
+	case "csv":
+		return exportToCSV(transactions, destinationPath)
+	case "xlsx":
+		return exportToXLSX(transactions, destinationPath)
+	default:
+		return 0, fmt.Errorf("unsupported format: %s (use 'csv' or 'xlsx')", format)
+	}
+}
+
+// exportToCSV writes transactions to CSV with UTF-8 BOM for Excel compatibility
+func exportToCSV(transactions []database.TransactionModel, destinationPath string) (int, error) {
+	file, err := os.Create(destinationPath)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	// Write UTF-8 BOM for Excel/Numbers compatibility
+	if _, err := file.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
+		return 0, fmt.Errorf("failed to write BOM: %w", err)
+	}
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	// Write header
+	header := []string{"Date", "Description", "Amount", "Category", "Account", "Owner", "Currency"}
+	if err := writer.Write(header); err != nil {
+		return 0, fmt.Errorf("failed to write header: %w", err)
+	}
+
+	// Write rows
+	for _, tx := range transactions {
+		category := tx.CategoryName
+		if tx.CategoryID == nil {
+			category = ""
+		}
+
+		row := []string{
+			tx.Date,
+			tx.Description,
+			strconv.FormatFloat(tx.Amount, 'f', -1, 64),
+			category,
+			tx.AccountName,
+			tx.OwnerName,
+			tx.Currency,
+		}
+		if err := writer.Write(row); err != nil {
+			return 0, fmt.Errorf("failed to write row: %w", err)
+		}
+	}
+
+	return len(transactions), nil
+}
+
+// exportToXLSX writes transactions to Excel with auto-column widths
+func exportToXLSX(transactions []database.TransactionModel, destinationPath string) (int, error) {
+	f := excelize.NewFile()
+	sheetName := "Transactions"
+	f.SetSheetName("Sheet1", sheetName)
+
+	// Define headers and column letters
+	headers := []string{"Date", "Description", "Amount", "Category", "Account", "Owner", "Currency"}
+	cols := []string{"A", "B", "C", "D", "E", "F", "G"}
+
+	// Write header row with bold formatting
+	headerStyle, err := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+	})
+	if err != nil {
+		return 0, fmt.Errorf("failed to create header style: %w", err)
+	}
+
+	for i, header := range headers {
+		cell := cols[i] + "1"
+		if err := f.SetCellValue(sheetName, cell, header); err != nil {
+			return 0, fmt.Errorf("failed to set header %s: %w", header, err)
+		}
+		if err := f.SetCellStyle(sheetName, cell, cell, headerStyle); err != nil {
+			return 0, fmt.Errorf("failed to style header %s: %w", header, err)
+		}
+	}
+
+	// Write data rows
+	for i, tx := range transactions {
+		row := i + 2
+
+		category := tx.CategoryName
+		if tx.CategoryID == nil {
+			category = ""
+		}
+
+		values := []interface{}{
+			tx.Date,
+			tx.Description,
+			tx.Amount,
+			category,
+			tx.AccountName,
+			tx.OwnerName,
+			tx.Currency,
+		}
+
+		for j, val := range values {
+			cell := cols[j] + strconv.Itoa(row)
+			if err := f.SetCellValue(sheetName, cell, val); err != nil {
+				return 0, fmt.Errorf("failed to set cell %s: %w", cell, err)
+			}
+		}
+	}
+
+	// Auto-calculate column widths based on content
+	for i, col := range cols {
+		maxWidth := float64(len(headers[i]))
+
+		// Check data width
+		for _, tx := range transactions {
+			var value string
+			switch i {
+			case 0:
+				value = tx.Date
+			case 1:
+				value = tx.Description
+			case 2:
+				value = strconv.FormatFloat(tx.Amount, 'f', -1, 64)
+			case 3:
+				if tx.CategoryID != nil {
+					value = tx.CategoryName
+				} else {
+					value = ""
+				}
+			case 4:
+				value = tx.AccountName
+			case 5:
+				value = tx.OwnerName
+			case 6:
+				value = tx.Currency
+			}
+
+			width := float64(len(value))
+			if width > maxWidth {
+				maxWidth = width
+			}
+		}
+
+		// Set column width (min 10, max 50, with some padding)
+		width := maxWidth + 2
+		if width < 10 {
+			width = 10
+		}
+		if width > 50 {
+			width = 50
+		}
+		if err := f.SetColWidth(sheetName, col, col, width); err != nil {
+			return 0, fmt.Errorf("failed to set column width %s: %w", col, err)
+		}
+	}
+
+	// Save file
+	if err := f.SaveAs(destinationPath); err != nil {
+		return 0, fmt.Errorf("failed to save excel file: %w", err)
+	}
+
+	return len(transactions), nil
 }

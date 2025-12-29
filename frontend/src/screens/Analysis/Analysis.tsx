@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   AnalysisMonthSelector,
   CategoryMultiSelect,
@@ -6,12 +6,14 @@ import {
 } from './components';
 import { database } from '../../../wailsjs/go/models';
 import { Card } from '../../components';
-import { BarChart3, ArrowUpDown } from 'lucide-react';
+import { BarChart3, ArrowUpDown, Download } from 'lucide-react';
+import { Toast } from '../../components';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 export type SortOrder = 'asc' | 'desc';
 export type GroupSortField = 'name' | 'amount';
 export type TransactionSortField = 'date' | 'amount';
+type ExportFormat = 'csv' | 'xlsx';
 
 const Analysis: React.FC = () => {
   const [months, setMonths] = useState<string[]>([]);
@@ -21,6 +23,11 @@ const Analysis: React.FC = () => {
   const [groupBy, setGroupBy] = useState<GroupBy>('All');
   const [transactions, setTransactions] = useState<database.TransactionModel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
+  const [exporting, setExporting] = useState(false);
+  const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const [groupSortField, setGroupSortField] = useState<GroupSortField>('name');
   const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>('asc');
@@ -74,6 +81,18 @@ const Analysis: React.FC = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
+        setExportDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleSortGroup = (field: GroupSortField) => {
     if (groupSortField === field) {
       setGroupSortOrder(groupSortOrder === 'asc' ? 'desc' : 'asc');
@@ -94,7 +113,7 @@ const Analysis: React.FC = () => {
 
   const handleCategorize = async (txId: number, categoryName: string) => {
     // Optimistic update
-    setTransactions(prev => prev.map(tx => 
+    setTransactions(prev => prev.map(tx =>
       tx.id === txId ? { ...tx, category_name: categoryName } : tx
     ));
 
@@ -107,6 +126,43 @@ const Analysis: React.FC = () => {
       console.error('Failed to categorize transaction', e);
       // Revert on error if necessary, though fetchTransactions will also fix it
       fetchTransactions(true);
+    }
+  };
+
+  const handleExport = async (format?: ExportFormat) => {
+    const targetFormat = format || exportFormat;
+
+    if (!selectedMonth) {
+      setToast({ message: 'Please select a month first', type: 'error' });
+      return;
+    }
+
+    setExporting(true);
+    setExportDropdownOpen(false);
+    try {
+      const [year, month] = selectedMonth.split('-');
+      const startDate = `${year}-${month}-01`;
+      const endDate = `${year}-${month}-31`;
+
+      const rowsExported = await (window as any).go.main.App.ExportTransactionsWithDialog(
+        startDate,
+        endDate,
+        selectedCategoryIds,
+        targetFormat
+      );
+
+      setToast({
+        message: `Successfully exported ${rowsExported} transaction${rowsExported !== 1 ? 's' : ''} to ${targetFormat.toUpperCase()}`,
+        type: 'success'
+      });
+    } catch (e) {
+      console.error('Export failed', e);
+      setToast({
+        message: e instanceof Error ? e.message : 'Export failed. Please try again.',
+        type: 'error'
+      });
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -139,6 +195,47 @@ const Analysis: React.FC = () => {
               selectedCategoryIds={selectedCategoryIds}
               onChange={setSelectedCategoryIds}
             />
+
+            {/* Export Dropdown */}
+            <div className="relative" ref={exportDropdownRef}>
+              <button
+                onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
+                disabled={exporting}
+                className={`
+                  p-2 rounded-lg transition-all
+                  ${exporting
+                    ? 'bg-canvas-100 text-canvas-400 cursor-not-allowed'
+                    : 'text-canvas-500 hover:text-canvas-700 hover:bg-canvas-200'
+                  }
+                `}
+                title="Export transactions"
+              >
+                {exporting ? (
+                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Download className="w-5 h-5" />
+                )}
+              </button>
+
+              {exportDropdownOpen && (
+                <div className="absolute right-0 top-full mt-1 w-36 bg-canvas-50 rounded-lg border border-canvas-200 shadow-card overflow-hidden z-10">
+                  <button
+                    onClick={() => handleExport('csv')}
+                    disabled={!selectedMonth}
+                    className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    CSV
+                  </button>
+                  <button
+                    onClick={() => handleExport('xlsx')}
+                    disabled={!selectedMonth}
+                    className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Excel
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -247,6 +344,18 @@ const Analysis: React.FC = () => {
           />
         )}
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            duration={4000}
+            onClose={() => setToast(null)}
+          />
+        </div>
+      )}
     </div>
   );
 };
