@@ -16,7 +16,7 @@ This checklist covers all items that should be addressed before releasing to cus
 - [ ] **Configure build metadata** - Update `wails.json` and build templates with proper copyright strings (currently `{{.Info.Copyright}}` placeholders).
 
 ### 2. Database Path & Portability
-- [ ] **Fix database file location** - Uses relative path `./cashflow.db` which resolves differently based on launch method. Use platform-standard directories:
+- [x] **Fix database file location** - Database now resolves via a single `storageName` constant. Dev/test use project-root DB files for easy inspection; production stores under platform config directories:
   - Windows: `%LOCALAPPDATA%\cashflow\`
   - macOS: `~/Library/Application Support/cashflow/`
   - Linux: `~/.config/cashflow/` or `XDG_CONFIG_HOME`

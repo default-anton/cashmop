@@ -2,21 +2,26 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
 
 var DB *sql.DB
 
+const storageName = "cashflow"
+
 func InitDB() {
-	dbPath := "./cashflow.db"
-	if os.Getenv("APP_ENV") == "test" {
-		dbPath = "./cashflow_test.db"
+	dbPath, err := resolveDatabasePath()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	var err error
 	DB, err = sql.Open("sqlite", dbPath)
 	if err != nil {
 		log.Fatal(err)
@@ -24,6 +29,78 @@ func InitDB() {
 
 	if err := Migrate(); err != nil {
 		log.Fatalf("Failed to migrate database: %q", err)
+	}
+}
+
+func resolveDatabasePath() (string, error) {
+	env := strings.ToLower(os.Getenv("APP_ENV"))
+
+	switch env {
+	case "test":
+		return devTestPath("test")
+	case "dev", "development":
+		return devTestPath("dev")
+	}
+
+	dir, err := databaseDir()
+	if err != nil {
+		return "", err
+	}
+
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", fmt.Errorf("create database directory: %w", err)
+	}
+
+	return filepath.Join(dir, storageName+".db"), nil
+}
+
+func databaseDir() (string, error) {
+	switch runtime.GOOS {
+	case "windows":
+		if dir := os.Getenv("LOCALAPPDATA"); dir != "" {
+			return filepath.Join(dir, storageName), nil
+		}
+		configDir, err := os.UserConfigDir()
+		if err != nil {
+			return "", fmt.Errorf("get user config dir: %w", err)
+		}
+		if configDir != "" {
+			return filepath.Join(configDir, storageName), nil
+		}
+		return "", fmt.Errorf("LOCALAPPDATA not set")
+	default:
+		configDir, err := os.UserConfigDir()
+		if err != nil {
+			return "", fmt.Errorf("get user config dir: %w", err)
+		}
+		return filepath.Join(configDir, storageName), nil
+	}
+}
+
+func devTestPath(suffix string) (string, error) {
+	root, err := projectRoot()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(root, storageName+"_"+suffix+".db"), nil
+}
+
+func projectRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("get working dir: %w", err)
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir, nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", fmt.Errorf("go.mod not found from %s", dir)
+		}
+		dir = parent
 	}
 }
 
@@ -61,8 +138,8 @@ func GetColumnMappings() ([]ColumnMappingModel, error) {
 func SaveColumnMapping(name string, mappingJSON string) (int64, error) {
 	// Upsert based on name
 	res, err := DB.Exec(`
-		INSERT INTO column_mappings (name, mapping_json) 
-		VALUES (?, ?) 
+		INSERT INTO column_mappings (name, mapping_json)
+		VALUES (?, ?)
 		ON CONFLICT(name) DO UPDATE SET mapping_json=excluded.mapping_json`,
 		name, mappingJSON,
 	)
