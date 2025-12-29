@@ -17,7 +17,6 @@ UI Location: `frontend/src/screens/Analysis/`
 ## Formats
 * **CSV** (default): UTF-8 with BOM for Excel/Numbers compatibility
 * **XLSX**: Native Excel format with auto-column widths
-* **Numbers**: Alias for CSV (macOS users can open directly)
 
 ## Filename Convention
 * Single month: `cashflow_2025-01.csv`
