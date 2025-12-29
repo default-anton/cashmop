@@ -273,12 +273,38 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 	args := []any{startDate, endDate}
 
 	if len(categoryIDs) > 0 {
-		placeholders := make([]string, len(categoryIDs))
-		for i := range categoryIDs {
-			placeholders[i] = "?"
-			args = append(args, categoryIDs[i])
+		// Check if 0 (representing NULL/uncategorized) is in the selection
+		hasUncategorized := false
+		var realIDs []int64
+		for _, id := range categoryIDs {
+			if id == 0 {
+				hasUncategorized = true
+			} else {
+				realIDs = append(realIDs, id)
+			}
 		}
-		query += fmt.Sprintf(" AND t.category_id IN (%s)", strings.Join(placeholders, ","))
+
+		if hasUncategorized {
+			// Filter for uncategorized (NULL category_id) and/or specific categories
+			query += " AND (t.category_id IS NULL"
+			if len(realIDs) > 0 {
+				placeholders := make([]string, len(realIDs))
+				for i, id := range realIDs {
+					placeholders[i] = "?"
+					args = append(args, id)
+				}
+				query += fmt.Sprintf(" OR t.category_id IN (%s)", strings.Join(placeholders, ","))
+			}
+			query += ")"
+		} else if len(realIDs) > 0 {
+			// Filter for specific categories only
+			placeholders := make([]string, len(realIDs))
+			for i, id := range realIDs {
+				placeholders[i] = "?"
+				args = append(args, id)
+			}
+			query += fmt.Sprintf(" AND t.category_id IN (%s)", strings.Join(placeholders, ","))
+		}
 	}
 
 	query += " ORDER BY t.date DESC"

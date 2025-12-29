@@ -51,7 +51,7 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
   };
 
   const selectAll = () => {
-    onChange(categories.map(c => c.id));
+    onChange([0, ...categories.map(c => c.id)]);
   };
 
   const clearSelection = (e?: React.MouseEvent) => {
@@ -62,8 +62,10 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
   const [filteredCategories, setFilteredCategories] = useState<Category[]>(categories);
 
   useEffect(() => {
+    const uncategorizedOption: Category = { id: 0, name: 'Uncategorized' };
+
     if (!searchTerm.trim()) {
-      setFilteredCategories(categories);
+      setFilteredCategories([uncategorizedOption, ...categories]);
       return;
     }
 
@@ -72,12 +74,12 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
       const ranked = rankedNames
         .map(name => categories.find(c => c.name === name))
         .filter((c): c is Category => !!c);
-      setFilteredCategories(ranked);
+      setFilteredCategories([uncategorizedOption, ...ranked]);
     });
   }, [categories, searchTerm]);
 
   const selectedCount = selectedCategoryIds.length;
-  const isAllSelected = selectedCount === categories.length && categories.length > 0;
+  const isAllSelected = selectedCount === categories.length + 1;
 
   return (
     <div className="relative" ref={containerRef}>
@@ -95,7 +97,7 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
           <span className="text-sm font-bold">
             {selectedCount === 0
               ? 'All Categories'
-              : selectedCount === categories.length
+              : selectedCount === categories.length + 1
                 ? 'All Categories Selected'
                 : `${selectedCount} Categor${selectedCount === 1 ? 'y' : 'ies'}`}
           </span>
