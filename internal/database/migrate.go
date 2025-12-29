@@ -4,6 +4,7 @@ import (
 	"embed"
 	"fmt"
 	"log"
+	"os"
 	"sort"
 	"strings"
 )
@@ -99,6 +100,8 @@ func Migrate() error {
 		return migrationFiles[i].version < migrationFiles[j].version
 	})
 
+	isTest := os.Getenv("APP_ENV") == "test"
+
 	for _, mf := range migrationFiles {
 		if applied[mf.version] {
 			continue
@@ -110,11 +113,15 @@ func Migrate() error {
 			return fmt.Errorf("failed to read migration %s: %w", path, err)
 		}
 
-		log.Printf("Running migration %d: %s", mf.version, mf.name)
+		if !isTest {
+			log.Printf("Running migration %d: %s", mf.version, mf.name)
+		}
 		if err := runMigration(mf.version, string(content)); err != nil {
 			return err
 		}
-		log.Printf("Migration %d completed", mf.version)
+		if !isTest {
+			log.Printf("Migration %d completed", mf.version)
+		}
 	}
 
 	return nil
