@@ -28,7 +28,7 @@ This checklist covers all items that should be addressed before releasing to cus
   - Restore UI for selecting backup file
 
 ### 4. SQL Injection in Test Helper (FALSE POSITIVE, DON'T FIX)
-- [ ] **Fix SQL injection vulnerability** - `cmd/test-helper/main.go:51` concatenates table names directly into DROP TABLE. Use allowlist validation or proper identifier escaping.
+- [x] **Fix SQL injection vulnerability** - `cmd/test-helper/main.go:51` concatenates table names directly into DROP TABLE. Use allowlist validation or proper identifier escaping.
 
 ---
 
