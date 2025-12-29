@@ -46,14 +46,8 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
 ```
 
 ### 6. Performance: N+1 Query in Category Search
-- [ ] **Fix `SearchCategories` performance** - Loads all categories on every keystroke, then filters client-side. Use existing `categories_fts` table instead:
-  ```go
-  SELECT id, name FROM categories_fts 
-  WHERE categories_fts MATCH ? 
-  ORDER BY rank
-  LIMIT 10
-  ```
-- [ ] **Add debouncing** - `CategorizationLoop.tsx:135-143` fires `SearchCategories` on every keystroke without debounce. Add 150-200ms delay.
+- [x] **Fix `SearchCategories` performance** - Added in-memory category cache with invalidation on category mutations; removed unused `categories_fts` FTS table and triggers.
+- [x] **Add debouncing** - `CategorizationLoop` now delays category lookups by 200ms.
 
 ### 7. Performance: Blocking File Operations
 - [ ] **Make Excel parsing non-blocking** - `ParseExcel` uses `excelize.OpenReader` synchronously, freezing UI on large files. Move to goroutine with callback or channel.
