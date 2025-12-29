@@ -11,7 +11,7 @@ This checklist covers all items that should be addressed before releasing to cus
 ## 🔴 CRITICAL
 
 ### 1. License & Legal
-- [ ] **Add LICENSE file** - No license exists in the repository. Choose an open-source license (MIT, Apache 2.0, GPL, etc.) or clearly state if this is proprietary software.
+- [x] **Add LICENSE file** - Apache License 2.0 added to the repository.
 - [ ] **Add copyright headers** - Source files lack copyright/license headers.
 - [ ] **Configure build metadata** - Update `wails.json` and build templates with proper copyright strings (currently `{{.Info.Copyright}}` placeholders).
 

@@ -11,3 +11,7 @@
 - [Data Ingestion (Import Flow)](./docs/specs/import-flow.md)
 - [The Categorization Loop](./docs/specs/categorization-loop.md)
 - [Analysis Screen](./docs/specs/analysis.md)
+
+## License
+
+Licensed under the [Apache License 2.0](./LICENSE).
