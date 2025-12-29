@@ -35,7 +35,7 @@ This checklist covers all items that should be addressed before releasing to cus
 - [ ] **Update Go dependencies** - Run `go get -u ./... && go mod tidy`. Security-sensitive packages are outdated:
   - `golang.org/x/crypto` v0.46.0 → newer
   - `golang.org/x/net` v0.48.0 → newer
-- [ ] **Run vulnerability scanner** - Use `govulncheck` for Go.
+- [x] **Run vulnerability scanner** - Use `govulncheck` for Go.
 
 ### 4. Debug Logging in Production
 - [ ] **Remove debug console.log** - `ImportFlow.tsx:354` logs transaction count during import. Remove or replace with proper telemetry.

@@ -1,6 +1,6 @@
-.PHONY: check test vet tidy build
+.PHONY: check test vet tidy vulncheck build
 
-check: test vet tidy build
+check: test vet tidy vulncheck build
 
 test:
 	@echo "==> go test ./..."
@@ -28,6 +28,16 @@ tidy:
 		echo "✓ tidy OK"; \
 	else \
 		echo "✗ tidy FAILED"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
+
+vulncheck:
+	@echo "==> govulncheck ./..."
+	@if OUTPUT=$$(/Users/akuzmenko/code/.go/bin/govulncheck ./... 2>&1); then \
+		echo "✓ vulncheck OK"; \
+	else \
+		echo "✗ vulncheck FAILED"; \
 		echo "$$OUTPUT"; \
 		exit 1; \
 	fi
