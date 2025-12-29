@@ -13,15 +13,9 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 * ORM: Standard library `database/sql` with `modernc.org/sqlite` driver
 * Build: Wails CLI, npm scripts
 
-## Feature Specifications
-
-- [Data Ingestion (Import Flow)](./docs/specs/import-flow.md)
-- [The Categorization Loop](./docs/specs/categorization-loop.md)
-- [Analysis Screen](./docs/specs/analysis.md)
-
 ## Project Rules You MUST Follow
 
-- Feature specs are located in `docs/specs/`. When updating them, keep formatting simple and token-efficient (bullet points, concise text, no inline formatting).
+- Feature specs are here `docs/specs/`.
 - Frontend dependencies belong in `frontend/package.json`. Never install npm packages in the root directory.
 - Assume `wails dev` is running. If not, start it yourself in background (clean up when you're done). Use the browser skill to verify and test UI changes. The DevServer URL is http://localhost:34115.
 - After changing Go files, run `go test ./...`, `go vet ./...`, `go mod tidy`, and `wails build` to ensure the backend is healthy and compiles without issues.
@@ -36,7 +30,6 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 
 ## Fuzzy Matching
 
-- Implementation: All fuzzy searching uses `internal/fuzzy` (encapsulating the `fzf` algorithm).
-- Ranking Priority: Matches at string/word starts > middle-string fuzzy matches. Tie-break: shorter strings first.
-- Hard Rule: Avoid client-side `.includes()` or JS fuzzy libraries for lists. Always use Wails bindings to `internal/fuzzy` to ensure consistent ranking and behavior across the UI.
-- Reference: `internal/fuzzy/fuzzy_test.go` for ranking verification.
+- All fuzzy search uses `internal/fuzzy` (fzf).
+- Ranking: word/string starts outrank mid-string; ties favor shorter strings (see `internal/fuzzy/fuzzy_test.go`).
+- Lists must call Wails bindings; never client-side `.includes()` or JS fuzzy libs.
