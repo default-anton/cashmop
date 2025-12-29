@@ -27,9 +27,6 @@ This checklist covers all items that should be addressed before releasing to cus
   - Simple file copy for database backup
   - Restore UI for selecting backup file
 
-### 4. SQL Injection in Test Helper
-- [ ] **Fix SQL injection vulnerability** - `cmd/test-helper/main.go:51` concatenates table names directly into DROP TABLE. Use allowlist validation or proper identifier escaping.
-
 ---
 
 ## 🟠 HIGH
@@ -48,8 +45,8 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
 ### 6. Performance: N+1 Query in Category Search
 - [ ] **Fix `SearchCategories` performance** - Loads all categories on every keystroke, then filters client-side. Use existing `categories_fts` table instead:
   ```go
-  SELECT id, name FROM categories_fts 
-  WHERE categories_fts MATCH ? 
+  SELECT id, name FROM categories_fts
+  WHERE categories_fts MATCH ?
   ORDER BY rank
   LIMIT 10
   ```
