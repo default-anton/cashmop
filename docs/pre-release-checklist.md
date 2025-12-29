@@ -35,9 +35,9 @@ This checklist covers all items that should be addressed before releasing to cus
 ## 🟠 HIGH
 
 ### 5. Performance: Missing Database Indexes
-- [ ] **Add index on `account_id`** - Every query JOINs on accounts but no index exists on `transactions.account_id`
-- [ ] **Add index on `owner_id`** - Queries LEFT JOIN users but no index on `transactions.owner_id`
-- [ ] **Create migration 002** - Add indexes via new migration file
+- [x] **Add index on `account_id`** - Every query JOINs on accounts but no index exists on `transactions.account_id`
+- [x] **Add index on `owner_id`** - Queries LEFT JOIN users but no index on `transactions.owner_id`
+- [x] **Create migration 002** - Add indexes via new migration file
 
 ```sql
 -- Migration 002
