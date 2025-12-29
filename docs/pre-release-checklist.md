@@ -8,55 +8,16 @@ This checklist covers all items that should be addressed before releasing to cus
 
 ---
 
-## 🔴 CRITICAL
-
-### 1. License & Legal
-- [x] **Add LICENSE file** - Apache License 2.0 added to the repository.
-- [x] **Configure build metadata** - Updated `wails.json` with `info` section containing productVersion, copyright, companyName, productName, and comments. Build templates (Info.plist, info.json) now properly populate copyright strings.
-- [n/a] **Add copyright headers** - Not adding copyright headers to source files (license and build metadata suffice).
-
-### 2. Database Path & Portability
-- [x] **Fix database file location** - Database now resolves via a single `storageName` constant and stores files under platform config directories:
-  - Windows: `%LOCALAPPDATA%\cashflow\`
-  - macOS: `~/Library/Application Support/cashflow/`
-  - Linux: `~/.config/cashflow/` or `XDG_CONFIG_HOME`
-
-### 3. Data Loss Prevention
-- [ ] **Add backup/restore functionality** - Users can export transactions but cannot backup/restore full database (accounts, categories, rules). Consider:
-  - SQLite `VACUUM INTO` for backup
-  - Simple file copy for database backup
-  - Restore UI for selecting backup file
-
-### 4. SQL Injection in Test Helper (FALSE POSITIVE, DON'T FIX)
-- [x] **Fix SQL injection vulnerability** - `cmd/test-helper/main.go:51` concatenates table names directly into DROP TABLE. Use allowlist validation or proper identifier escaping.
-
----
-
 ## 🟠 HIGH
 
-### 5. Performance: Missing Database Indexes
-- [x] **Add index on `account_id`** - Every query JOINs on accounts but no index exists on `transactions.account_id`
-- [x] **Add index on `owner_id`** - Queries LEFT JOIN users but no index on `transactions.owner_id`
-- [x] **Create migration 002** - Add indexes via new migration file
-
-```sql
--- Migration 002
-CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
-CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
-```
-
-### 6. Performance: N+1 Query in Category Search
-- [x] **Fix `SearchCategories` performance** - Added in-memory category cache with invalidation on category mutations; removed unused `categories_fts` FTS table and triggers.
-- [x] **Add debouncing** - `CategorizationLoop` now delays category lookups by 200ms.
-
-### 7. Performance: Blocking File Operations
+### 1. Performance: Blocking File Operations
 - [ ] **Make Excel parsing non-blocking** - `ParseExcel` uses `excelize.OpenReader` synchronously, freezing UI on large files. Move to goroutine with callback or channel.
 - [ ] **Optimize CSV parsing** - `file.text()` is synchronous and can block. Consider streaming/chunking for large files.
 
-### 8. Cross-Platform: CSV Line Endings
+### 2. Cross-Platform: CSV Line Endings
 - [ ] **Fix CSV export for Windows** - `encoding/csv` writes LF-only (`\n`) but Excel on Windows expects CRLF (`\r\n`). Add `writer.UseCRLF = true` on Windows.
 
-### 9. Input Validation Gaps
+### 3. Input Validation Gaps
 - [ ] **Add magic number validation** - File uploads are validated by extension only, not content. Check file signatures:
   - CSV: Plain text (already validated)
   - XLSX: `PK\x03\x04` (ZIP signature)
@@ -64,7 +25,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
 - [ ] **Sanitize user input** - While SQL injection is protected, no XSS sanitization exists. Data could be dangerous if exported to web formats later.
 - [ ] **Check for CSV injection vectors** - CSV parsing doesn't block formulas like `=HYPERLINK()`, `=CMD()`. Sanitize or escape when exporting.
 
-### 10. Outdated Dependencies (Security Risk)
+### 4. Outdated Dependencies (Security Risk)
 - [ ] **Audit frontend dependencies** - Run `npm audit` after generating `package-lock.json`. Major updates available:
   - React 18→19
   - Vite 3→7
@@ -75,7 +36,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
   - `golang.org/x/net` v0.48.0 → newer
 - [ ] **Run vulnerability scanner** - Use `govulncheck` for Go.
 
-### 11. Debug Logging in Production
+### 5. Debug Logging in Production
 - [ ] **Remove debug console.log** - `ImportFlow.tsx:354` logs transaction count during import. Remove or replace with proper telemetry.
 - [ ] **Review console.error usage** - 20+ console.error statements in error handlers. Decide if these should remain for production debugging.
 
@@ -83,7 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
 
 ## 🟡 MEDIUM
 
-### 12. Release Infrastructure
+### 6. Release Infrastructure
 - [ ] **Set up CI/CD** - No GitHub Actions or automated builds exist. Create workflow to:
   - Run tests on all PRs
   - Build for all platforms (windows/amd64, darwin/amd64, darwin/arm64, linux/amd64)
@@ -96,7 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
   - Linux: AppImage signing (optional)
 - [ ] **Configure macOS notarization** - Required for distribution outside App Store.
 
-### 13. Database Migration Improvements
+### 7. Database Migration Improvements
 - [ ] **Add rollback capability** - Migrations only move forward. Consider adding down migrations for development/testing.
 - [ ] **Improve migration failure recovery** - App aborts on startup if migration fails. Add:
   - Automatic backup before migration
@@ -105,7 +66,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
 - [ ] **Fix date storage** - Dates stored as `TEXT` rather than ISO8601 format. May cause sorting/issues.
 - [ ] **Fix currency storage** - `amount` stored as `REAL` may introduce floating-point precision issues. Use INTEGER (cents) or DECIMAL.
 
-### 14. Test Coverage
+### 8. Test Coverage
 - [ ] **Add database layer tests** - `internal/database/` has no tests for CRUD operations, migrations, or rule application.
 - [ ] **Add app service tests** - `app.go` has 30+ methods with no test coverage.
 - [ ] **Add component unit tests** - 23+ React components have no unit tests (only E2E tests exist).
@@ -116,19 +77,19 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
   - Migration failures
   - Concurrent operations
 
-### 15. Configuration Hardcoding
+### 9. Configuration Hardcoding
 - [ ] **Make window dimensions configurable** - Hardcoded to 1024x768 in `main.go:20-21`.
 - [ ] **Make Brave Search timeout configurable** - Hardcoded to 15s in `internal/brave/search.go:18`.
 - [ ] **Make file size limit configurable** - Hardcoded to 10MB in `ImportFlow.tsx:126`.
 - [ ] **Use environment-specific configs** - Only `APP_ENV=test` exists. Add support for dev/prod configs.
 
-### 16. User Experience
+### 10. User Experience
 - [ ] **Add onboarding** - No first-run experience for new users.
 - [ ] **Improve error messages** - Some errors are technical (e.g., "failed to decode base64"). Make user-friendly.
 - [ ] **Add progress indicators** - Large file imports show no progress.
 - [ ] **Add undo functionality** - No way to undo accidental categorization or deletion.
 
-### 17. Accessibility
+### 11. Accessibility
 - [ ] **Add ARIA labels** - Review interactive components for proper accessibility attributes.
 - [ ] **Keyboard navigation** - Ensure all features are keyboard accessible.
 - [ ] **Screen reader testing** - Test with NVDA (Windows) or VoiceOver (macOS).
@@ -137,18 +98,18 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
 
 ## 🟢 LOW
 
-### 18. Code Cleanup
+### 12. Code Cleanup
 - [ ] **Implement auto-categorization** - `ImportFlow.tsx:339` has TODO comment for this feature.
 - [ ] **Remove duplicate schema.sql** - `internal/database/schema.sql` duplicates migration 001. Unclear if needed.
 - [ ] **Add code coverage reporting** - Set up `go test -coverprofile` and frontend coverage reports.
 
-### 19. Documentation
+### 13. Documentation
 - [ ] **Add user guide** - No end-user documentation exists.
 - [ ] **Add contributor guide** - No CONTRIBUTING.md for external contributors.
 - [ ] **Document architecture** - Add architecture overview for maintainers.
 - [ ] **Add troubleshooting guide** - Common issues and solutions.
 
-### 20. Polish
+### 14. Polish
 - [ ] **Add about screen** - Show version, license, and credits.
 - [ ] **Add check for updates** - Notify users when new versions are available.
 - [ ] **Improve toast duration** - Default 5000ms may be too short for some messages.
@@ -170,12 +131,12 @@ CREATE INDEX IF NOT EXISTS idx_transactions_owner_id ON transactions(owner_id);
 
 | Priority | Items | Status |
 |----------|-------|--------|
-| 🔴 CRITICAL | 4 | Must fix before release |
-| 🟠 HIGH | 10 | Should fix if time permits |
+| 🔴 CRITICAL | 0 | None |
+| 🟠 HIGH | 5 | Should fix if time permits |
 | 🟡 MEDIUM | 6 | Nice to have |
 | 🟢 LOW | 3 | Future consideration |
 
-**Total: 23 items to review**
+**Total: 14 items to review**
 
 ---
 
