@@ -53,21 +53,3 @@ CREATE TABLE IF NOT EXISTS categorization_rules (
     FOREIGN KEY(category_id) REFERENCES categories(id)
 );
 
--- Categories FTS for fast search and BM25 ranking
-CREATE VIRTUAL TABLE IF NOT EXISTS categories_fts USING fts5(
-    name,
-    content='categories',
-    content_rowid='id'
-);
-
--- Triggers to keep categories_fts in sync
-CREATE TRIGGER IF NOT EXISTS cat_after_insert AFTER INSERT ON categories BEGIN
-    INSERT INTO categories_fts(rowid, name) VALUES (new.id, new.name);
-END;
-CREATE TRIGGER IF NOT EXISTS cat_after_delete AFTER DELETE ON categories BEGIN
-    INSERT INTO categories_fts(categories_fts, rowid, name) VALUES ('delete', old.id, old.name);
-END;
-CREATE TRIGGER IF NOT EXISTS cat_after_update AFTER UPDATE ON categories BEGIN
-    INSERT INTO categories_fts(categories_fts, rowid, name) VALUES ('delete', old.id, old.name);
-    INSERT INTO categories_fts(rowid, name) VALUES (new.id, new.name);
-END;
