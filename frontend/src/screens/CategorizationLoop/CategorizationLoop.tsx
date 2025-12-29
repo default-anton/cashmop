@@ -6,6 +6,7 @@ import {
   TransactionCard,
   RuleEditor,
   CategoryInput,
+  WebSearchResults,
 } from './components';
 
 interface Transaction {
@@ -50,6 +51,16 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [matchingTransactions, setMatchingTransactions] = useState<Transaction[]>([]);
   const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
   const [hasRules, setHasRules] = useState<boolean | null>(null);
+
+  // Web search state
+  const [webSearchResults, setWebSearchResults] = useState<Array<{
+    title: string;
+    url: string;
+    snippet: string;
+    domain: string;
+  }> | null>(null);
+  const [webSearchLoading, setWebSearchLoading] = useState(false);
+  const [webSearchError, setWebSearchError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const amountInputRef = useRef<HTMLInputElement>(null);
@@ -195,6 +206,44 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     fetchMatching();
   }, [debouncedRule, amountFilter, currentTx?.id]);
 
+  // Keyboard shortcut for web search (Cmd+K / Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        if (currentTx) {
+          handleWebSearch();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentTx]);
+
+  const handleWebSearch = async () => {
+    if (!currentTx) return;
+
+    setWebSearchLoading(true);
+    setWebSearchError(null);
+    setWebSearchResults(null);
+
+    try {
+      const results = await (window as any).go.main.App.SearchWeb(currentTx.description);
+      setWebSearchResults(results);
+    } catch (e) {
+      console.error('Web search failed', e);
+      setWebSearchError('Web search unavailable. Try again later');
+    } finally {
+      setWebSearchLoading(false);
+    }
+  };
+
+  const handleDismissWebSearch = () => {
+    setWebSearchResults(null);
+    setWebSearchError(null);
+  };
+
   const handleCategorize = async (categoryName: string, categoryId?: number) => {
     if (!currentTxId) return;
 
@@ -256,6 +305,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
       setCategoryInput('');
       setSuggestions([]);
+      setWebSearchResults(null);
+      setWebSearchError(null);
     } catch (e) {
       console.error('Failed to (rule-)categorize', e);
     }
@@ -267,10 +318,12 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     setSuggestions([]);
     setSelectionRule(null);
     setAmountFilter({ operator: 'none', value1: '', value2: '' });
+    setWebSearchResults(null);
+    setWebSearchError(null);
   };
 
-  /* 
-   * Replaced by manual selection from TransactionCard to support custom highlighting 
+  /*
+   * Replaced by manual selection from TransactionCard to support custom highlighting
    * without fighting browser selection behavior.
    */
   const handleManualSelection = useCallback((startIndex: number, endIndex: number) => {
@@ -325,7 +378,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     }
   }, [selectionRule]);
 
-
   if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
 
   if (transactions.length === 0 || !currentTx) {
@@ -343,6 +395,15 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           onSelectionChange={handleManualSelection}
           selectionRule={selectionRule}
           showOnboardingHint={hasRules === false}
+        />
+
+        <WebSearchResults
+          query={currentTx.description}
+          results={webSearchResults}
+          loading={webSearchLoading}
+          error={webSearchError}
+          onSearch={handleWebSearch}
+          onDismiss={handleDismissWebSearch}
         />
 
         <RuleEditor

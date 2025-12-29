@@ -3,3 +3,4 @@ export * from './ProgressHeader';
 export * from './TransactionCard';
 export * from './RuleEditor';
 export * from './CategoryInput';
+export * from './WebSearchResults';

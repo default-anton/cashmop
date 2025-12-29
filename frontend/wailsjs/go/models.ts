@@ -129,6 +129,24 @@ export namespace main {
 	        this.owner = source["owner"];
 	    }
 	}
+	export class WebSearchResult {
+	    title: string;
+	    url: string;
+	    snippet: string;
+	    domain: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new WebSearchResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.title = source["title"];
+	        this.url = source["url"];
+	        this.snippet = source["snippet"];
+	        this.domain = source["domain"];
+	    }
+	}
 
 }
 

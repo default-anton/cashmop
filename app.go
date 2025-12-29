@@ -1,25 +1,32 @@
 package main
 
 import (
+	"cashflow/internal/brave"
 	"cashflow/internal/database"
 	"cashflow/internal/fuzzy"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/xuri/excelize/v2"
 )
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx         context.Context
+	searchCache *sync.Map
 }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	return &App{
+		searchCache: &sync.Map{},
+	}
 }
 
 // startup is called when the app starts. The context is saved
@@ -299,4 +306,59 @@ func (a *App) ParseExcel(base64Data string) (*ExcelData, error) {
 		Headers: headers,
 		Rows:    dataRows,
 	}, nil
+}
+
+// WebSearchResult represents a single web search result
+type WebSearchResult struct {
+	Title   string `json:"title"`
+	URL     string `json:"url"`
+	Snippet string `json:"snippet"`
+	Domain  string `json:"domain"`
+}
+
+// hashQuery creates a simple hash of the query string for caching
+func hashQuery(query string) string {
+	h := sha256.Sum256([]byte(query))
+	return fmt.Sprintf("%x", h)[:16]
+}
+
+// SearchWeb performs a web search using Brave Search API
+// Returns top 5 results with caching (session-only)
+func (a *App) SearchWeb(query string) ([]WebSearchResult, error) {
+	if query == "" {
+		return nil, fmt.Errorf("query cannot be empty")
+	}
+
+	// Check cache
+	cacheKey := hashQuery(query)
+	if cached, ok := a.searchCache.Load(cacheKey); ok {
+		return cached.([]WebSearchResult), nil
+	}
+
+	// Call Brave search (top 5 results)
+	results, err := brave.Search(query, 5)
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform to frontend format with domain extraction
+	webResults := make([]WebSearchResult, 0, len(results))
+	for _, r := range results {
+		domain := ""
+		if u, err := url.Parse(r.URL); err == nil {
+			domain = u.Hostname()
+		}
+
+		webResults = append(webResults, WebSearchResult{
+			Title:   r.Title,
+			URL:     r.URL,
+			Snippet: r.Snippet,
+			Domain:  domain,
+		})
+	}
+
+	// Cache results
+	a.searchCache.Store(cacheKey, webResults)
+
+	return webResults, nil
 }

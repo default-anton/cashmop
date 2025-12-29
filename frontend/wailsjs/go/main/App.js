@@ -85,3 +85,7 @@ export function SearchCategories(arg1) {
 export function SearchTransactions(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['SearchTransactions'](arg1, arg2, arg3, arg4);
 }
+
+export function SearchWeb(arg1) {
+  return window['go']['main']['App']['SearchWeb'](arg1);
+}

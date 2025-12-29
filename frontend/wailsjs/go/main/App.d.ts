@@ -44,3 +44,5 @@ export function SaveColumnMapping(arg1:string,arg2:any):Promise<number>;
 export function SearchCategories(arg1:string):Promise<Array<database.Category>>;
 
 export function SearchTransactions(arg1:string,arg2:string,arg3:any,arg4:any):Promise<Array<database.TransactionModel>>;
+
+export function SearchWeb(arg1:string):Promise<Array<main.WebSearchResult>>;

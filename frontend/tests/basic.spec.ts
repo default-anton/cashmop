@@ -17,3 +17,19 @@ test('should show analysis screen when no uncategorized transactions', async ({ 
   await categorizationPage.goto();
   await analysisPage.expectAnalysisButtonVisible();
 });
+
+test('should perform web search for transaction context', async ({ categorizationPage }) => {
+  await categorizationPage.goto();
+
+  // Wait for the transaction to load
+  await categorizationPage.expectTransaction('Amazon.ca');
+
+  // Trigger web search
+  await categorizationPage.triggerWebSearch();
+
+  // Expect loading state
+  await categorizationPage.expectWebSearchLoading();
+
+  // Expect web search results to appear
+  await categorizationPage.expectWebSearchResults();
+});
