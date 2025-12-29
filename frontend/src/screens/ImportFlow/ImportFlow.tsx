@@ -117,6 +117,33 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   return { headers, rows };
 }
 
+// Validates file signature to detect file type mismatches
+async function validateFileSignature(file: File, expectedExtension: string): Promise<void> {
+  const reader = new FileReader();
+  const signaturePromise = new Promise<Uint8Array>((resolve, reject) => {
+    reader.onload = () => resolve(new Uint8Array(reader.result as ArrayBuffer));
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file.slice(0, 8));
+  });
+
+  const bytes = await signaturePromise;
+
+  if (expectedExtension === '.xlsx') {
+    // XLSX files are ZIP archives: signature is "PK\x03\x04"
+    if (bytes[0] !== 0x50 || bytes[1] !== 0x4B || bytes[2] !== 0x03 || bytes[3] !== 0x04) {
+      throw new Error('File does not appear to be a valid XLSX file. The file signature does not match. Please ensure you are uploading a genuine Excel file.');
+    }
+  } else if (expectedExtension === '.xls') {
+    // XLS files use OLE2 compound document storage: signature is D0 CF 11 E0 A0 B1 1A E1
+    const ole2Signature = [0xD0, 0xCF, 0x11, 0xE0, 0xA0, 0xB1, 0x1A, 0xE1];
+    for (let i = 0; i < 8; i++) {
+      if (bytes[i] !== ole2Signature[i]) {
+        throw new Error('File does not appear to be a valid XLS file. The file signature does not match. Please ensure you are uploading a genuine Excel file or try saving as XLSX.');
+      }
+    }
+  }
+}
+
 async function parseFile(file: File): Promise<ParsedFile> {
   const name = file.name.toLowerCase();
   // Basic file validation
@@ -137,7 +164,30 @@ async function parseFile(file: File): Promise<ParsedFile> {
     }
     return { file, kind: 'csv', headers, rows };
   }
-  if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+  if (name.endsWith('.xlsx')) {
+    await validateFileSignature(file, '.xlsx');
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    try {
+      const base64Data = await base64Promise;
+      const result = await (window as any).go.main.App.ParseExcel(base64Data);
+      return {
+        file,
+        kind: 'excel',
+        headers: result.headers,
+        rows: result.rows,
+      };
+    } catch (e) {
+      throw new Error('Failed to parse Excel file: ' + (e instanceof Error ? e.message : String(e)));
+    }
+  }
+  if (name.endsWith('.xls')) {
+    await validateFileSignature(file, '.xls');
     const reader = new FileReader();
     const base64Promise = new Promise<string>((resolve, reject) => {
       reader.onload = () => resolve(reader.result as string);

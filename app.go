@@ -451,6 +451,23 @@ func (a *App) ExportTransactions(startDate, endDate string, categoryIDs []int64,
 	}
 }
 
+// sanitizeCSVField prevents CSV injection attacks by escaping leading formula characters
+// See: https://owasp.org/www-community/attacks/CSV_Injection
+func sanitizeCSVField(field string) string {
+	if field == "" {
+		return field
+	}
+	// Escape leading characters that could trigger Excel formulas
+	// Common formula triggers: = + - @ \t \r
+	// We prepend a tab character which forces Excel to treat the value as text
+	firstChar := field[0]
+	if firstChar == '=' || firstChar == '+' || firstChar == '-' || firstChar == '@' ||
+		firstChar == '\t' || firstChar == '\r' {
+		return "\t" + field
+	}
+	return field
+}
+
 // exportToCSV writes transactions to CSV with UTF-8 BOM for Excel compatibility
 func exportToCSV(transactions []database.TransactionModel, destinationPath string) (int, error) {
 	file, err := os.Create(destinationPath)
@@ -483,12 +500,12 @@ func exportToCSV(transactions []database.TransactionModel, destinationPath strin
 
 		row := []string{
 			tx.Date,
-			tx.Description,
+			sanitizeCSVField(tx.Description),
 			strconv.FormatFloat(tx.Amount, 'f', -1, 64),
-			category,
-			tx.AccountName,
-			tx.OwnerName,
-			tx.Currency,
+			sanitizeCSVField(category),
+			sanitizeCSVField(tx.AccountName),
+			sanitizeCSVField(tx.OwnerName),
+			sanitizeCSVField(tx.Currency),
 		}
 		if err := writer.Write(row); err != nil {
 			return 0, fmt.Errorf("failed to write row: %w", err)

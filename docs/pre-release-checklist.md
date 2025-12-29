@@ -20,12 +20,11 @@ This checklist covers all items that should be addressed before releasing to cus
 - [x] **Fix CSV export for Windows** - `encoding/csv` writes LF-only (`\n`) but Excel on Windows expects CRLF (`\r\n`). Add `writer.UseCRLF = true` on Windows.
 
 ### 2. Input Validation Gaps
-- [ ] **Add magic number validation** - File uploads are validated by extension only, not content. Check file signatures:
+- [x] **Add magic number validation** - File uploads are validated by extension only, not content. Check file signatures:
   - CSV: Plain text (already validated)
   - XLSX: `PK\x03\x04` (ZIP signature)
   - XLS: `ÐÏ\x00\x00`
-- [ ] **Sanitize user input** - While SQL injection is protected, no XSS sanitization exists. Data could be dangerous if exported to web formats later.
-- [ ] **Check for CSV injection vectors** - CSV parsing doesn't block formulas like `=HYPERLINK()`, `=CMD()`. Sanitize or escape when exporting.
+- [x] **Check for CSV injection vectors** - CSV parsing doesn't block formulas like `=HYPERLINK()`, `=CMD()`. Sanitize or escape when exporting.
 
 ### 3. Outdated Dependencies (Security Risk)
 - [ ] **Audit frontend dependencies** - Run `npm audit` after generating `package-lock.json`. Major updates available:
@@ -131,10 +130,10 @@ This checklist covers all items that should be addressed before releasing to cus
 |----------|-------|--------|
 | 🔴 CRITICAL | 0 | None |
 | 🟠 HIGH | 0 | None |
-| 🟡 MEDIUM | 33 | Nice to have (1 done) |
+| 🟡 MEDIUM | 33 | Nice to have (3 done) |
 | 🟢 LOW | 11 | Future consideration |
 
-**Total: 44 items to review (1 completed)**
+**Total: 44 items to review (3 completed)**
 
 ---
 
