@@ -31,7 +31,7 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
 
   if (!results && !loading && !error) {
     return (
-      <div className="mt-4">
+      <div className="my-4">
         <button
           onClick={onSearch}
           className="w-full flex items-center justify-center gap-2 bg-canvas-100 hover:bg-canvas-200 border-2 border-canvas-200 hover:border-brand/30 text-canvas-600 hover:text-brand rounded-xl py-3 px-4 font-bold transition-all duration-200 group"
