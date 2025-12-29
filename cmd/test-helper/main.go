@@ -61,12 +61,12 @@ func resetDB() error {
 		}
 	}
 
-	// Re-enable and re-run schema
+	// Re-enable and re-run migrations
 	if _, err := database.DB.Exec("PRAGMA foreign_keys = ON"); err != nil {
 		return err
 	}
-	if _, err := database.DB.Exec(database.SchemaSQL); err != nil {
-		return fmt.Errorf("failed to re-run schema: %w", err)
+	if err := database.Migrate(); err != nil {
+		return fmt.Errorf("failed to re-run migrations: %w", err)
 	}
 
 	return loadFixtures()

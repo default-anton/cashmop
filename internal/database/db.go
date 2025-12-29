@@ -2,15 +2,11 @@ package database
 
 import (
 	"database/sql"
-	_ "embed"
 	"log"
 	"os"
 
 	_ "modernc.org/sqlite"
 )
-
-//go:embed schema.sql
-var SchemaSQL string
 
 var DB *sql.DB
 
@@ -26,9 +22,16 @@ func InitDB() {
 		log.Fatal(err)
 	}
 
-	if _, err := DB.Exec(SchemaSQL); err != nil {
-		log.Fatalf("Failed to init db: %q", err)
+	if err := Migrate(); err != nil {
+		log.Fatalf("Failed to migrate database: %q", err)
 	}
+}
+
+func Close() error {
+	if DB != nil {
+		return DB.Close()
+	}
+	return nil
 }
 
 type ColumnMappingModel struct {
