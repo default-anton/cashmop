@@ -14,13 +14,6 @@
 
 ---
 
-### 4. Technical Stack & Intelligence (TO BE IMPLEMENTED)
-* Web Search Integration:
-    * Integrate a free search engine API (e.g., DuckDuckGo, Brave) to allow users to search for transaction details directly from the app.
-    * Goal: If the user is unsure how to categorize a transaction, the system suggests a category based on similar past transactions (fuzzy search using fzf).
-
----
-
 ### 5. Data Export (TO BE IMPLEMENTED)
 * General: Users must be able to get their data out easily.
 * Formats:
