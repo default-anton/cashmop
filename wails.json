@@ -9,5 +9,12 @@
   "author": {
     "name": "Anton Kuzmenko",
     "email": "1917237+default-anton@users.noreply.github.com"
+  },
+  "info": {
+    "companyName": "Anton Kuzmenko",
+    "productName": "Cashflow Tracker",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright 2026 Anton Kuzmenko. Licensed under the Apache License, Version 2.0",
+    "comments": "Desktop-first cash flow tracking application"
   }
 }

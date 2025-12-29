@@ -12,8 +12,8 @@ This checklist covers all items that should be addressed before releasing to cus
 
 ### 1. License & Legal
 - [x] **Add LICENSE file** - Apache License 2.0 added to the repository.
-- [ ] **Add copyright headers** - Source files lack copyright/license headers.
-- [ ] **Configure build metadata** - Update `wails.json` and build templates with proper copyright strings (currently `{{.Info.Copyright}}` placeholders).
+- [x] **Configure build metadata** - Updated `wails.json` with `info` section containing productVersion, copyright, companyName, productName, and comments. Build templates (Info.plist, info.json) now properly populate copyright strings.
+- [n/a] **Add copyright headers** - Not adding copyright headers to source files (license and build metadata suffice).
 
 ### 2. Database Path & Portability
 - [x] **Fix database file location** - Database now resolves via a single `storageName` constant and stores files under platform config directories:
