@@ -2,6 +2,7 @@ package database
 
 import (
 	"cashflow/internal/fuzzy"
+	"sync"
 )
 
 type Category struct {
@@ -19,6 +20,59 @@ type CategorizationRule struct {
 	AmountMax    *float64 `json:"amount_max"`
 }
 
+var (
+	categoryCacheMu sync.RWMutex
+	categoryCache   []Category
+)
+
+func invalidateCategoryCache() {
+	categoryCacheMu.Lock()
+	categoryCache = nil
+	categoryCacheMu.Unlock()
+}
+
+func loadCategories() ([]Category, error) {
+	categoryCacheMu.RLock()
+	cached := categoryCache
+	categoryCacheMu.RUnlock()
+	if cached != nil {
+		return cached, nil
+	}
+
+	categoryCacheMu.Lock()
+	defer categoryCacheMu.Unlock()
+	if categoryCache != nil {
+		return categoryCache, nil
+	}
+
+	rows, err := DB.Query("SELECT id, name FROM categories ORDER BY name ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var categories []Category
+	for rows.Next() {
+		var c Category
+		if err := rows.Scan(&c.ID, &c.Name); err != nil {
+			return nil, err
+		}
+		categories = append(categories, c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	categoryCache = categories
+	return categories, nil
+}
+
+func cloneCategories(items []Category) []Category {
+	res := make([]Category, len(items))
+	copy(res, items)
+	return res
+}
+
 func GetOrCreateCategory(name string) (int64, error) {
 	var id int64
 	err := DB.QueryRow("SELECT id FROM categories WHERE name = ?", name).Scan(&id)
@@ -29,7 +83,12 @@ func GetOrCreateCategory(name string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return res.LastInsertId()
+	insertedID, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	invalidateCategoryCache()
+	return insertedID, nil
 }
 
 func RenameCategory(id int64, newName string) error {
@@ -50,14 +109,19 @@ func RenameCategory(id int64, newName string) error {
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	invalidateCategoryCache()
+	return nil
 }
 
 func SaveRule(rule CategorizationRule) (int64, error) {
 	res, err := DB.Exec(`
-		INSERT INTO categorization_rules (match_type, match_value, category_id, amount_min, amount_max)
-		VALUES (?, ?, ?, ?, ?)
-	`, rule.MatchType, rule.MatchValue, rule.CategoryID, rule.AmountMin, rule.AmountMax)
+        INSERT INTO categorization_rules (match_type, match_value, category_id, amount_min, amount_max)
+        VALUES (?, ?, ?, ?, ?)
+    `, rule.MatchType, rule.MatchValue, rule.CategoryID, rule.AmountMin, rule.AmountMax)
 	if err != nil {
 		return 0, err
 	}
@@ -66,26 +130,26 @@ func SaveRule(rule CategorizationRule) (int64, error) {
 
 func GetRules() ([]CategorizationRule, error) {
 	rows, err := DB.Query(`
-		SELECT id, match_type, match_value, category_id, amount_min, amount_max 
-		FROM categorization_rules
-		ORDER BY 
-			-- Priority by amount specificity
-			CASE 
-				WHEN amount_min IS NOT NULL AND amount_max IS NOT NULL THEN 1
-				WHEN amount_min IS NOT NULL AND amount_max IS NULL THEN 2
-				WHEN amount_min IS NULL AND amount_max IS NOT NULL THEN 3
-				ELSE 4
-			END ASC,
-			-- Priority by match type specificity
-			CASE 
-				WHEN match_type = 'exact' THEN 1
-				WHEN match_type = 'starts_with' THEN 2
-				WHEN match_type = 'ends_with' THEN 2
-				WHEN match_type = 'contains' THEN 3
-				ELSE 4
-			END ASC,
-			id ASC -- Fallback to oldest rules first
-	`)
+        SELECT id, match_type, match_value, category_id, amount_min, amount_max 
+        FROM categorization_rules
+        ORDER BY 
+            -- Priority by amount specificity
+            CASE 
+                WHEN amount_min IS NOT NULL AND amount_max IS NOT NULL THEN 1
+                WHEN amount_min IS NOT NULL AND amount_max IS NULL THEN 2
+                WHEN amount_min IS NULL AND amount_max IS NOT NULL THEN 3
+                ELSE 4
+            END ASC,
+            -- Priority by match type specificity
+            CASE 
+                WHEN match_type = 'exact' THEN 1
+                WHEN match_type = 'starts_with' THEN 2
+                WHEN match_type = 'ends_with' THEN 2
+                WHEN match_type = 'contains' THEN 3
+                ELSE 4
+            END ASC,
+            id ASC -- Fallback to oldest rules first
+    `)
 	if err != nil {
 		return nil, err
 	}
@@ -156,16 +220,16 @@ func ApplyRule(ruleID int64) (int64, error) {
 }
 
 func SearchCategories(query string) ([]Category, error) {
-	all, err := GetAllCategories()
+	all, err := loadCategories()
 	if err != nil {
 		return nil, err
 	}
 
 	if query == "" {
 		if len(all) > 10 {
-			return all[:10], nil
+			return cloneCategories(all[:10]), nil
 		}
-		return all, nil
+		return cloneCategories(all), nil
 	}
 
 	names := make([]string, len(all))
@@ -190,21 +254,11 @@ func SearchCategories(query string) ([]Category, error) {
 }
 
 func GetAllCategories() ([]Category, error) {
-	rows, err := DB.Query("SELECT id, name FROM categories ORDER BY name ASC")
+	categories, err := loadCategories()
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-
-	var categories []Category
-	for rows.Next() {
-		var c Category
-		if err := rows.Scan(&c.ID, &c.Name); err != nil {
-			return nil, err
-		}
-		categories = append(categories, c)
-	}
-	return categories, nil
+	return cloneCategories(categories), nil
 }
 
 func ApplyAllRules() error {
