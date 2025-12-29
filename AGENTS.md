@@ -18,7 +18,7 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 - Feature specs are here `docs/specs/`.
 - Frontend dependencies belong in `frontend/package.json`. Never install npm packages in the root directory.
 - Assume `wails dev` is running. If not, start it yourself in background (clean up when you're done). Use the browser skill to verify and test UI changes. The DevServer URL is http://localhost:34115.
-- After changing Go files, run `go test ./...`, `go vet ./...`, `go mod tidy`, and `wails build` to ensure the backend is healthy and compiles without issues.
+- After changing Go files, run `make check` to ensure the backend is healthy and compiles without issues. This runs: `go test ./...`, `go vet ./...`, `go mod tidy`, and `wails build`.
 
 ## Integration Testing
 
