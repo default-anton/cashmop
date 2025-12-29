@@ -3,9 +3,10 @@ import ImportFlow from './screens/ImportFlow/ImportFlow';
 import CategorizationLoop from './screens/CategorizationLoop/CategorizationLoop';
 import CategoryManager from './screens/CategoryManager/CategoryManager';
 import Analysis from './screens/Analysis/Analysis';
+import Settings from './screens/Settings/Settings';
 
 function App() {
-  const [screen, setScreen] = useState<'import' | 'categorize' | 'categories' | 'analysis'>('analysis');
+  const [screen, setScreen] = useState<'import' | 'categorize' | 'categories' | 'analysis' | 'settings'>('analysis');
   const [hasUncategorized, setHasUncategorized] = useState(false);
   const [hasData, setHasData] = useState(false);
 
@@ -91,6 +92,14 @@ function App() {
         >
           Categories
         </button>
+        <button
+          onClick={() => setScreen('settings')}
+          aria-label="Navigate to Settings"
+          className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'settings' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
+            }`}
+        >
+          Settings
+        </button>
       </nav>
 
       {screen === 'import' ? (
@@ -99,6 +108,8 @@ function App() {
         <CategorizationLoop onFinish={handleCategorizationFinish} />
       ) : screen === 'categories' ? (
         <CategoryManager />
+      ) : screen === 'settings' ? (
+        <Settings />
       ) : (
         <Analysis />
       )}

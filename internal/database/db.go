@@ -111,6 +111,35 @@ func Close() error {
 	return nil
 }
 
+// DatabasePath returns the current database file path
+func DatabasePath() (string, error) {
+	return resolveDatabasePath()
+}
+
+// EnsureBackupDir creates and returns the backup directory path
+func EnsureBackupDir() (string, error) {
+	dir, err := backupDir()
+	if err != nil {
+		return "", err
+	}
+
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", fmt.Errorf("create backup directory: %w", err)
+	}
+
+	return dir, nil
+}
+
+// backupDir returns the backup directory next to the active database
+func backupDir() (string, error) {
+	dbPath, err := resolveDatabasePath()
+	if err != nil {
+		return "", err
+	}
+	dbDir := filepath.Dir(dbPath)
+	return filepath.Join(dbDir, "backups"), nil
+}
+
 type ColumnMappingModel struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name"`

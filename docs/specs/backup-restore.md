@@ -224,6 +224,7 @@ frontend/src/
 - **Detection**: Check available disk space before backup
 - **Error**: "Insufficient disk space to create backup"
 - **Action**: Fail gracefully, notify user, don't attempt backup
+- **Known Issue**: The `hasSufficientSpace()` function uses Unix-specific `syscall.Statfs_t`. Windows compatibility is not yet verified. For Windows users, the space check may not work correctly and will fail gracefully (assumes enough space if unknown). This needs cross-platform testing and potential fix before Windows release.
 
 ### Database Locks
 - **Detection**: SQLite locked errors during `VACUUM INTO`

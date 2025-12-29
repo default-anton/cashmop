@@ -10,6 +10,10 @@ export function CreateAccount(arg1) {
   return window['go']['main']['App']['CreateAccount'](arg1);
 }
 
+export function CreateManualBackup() {
+  return window['go']['main']['App']['CreateManualBackup']();
+}
+
 export function CreateOwner(arg1) {
   return window['go']['main']['App']['CreateOwner'](arg1);
 }
@@ -50,6 +54,10 @@ export function GetColumnMappings() {
   return window['go']['main']['App']['GetColumnMappings']();
 }
 
+export function GetLastBackupInfo() {
+  return window['go']['main']['App']['GetLastBackupInfo']();
+}
+
 export function GetMonthList() {
   return window['go']['main']['App']['GetMonthList']();
 }
@@ -70,12 +78,24 @@ export function ImportTransactions(arg1) {
   return window['go']['main']['App']['ImportTransactions'](arg1);
 }
 
+export function OpenBackupFolder() {
+  return window['go']['main']['App']['OpenBackupFolder']();
+}
+
 export function ParseExcel(arg1) {
   return window['go']['main']['App']['ParseExcel'](arg1);
 }
 
 export function RenameCategory(arg1, arg2) {
   return window['go']['main']['App']['RenameCategory'](arg1, arg2);
+}
+
+export function RestoreBackup(arg1) {
+  return window['go']['main']['App']['RestoreBackup'](arg1);
+}
+
+export function RestoreBackupFromDialog() {
+  return window['go']['main']['App']['RestoreBackupFromDialog']();
 }
 
 export function SaveCategorizationRule(arg1) {
@@ -96,4 +116,16 @@ export function SearchTransactions(arg1, arg2, arg3, arg4) {
 
 export function SearchWeb(arg1) {
   return window['go']['main']['App']['SearchWeb'](arg1);
+}
+
+export function SelectBackupFile() {
+  return window['go']['main']['App']['SelectBackupFile']();
+}
+
+export function TriggerAutoBackup() {
+  return window['go']['main']['App']['TriggerAutoBackup']();
+}
+
+export function ValidateBackupFile(arg1) {
+  return window['go']['main']['App']['ValidateBackupFile'](arg1);
 }

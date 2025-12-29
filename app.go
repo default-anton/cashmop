@@ -10,11 +10,15 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/url"
 	"os"
+	osexec "os/exec"
+	stdlibRuntime "runtime"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/xuri/excelize/v2"
@@ -38,6 +42,12 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	database.InitDB() // Initialize SQLite
+
+	go func() {
+		if _, err := a.TriggerAutoBackup(); err != nil {
+			log.Printf("Auto-backup failed: %v", err)
+		}
+	}()
 }
 
 // Greet returns a greeting for the given name
@@ -595,4 +605,175 @@ func exportToXLSX(transactions []database.TransactionModel, destinationPath stri
 	}
 
 	return len(transactions), nil
+}
+
+// CreateManualBackup creates a manual backup with a user-chosen destination
+func (a *App) CreateManualBackup() (string, error) {
+	timestamp := time.Now().Format("20060102_150405")
+	defaultFilename := fmt.Sprintf("cashflow_backup_%s.db", timestamp)
+
+	destinationPath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Create Backup",
+		DefaultFilename: defaultFilename,
+		Filters: []runtime.FileFilter{
+			{
+				DisplayName: "SQLite Database",
+				Pattern:     "*.db",
+			},
+			{
+				DisplayName: "All Files",
+				Pattern:     "*.*",
+			},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("dialog cancelled or failed: %w", err)
+	}
+
+	if destinationPath == "" {
+		return "", fmt.Errorf("no destination selected")
+	}
+
+	if err := database.CreateBackup(destinationPath); err != nil {
+		return "", fmt.Errorf("failed to create backup: %w", err)
+	}
+
+	return destinationPath, nil
+}
+
+// GetLastBackupInfo returns information about the most recent backup
+func (a *App) GetLastBackupInfo() (map[string]interface{}, error) {
+	lastTime, err := database.GetLastBackupTime()
+	if err != nil {
+		return nil, err
+	}
+
+	last := ""
+	if !lastTime.IsZero() {
+		last = lastTime.Format(time.RFC3339)
+	}
+
+	return map[string]interface{}{
+		"lastBackupTime": last,
+		"hasBackup":      !lastTime.IsZero(),
+	}, nil
+}
+
+// ValidateBackupFile validates a backup file and returns its metadata
+func (a *App) ValidateBackupFile(path string) (*database.BackupMetadata, error) {
+	txCount, err := database.ValidateBackup(path)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return &database.BackupMetadata{
+		Path:             path,
+		Size:             info.Size(),
+		TransactionCount: txCount,
+		CreatedAt:        info.ModTime(),
+	}, nil
+}
+
+// SelectBackupFile opens a picker and returns validated metadata
+func (a *App) SelectBackupFile() (*database.BackupMetadata, error) {
+	backupPath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Select Backup to Restore",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "SQLite Database", Pattern: "*.db"},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("dialog cancelled or failed: %w", err)
+	}
+	if backupPath == "" {
+		return nil, fmt.Errorf("no file selected")
+	}
+
+	return a.ValidateBackupFile(backupPath)
+}
+
+// RestoreBackup restores from a validated backup path
+func (a *App) RestoreBackup(backupPath string) error {
+	if strings.TrimSpace(backupPath) == "" {
+		return fmt.Errorf("backup path is required")
+	}
+	return database.RestoreBackup(backupPath)
+}
+
+// RestoreBackupFromDialog shows file picker and restores selected backup
+func (a *App) RestoreBackupFromDialog() (string, error) {
+	meta, err := a.SelectBackupFile()
+	if err != nil {
+		return "", err
+	}
+
+	if err := database.RestoreBackup(meta.Path); err != nil {
+		return "", fmt.Errorf("failed to restore backup: %w", err)
+	}
+
+	return meta.Path, nil
+}
+
+// OpenBackupFolder opens the platform-specific backup folder
+func (a *App) OpenBackupFolder() (string, error) {
+	backupDir, err := database.EnsureBackupDir()
+	if err != nil {
+		return "", err
+	}
+
+	// Try to open the folder with the system file manager
+	var cmd *osexec.Cmd
+	switch stdlibRuntime.GOOS {
+	case "darwin":
+		cmd = osexec.Command("open", backupDir)
+	case "windows":
+		cmd = osexec.Command("explorer", backupDir)
+	default:
+		cmd = osexec.Command("xdg-open", backupDir)
+	}
+
+	if err := cmd.Start(); err != nil {
+		// If opening fails, just return the path
+		return backupDir, nil
+	}
+
+	return backupDir, nil
+}
+
+// TriggerAutoBackup checks if auto-backup is needed and creates one
+func (a *App) TriggerAutoBackup() (string, error) {
+	shouldBackup, err := database.ShouldAutoBackup()
+	if err != nil {
+		return "", err
+	}
+
+	if !shouldBackup {
+		return "", nil
+	}
+
+	return database.CreateAutoBackup()
+}
+
+// shutdown is called when the app is closing
+func (a *App) shutdown(ctx context.Context) {
+	// Trigger auto-backup on exit if needed (with timeout to prevent hanging)
+	done := make(chan struct{})
+	go func() {
+		_, _ = a.TriggerAutoBackup()
+		close(done)
+	}()
+	select {
+	case <-done:
+		// Backup completed successfully
+	case <-time.After(15 * time.Second):
+		log.Printf("Auto-backup on exit timed out after 15 seconds")
+	}
+
+	// Close database
+	database.Close()
 }

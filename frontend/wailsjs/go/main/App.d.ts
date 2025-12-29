@@ -7,6 +7,8 @@ export function CategorizeTransaction(arg1:number,arg2:string):Promise<void>;
 
 export function CreateAccount(arg1:string):Promise<number>;
 
+export function CreateManualBackup():Promise<string>;
+
 export function CreateOwner(arg1:string):Promise<number>;
 
 export function DeleteColumnMapping(arg1:number):Promise<void>;
@@ -27,6 +29,8 @@ export function GetCategorizationRulesCount():Promise<number>;
 
 export function GetColumnMappings():Promise<Array<database.ColumnMappingModel>>;
 
+export function GetLastBackupInfo():Promise<Record<string, any>>;
+
 export function GetMonthList():Promise<Array<string>>;
 
 export function GetOwners():Promise<Array<string>>;
@@ -37,9 +41,15 @@ export function Greet(arg1:string):Promise<string>;
 
 export function ImportTransactions(arg1:Array<main.TransactionInput>):Promise<void>;
 
+export function OpenBackupFolder():Promise<string>;
+
 export function ParseExcel(arg1:string):Promise<main.ExcelData>;
 
 export function RenameCategory(arg1:number,arg2:string):Promise<void>;
+
+export function RestoreBackup(arg1:string):Promise<void>;
+
+export function RestoreBackupFromDialog():Promise<string>;
 
 export function SaveCategorizationRule(arg1:database.CategorizationRule):Promise<number>;
 
@@ -50,3 +60,9 @@ export function SearchCategories(arg1:string):Promise<Array<database.Category>>;
 export function SearchTransactions(arg1:string,arg2:string,arg3:any,arg4:any):Promise<Array<database.TransactionModel>>;
 
 export function SearchWeb(arg1:string):Promise<Array<main.WebSearchResult>>;
+
+export function SelectBackupFile():Promise<database.BackupMetadata>;
+
+export function TriggerAutoBackup():Promise<string>;
+
+export function ValidateBackupFile(arg1:string):Promise<database.BackupMetadata>;

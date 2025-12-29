@@ -2,6 +2,7 @@ import { test as base } from '@playwright/test';
 import { CategorizationPage } from './pom/CategorizationPage';
 import { AnalysisPage } from './pom/AnalysisPage';
 import { ImportFlowPage } from './pom/ImportFlowPage';
+import { SettingsPage } from './pom/SettingsPage';
 import { execSync } from 'child_process';
 
 type MyFixtures = {
@@ -9,6 +10,7 @@ type MyFixtures = {
   categorizationPage: CategorizationPage;
   analysisPage: AnalysisPage;
   importFlowPage: ImportFlowPage;
+  settingsPage: SettingsPage;
 };
 
 export const test = base.extend<MyFixtures>({
@@ -28,6 +30,10 @@ export const test = base.extend<MyFixtures>({
 
   importFlowPage: async ({ page }, use) => {
     await use(new ImportFlowPage(page));
+  },
+
+  settingsPage: async ({ page }, use) => {
+    await use(new SettingsPage(page));
   },
 });
 

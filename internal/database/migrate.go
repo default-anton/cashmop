@@ -101,10 +101,23 @@ func Migrate() error {
 	})
 
 	isTest := os.Getenv("APP_ENV") == "test"
+	backupCreated := false
+	var backupPath string
 
 	for _, mf := range migrationFiles {
 		if applied[mf.version] {
 			continue
+		}
+
+		if !isTest && !backupCreated {
+			path, err := CreatePreMigrationBackup(mf.version)
+			if err != nil {
+				log.Printf("Warning: Failed to create pre-migration backup: %v", err)
+			} else {
+				backupPath = path
+				backupCreated = true
+				log.Printf("Pre-migration backup created: %s", path)
+			}
 		}
 
 		path := "migrations/" + mf.name
@@ -117,6 +130,9 @@ func Migrate() error {
 			log.Printf("Running migration %d: %s", mf.version, mf.name)
 		}
 		if err := runMigration(mf.version, string(content)); err != nil {
+			if backupPath != "" {
+				return fmt.Errorf("migration %d failed (backup at %s): %w", mf.version, backupPath, err)
+			}
 			return err
 		}
 		if !isTest {
