@@ -15,7 +15,7 @@ This checklist covers all items that should be addressed before releasing to cus
 - [ ] **Optimize CSV parsing** - `file.text()` is synchronous and can block. Consider streaming/chunking for large files.
 
 ### 2. Cross-Platform: CSV Line Endings
-- [ ] **Fix CSV export for Windows** - `encoding/csv` writes LF-only (`\n`) but Excel on Windows expects CRLF (`\r\n`). Add `writer.UseCRLF = true` on Windows.
+- [x] **Fix CSV export for Windows** - `encoding/csv` writes LF-only (`\n`) but Excel on Windows expects CRLF (`\r\n`). Add `writer.UseCRLF = true` on Windows.
 
 ### 3. Input Validation Gaps
 - [ ] **Add magic number validation** - File uploads are validated by extension only, not content. Check file signatures:
@@ -132,11 +132,11 @@ This checklist covers all items that should be addressed before releasing to cus
 | Priority | Items | Status |
 |----------|-------|--------|
 | 🔴 CRITICAL | 0 | None |
-| 🟠 HIGH | 5 | Should fix if time permits |
+| 🟠 HIGH | 4 | Should fix if time permits (1 done) |
 | 🟡 MEDIUM | 6 | Nice to have |
 | 🟢 LOW | 3 | Future consideration |
 
-**Total: 14 items to review**
+**Total: 14 items to review (1 completed)**
 
 ---
 

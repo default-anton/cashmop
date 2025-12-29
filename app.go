@@ -465,6 +465,7 @@ func exportToCSV(transactions []database.TransactionModel, destinationPath strin
 	}
 
 	writer := csv.NewWriter(file)
+	writer.UseCRLF = true
 	defer writer.Flush()
 
 	// Write header
