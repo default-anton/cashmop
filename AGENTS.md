@@ -7,7 +7,7 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 ## Tech Stack
 
 * Backend: Go 1.25 + Wails v2 framework
-* Frontend: React 18 + TypeScript + Vite
+* Frontend: React 19 + TypeScript + Vite
 * UI: Tailwind CSS
 * Database: SQLite (local on-device)
 * ORM: Standard library `database/sql` with `modernc.org/sqlite` driver

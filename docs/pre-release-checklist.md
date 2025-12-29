@@ -27,8 +27,8 @@ This checklist covers all items that should be addressed before releasing to cus
 - [x] **Check for CSV injection vectors** - CSV parsing doesn't block formulas like `=HYPERLINK()`, `=CMD()`. Sanitize or escape when exporting.
 
 ### 3. Outdated Dependencies (Security Risk)
-- [ ] **Audit frontend dependencies** - Run `npm audit` after generating `package-lock.json`. Major updates available:
-  - React 18→19
+- [x] **Audit frontend dependencies** - Run `npm audit` after generating `package-lock.json`. Major updates available:
+  - ~~React 18→19~~ ✅ **DONE** (upgraded to 19.2.3, see `docs/react-19-upgrade-summary.md`)
   - Vite 3→7
   - TypeScript 4→5
   - Tailwind 3→4
