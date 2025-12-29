@@ -28,8 +28,7 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 
 ## Integration Testing
 
-- Orchestration: Run `./scripts/run-integration-tests.sh` to start Wails dev server in test mode and run Playwright tests.
-- Knowledge: Detailed implementation details and gotchas in `docs/knowledge/integration-testing.md`.
+- Run `./scripts/run-integration-tests.sh` to start Wails dev server in test mode and run Playwright tests.
 
 ## Database Conventions
 
