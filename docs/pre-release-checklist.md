@@ -32,9 +32,7 @@ This checklist covers all items that should be addressed before releasing to cus
   - Vite 3→7
   - TypeScript 4→5
   - Tailwind 3→4
-- [ ] **Update Go dependencies** - Run `go get -u ./... && go mod tidy`. Security-sensitive packages are outdated:
-  - `golang.org/x/crypto` v0.46.0 → newer
-  - `golang.org/x/net` v0.48.0 → newer
+- [x] **Update Go dependencies** - Run `go get -u ./... && go mod tidy`. Note: `golang.org/x/crypto` v0.46.0 and `golang.org/x/net` v0.48.0 are already at latest versions. Updated: `modernc.org/sqlite` v1.40.1→v1.42.2, `modernc.org/libc` v1.66.10→v1.67.2, `github.com/godbus/dbus/v5` v5.2.0→v5.2.2, and several others.
 - [x] **Run vulnerability scanner** - Use `govulncheck` for Go.
 
 ### 4. Debug Logging in Production
@@ -133,7 +131,7 @@ This checklist covers all items that should be addressed before releasing to cus
 | 🟡 MEDIUM | 33 | Nice to have (3 done) |
 | 🟢 LOW | 11 | Future consideration |
 
-**Total: 44 items to review (3 completed)**
+**Total: 44 items to review (4 completed)**
 
 ---
 
