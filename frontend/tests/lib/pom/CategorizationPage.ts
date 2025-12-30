@@ -9,7 +9,7 @@ export class CategorizationPage {
   constructor(page: Page) {
     this.page = page;
     this.categoryInput = page.getByLabel('Category', { exact: true });
-    this.categorizeButton = page.getByLabel('Categorize', { exact: true });
+    this.categorizeButton = page.getByTestId('categorize-submit-button');
     this.searchWebButton = page.getByRole('button', { name: /search web for context/i });
   }
 

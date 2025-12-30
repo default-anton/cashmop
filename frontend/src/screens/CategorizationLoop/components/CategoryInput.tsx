@@ -8,7 +8,7 @@ interface Category {
 }
 
 interface CategoryInputProps {
-  inputRef: React.RefObject<HTMLInputElement>;
+  inputRef: React.RefObject<HTMLInputElement | null>;
   categoryInput: string;
   setCategoryInput: (value: string) => void;
   onCategorize: (name: string, id?: number) => void;
@@ -74,6 +74,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
           size="md"
           variant="primary"
           aria-label={categoryInput ? 'Categorize' : 'Skip'}
+          data-testid="categorize-submit-button"
           className={`px-8 rounded-2xl transition-all duration-300 ${isRuleMode ? 'shadow-brand-glow scale-105' : 'shadow-brand/20'
             }`}
           onClick={() => (categoryInput ? onCategorize(categoryInput) : onSkip())}

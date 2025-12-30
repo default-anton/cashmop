@@ -146,8 +146,8 @@ test.describe('Restore Flow', () => {
     await page.goto('/');
     await settingsPage.navigateTo();
 
-    // Cancel button should be visible (part of restore UI)
-    await expect(settingsPage.cancelRestoreButton).toBeVisible();
+    // Cancel button should NOT be visible initially (only shows after backup selection)
+    await expect(settingsPage.cancelRestoreButton).not.toBeVisible();
   });
 
   test('should show backup details section when restore is initiated', async ({ page, settingsPage }) => {
