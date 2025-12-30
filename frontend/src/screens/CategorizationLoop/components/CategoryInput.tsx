@@ -8,7 +8,7 @@ interface Category {
 }
 
 interface CategoryInputProps {
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: React.RefObject<HTMLInputElement>;
   categoryInput: string;
   setCategoryInput: (value: string) => void;
   onCategorize: (name: string, id?: number) => void;

@@ -19,7 +19,7 @@ interface RuleEditorProps {
   onClearRule: () => void;
   amountFilter: AmountFilter;
   setAmountFilter: (filter: AmountFilter) => void;
-  amountInputRef: React.RefObject<HTMLInputElement | null>;
+  amountInputRef: React.RefObject<HTMLInputElement>;
   currentAmount?: number;
   matchingTransactions?: any[];
 }
