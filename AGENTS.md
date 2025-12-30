@@ -23,7 +23,6 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 ## Database Conventions
 
 - Uncategorized state: Use `NULL` in the database to represent uncategorized items (transactions, rules, etc.). In Go helpers, allow passing `0` to signify `NULL` for foreign keys where appropriate.
-- No FTS tables: Full-text search tables (e.g., `categories_fts`) have been removed; use regular queries instead.
 
 ## Fuzzy Matching
 
