@@ -34,7 +34,7 @@ tidy:
 
 vulncheck:
 	@echo "==> govulncheck ./..."
-	@if OUTPUT=$$(/Users/akuzmenko/code/.go/bin/govulncheck ./... 2>&1); then \
+	@if OUTPUT=$$(govulncheck ./... 2>&1); then \
 		echo "✓ vulncheck OK"; \
 	else \
 		echo "✗ vulncheck FAILED"; \
