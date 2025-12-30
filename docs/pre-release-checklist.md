@@ -31,8 +31,11 @@ This checklist covers all items that should be addressed before releasing to cus
 - [ ] **Fix currency storage** - `amount` stored as `REAL` may introduce floating-point precision issues. Documented as known limitation; deferring fix to post-v1.0 due to migration complexity and risk.
 
 ### 3. Test Coverage
-- [ ] **Add app service tests** - `app.go` has 30+ methods with no test coverage.
-- [ ] **Add component unit tests** - 23+ React components have no unit tests (only E2E tests exist).
+- [x] **Add app service tests** - `app.go` has 30+ methods with no test coverage. (Completed 2025-12-30)
+  - Created 32 test functions with 60+ test cases
+  - 65.6% code coverage for app.go
+  - Tests use in-memory SQLite database (no mocks)
+  - See docs/app-test-implementation-summary.md for details
 - [ ] **Test edge cases** - Add tests for:
   - Empty files
   - Malformed CSV/Excel

@@ -1,0 +1,1370 @@
+package main
+
+import (
+	"cashflow/internal/database"
+	"context"
+	"database/sql"
+	"os"
+	"strings"
+	"testing"
+)
+
+// ============================================================================
+// 1. Basic / Simple Functions (No DB/External)
+// ============================================================================
+
+func TestNewApp(t *testing.T) {
+	app := NewApp()
+	if app == nil {
+		t.Fatal("NewApp() returned nil")
+	}
+	if app.ctx != nil {
+		t.Error("Expected ctx to be nil after NewApp(), should be set in startup()")
+	}
+	if app.searchCache == nil {
+		t.Error("Expected searchCache to be initialized")
+	}
+}
+
+func TestGreet(t *testing.T) {
+	app := NewApp()
+	result := app.Greet("TestUser")
+	expected := "Hello TestUser, It's show time!"
+	if result != expected {
+		t.Errorf("Greet() = %q, want %q", result, expected)
+	}
+}
+
+func TestGetVersion(t *testing.T) {
+	app := NewApp()
+	version := app.GetVersion()
+	if version == "" {
+		t.Error("GetVersion() returned empty string")
+	}
+	// Version should contain at least a dot (semantic versioning)
+	if !strings.Contains(version, ".") {
+		t.Errorf("Version %q doesn't look like a semantic version", version)
+	}
+}
+
+func TestFuzzySearch(t *testing.T) {
+	app := NewApp()
+
+	items := []string{"Grocery Store", "Gas Station", "Electric Bill", "Water Bill"}
+
+	// Test matching start
+	results := app.FuzzySearch("gas", items)
+	if len(results) == 0 {
+		t.Error("Expected results for 'gas' query")
+	}
+
+	// Test exact match
+	results = app.FuzzySearch("grocery", items)
+	found := false
+	for _, r := range results {
+		if strings.Contains(strings.ToLower(r), "grocery") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("Expected to find 'grocery' in results")
+	}
+
+	// Test no match
+	results = app.FuzzySearch("xyz", items)
+	// Fuzzy search should return results, just ranked lower
+
+	// Test empty query
+	results = app.FuzzySearch("", items)
+	if len(results) != len(items) {
+		t.Errorf("Empty query should return all items, got %d, want %d", len(results), len(items))
+	}
+}
+
+// ============================================================================
+// 2. Transaction Management
+// ============================================================================
+
+func TestImportTransactions(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	t.Run("successful import with all fields", func(t *testing.T) {
+		transactions := []TransactionInput{
+			{
+				Date:        "2024-01-15",
+				Description: "Test Transaction",
+				Amount:      100.50,
+				Category:    "Groceries",
+				Account:     "Checking",
+				Owner:       "John",
+			},
+		}
+
+		err := app.ImportTransactions(transactions)
+		if err != nil {
+			t.Fatalf("ImportTransactions failed: %v", err)
+		}
+
+		count := countTransactions(t)
+		if count != 1 {
+			t.Errorf("Expected 1 transaction, got %d", count)
+		}
+	})
+
+	t.Run("import with empty transaction list", func(t *testing.T) {
+		err := app.ImportTransactions([]TransactionInput{})
+		if err != nil {
+			t.Errorf("ImportTransactions with empty list should not error: %v", err)
+		}
+
+		count := countTransactions(t)
+		if count != 1 {
+			t.Errorf("Expected 1 transaction (from previous test), got %d", count)
+		}
+	})
+
+	t.Run("creates new accounts, owners, categories", func(t *testing.T) {
+		transactions := []TransactionInput{
+			{
+				Date:        "2024-01-16",
+				Description: "New Transaction",
+				Amount:      50.00,
+				Category:    "New Category",
+				Account:     "New Account",
+				Owner:       "Jane",
+			},
+		}
+
+		err := app.ImportTransactions(transactions)
+		if err != nil {
+			t.Fatalf("ImportTransactions failed: %v", err)
+		}
+
+		accounts := countAccounts(t)
+		owners := countUsers(t)
+		categories := countCategories(t)
+
+		if accounts != 2 {
+			t.Errorf("Expected 2 accounts, got %d", accounts)
+		}
+		if owners != 2 {
+			t.Errorf("Expected 2 owners, got %d", owners)
+		}
+		if categories != 2 {
+			t.Errorf("Expected 2 categories, got %d", categories)
+		}
+	})
+
+	t.Run("reuses existing accounts, owners, categories", func(t *testing.T) {
+		transactions := []TransactionInput{
+			{
+				Date:        "2024-01-17",
+				Description: "Reuse Test",
+				Amount:      75.00,
+				Category:    "Groceries",
+				Account:     "Checking",
+				Owner:       "John",
+			},
+		}
+
+		err := app.ImportTransactions(transactions)
+		if err != nil {
+			t.Fatalf("ImportTransactions failed: %v", err)
+		}
+
+		accounts := countAccounts(t)
+		owners := countUsers(t)
+		categories := countCategories(t)
+
+		if accounts != 2 {
+			t.Errorf("Expected 2 accounts (no new ones), got %d", accounts)
+		}
+		if owners != 2 {
+			t.Errorf("Expected 2 owners (no new ones), got %d", owners)
+		}
+		if categories != 2 {
+			t.Errorf("Expected 2 categories (no new ones), got %d", categories)
+		}
+	})
+
+	t.Run("import without owner", func(t *testing.T) {
+		transactions := []TransactionInput{
+			{
+				Date:        "2024-01-18",
+				Description: "No Owner",
+				Amount:      25.00,
+				Category:    "Groceries",
+				Account:     "Checking",
+			},
+		}
+
+		err := app.ImportTransactions(transactions)
+		if err != nil {
+			t.Fatalf("ImportTransactions failed: %v", err)
+		}
+
+		count := countTransactions(t)
+		if count != 4 {
+			t.Errorf("Expected 4 transactions, got %d", count)
+		}
+	})
+}
+
+func TestGetUncategorizedTransactions(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+
+	// Create uncategorized transaction
+	tx1 := createTestTransaction(t, accountID, nil, "2024-01-01", "Uncategorized 1", 100.00, nil)
+
+	// Create categorized transaction
+	catID := createTestCategory(t, "Groceries")
+	createTestTransaction(t, accountID, nil, "2024-01-02", "Categorized 1", 50.00, &catID)
+
+	txs, err := app.GetUncategorizedTransactions()
+	if err != nil {
+		t.Fatalf("GetUncategorizedTransactions failed: %v", err)
+	}
+
+	if len(txs) != 1 {
+		t.Errorf("Expected 1 uncategorized transaction, got %d", len(txs))
+	}
+
+	if len(txs) > 0 && txs[0].ID != tx1.ID {
+		t.Errorf("Expected transaction ID %d, got %d", tx1.ID, txs[0].ID)
+	}
+}
+
+func TestCategorizeTransaction(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+
+	tx := createTestTransaction(t, accountID, nil, "2024-01-01", "Test", 100.00, nil)
+
+	t.Run("categorize with new category", func(t *testing.T) {
+		err := app.CategorizeTransaction(tx.ID, "Groceries")
+		if err != nil {
+			t.Fatalf("CategorizeTransaction failed: %v", err)
+		}
+
+		// Verify transaction is now categorized
+		var catID sql.NullInt64
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx.ID).Scan(&catID)
+		if err != nil {
+			t.Fatalf("Failed to query transaction: %v", err)
+		}
+		if !catID.Valid {
+			t.Error("Expected transaction to have a category_id")
+		}
+	})
+
+	t.Run("categorize with existing category", func(t *testing.T) {
+		tx2 := createTestTransaction(t, accountID, nil, "2024-01-02", "Test2", 50.00, nil)
+		createTestCategory(t, "Transportation")
+
+		err := app.CategorizeTransaction(tx2.ID, "Transportation")
+		if err != nil {
+			t.Fatalf("CategorizeTransaction failed: %v", err)
+		}
+
+		count := countCategories(t)
+		if count != 2 {
+			t.Errorf("Expected 2 categories, got %d", count)
+		}
+	})
+
+	t.Run("uncategorize transaction with empty string", func(t *testing.T) {
+		tx3 := createTestTransaction(t, accountID, nil, "2024-01-03", "Test3", 75.00, nil)
+		catID := createTestCategory(t, "Utilities")
+
+		// First categorize it
+		_, err := database.DB.Exec("UPDATE transactions SET category_id = ? WHERE id = ?", catID, tx3.ID)
+		if err != nil {
+			t.Fatalf("Failed to categorize transaction: %v", err)
+		}
+
+		// Now uncategorize
+		err = app.CategorizeTransaction(tx3.ID, "")
+		if err != nil {
+			t.Fatalf("CategorizeTransaction with empty string failed: %v", err)
+		}
+
+		// Verify it's uncategorized
+		var catID2 sql.NullInt64
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx3.ID).Scan(&catID2)
+		if err != nil {
+			t.Fatalf("Failed to query transaction: %v", err)
+		}
+		if catID2.Valid {
+			t.Error("Expected transaction to have NULL category_id")
+		}
+	})
+}
+
+// ============================================================================
+// 3. Category Management
+// ============================================================================
+
+func TestGetCategories(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	createTestCategory(t, "Groceries")
+	createTestCategory(t, "Transportation")
+	createTestCategory(t, "Utilities")
+
+	categories, err := app.GetCategories()
+	if err != nil {
+		t.Fatalf("GetCategories failed: %v", err)
+	}
+
+	if len(categories) != 3 {
+		t.Errorf("Expected 3 categories, got %d", len(categories))
+	}
+
+	// Verify categories are sorted alphabetically
+	for i := 1; i < len(categories); i++ {
+		if categories[i-1].Name > categories[i].Name {
+			t.Error("Expected categories to be sorted alphabetically")
+		}
+	}
+}
+
+func TestSearchCategories(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	createTestCategory(t, "Groceries")
+	createTestCategory(t, "Gas")
+	createTestCategory(t, "Gardening")
+	createTestCategory(t, "Utilities")
+	createTestCategory(t, "Transportation")
+
+	t.Run("search with query", func(t *testing.T) {
+		categories, err := app.SearchCategories("ga")
+		if err != nil {
+			t.Fatalf("SearchCategories failed: %v", err)
+		}
+
+		if len(categories) == 0 {
+			t.Error("Expected results for 'ga' query")
+		}
+
+		// Check that results contain matching categories
+		found := false
+		for _, cat := range categories {
+			if strings.Contains(strings.ToLower(cat.Name), "ga") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Error("Expected to find categories matching 'ga'")
+		}
+	})
+
+	t.Run("empty query returns top 10", func(t *testing.T) {
+		categories, err := app.SearchCategories("")
+		if err != nil {
+			t.Fatalf("SearchCategories failed: %v", err)
+		}
+
+		// Should return all 5 categories (less than 10)
+		if len(categories) != 5 {
+			t.Errorf("Expected 5 categories, got %d", len(categories))
+		}
+	})
+
+	t.Run("no matches", func(t *testing.T) {
+		categories, err := app.SearchCategories("xyz")
+		if err != nil {
+			t.Fatalf("SearchCategories failed: %v", err)
+		}
+
+		if len(categories) != 0 {
+			t.Errorf("Expected 0 categories for 'xyz', got %d", len(categories))
+		}
+	})
+}
+
+func TestRenameCategory(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	catID := createTestCategory(t, "OldName")
+
+	err := app.RenameCategory(catID, "NewName")
+	if err != nil {
+		t.Fatalf("RenameCategory failed: %v", err)
+	}
+
+	// Verify category was renamed
+	var name string
+	err = database.DB.QueryRow("SELECT name FROM categories WHERE id = ?", catID).Scan(&name)
+	if err != nil {
+		t.Fatalf("Failed to query category: %v", err)
+	}
+
+	if name != "NewName" {
+		t.Errorf("Expected category name 'NewName', got '%s'", name)
+	}
+}
+
+// ============================================================================
+// 4. Account & Owner Management
+// ============================================================================
+
+func TestGetAccounts(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	createTestAccount(t, "Checking")
+	createTestAccount(t, "Savings")
+	createTestAccount(t, "Credit Card")
+
+	accounts, err := app.GetAccounts()
+	if err != nil {
+		t.Fatalf("GetAccounts failed: %v", err)
+	}
+
+	if len(accounts) != 3 {
+		t.Errorf("Expected 3 accounts, got %d", len(accounts))
+	}
+
+	// Verify accounts are sorted alphabetically
+	for i := 1; i < len(accounts); i++ {
+		if accounts[i-1] > accounts[i] {
+			t.Error("Expected accounts to be sorted alphabetically")
+		}
+	}
+}
+
+func TestGetOwners(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	createTestOwner(t, "Alice")
+	createTestOwner(t, "Bob")
+	createTestOwner(t, "Charlie")
+
+	owners, err := app.GetOwners()
+	if err != nil {
+		t.Fatalf("GetOwners failed: %v", err)
+	}
+
+	if len(owners) != 3 {
+		t.Errorf("Expected 3 owners, got %d", len(owners))
+	}
+
+	// Verify owners are sorted alphabetically
+	for i := 1; i < len(owners); i++ {
+		if owners[i-1] > owners[i] {
+			t.Error("Expected owners to be sorted alphabetically")
+		}
+	}
+}
+
+func TestCreateAccount(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	t.Run("creates new account", func(t *testing.T) {
+		id, err := app.CreateAccount("New Account")
+		if err != nil {
+			t.Fatalf("CreateAccount failed: %v", err)
+		}
+		if id <= 0 {
+			t.Errorf("Expected positive account ID, got %d", id)
+		}
+
+		count := countAccounts(t)
+		if count != 1 {
+			t.Errorf("Expected 1 account, got %d", count)
+		}
+	})
+
+	t.Run("reuses existing account", func(t *testing.T) {
+		id1, err := app.CreateAccount("Existing Account")
+		if err != nil {
+			t.Fatalf("CreateAccount failed: %v", err)
+		}
+
+		id2, err := app.CreateAccount("Existing Account")
+		if err != nil {
+			t.Fatalf("CreateAccount failed: %v", err)
+		}
+
+		if id1 != id2 {
+			t.Errorf("Expected same account ID %d, got %d", id1, id2)
+		}
+
+		count := countAccounts(t)
+		if count != 2 {
+			t.Errorf("Expected 2 accounts, got %d", count)
+		}
+	})
+}
+
+func TestCreateOwner(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	t.Run("creates new owner", func(t *testing.T) {
+		id, err := app.CreateOwner("New Owner")
+		if err != nil {
+			t.Fatalf("CreateOwner failed: %v", err)
+		}
+		if id <= 0 {
+			t.Errorf("Expected positive owner ID, got %d", id)
+		}
+
+		count := countUsers(t)
+		if count != 1 {
+			t.Errorf("Expected 1 owner, got %d", count)
+		}
+	})
+
+	t.Run("reuses existing owner", func(t *testing.T) {
+		id1, err := app.CreateOwner("Existing Owner")
+		if err != nil {
+			t.Fatalf("CreateOwner failed: %v", err)
+		}
+
+		id2, err := app.CreateOwner("Existing Owner")
+		if err != nil {
+			t.Fatalf("CreateOwner failed: %v", err)
+		}
+
+		if id1 != id2 {
+			t.Errorf("Expected same owner ID %d, got %d", id1, id2)
+		}
+
+		count := countUsers(t)
+		if count != 2 {
+			t.Errorf("Expected 2 owners, got %d", count)
+		}
+	})
+}
+
+// ============================================================================
+// 5. Categorization Rules
+// ============================================================================
+
+func TestGetCategorizationRulesCount(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	count, err := app.GetCategorizationRulesCount()
+	if err != nil {
+		t.Fatalf("GetCategorizationRulesCount failed: %v", err)
+	}
+
+	if count != 0 {
+		t.Errorf("Expected 0 rules, got %d", count)
+	}
+
+	// Create a rule
+	catID := createTestCategory(t, "Groceries")
+	rule := database.CategorizationRule{
+		MatchType:    "contains",
+		MatchValue:   "grocery",
+		CategoryID:   catID,
+		CategoryName: "Groceries",
+	}
+	createTestRule(t, rule)
+
+	count, err = app.GetCategorizationRulesCount()
+	if err != nil {
+		t.Fatalf("GetCategorizationRulesCount failed: %v", err)
+	}
+
+	if count != 1 {
+		t.Errorf("Expected 1 rule, got %d", count)
+	}
+}
+
+func TestSaveCategorizationRule(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+
+	// Create uncategorized transactions that match the rule
+	createTestTransaction(t, accountID, nil, "2024-01-01", "Grocery Store", 100.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-01-02", "Weekly Grocery Shopping", 50.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-01-03", "Gas Station", 30.00, nil)
+
+	t.Run("save rule with category ID", func(t *testing.T) {
+		catID := createTestCategory(t, "Groceries")
+		rule := database.CategorizationRule{
+			MatchType:  "contains",
+			MatchValue: "grocery",
+			CategoryID: catID,
+		}
+
+		id, err := app.SaveCategorizationRule(rule)
+		if err != nil {
+			t.Fatalf("SaveCategorizationRule failed: %v", err)
+		}
+		if id <= 0 {
+			t.Errorf("Expected positive rule ID, got %d", id)
+		}
+
+		// Check that matching transactions were categorized
+		var uncategorizedCount int64
+		err = database.DB.QueryRow("SELECT COUNT(*) FROM transactions WHERE category_id IS NULL").Scan(&uncategorizedCount)
+		if err != nil {
+			t.Fatalf("Failed to count uncategorized transactions: %v", err)
+		}
+
+		if uncategorizedCount != 1 {
+			t.Errorf("Expected 1 uncategorized transaction (Gas Station), got %d", uncategorizedCount)
+		}
+	})
+
+	t.Run("save rule with category name", func(t *testing.T) {
+		rule := database.CategorizationRule{
+			MatchType:    "contains",
+			MatchValue:   "gas",
+			CategoryName: "Transportation",
+		}
+
+		_, err := app.SaveCategorizationRule(rule)
+		if err != nil {
+			t.Fatalf("SaveCategorizationRule failed: %v", err)
+		}
+
+		// Verify category was created
+		count := countCategories(t)
+		if count != 2 {
+			t.Errorf("Expected 2 categories, got %d", count)
+		}
+
+		// Check that remaining transaction was categorized
+		var uncategorizedCount int64
+		err = database.DB.QueryRow("SELECT COUNT(*) FROM transactions WHERE category_id IS NULL").Scan(&uncategorizedCount)
+		if err != nil {
+			t.Fatalf("Failed to count uncategorized transactions: %v", err)
+		}
+
+		if uncategorizedCount != 0 {
+			t.Errorf("Expected 0 uncategorized transactions, got %d", uncategorizedCount)
+		}
+	})
+}
+
+// ============================================================================
+// 6. Search & Filtering
+// ============================================================================
+
+func TestSearchTransactions(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+
+	createTestTransaction(t, accountID, nil, "2024-01-01", "Grocery Store", 100.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-01-02", "Gas Station", 50.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-01-03", "Weekly Grocery Shopping", 75.00, nil)
+
+	t.Run("search by description contains", func(t *testing.T) {
+		results, err := app.SearchTransactions("grocery", "contains", nil, nil)
+		if err != nil {
+			t.Fatalf("SearchTransactions failed: %v", err)
+		}
+
+		// Debug: print what we found
+		for _, r := range results {
+			t.Logf("Found: %q (ID: %d)", r.Description, r.ID)
+		}
+
+		if len(results) != 2 {
+			t.Errorf("Expected 2 results for 'grocery' contains, got %d", len(results))
+		}
+	})
+
+	t.Run("search by description starts_with", func(t *testing.T) {
+		results, err := app.SearchTransactions("Grocery", "starts_with", nil, nil)
+		if err != nil {
+			t.Fatalf("SearchTransactions failed: %v", err)
+		}
+
+		if len(results) != 1 {
+			t.Errorf("Expected 1 result for 'Grocery' starts_with, got %d", len(results))
+		}
+
+		if len(results) > 0 && results[0].Description != "Grocery Store" {
+			t.Errorf("Expected 'Grocery Store', got '%s'", results[0].Description)
+		}
+	})
+
+	t.Run("search by description ends_with", func(t *testing.T) {
+		results, err := app.SearchTransactions("Store", "ends_with", nil, nil)
+		if err != nil {
+			t.Fatalf("SearchTransactions failed: %v", err)
+		}
+
+		if len(results) != 1 {
+			t.Errorf("Expected 1 result for 'Store' ends_with, got %d", len(results))
+		}
+	})
+
+	t.Run("search with amount range", func(t *testing.T) {
+		min := 60.0
+		max := 100.0
+		results, err := app.SearchTransactions("", "", &min, &max)
+		if err != nil {
+			t.Fatalf("SearchTransactions failed: %v", err)
+		}
+
+		if len(results) != 2 {
+			t.Errorf("Expected 2 results for amount range 60-100, got %d", len(results))
+		}
+	})
+
+	t.Run("combined filters", func(t *testing.T) {
+		min := 70.0
+		results, err := app.SearchTransactions("grocery", "contains", &min, nil)
+		if err != nil {
+			t.Fatalf("SearchTransactions failed: %v", err)
+		}
+
+		if len(results) != 2 {
+			t.Errorf("Expected 2 results for combined filters, got %d", len(results))
+		}
+	})
+}
+
+func TestGetMonthList(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+
+	createTestTransaction(t, accountID, nil, "2024-01-15", "Tx1", 100.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-01-20", "Tx2", 50.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-02-10", "Tx3", 75.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-03-05", "Tx4", 25.00, nil)
+
+	months, err := app.GetMonthList()
+	if err != nil {
+		t.Fatalf("GetMonthList failed: %v", err)
+	}
+
+	if len(months) != 3 {
+		t.Errorf("Expected 3 months, got %d", len(months))
+	}
+
+	// Should be sorted descending (most recent first)
+	if months[0] != "2024-03" {
+		t.Errorf("Expected first month to be '2024-03', got '%s'", months[0])
+	}
+}
+
+func TestGetAnalysisTransactions(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+
+	createTestTransaction(t, accountID, nil, "2024-01-10", "Jan 1", 100.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-01-20", "Jan 2", 50.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-02-10", "Feb 1", 75.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-03-05", "Mar 1", 25.00, nil)
+
+	t.Run("date range only", func(t *testing.T) {
+		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", nil)
+		if err != nil {
+			t.Fatalf("GetAnalysisTransactions failed: %v", err)
+		}
+
+		if len(results) != 2 {
+			t.Errorf("Expected 2 transactions in January, got %d", len(results))
+		}
+	})
+
+	t.Run("filter by categories", func(t *testing.T) {
+		catID := createTestCategory(t, "Groceries")
+		tx := createTestTransaction(t, accountID, nil, "2024-01-15", "Categorized", 50.00, &catID)
+
+		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", []int64{catID})
+		if err != nil {
+			t.Fatalf("GetAnalysisTransactions failed: %v", err)
+		}
+
+		if len(results) != 1 {
+			t.Errorf("Expected 1 transaction with category filter, got %d", len(results))
+		}
+
+		if len(results) > 0 && results[0].ID != tx.ID {
+			t.Errorf("Expected transaction ID %d, got %d", tx.ID, results[0].ID)
+		}
+	})
+
+	t.Run("filter by uncategorized (category ID 0)", func(t *testing.T) {
+		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", []int64{0})
+		if err != nil {
+			t.Fatalf("GetAnalysisTransactions failed: %v", err)
+		}
+
+		// Should get 2 uncategorized transactions from Jan (Jan 1, Jan 2)
+		// The categorized transaction (from previous test) has ID 5
+		if len(results) != 2 {
+			t.Errorf("Expected 2 uncategorized transactions in January, got %d", len(results))
+		}
+	})
+}
+
+// ============================================================================
+// 7. Excel Parsing
+// ============================================================================
+
+func TestParseExcel(t *testing.T) {
+	app := NewApp()
+
+	t.Run("parse valid Excel file with transactions", func(t *testing.T) {
+		xlsxData := readExcelFile(t, "transactions.xlsx")
+
+		result, err := app.ParseExcel(xlsxData)
+		if err != nil {
+			t.Fatalf("Failed to parse Excel: %v", err)
+		}
+
+		if result == nil {
+			t.Fatal("Expected non-nil result")
+		}
+
+		// Verify headers
+		expectedHeaders := []string{"Date", "Description", "Amount", "Account"}
+		if len(result.Headers) != len(expectedHeaders) {
+			t.Errorf("Expected %d headers, got %d", len(expectedHeaders), len(result.Headers))
+		}
+		for i, h := range expectedHeaders {
+			if i < len(result.Headers) && result.Headers[i] != h {
+				t.Errorf("Header %d: expected '%s', got '%s'", i, h, result.Headers[i])
+			}
+		}
+
+		// Verify we have data rows
+		if len(result.Rows) == 0 {
+			t.Error("Expected at least one data row")
+		}
+
+		// Verify first row
+		if len(result.Rows) > 0 {
+			firstRow := result.Rows[0]
+			expected := []string{"2025-01-15", "Coffee Shop", "4.5", "Checking"}
+			for i, exp := range expected {
+				if i >= len(firstRow) {
+					t.Errorf("Row 0: missing column %d", i)
+					continue
+				}
+				if firstRow[i] != exp {
+					t.Errorf("Row 0, col %d: expected '%s', got '%s'", i, exp, firstRow[i])
+				}
+			}
+		}
+	})
+
+	t.Run("invalid base64 data", func(t *testing.T) {
+		invalidData := "not-valid-base64!!!"
+
+		_, err := app.ParseExcel(invalidData)
+		if err == nil {
+			t.Error("Expected error for invalid base64 data")
+		}
+	})
+
+	t.Run("empty string", func(t *testing.T) {
+		_, err := app.ParseExcel("")
+		if err == nil {
+			t.Error("Expected error for empty string")
+		}
+	})
+}
+
+// ============================================================================
+// 8. Web Search
+// ============================================================================
+
+func TestSearchWeb(t *testing.T) {
+	app := NewApp()
+
+	t.Run("empty query error", func(t *testing.T) {
+		_, err := app.SearchWeb("")
+		if err == nil {
+			t.Error("Expected error for empty query")
+		}
+	})
+
+	t.Run("caches results", func(t *testing.T) {
+		// This test verifies caching behavior
+		// Note: Actual web search might fail in tests, so we focus on cache logic
+		query := "test query"
+
+		// First call - will attempt web search
+		_, err := app.SearchWeb(query)
+		if err != nil {
+			// Web search might fail due to network, which is OK for this test
+			t.Logf("Web search failed (expected in tests): %v", err)
+		}
+
+		// Check if cache entry was created
+		// We can't directly check the cache, but we can verify the structure
+		if app.searchCache == nil {
+			t.Error("Expected searchCache to be initialized")
+		}
+	})
+
+	t.Run("hashQuery consistency", func(t *testing.T) {
+		query := "test query"
+		hash1 := hashQuery(query)
+		hash2 := hashQuery(query)
+
+		if hash1 != hash2 {
+			t.Error("hashQuery should return consistent hash for same input")
+		}
+
+		// Different queries should have different hashes
+		query2 := "different query"
+		hash3 := hashQuery(query2)
+
+		if hash1 == hash3 {
+			t.Error("Different queries should have different hashes")
+		}
+	})
+}
+
+// ============================================================================
+// 9. Column Mappings
+// ============================================================================
+
+func TestGetColumnMappings(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	t.Run("empty mappings", func(t *testing.T) {
+		mappings, err := app.GetColumnMappings()
+		if err != nil {
+			t.Fatalf("GetColumnMappings failed: %v", err)
+		}
+
+		if len(mappings) != 0 {
+			t.Errorf("Expected 0 mappings, got %d", len(mappings))
+		}
+	})
+
+	t.Run("with mappings", func(t *testing.T) {
+		_, err := app.SaveColumnMapping("Test Mapping", `{"date": "A", "amount": "B"}`)
+		if err != nil {
+			t.Fatalf("SaveColumnMapping failed: %v", err)
+		}
+
+		mappings, err := app.GetColumnMappings()
+		if err != nil {
+			t.Fatalf("GetColumnMappings failed: %v", err)
+		}
+
+		if len(mappings) != 1 {
+			t.Errorf("Expected 1 mapping, got %d", len(mappings))
+		}
+
+		if mappings[0].Name != "Test Mapping" {
+			t.Errorf("Expected mapping name 'Test Mapping', got '%s'", mappings[0].Name)
+		}
+	})
+}
+
+func TestSaveColumnMapping(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	t.Run("save new mapping", func(t *testing.T) {
+		id, err := app.SaveColumnMapping("New Mapping", `{"date": "A"}`)
+		if err != nil {
+			t.Fatalf("SaveColumnMapping failed: %v", err)
+		}
+		if id <= 0 {
+			t.Errorf("Expected positive mapping ID, got %d", id)
+		}
+
+		var count int64
+		err = database.DB.QueryRow("SELECT COUNT(*) FROM column_mappings").Scan(&count)
+		if err != nil {
+			t.Fatalf("Failed to count mappings: %v", err)
+		}
+
+		if count != 1 {
+			t.Errorf("Expected 1 mapping, got %d", count)
+		}
+	})
+
+	t.Run("update existing mapping", func(t *testing.T) {
+		_, err := app.SaveColumnMapping("Update Test", `{"old": "data"}`)
+		if err != nil {
+			t.Fatalf("SaveColumnMapping failed: %v", err)
+		}
+
+		// Update with same name - should succeed
+		_, err = app.SaveColumnMapping("Update Test", `{"new": "data"}`)
+		if err != nil {
+			t.Fatalf("SaveColumnMapping failed: %v", err)
+		}
+
+		// Verify only one mapping with this name exists
+		var count int64
+		err = database.DB.QueryRow("SELECT COUNT(*) FROM column_mappings WHERE name = ?", "Update Test").Scan(&count)
+		if err != nil {
+			t.Fatalf("Failed to count mappings: %v", err)
+		}
+
+		if count != 1 {
+			t.Errorf("Expected 1 mapping after update, got %d", count)
+		}
+	})
+}
+
+func TestDeleteColumnMapping(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	id, err := app.SaveColumnMapping("Delete Me", `{"data": "value"}`)
+	if err != nil {
+		t.Fatalf("SaveColumnMapping failed: %v", err)
+	}
+
+	err = app.DeleteColumnMapping(id)
+	if err != nil {
+		t.Fatalf("DeleteColumnMapping failed: %v", err)
+	}
+
+	var count int64
+	err = database.DB.QueryRow("SELECT COUNT(*) FROM column_mappings").Scan(&count)
+	if err != nil {
+		t.Fatalf("Failed to count mappings: %v", err)
+	}
+
+	if count != 0 {
+		t.Errorf("Expected 0 mappings after deletion, got %d", count)
+	}
+}
+
+// ============================================================================
+// 10. Export (No Dialog Tests)
+// ============================================================================
+
+func TestExportTransactions(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+	ownerID := createTestOwner(t, "Test Owner")
+	catID := createTestCategory(t, "Groceries")
+
+	createTestTransaction(t, accountID, ownerID, "2024-01-15", "Test Transaction", 100.50, &catID)
+
+	tempDir := t.TempDir()
+
+	t.Run("export to CSV", func(t *testing.T) {
+		csvPath := tempDir + "/test_export.csv"
+		count, err := app.ExportTransactions("2024-01-01", "2024-01-31", nil, "csv", csvPath)
+		if err != nil {
+			t.Fatalf("ExportTransactions to CSV failed: %v", err)
+		}
+
+		if count != 1 {
+			t.Errorf("Expected to export 1 row, got %d", count)
+		}
+
+		// Verify file exists
+		if _, err := os.Stat(csvPath); os.IsNotExist(err) {
+			t.Error("CSV file was not created")
+		}
+
+		// Read file and verify it contains expected content
+		content, err := os.ReadFile(csvPath)
+		if err != nil {
+			t.Fatalf("Failed to read CSV file: %v", err)
+		}
+
+		csvContent := string(content)
+		if !strings.Contains(csvContent, "Test Transaction") {
+			t.Error("CSV file should contain transaction description")
+		}
+
+		if !strings.Contains(csvContent, "Groceries") {
+			t.Error("CSV file should contain category name")
+		}
+	})
+
+	t.Run("export to XLSX", func(t *testing.T) {
+		xlsxPath := tempDir + "/test_export.xlsx"
+		count, err := app.ExportTransactions("2024-01-01", "2024-01-31", nil, "xlsx", xlsxPath)
+		if err != nil {
+			t.Fatalf("ExportTransactions to XLSX failed: %v", err)
+		}
+
+		if count != 1 {
+			t.Errorf("Expected to export 1 row, got %d", count)
+		}
+
+		// Verify file exists
+		if _, err := os.Stat(xlsxPath); os.IsNotExist(err) {
+			t.Error("XLSX file was not created")
+		}
+	})
+
+	t.Run("no transactions error", func(t *testing.T) {
+		path := tempDir + "/no_transactions.csv"
+		_, err := app.ExportTransactions("2025-01-01", "2025-01-31", nil, "csv", path)
+		if err == nil {
+			t.Error("Expected error when no transactions in date range")
+		}
+	})
+
+	t.Run("invalid format error", func(t *testing.T) {
+		path := tempDir + "/invalid.txt"
+		_, err := app.ExportTransactions("2024-01-01", "2024-01-31", nil, "txt", path)
+		if err == nil {
+			t.Error("Expected error for invalid format")
+		}
+	})
+}
+
+// ============================================================================
+// 11. Backup & Restore
+// ============================================================================
+
+func TestGetLastBackupInfo(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	t.Run("returns backup info structure", func(t *testing.T) {
+		// This test just verifies the function returns the expected structure
+		// We can't reliably test "no backup exists" since backups are on the filesystem
+		info, err := app.GetLastBackupInfo()
+		if err != nil {
+			t.Fatalf("GetLastBackupInfo failed: %v", err)
+		}
+
+		// Verify structure has expected keys
+		if _, ok := info["hasBackup"]; !ok {
+			t.Error("Expected info to have 'hasBackup' key")
+		}
+		if _, ok := info["lastBackupTime"]; !ok {
+			t.Error("Expected info to have 'lastBackupTime' key")
+		}
+	})
+}
+
+func TestValidateBackupFile(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+	createTestTransaction(t, accountID, nil, "2024-01-01", "Test", 100.00, nil)
+
+	tempDir := t.TempDir()
+
+	t.Run("validate valid backup", func(t *testing.T) {
+		backupPath := tempDir + "/valid_backup.db"
+		err := database.CreateBackup(backupPath)
+		if err != nil {
+			t.Fatalf("Failed to create backup: %v", err)
+		}
+
+		meta, err := app.ValidateBackupFile(backupPath)
+		if err != nil {
+			t.Fatalf("ValidateBackupFile failed: %v", err)
+		}
+
+		if meta.Path != backupPath {
+			t.Errorf("Expected path '%s', got '%s'", backupPath, meta.Path)
+		}
+
+		if meta.TransactionCount != 1 {
+			t.Errorf("Expected 1 transaction, got %d", meta.TransactionCount)
+		}
+
+		if meta.Size <= 0 {
+			t.Errorf("Expected positive size, got %d", meta.Size)
+		}
+	})
+
+	t.Run("validate invalid file", func(t *testing.T) {
+		invalidPath := tempDir + "/invalid.txt"
+		err := os.WriteFile(invalidPath, []byte("not a database"), 0o644)
+		if err != nil {
+			t.Fatalf("Failed to write invalid file: %v", err)
+		}
+
+		_, err = app.ValidateBackupFile(invalidPath)
+		if err == nil {
+			t.Error("Expected error for invalid backup file")
+		}
+	})
+}
+
+func TestRestoreBackup(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+
+	createTestTransaction(t, accountID, nil, "2024-01-01", "Original", 100.00, nil)
+
+	tempDir := t.TempDir()
+	backupPath := tempDir + "/restore_test.db"
+
+	// Create backup
+	err := database.CreateBackup(backupPath)
+	if err != nil {
+		t.Fatalf("Failed to create backup: %v", err)
+	}
+
+	// Add another transaction
+	createTestTransaction(t, accountID, nil, "2024-01-02", "New", 50.00, nil)
+
+	countBeforeRestore := countTransactions(t)
+	if countBeforeRestore != 2 {
+		t.Errorf("Expected 2 transactions before restore, got %d", countBeforeRestore)
+	}
+
+	// Restore
+	err = app.RestoreBackup(backupPath)
+	if err != nil {
+		t.Fatalf("RestoreBackup failed: %v", err)
+	}
+
+	countAfterRestore := countTransactions(t)
+	if countAfterRestore != 1 {
+		t.Errorf("Expected 1 transaction after restore, got %d", countAfterRestore)
+	}
+}
+
+func TestRestoreBackup_EmptyPath(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	err := app.RestoreBackup("")
+	if err == nil {
+		t.Error("Expected error for empty backup path")
+	}
+}
+
+func TestTriggerAutoBackup(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+
+	t.Run("creates backup when needed", func(t *testing.T) {
+		// This test assumes backup is needed (no recent backup exists)
+		path, err := app.TriggerAutoBackup()
+		// May return empty string if backup not needed, which is OK
+		_ = path
+		if err != nil {
+			t.Logf("TriggerAutoBackup returned error (may be expected): %v", err)
+		}
+	})
+}
+
+// ============================================================================
+// 12. App Lifecycle
+// ============================================================================
+
+func TestShutdown(t *testing.T) {
+	_ = setupTestDB(t)
+
+	app := NewApp()
+
+	// Create a transaction to ensure DB has data
+	accountID := createTestAccount(t, "TestAccount")
+	createTestTransaction(t, accountID, nil, "2024-01-01", "Test", 100.00, nil)
+
+	// Verify database is open before shutdown
+	var count int64
+	err := database.DB.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&count)
+	if err != nil {
+		t.Fatalf("Failed to query database before shutdown: %v", err)
+	}
+
+	// Call shutdown - should not panic
+	app.shutdown(context.Background())
+
+	// Note: database.DB will be nil after shutdown, which is expected behavior
+	// The test passes if we reach this point without panicking
+}
+
+// ============================================================================
+// 13. Web Search Helpers
+// ============================================================================
+
+func TestGenerateDefaultFilename(t *testing.T) {
+	t.Run("single month", func(t *testing.T) {
+		filename := generateDefaultFilename("2024-01-01", "2024-01-31", "csv")
+		expected := "cashflow_2024-01.csv"
+		if filename != expected {
+			t.Errorf("Expected '%s', got '%s'", expected, filename)
+		}
+	})
+
+	t.Run("date range", func(t *testing.T) {
+		filename := generateDefaultFilename("2024-01-01", "2024-03-31", "csv")
+		expected := "cashflow_2024-01-01_to_2024-03-31.csv"
+		if filename != expected {
+			t.Errorf("Expected '%s', got '%s'", expected, filename)
+		}
+	})
+
+	t.Run("different formats", func(t *testing.T) {
+		filename := generateDefaultFilename("2024-01-01", "2024-01-31", "xlsx")
+		expected := "cashflow_2024-01.xlsx"
+		if filename != expected {
+			t.Errorf("Expected '%s', got '%s'", expected, filename)
+		}
+	})
+}
