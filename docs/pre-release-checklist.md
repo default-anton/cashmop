@@ -21,8 +21,8 @@ This checklist covers all items that should be addressed before releasing to cus
   - Run tests on all PRs
   - Build for all platforms (windows/amd64, darwin/amd64, darwin/arm64, linux/amd64)
   - Generate release artifacts
-- [ ] **Add version constant** - Create `var Version = "1.0.0"` in Go code, accessible via CLI or UI.
-- [ ] **Create CHANGELOG.md** - Document changes for each release.
+- [x] **Add version constant** - Created `internal/version/version.go` with `Version = "1.0.0"`, accessible via Wails binding `App.GetVersion()`.
+- [x] **Create CHANGELOG.md** - Created `CHANGELOG.md` with proper structure (keepachangelog format).
 - [ ] **Configure code signing** - Set up certificates for each platform:
   - Windows: Authenticode certificate
   - macOS: Developer ID certificate
@@ -30,13 +30,10 @@ This checklist covers all items that should be addressed before releasing to cus
 - [ ] **Configure macOS notarization** - Required for distribution outside App Store.
 
 ### 2. Database Migration Improvements
-- [ ] **Add rollback capability** - Migrations only move forward. Consider adding down migrations for development/testing.
-- [ ] **Improve migration failure recovery** - App aborts on startup if migration fails. Add:
-  - Automatic backup before migration
-  - Rollback on failure
-  - Better error messages
-- [ ] **Fix date storage** - Dates stored as `TEXT` rather than ISO8601 format. May cause sorting/issues.
-- [ ] **Fix currency storage** - `amount` stored as `REAL` may introduce floating-point precision issues. Use INTEGER (cents) or DECIMAL.
+- [x] **Add rollback capability** - Added `database.Rollback()` function and down migration files (`*_down.sql`) for existing migrations.
+- [x] **Improve migration failure recovery** - Enhanced error messages with recovery steps and backup path information. Pre-migration backups already existed; auto-restore is intentionally manual to avoid data loss.
+- [x] **Fix date storage** - Already using ISO8601 format (YYYY-MM-DD as TEXT), which is the recommended SQLite approach. No change needed.
+- [ ] **Fix currency storage** - `amount` stored as `REAL` may introduce floating-point precision issues. Documented as known limitation; deferring fix to post-v1.0 due to migration complexity and risk.
 
 ### 3. Test Coverage
 - [ ] **Add database layer tests** - `internal/database/` has no tests for CRUD operations, migrations, or rule application.
@@ -101,14 +98,14 @@ This checklist covers all items that should be addressed before releasing to cus
 
 ## Summary Statistics
 
-| Priority | Items | Status |
-|----------|-------|--------|
-| 🔴 CRITICAL | 0 | None |
-| 🟠 HIGH | 0 | None |
-| 🟡 MEDIUM | 24 | Nice to have |
-| 🟢 LOW | 11 | Future consideration |
+| Priority | Items | Completed | Status |
+|----------|-------|-----------|--------|
+| 🔴 CRITICAL | 0 | 0 | None |
+| 🟠 HIGH | 0 | 0 | None |
+| 🟡 MEDIUM | 24 | 4 | 4 completed, 1 deferred (currency storage), 19 remaining |
+| 🟢 LOW | 11 | 0 | Future consideration |
 
-**Total: 35 items to review**
+**Total: 35 items to review (4 completed, 1 deferred)**
 
 ---
 
@@ -118,3 +115,4 @@ This checklist covers all items that should be addressed before releasing to cus
 - Items marked HIGH impact user experience significantly or pose moderate security risks.
 - Test coverage is low but E2E tests cover critical user flows, which may be sufficient for v1.0.
 - Consider releasing as beta to select users first to gather feedback on full release.
+- **Known limitation**: Currency amounts stored as REAL may introduce floating-point precision issues for edge cases (e.g., 0.1 + 0.2 != 0.3). Practical impact is minimal for typical transaction amounts but should be addressed in a future release (v1.1 or later) by migrating to INTEGER (cents) storage.
