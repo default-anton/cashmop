@@ -1,6 +1,6 @@
-.PHONY: check test vet tidy vulncheck build
+.PHONY: check test vet tidy vulncheck build typescript integration
 
-check: test vet tidy vulncheck build
+check: test vet tidy vulncheck build typescript integration
 
 test:
 	@echo "==> go test ./..."
@@ -51,3 +51,11 @@ build:
 		echo "$$OUTPUT"; \
 		exit 1; \
 	fi
+
+typescript:
+	@echo "==> typescript check"
+	@cd frontend && npx tsc --noEmit
+
+integration:
+	@echo "==> integration tests"
+	@./scripts/run-integration-tests.sh

@@ -18,15 +18,12 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 - Feature specs are here `docs/specs/`.
 - Frontend dependencies belong in `frontend/package.json`. Never install npm packages in the root directory.
 - Assume `wails dev` is running. If not, start it yourself in background (clean up when you're done). Use the browser skill to verify and test UI changes. The DevServer URL is http://localhost:34115.
-- After changing Go files, run `make check` to ensure the backend is healthy and compiles without issues. This runs: `go test ./...`, `go vet ./...`, `go mod tidy`, and `wails build`.
-
-## Integration Testing
-
-- Run `./scripts/run-integration-tests.sh` to start Wails dev server in test mode and run Playwright tests.
+- After changing Go or frontend files, run `make check`. Runs: test, vet, tidy, build, typescript, integration tests.
 
 ## Database Conventions
 
 - Uncategorized state: Use `NULL` in the database to represent uncategorized items (transactions, rules, etc.). In Go helpers, allow passing `0` to signify `NULL` for foreign keys where appropriate.
+- No FTS tables: Full-text search tables (e.g., `categories_fts`) have been removed; use regular queries instead.
 
 ## Fuzzy Matching
 

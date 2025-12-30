@@ -1,0 +1,2 @@
+-- This migration removes FTS tables that are no longer needed
+-- Down migration is not applicable (no need to recreate them)
