@@ -36,8 +36,14 @@ This checklist covers all items that should be addressed before releasing to cus
 - [x] **Run vulnerability scanner** - Use `govulncheck` for Go.
 
 ### 4. Debug Logging in Production
-- [ ] **Remove debug console.log** - `ImportFlow.tsx:354` logs transaction count during import. Remove or replace with proper telemetry.
-- [ ] **Review console.error usage** - 20+ console.error statements in error handlers. Decide if these should remain for production debugging.
+- [x] **Remove debug console.log** - `ImportFlow.tsx:404` logs transaction count during import. Removed.
+- [x] **Review console.error usage** - 20+ console.error statements in error handlers. **Decision: KEEP** all console.error statements. Rationale:
+  - Desktop app without telemetry - console is the only built-in logging mechanism for post-release debugging
+  - All console.error statements are paired with user-facing toast messages; no new information is exposed to users
+  - Users can open DevTools (F12) to share console output with support when needed
+  - No data leaves the user's machine; complete privacy preservation
+  - Essential distributed debugging for a desktop application where server-side logs are unavailable
+- [x] **Remove console.warn statements** - Removed 3 console.warn statements in CSV parsing (`ImportFlow.tsx:106,109,114`). These were data quality warnings that add noise in production without user-facing value.
 
 ### 5. Release Infrastructure
 - [ ] **Set up CI/CD** - No GitHub Actions or automated builds exist. Create workflow to:
@@ -128,10 +134,10 @@ This checklist covers all items that should be addressed before releasing to cus
 |----------|-------|--------|
 | 🔴 CRITICAL | 0 | None |
 | 🟠 HIGH | 0 | None |
-| 🟡 MEDIUM | 33 | Nice to have (3 done) |
+| 🟡 MEDIUM | 33 | Nice to have (4 done) |
 | 🟢 LOW | 11 | Future consideration |
 
-**Total: 44 items to review (4 completed)**
+**Total: 44 items to review (5 completed)**
 
 ---
 

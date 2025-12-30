@@ -101,19 +101,6 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
     rows.push(padded);
   }
 
-  // Warn about inconsistencies (could be logged)
-  if (inconsistentColumns > 0) {
-    console.warn(`${inconsistentColumns} rows have more columns than headers. Extra columns were truncated.`);
-  }
-  if (skippedEmpty > 0) {
-    console.warn(`Skipped ${skippedEmpty} empty lines.`);
-  }
-
-  // Ensure we have at least one data row (optional)
-  if (rows.length === 0) {
-    console.warn('No data rows found after header.');
-  }
-
   return { headers, rows };
 }
 
@@ -400,8 +387,6 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
     // Normalize and send
     const txs = normalizeTransactions(mapping, parsedFiles, keys);
-
-    console.log('Importing...', txs.length);
 
     try {
       await (window as any).go.main.App.ImportTransactions(txs);
