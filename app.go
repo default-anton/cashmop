@@ -4,6 +4,7 @@ import (
 	"cashflow/internal/brave"
 	"cashflow/internal/database"
 	"cashflow/internal/fuzzy"
+	"cashflow/internal/version"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -53,6 +54,11 @@ func (a *App) startup(ctx context.Context) {
 // Greet returns a greeting for the given name
 func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, It's show time!", name)
+}
+
+// GetVersion returns the application version
+func (a *App) GetVersion() string {
+	return version.Version
 }
 
 type TransactionInput struct {

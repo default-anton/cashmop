@@ -70,6 +70,10 @@ export function GetUncategorizedTransactions() {
   return window['go']['main']['App']['GetUncategorizedTransactions']();
 }
 
+export function GetVersion() {
+  return window['go']['main']['App']['GetVersion']();
+}
+
 export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }

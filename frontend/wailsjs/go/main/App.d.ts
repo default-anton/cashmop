@@ -37,6 +37,8 @@ export function GetOwners():Promise<Array<string>>;
 
 export function GetUncategorizedTransactions():Promise<Array<database.TransactionModel>>;
 
+export function GetVersion():Promise<string>;
+
 export function Greet(arg1:string):Promise<string>;
 
 export function ImportTransactions(arg1:Array<main.TransactionInput>):Promise<void>;
