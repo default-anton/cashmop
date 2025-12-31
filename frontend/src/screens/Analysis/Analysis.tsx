@@ -6,8 +6,8 @@ import {
 } from './components';
 import { database } from '../../../wailsjs/go/models';
 import { Card } from '../../components';
+import { useToast } from '../../components';
 import { BarChart3, ArrowUpDown, Download } from 'lucide-react';
-import { Toast } from '../../components';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 export type SortOrder = 'asc' | 'desc';
@@ -16,6 +16,7 @@ export type TransactionSortField = 'date' | 'amount';
 type ExportFormat = 'csv' | 'xlsx';
 
 const Analysis: React.FC = () => {
+  const toast = useToast();
   const [months, setMonths] = useState<string[]>([]);
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [categories, setCategories] = useState<database.Category[]>([]);
@@ -27,7 +28,6 @@ const Analysis: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const [groupSortField, setGroupSortField] = useState<GroupSortField>('name');
   const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>('asc');
@@ -133,7 +133,7 @@ const Analysis: React.FC = () => {
     const targetFormat = format || exportFormat;
 
     if (!selectedMonth) {
-      setToast({ message: 'Please select a month first', type: 'error' });
+      toast.showToast('Please select a month first', 'error');
       return;
     }
 
@@ -151,16 +151,16 @@ const Analysis: React.FC = () => {
         targetFormat
       );
 
-      setToast({
-        message: `Successfully exported ${rowsExported} transaction${rowsExported !== 1 ? 's' : ''} to ${targetFormat.toUpperCase()}`,
-        type: 'success'
-      });
+      toast.showToast(
+        `Successfully exported ${rowsExported} transaction${rowsExported !== 1 ? 's' : ''} to ${targetFormat.toUpperCase()}`,
+        'success'
+      );
     } catch (e) {
       console.error('Export failed', e);
-      setToast({
-        message: e instanceof Error ? e.message : 'Export failed. Please try again.',
-        type: 'error'
-      });
+      toast.showToast(
+        e instanceof Error ? e.message : 'Export failed. Please try again.',
+        'error'
+      );
     } finally {
       setExporting(false);
     }
@@ -345,17 +345,6 @@ const Analysis: React.FC = () => {
         )}
       </div>
 
-      {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            duration={4000}
-            onClose={() => setToast(null)}
-          />
-        </div>
-      )}
     </div>
   );
 };

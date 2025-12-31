@@ -4,6 +4,7 @@ import CategorizationLoop from './screens/CategorizationLoop/CategorizationLoop'
 import CategoryManager from './screens/CategoryManager/CategoryManager';
 import Analysis from './screens/Analysis/Analysis';
 import Settings from './screens/Settings/Settings';
+import { ToastProvider } from './contexts/ToastContext';
 
 function App() {
   const [screen, setScreen] = useState<'import' | 'categorize' | 'categories' | 'analysis' | 'settings'>('analysis');
@@ -54,7 +55,8 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-canvas-100">
+    <ToastProvider>
+      <div className="min-h-screen bg-canvas-100">
       <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 bg-canvas-50/80 backdrop-blur-md border border-canvas-200 rounded-full shadow-lg">
         {hasData && (
           <button
@@ -114,6 +116,7 @@ function App() {
         <Analysis />
       )}
     </div>
+    </ToastProvider>
   );
 }
 

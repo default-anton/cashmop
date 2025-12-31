@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Database, Download, Upload, Folder, Clock, Check, AlertTriangle, HardDrive, RefreshCcw } from 'lucide-react';
-import { Card, Button, Toast } from '../../components';
+import { Card, Button, useToast } from '../../components';
 
 interface BackupInfo {
   hasBackup: boolean;
@@ -15,6 +15,7 @@ interface BackupMetadata {
 }
 
 const Settings: React.FC = () => {
+  const toast = useToast();
   const [backupInfo, setBackupInfo] = useState<BackupInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [backupLoading, setBackupLoading] = useState(false);
@@ -22,7 +23,6 @@ const Settings: React.FC = () => {
   const [selectedBackup, setSelectedBackup] = useState<BackupMetadata | null>(null);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [showRestartNotice, setShowRestartNotice] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
 
   const fetchBackupInfo = async () => {
     try {
@@ -30,7 +30,7 @@ const Settings: React.FC = () => {
       setBackupInfo(info);
     } catch (e) {
       console.error('Failed to fetch backup info', e);
-      setToast({ message: 'Failed to load backup info', type: 'error' });
+      toast.showToast('Failed to load backup info', 'error');
     } finally {
       setLoading(false);
     }
@@ -57,12 +57,12 @@ const Settings: React.FC = () => {
     try {
       const path = await (window as any).go.main.App.CreateManualBackup();
       if (path) {
-        setToast({ message: 'Backup created successfully', type: 'success' });
+        toast.showToast('Backup created successfully', 'success');
         await fetchBackupInfo();
       }
     } catch (e: any) {
       console.error('Failed to create backup', e);
-      setToast({ message: `Failed to create backup: ${e?.message || 'Unknown error'}`, type: 'error' });
+      toast.showToast(`Failed to create backup: ${e?.message || 'Unknown error'}`, 'error');
     } finally {
       setBackupLoading(false);
     }
@@ -73,7 +73,7 @@ const Settings: React.FC = () => {
       await (window as any).go.main.App.OpenBackupFolder();
     } catch (e: any) {
       console.error('Failed to open backup folder', e);
-      setToast({ message: `Failed to open backup folder: ${e?.message || 'Unknown error'}`, type: 'error' });
+      toast.showToast(`Failed to open backup folder: ${e?.message || 'Unknown error'}`, 'error');
     }
   };
 
@@ -82,13 +82,13 @@ const Settings: React.FC = () => {
       const meta: BackupMetadata = await (window as any).go.main.App.SelectBackupFile();
       setSelectedBackup(meta);
       setShowRestoreConfirm(true);
-      setToast({ message: 'Backup validated. Review details before restoring.', type: 'warning' });
+      toast.showToast('Backup validated. Review details before restoring.', 'warning');
     } catch (e: any) {
       if (e?.message?.toLowerCase().includes('cancelled')) {
         return;
       }
       console.error('Failed to validate backup', e);
-      setToast({ message: `Invalid backup file: ${e?.message || 'Unknown error'}`, type: 'error' });
+      toast.showToast(`Invalid backup file: ${e?.message || 'Unknown error'}`, 'error');
     }
   };
 
@@ -97,12 +97,12 @@ const Settings: React.FC = () => {
     setRestoreLoading(true);
     try {
       await (window as any).go.main.App.RestoreBackup(selectedBackup.path);
-      setToast({ message: 'Database restored. Please restart the application.', type: 'success' });
+      toast.showToast('Database restored. Please restart the application.', 'success');
       setShowRestoreConfirm(false);
       setShowRestartNotice(true);
     } catch (e: any) {
       console.error('Failed to restore backup', e);
-      setToast({ message: `Failed to restore backup: ${e?.message || 'Unknown error'}`, type: 'error' });
+      toast.showToast(`Failed to restore backup: ${e?.message || 'Unknown error'}`, 'error');
     } finally {
       setRestoreLoading(false);
     }
@@ -280,17 +280,6 @@ const Settings: React.FC = () => {
           </p>
         </Card>
       </div>
-
-      {toast && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <Toast
-            message={toast.message}
-            type={toast.type === 'warning' ? 'warning' : toast.type}
-            duration={4000}
-            onClose={() => setToast(null)}
-          />
-        </div>
-      )}
     </div>
   );
 };

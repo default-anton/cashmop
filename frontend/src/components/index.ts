@@ -1,4 +1,5 @@
 export { default as DropTarget } from './DropTarget';
+export { useToast } from '../contexts/ToastContext';
 export { default as Pill } from './Pill';
 export { default as FieldMeta } from './FieldMeta';
 export { default as SingleMappingPill } from './SingleMappingPill';

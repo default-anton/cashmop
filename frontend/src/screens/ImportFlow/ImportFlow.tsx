@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 
 import { Button } from '../../components';
+import { useToast } from '../../contexts/ToastContext';
 
 import FileDropZone from './components/FileDropZone';
 import { MappingPunchThrough } from './components/MappingPunchThrough';
@@ -203,6 +204,7 @@ interface ImportFlowProps {
 }
 
 export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
+  const toast = useToast();
   const [step, setStep] = useState(1); // 1: Choose file(s), 2: Map, 3: Month Select, 4: Done
 
   const [parseBusy, setParseBusy] = useState(false);
@@ -398,7 +400,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     } catch (e) {
       console.error(e);
       const errorMsg = e instanceof Error ? e.message : String(e);
-      alert(`Unable to import transactions: ${errorMsg}. Please check your file format and try again.`);
+      toast.showToast(`Unable to import transactions: ${errorMsg}. Please check your file format and try again.`, 'error');
     }
   };
 
