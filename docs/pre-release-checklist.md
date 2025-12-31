@@ -44,7 +44,6 @@ This checklist covers all items that should be addressed before releasing to cus
 - [ ] **Add about screen** - Show version, license, and credits (version available via `GetVersion()` binding).
 - [ ] **Add check for updates** - Notify users when new versions are available.
 - [ ] **Add keyboard shortcuts** - Beyond Cmd+K for web search, add shortcuts for common actions (import, export, settings).
-- [ ] **Improve toast duration** - Default 5000ms may be too short for some messages; consider message-type-specific durations.
 
 ### 2. Documentation
 - [ ] **Add user guide** - No end-user documentation exists.
