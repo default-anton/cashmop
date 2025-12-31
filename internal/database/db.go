@@ -6,8 +6,9 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
+
+	"cashflow/internal/paths"
 
 	_ "modernc.org/sqlite"
 )
@@ -46,39 +47,12 @@ func resolveDatabasePath() (string, error) {
 		return devTestPath("dev")
 	}
 
-	dir, err := databaseDir()
+	dir, err := paths.AppConfigDir()
 	if err != nil {
 		return "", err
 	}
 
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", fmt.Errorf("create database directory: %w", err)
-	}
-
 	return filepath.Join(dir, storageName+".db"), nil
-}
-
-func databaseDir() (string, error) {
-	switch runtime.GOOS {
-	case "windows":
-		if dir := os.Getenv("LOCALAPPDATA"); dir != "" {
-			return filepath.Join(dir, storageName), nil
-		}
-		configDir, err := os.UserConfigDir()
-		if err != nil {
-			return "", fmt.Errorf("get user config dir: %w", err)
-		}
-		if configDir != "" {
-			return filepath.Join(configDir, storageName), nil
-		}
-		return "", fmt.Errorf("LOCALAPPDATA not set")
-	default:
-		configDir, err := os.UserConfigDir()
-		if err != nil {
-			return "", fmt.Errorf("get user config dir: %w", err)
-		}
-		return filepath.Join(configDir, storageName), nil
-	}
 }
 
 func devTestPath(suffix string) (string, error) {

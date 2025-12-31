@@ -84,7 +84,7 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 		if !ok {
 			id, err := database.GetOrCreateAccount(t.Account)
 			if err != nil {
-				return fmt.Errorf("failed to get/create account '%s': %w", t.Account, err)
+				return fmt.Errorf("Unable to process account '%s'. Please check the file format.", t.Account)
 			}
 			accID = id
 			accountCache[t.Account] = accID
@@ -97,7 +97,7 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 			if !ok {
 				id, err := database.GetOrCreateUser(t.Owner)
 				if err != nil {
-					return fmt.Errorf("failed to get/create user '%s': %w", t.Owner, err)
+					return fmt.Errorf("Unable to process owner '%s'. Please check the file format.", t.Owner)
 				}
 				ownerID = id
 				userCache[t.Owner] = ownerID
@@ -114,7 +114,7 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 				var err error
 				id, err = database.GetOrCreateCategory(t.Category)
 				if err != nil {
-					return fmt.Errorf("failed to get/create category '%s': %w", t.Category, err)
+					return fmt.Errorf("Unable to process category '%s'. Please check the file format.", t.Category)
 				}
 				categoryCache[t.Category] = id
 			}
@@ -147,7 +147,7 @@ func (a *App) GetColumnMappings() ([]database.ColumnMappingModel, error) {
 func (a *App) SaveColumnMapping(name string, mapping interface{}) (int64, error) {
 	bytes, err := json.Marshal(mapping)
 	if err != nil {
-		return 0, fmt.Errorf("failed to marshal mapping: %w", err)
+		return 0, fmt.Errorf("Unable to save column mapping. Please try again.")
 	}
 	return database.SaveColumnMapping(name, string(bytes))
 }
@@ -273,29 +273,29 @@ func (a *App) ParseExcel(base64Data string) (*ExcelData, error) {
 
 	data, err := base64.StdEncoding.DecodeString(base64Data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode base64: %w", err)
+		return nil, fmt.Errorf("Unable to read the Excel file. The file may be corrupted.")
 	}
 
 	reader := strings.NewReader(string(data))
 	f, err := excelize.OpenReader(reader)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open excel: %w", err)
+		return nil, fmt.Errorf("Unable to read the Excel file. Please check if it's corrupted or password-protected.")
 	}
 	defer f.Close()
 
 	// Get first sheet
 	sheetName := f.GetSheetName(0)
 	if sheetName == "" {
-		return nil, fmt.Errorf("no sheets found in excel file")
+		return nil, fmt.Errorf("The Excel file doesn't contain any data sheets.")
 	}
 
 	rows, err := f.GetRows(sheetName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get rows from sheet %s: %w", sheetName, err)
+		return nil, fmt.Errorf("Unable to read data from the Excel file.")
 	}
 
 	if len(rows) == 0 {
-		return nil, fmt.Errorf("excel file is empty")
+		return nil, fmt.Errorf("The Excel file is empty. Please choose a file with data.")
 	}
 
 	headers := rows[0]
@@ -346,7 +346,7 @@ func hashQuery(query string) string {
 // Returns top 5 results with caching (session-only)
 func (a *App) SearchWeb(query string) ([]WebSearchResult, error) {
 	if query == "" {
-		return nil, fmt.Errorf("query cannot be empty")
+		return nil, fmt.Errorf("Please enter a search term.")
 	}
 
 	// Check cache
@@ -440,11 +440,11 @@ func (a *App) ExportTransactions(startDate, endDate string, categoryIDs []int64,
 	// Fetch transactions using existing filter logic
 	transactions, err := database.GetAnalysisTransactions(startDate, endDate, categoryIDs)
 	if err != nil {
-		return 0, fmt.Errorf("failed to fetch transactions: %w", err)
+		return 0, fmt.Errorf("Unable to load transactions. Please try again.")
 	}
 
 	if len(transactions) == 0 {
-		return 0, fmt.Errorf("no transactions to export")
+		return 0, fmt.Errorf("No transactions found for this date range.")
 	}
 
 	switch strings.ToLower(format) {
@@ -453,7 +453,7 @@ func (a *App) ExportTransactions(startDate, endDate string, categoryIDs []int64,
 	case "xlsx":
 		return exportToXLSX(transactions, destinationPath)
 	default:
-		return 0, fmt.Errorf("unsupported format: %s (use 'csv' or 'xlsx')", format)
+		return 0, fmt.Errorf("Unsupported format. Please choose CSV or Excel.")
 	}
 }
 
@@ -478,13 +478,13 @@ func sanitizeCSVField(field string) string {
 func exportToCSV(transactions []database.TransactionModel, destinationPath string) (int, error) {
 	file, err := os.Create(destinationPath)
 	if err != nil {
-		return 0, fmt.Errorf("failed to create file: %w", err)
+		return 0, fmt.Errorf("Unable to create the export file. Please check your folder permissions.")
 	}
 	defer file.Close()
 
 	// Write UTF-8 BOM for Excel/Numbers compatibility
 	if _, err := file.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
-		return 0, fmt.Errorf("failed to write BOM: %w", err)
+		return 0, fmt.Errorf("Unable to write the export file. Please check disk space and permissions.")
 	}
 
 	writer := csv.NewWriter(file)
@@ -494,7 +494,7 @@ func exportToCSV(transactions []database.TransactionModel, destinationPath strin
 	// Write header
 	header := []string{"Date", "Description", "Amount", "Category", "Account", "Owner", "Currency"}
 	if err := writer.Write(header); err != nil {
-		return 0, fmt.Errorf("failed to write header: %w", err)
+		return 0, fmt.Errorf("Unable to write the export file. Please check disk space and permissions.")
 	}
 
 	// Write rows
@@ -514,7 +514,7 @@ func exportToCSV(transactions []database.TransactionModel, destinationPath strin
 			sanitizeCSVField(tx.Currency),
 		}
 		if err := writer.Write(row); err != nil {
-			return 0, fmt.Errorf("failed to write row: %w", err)
+			return 0, fmt.Errorf("Unable to write the export file. Please check disk space and permissions.")
 		}
 	}
 
@@ -536,16 +536,16 @@ func exportToXLSX(transactions []database.TransactionModel, destinationPath stri
 		Font: &excelize.Font{Bold: true},
 	})
 	if err != nil {
-		return 0, fmt.Errorf("failed to create header style: %w", err)
+		return 0, fmt.Errorf("Unable to create the Excel file. Please try again.")
 	}
 
 	for i, header := range headers {
 		cell := cols[i] + "1"
 		if err := f.SetCellValue(sheetName, cell, header); err != nil {
-			return 0, fmt.Errorf("failed to set header %s: %w", header, err)
+			return 0, fmt.Errorf("Unable to create the Excel file. Please try again.")
 		}
 		if err := f.SetCellStyle(sheetName, cell, cell, headerStyle); err != nil {
-			return 0, fmt.Errorf("failed to style header %s: %w", header, err)
+			return 0, fmt.Errorf("Unable to create the Excel file. Please try again.")
 		}
 	}
 
@@ -571,7 +571,7 @@ func exportToXLSX(transactions []database.TransactionModel, destinationPath stri
 		for j, val := range values {
 			cell := cols[j] + strconv.Itoa(row)
 			if err := f.SetCellValue(sheetName, cell, val); err != nil {
-				return 0, fmt.Errorf("failed to set cell %s: %w", cell, err)
+				return 0, fmt.Errorf("Unable to create the Excel file. Please try again.")
 			}
 		}
 	}
@@ -619,13 +619,13 @@ func exportToXLSX(transactions []database.TransactionModel, destinationPath stri
 			width = 50
 		}
 		if err := f.SetColWidth(sheetName, col, col, width); err != nil {
-			return 0, fmt.Errorf("failed to set column width %s: %w", col, err)
+			return 0, fmt.Errorf("Unable to create the Excel file. Please try again.")
 		}
 	}
 
 	// Save file
 	if err := f.SaveAs(destinationPath); err != nil {
-		return 0, fmt.Errorf("failed to save excel file: %w", err)
+		return 0, fmt.Errorf("Unable to save the Excel file. Please check disk space and permissions.")
 	}
 
 	return len(transactions), nil
@@ -651,15 +651,15 @@ func (a *App) CreateManualBackup() (string, error) {
 		},
 	})
 	if err != nil {
-		return "", fmt.Errorf("dialog cancelled or failed: %w", err)
+		return "", err // Don't show error if user cancelled the dialog
 	}
 
 	if destinationPath == "" {
-		return "", fmt.Errorf("no destination selected")
+		return "", nil // User cancelled, no error needed
 	}
 
 	if err := database.CreateBackup(destinationPath); err != nil {
-		return "", fmt.Errorf("failed to create backup: %w", err)
+		return "", fmt.Errorf("Unable to create backup: %s", err.Error())
 	}
 
 	return destinationPath, nil
@@ -712,10 +712,10 @@ func (a *App) SelectBackupFile() (*database.BackupMetadata, error) {
 		},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("dialog cancelled or failed: %w", err)
+		return nil, err // Don't show error if user cancelled the dialog
 	}
 	if backupPath == "" {
-		return nil, fmt.Errorf("no file selected")
+		return nil, fmt.Errorf("No backup file selected.")
 	}
 
 	return a.ValidateBackupFile(backupPath)
@@ -724,7 +724,7 @@ func (a *App) SelectBackupFile() (*database.BackupMetadata, error) {
 // RestoreBackup restores from a validated backup path
 func (a *App) RestoreBackup(backupPath string) error {
 	if strings.TrimSpace(backupPath) == "" {
-		return fmt.Errorf("backup path is required")
+		return fmt.Errorf("No backup file selected.")
 	}
 	return database.RestoreBackup(backupPath)
 }
@@ -737,7 +737,7 @@ func (a *App) RestoreBackupFromDialog() (string, error) {
 	}
 
 	if err := database.RestoreBackup(meta.Path); err != nil {
-		return "", fmt.Errorf("failed to restore backup: %w", err)
+		return "", fmt.Errorf("Unable to restore backup: %s", err.Error())
 	}
 
 	return meta.Path, nil

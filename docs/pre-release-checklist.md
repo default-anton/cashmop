@@ -44,15 +44,10 @@ This checklist covers all items that should be addressed before releasing to cus
   - Concurrent operations
 
 ### 4. Configuration Hardcoding
-- [ ] **Make window dimensions configurable** - Hardcoded to 1024x768 in `main.go:20-21`.
-- [ ] **Make Brave Search timeout configurable** - Hardcoded to 15s in `internal/brave/search.go:18`.
-- [ ] **Make file size limit configurable** - Hardcoded to 10MB in `ImportFlow.tsx:126`.
-- [ ] **Use environment-specific configs** - Only `APP_ENV=test` exists. Add support for dev/prod configs.
+- [x] **Make window dimensions configurable** - Hardcoded to 1024x768 in `main.go:20-21`.
 
 ### 5. User Experience
-- [ ] **Add onboarding** - No first-run experience for new users.
-- [ ] **Improve error messages** - Some errors are technical (e.g., "failed to decode base64"). Make user-friendly.
-- [ ] **Add progress indicators** - Large file imports show no progress.
+- [x] **Improve error messages** - Some errors are technical (e.g., "failed to decode base64"). Make user-friendly.
 - [ ] **Add undo functionality** - No way to undo accidental categorization or deletion.
 
 ### 6. Accessibility

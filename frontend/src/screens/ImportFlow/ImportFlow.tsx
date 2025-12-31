@@ -118,14 +118,14 @@ async function validateFileSignature(file: File, expectedExtension: string): Pro
   if (expectedExtension === '.xlsx') {
     // XLSX files are ZIP archives: signature is "PK\x03\x04"
     if (bytes[0] !== 0x50 || bytes[1] !== 0x4B || bytes[2] !== 0x03 || bytes[3] !== 0x04) {
-      throw new Error('File does not appear to be a valid XLSX file. The file signature does not match. Please ensure you are uploading a genuine Excel file.');
+      throw new Error('This doesn\'t look like a valid Excel file. Please check the file format.');
     }
   } else if (expectedExtension === '.xls') {
     // XLS files use OLE2 compound document storage: signature is D0 CF 11 E0 A0 B1 1A E1
     const ole2Signature = [0xD0, 0xCF, 0x11, 0xE0, 0xA0, 0xB1, 0x1A, 0xE1];
     for (let i = 0; i < 8; i++) {
       if (bytes[i] !== ole2Signature[i]) {
-        throw new Error('File does not appear to be a valid XLS file. The file signature does not match. Please ensure you are uploading a genuine Excel file or try saving as XLSX.');
+        throw new Error('This doesn\'t look like a valid .xls file. Try saving it as .xlsx instead.');
       }
     }
   }
@@ -170,7 +170,7 @@ async function parseFile(file: File): Promise<ParsedFile> {
         rows: result.rows,
       };
     } catch (e) {
-      throw new Error('Failed to parse Excel file: ' + (e instanceof Error ? e.message : String(e)));
+      throw new Error('Unable to read the Excel file. Please check if it\'s corrupted or password-protected.');
     }
   }
   if (name.endsWith('.xls')) {
@@ -192,7 +192,7 @@ async function parseFile(file: File): Promise<ParsedFile> {
         rows: result.rows,
       };
     } catch (e) {
-      throw new Error('Failed to parse Excel file: ' + (e instanceof Error ? e.message : String(e)));
+      throw new Error('Unable to read the Excel file. Please check if it\'s corrupted or password-protected.');
     }
   }
   throw new Error('Unsupported file type. Please upload a .csv or .xlsx file.');
@@ -397,7 +397,8 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
       }
     } catch (e) {
       console.error(e);
-      alert('Failed to import transactions: ' + e);
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      alert(`Unable to import transactions: ${errorMsg}. Please check your file format and try again.`);
     }
   };
 

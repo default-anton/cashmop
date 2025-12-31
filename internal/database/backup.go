@@ -59,12 +59,12 @@ func CreateAutoBackup() (string, error) {
 func ValidateBackup(path string) (int64, error) {
 	info, err := os.Stat(path)
 	if err != nil {
-		return 0, fmt.Errorf("stat backup: %w", err)
+		return 0, fmt.Errorf("Cannot access the backup file: %s", err.Error())
 	}
 
 	db, err := sql.Open("sqlite", path+"?mode=ro&_pragma=busy_timeout(5000)")
 	if err != nil {
-		return 0, fmt.Errorf("not a valid sqlite database: %w", err)
+		return 0, fmt.Errorf("This is not a valid backup file.")
 	}
 	defer db.Close()
 
@@ -85,17 +85,17 @@ func ValidateBackup(path string) (int64, error) {
 		return 0, err
 	}
 	if backupVersion != currentVersion {
-		return 0, fmt.Errorf("backup is from an incompatible version")
+		return 0, fmt.Errorf("This backup was created with a different version of the app and cannot be restored.")
 	}
 
 	var count int64
 	if err := db.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&count); err != nil {
-		return 0, fmt.Errorf("failed to count transactions: %w", err)
+		return 0, fmt.Errorf("Unable to read the backup file.")
 	}
 
 	// additional sanity: file size > 0 already ensured by Stat above
 	if info.Size() == 0 {
-		return 0, fmt.Errorf("backup file is empty")
+		return 0, fmt.Errorf("The backup file is empty.")
 	}
 
 	return count, nil
@@ -109,43 +109,43 @@ func RestoreBackup(backupPath string) error {
 
 	txCount, err := ValidateBackup(backupPath)
 	if err != nil {
-		return fmt.Errorf("invalid backup file: %w", err)
+		return err
 	}
 	if txCount == 0 {
-		return fmt.Errorf("backup file contains no transactions")
+		return fmt.Errorf("The backup file contains no transactions.")
 	}
 
 	currentDBPath, err := DatabasePath()
 	if err != nil {
-		return fmt.Errorf("get current database path: %w", err)
+		return fmt.Errorf("Unable to access the database.")
 	}
 
 	backupDir, err := EnsureBackupDir()
 	if err != nil {
-		return fmt.Errorf("get backup directory: %w", err)
+		return fmt.Errorf("Unable to access the backup folder.")
 	}
 
 	safetyBackupPath := filepath.Join(backupDir, fmt.Sprintf("cashflow_pre_restore_%s.db", time.Now().Format("20060102_150405")))
 	if err := createBackupUnsafe(safetyBackupPath); err != nil {
-		return fmt.Errorf("create safety backup: %w", err)
+		return fmt.Errorf("Unable to create a safety backup before restoring.")
 	}
 
 	if err := Close(); err != nil {
-		return fmt.Errorf("close database: %w", err)
+		return fmt.Errorf("Unable to prepare the database for restore.")
 	}
 
 	tempPath := currentDBPath + ".tmp"
 	if err := copyFile(backupPath, tempPath); err != nil {
-		return fmt.Errorf("copy backup: %w", err)
+		return fmt.Errorf("Unable to copy the backup file.")
 	}
 
 	if err := os.Rename(tempPath, currentDBPath); err != nil {
-		return fmt.Errorf("replace database: %w", err)
+		return fmt.Errorf("Unable to restore the backup file.")
 	}
 
 	DB, err = sql.Open("sqlite", currentDBPath)
 	if err != nil {
-		return fmt.Errorf("reopen database: %w", err)
+		return fmt.Errorf("Unable to reopen the database after restore.")
 	}
 
 	return nil
@@ -287,7 +287,7 @@ func CreatePreMigrationBackup(version int64) (string, error) {
 	backupPath := filepath.Join(backupDir, filename)
 
 	if err := CreateBackup(backupPath); err != nil {
-		return "", fmt.Errorf("pre-migration backup failed: %w", err)
+		return "", fmt.Errorf("Unable to create a backup before update.")
 	}
 
 	return backupPath, nil
@@ -295,7 +295,7 @@ func CreatePreMigrationBackup(version int64) (string, error) {
 
 func createBackupUnsafe(destination string) error {
 	if err := os.MkdirAll(filepath.Dir(destination), 0o755); err != nil {
-		return fmt.Errorf("create destination directory: %w", err)
+		return fmt.Errorf("Unable to create backup folder: %s", err.Error())
 	}
 
 	dbPath, err := DatabasePath()
@@ -305,7 +305,7 @@ func createBackupUnsafe(destination string) error {
 
 	dbInfo, err := os.Stat(dbPath)
 	if err != nil {
-		return fmt.Errorf("stat database: %w", err)
+		return fmt.Errorf("Unable to access the database.")
 	}
 
 	hasSpace, err := hasSufficientSpace(destination, dbInfo.Size())
@@ -313,20 +313,20 @@ func createBackupUnsafe(destination string) error {
 		return err
 	}
 	if !hasSpace {
-		return fmt.Errorf("insufficient disk space to create backup")
+		return fmt.Errorf("Not enough disk space to create a backup.")
 	}
 
 	if err := vacuumWithRetry(destination); err != nil {
-		return fmt.Errorf("vacuum into failed: %w", err)
+		return fmt.Errorf("Unable to create the backup file.")
 	}
 
 	if _, err := os.Stat(destination); err != nil {
-		return fmt.Errorf("backup file was not created: %w", err)
+		return fmt.Errorf("Backup was not created successfully.")
 	}
 
 	if _, err := ValidateBackup(destination); err != nil {
 		_ = os.Remove(destination)
-		return fmt.Errorf("backup verification failed: %w", err)
+		return fmt.Errorf("Backup verification failed.")
 	}
 
 	return nil
@@ -357,10 +357,10 @@ func vacuumWithRetry(destination string) error {
 func ensureIntegrity(db *sql.DB) error {
 	var res string
 	if err := db.QueryRow("PRAGMA integrity_check").Scan(&res); err != nil {
-		return fmt.Errorf("integrity check failed: %w", err)
+		return fmt.Errorf("The backup file appears to be corrupted.")
 	}
 	if !strings.EqualFold(strings.TrimSpace(res), "ok") {
-		return fmt.Errorf("integrity check failed")
+		return fmt.Errorf("The backup file appears to be corrupted.")
 	}
 	return nil
 }
@@ -370,9 +370,9 @@ func ensureHasTransactionsTable(db *sql.DB) error {
 	err := db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'").Scan(&tableName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("file is not a valid cashflow backup (missing transactions table)")
+			return fmt.Errorf("This is not a valid Cashflow backup file.")
 		}
-		return fmt.Errorf("invalid database: %w", err)
+		return fmt.Errorf("Unable to read the backup file.")
 	}
 	return nil
 }
@@ -384,7 +384,7 @@ func schemaVersion(db *sql.DB) (int64, error) {
 		if strings.Contains(strings.ToLower(err.Error()), "no such table") {
 			return 0, nil
 		}
-		return 0, fmt.Errorf("schema version: %w", err)
+		return 0, fmt.Errorf("Unable to read the backup file.")
 	}
 	if !version.Valid {
 		return 0, nil
@@ -395,7 +395,7 @@ func schemaVersion(db *sql.DB) (int64, error) {
 // CurrentSchemaVersion returns max applied migration version
 func CurrentSchemaVersion() (int64, error) {
 	if DB == nil {
-		return 0, fmt.Errorf("database not initialized")
+		return 0, fmt.Errorf("Database not ready. Please restart the application.")
 	}
 	return schemaVersion(DB)
 }

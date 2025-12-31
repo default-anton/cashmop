@@ -48,11 +48,11 @@ func runMigration(version int64, sql string) error {
 	defer tx.Rollback()
 
 	if _, err := tx.Exec(sql); err != nil {
-		return fmt.Errorf("migration %d failed: %w", version, err)
+		return fmt.Errorf("Database update failed: %s", err.Error())
 	}
 
 	if _, err := tx.Exec("INSERT INTO schema_migrations (version) VALUES (?)", version); err != nil {
-		return fmt.Errorf("failed to record migration %d: %w", version, err)
+		return fmt.Errorf("Database update failed: %s", err.Error())
 	}
 
 	return tx.Commit()
@@ -66,11 +66,11 @@ func runDownMigration(version int64, sql string) error {
 	defer tx.Rollback()
 
 	if _, err := tx.Exec(sql); err != nil {
-		return fmt.Errorf("down migration %d failed: %w", version, err)
+		return fmt.Errorf("Unable to undo the database update: %s", err.Error())
 	}
 
 	if _, err := tx.Exec("DELETE FROM schema_migrations WHERE version = ?", version); err != nil {
-		return fmt.Errorf("failed to unrecord migration %d: %w", version, err)
+		return fmt.Errorf("Unable to undo the database update: %s", err.Error())
 	}
 
 	return tx.Commit()
@@ -79,21 +79,21 @@ func runDownMigration(version int64, sql string) error {
 // Rollback rolls back the most recent migration
 func Rollback() error {
 	if err := createMigrationsTable(); err != nil {
-		return fmt.Errorf("failed to create migrations table: %w", err)
+		return fmt.Errorf("Unable to access the database.")
 	}
 
 	applied, err := getAppliedVersions()
 	if err != nil {
-		return fmt.Errorf("failed to get applied versions: %w", err)
+		return fmt.Errorf("Unable to access the database.")
 	}
 
 	if len(applied) == 0 {
-		return fmt.Errorf("no migrations to rollback")
+		return fmt.Errorf("No updates can be undone.")
 	}
 
 	entries, err := migrationsFS.ReadDir("migrations")
 	if err != nil {
-		return fmt.Errorf("failed to read migrations dir: %w", err)
+		return fmt.Errorf("Unable to access the database.")
 	}
 
 	var migrationFiles []struct {
@@ -131,33 +131,33 @@ func Rollback() error {
 		path := "migrations/" + mf.name
 		content, err := migrationsFS.ReadFile(path)
 		if err != nil {
-			return fmt.Errorf("failed to read down migration %s: %w", path, err)
+			return fmt.Errorf("Unable to undo the database update.")
 		}
 
 		log.Printf("Rolling back migration %d: %s", mf.version, mf.name)
 		if err := runDownMigration(mf.version, string(content)); err != nil {
-			return fmt.Errorf("rollback failed for migration %d: %w", mf.version, err)
+			return fmt.Errorf("Unable to undo the database update.")
 		}
 		log.Printf("Migration %d rolled back successfully", mf.version)
 		return nil
 	}
 
-	return fmt.Errorf("no down migration found for latest version")
+	return fmt.Errorf("No updates can be undone.")
 }
 
 func Migrate() error {
 	if err := createMigrationsTable(); err != nil {
-		return fmt.Errorf("failed to create migrations table: %w", err)
+		return fmt.Errorf("Unable to access the database.")
 	}
 
 	applied, err := getAppliedVersions()
 	if err != nil {
-		return fmt.Errorf("failed to get applied versions: %w", err)
+		return fmt.Errorf("Unable to access the database.")
 	}
 
 	entries, err := migrationsFS.ReadDir("migrations")
 	if err != nil {
-		return fmt.Errorf("failed to read migrations dir: %w", err)
+		return fmt.Errorf("Unable to access the database.")
 	}
 
 	var migrationFiles []struct {
@@ -210,7 +210,7 @@ func Migrate() error {
 		path := "migrations/" + mf.name
 		content, err := migrationsFS.ReadFile(path)
 		if err != nil {
-			return fmt.Errorf("failed to read migration %s: %w", path, err)
+			return fmt.Errorf("Unable to update the database.")
 		}
 
 		if !isTest {
@@ -218,9 +218,9 @@ func Migrate() error {
 		}
 		if err := runMigration(mf.version, string(content)); err != nil {
 			if backupPath != "" {
-				return fmt.Errorf("migration %d failed: %w\n\nTo recover from this error:\n1. A backup was created at: %s\n2. Restore the backup manually or use the app's restore feature\n3. Check the migration file for syntax errors\n4. Ensure you have sufficient disk space\n5. Contact support if the issue persists", mf.version, err, backupPath)
+				return fmt.Errorf("Database update failed. A backup was created at: %s\n\nTo fix this issue:\n1. Close the app\n2. Restore the backup using Settings > Restore\n3. Restart the app", backupPath)
 			}
-			return fmt.Errorf("migration %d failed: %w\n\nNo backup was available. The database may be in an inconsistent state.", mf.version, err)
+			return fmt.Errorf("Database update failed. The app may not work correctly until this is resolved. Please restart the app.")
 		}
 		if !isTest {
 			log.Printf("Migration %d completed", mf.version)
