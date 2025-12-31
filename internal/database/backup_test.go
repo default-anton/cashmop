@@ -19,6 +19,16 @@ func setupTestDB(t *testing.T) {
 func teardownTestDB(t *testing.T) {
 	t.Helper()
 	Close()
+
+	dbPath, err := DatabasePath()
+	if err == nil {
+		os.Remove(dbPath)
+	}
+
+	backupDir, err := EnsureBackupDir()
+	if err == nil {
+		os.RemoveAll(backupDir)
+	}
 }
 
 func TestCreateBackup(t *testing.T) {

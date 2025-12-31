@@ -1197,7 +1197,7 @@ func TestGetLastBackupInfo(t *testing.T) {
 }
 
 func TestValidateBackupFile(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupTestDBWithFile(t)
 	defer teardownTestDB(t, db)
 
 	app := NewApp()
@@ -1246,7 +1246,7 @@ func TestValidateBackupFile(t *testing.T) {
 }
 
 func TestRestoreBackup(t *testing.T) {
-	db := setupTestDB(t)
+	db := setupTestDBWithFile(t)
 	defer teardownTestDB(t, db)
 
 	app := NewApp()

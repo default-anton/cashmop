@@ -58,6 +58,44 @@ func setupTestDB(t *testing.T) *sql.DB {
 	return db
 }
 
+// setupTestDBWithFile initializes a file-based SQLite database for testing
+// Required for tests that use CreateBackup or RestoreBackup, which need a file-based DB
+func setupTestDBWithFile(t *testing.T) *sql.DB {
+	t.Helper()
+
+	t.Setenv("APP_ENV", "test")
+
+	// Clean up pre-restore backup files from previous test runs
+	backupDir, err := database.EnsureBackupDir()
+	if err == nil {
+		files, _ := os.ReadDir(backupDir)
+		for _, f := range files {
+			if strings.HasPrefix(f.Name(), "cashflow_pre_restore_") {
+				_ = os.Remove(filepath.Join(backupDir, f.Name()))
+			}
+		}
+	}
+
+	// Initialize the database package which uses a file-based database in test mode
+	database.InitDB()
+	db := database.DB
+
+	// Clean up test database file and backup directory after test
+	t.Cleanup(func() {
+		database.Close()
+		dbPath, _ := database.DatabasePath()
+		if dbPath != "" {
+			os.Remove(dbPath)
+		}
+		backupDir, _ := database.EnsureBackupDir()
+		if backupDir != "" {
+			os.RemoveAll(backupDir)
+		}
+	})
+
+	return db
+}
+
 // teardownTestDB closes the test database
 func teardownTestDB(t *testing.T, db *sql.DB) {
 	t.Helper()
