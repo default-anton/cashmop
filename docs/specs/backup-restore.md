@@ -196,7 +196,6 @@ internal/database/
 ├── db.go              # EXISTING: add DatabasePath(), EnsureBackupDir()
 ├── migrate.go         # EXISTING: add pre-migration backup
 ├── migrations/        # EXISTING
-└── schema.sql         # EXISTING
 ```
 
 **Frontend**:
