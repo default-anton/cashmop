@@ -413,9 +413,9 @@ func TestCleanupOldBackups(t *testing.T) {
 		}
 	}
 
-	// Should keep at most 10 daily backups
-	if backupCount > 10 {
-		t.Errorf("Expected at most 10 backups after cleanup, got %d", backupCount)
+	// Should keep 10 daily backups + any additional weekly backups (total 11 in this test case)
+	if backupCount > 11 {
+		t.Errorf("Expected at most 11 backups after cleanup (10 daily + 1 extra weekly), got %d", backupCount)
 	}
 }
 

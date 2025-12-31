@@ -6,7 +6,7 @@ check: test vet tidy vulncheck build typescript integration
 
 test:
 	@echo "==> go test ./..."
-	@if OUTPUT=$$(go test ./... 2>&1); then \
+	@if OUTPUT=$$(go test -p 1 ./... 2>&1); then \
 		echo "✓ test OK"; \
 	else \
 		echo "✗ test FAILED"; \
