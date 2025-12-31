@@ -1,3 +1,5 @@
+# All targets: show output only on failure (silent success)
+
 .PHONY: check test vet tidy vulncheck build typescript integration
 
 check: test vet tidy vulncheck build typescript integration
@@ -54,8 +56,20 @@ build:
 
 typescript:
 	@echo "==> typescript check"
-	@cd frontend && npx tsc --noEmit
+	@if OUTPUT=$$(cd frontend && npx tsc --noEmit 2>&1); then \
+		echo "✓ typescript OK"; \
+	else \
+		echo "✗ typescript FAILED"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
 
 integration:
 	@echo "==> integration tests"
-	@./scripts/run-integration-tests.sh
+	@if OUTPUT=$$(./scripts/run-integration-tests.sh 2>&1); then \
+		echo "✓ integration OK"; \
+	else \
+		echo "✗ integration FAILED"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
