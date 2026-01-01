@@ -24,6 +24,13 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 
 - Uncategorized state: Use `NULL` in the database to represent uncategorized items (transactions, rules, etc.). In Go helpers, allow passing `0` to signify `NULL` for foreign keys where appropriate.
 
+## External Links
+
+- All external links MUST use Wails' `BrowserOpenURL` from `wailsjs/runtime/runtime`, not `window.open()` or `<a>` tags with `href`.
+- Import: `import { BrowserOpenURL } from '<path>/wailsjs/runtime/runtime'`
+- Usage: `onClick={() => BrowserOpenURL('https://example.com')}`
+- Reference: `frontend/src/screens/CategorizationLoop/components/WebSearchResults.tsx`
+
 ## Fuzzy Matching
 
 - All fuzzy search uses `internal/fuzzy` (fzf).

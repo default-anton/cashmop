@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Info, Code, Heart, ExternalLink, GitBranch, Shield, Users, Zap, X } from 'lucide-react';
 import { Card, Button, Modal } from '../../components';
+import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime';
 
 interface AboutProps {
   isOpen: boolean;
@@ -28,15 +29,15 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
   }, []);
 
   const handleCheckForUpdates = () => {
-    window.open('https://github.com/default-anton/cashflow/releases', '_blank');
+    BrowserOpenURL('https://github.com/default-anton/cashflow/releases');
   };
 
   const handleViewLicense = () => {
-    window.open('https://www.apache.org/licenses/LICENSE-2.0', '_blank');
+    BrowserOpenURL('https://www.apache.org/licenses/LICENSE-2.0');
   };
 
   const handleViewSource = () => {
-    window.open('https://github.com/default-anton/cashflow', '_blank');
+    BrowserOpenURL('https://github.com/default-anton/cashflow');
   };
 
   return (
@@ -122,15 +123,13 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
                 <p className="font-semibold text-canvas-900">Anton Kuzmenko</p>
                 <p className="text-sm text-canvas-600">Design, Development, & Product</p>
               </div>
-              <a
-                href="https://github.com/default-anton"
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                onClick={() => BrowserOpenURL('https://github.com/default-anton')}
                 className="text-canvas-400 hover:text-brand transition-colors"
                 aria-label="View GitHub profile"
               >
                 <ExternalLink className="w-5 h-5" />
-              </a>
+              </button>
             </div>
 
             <div>
