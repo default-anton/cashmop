@@ -22,7 +22,6 @@ func main() {
 	// Create application menu
 	appMenu := menu.NewMenu()
 	appMenu.Append(menu.AppMenu())
-	appMenu.Append(menu.EditMenu())
 	appMenu.Append(menu.WindowMenu())
 
 	// Add Help menu with About item
