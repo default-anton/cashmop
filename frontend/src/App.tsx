@@ -4,9 +4,12 @@ import CategorizationLoop from './screens/CategorizationLoop/CategorizationLoop'
 import CategoryManager from './screens/CategoryManager/CategoryManager';
 import Analysis from './screens/Analysis/Analysis';
 import Settings from './screens/Settings/Settings';
+import About from './screens/About/About';
 import { ToastProvider } from './contexts/ToastContext';
+import { EventsOn } from '../wailsjs/runtime/runtime';
 
 function App() {
+  const [showAbout, setShowAbout] = useState(false);
   const [screen, setScreen] = useState<'import' | 'categorize' | 'categories' | 'analysis' | 'settings'>('analysis');
   const [hasUncategorized, setHasUncategorized] = useState(false);
   const [hasData, setHasData] = useState(false);
@@ -29,6 +32,11 @@ function App() {
   };
 
   useEffect(() => {
+    // Listen for show-about event from Go
+    const off = EventsOn('show-about', () => {
+      setShowAbout(true);
+    });
+
     checkStatus().then(({ anyData, anyUncategorized }) => {
       if (!anyData) {
         setScreen('import');
@@ -38,6 +46,8 @@ function App() {
         setScreen('analysis');
       }
     });
+
+    return () => off?.();
   }, []);
 
   const handleImportComplete = async () => {
@@ -53,6 +63,13 @@ function App() {
     await checkStatus();
     setScreen('analysis');
   };
+
+  // Render About modal overlay when triggered
+  if (showAbout) {
+    return (
+      <About onClose={() => setShowAbout(false)} />
+    );
+  }
 
   return (
     <ToastProvider>

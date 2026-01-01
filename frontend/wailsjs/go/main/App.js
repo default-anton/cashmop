@@ -126,6 +126,10 @@ export function SelectBackupFile() {
   return window['go']['main']['App']['SelectBackupFile']();
 }
 
+export function ShowAbout() {
+  return window['go']['main']['App']['ShowAbout']();
+}
+
 export function TriggerAutoBackup() {
   return window['go']['main']['App']['TriggerAutoBackup']();
 }

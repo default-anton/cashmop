@@ -65,6 +65,8 @@ export function SearchWeb(arg1:string):Promise<Array<main.WebSearchResult>>;
 
 export function SelectBackupFile():Promise<database.BackupMetadata>;
 
+export function ShowAbout():Promise<void>;
+
 export function TriggerAutoBackup():Promise<string>;
 
 export function ValidateBackupFile(arg1:string):Promise<database.BackupMetadata>;

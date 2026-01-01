@@ -61,6 +61,11 @@ func (a *App) GetVersion() string {
 	return version.Version
 }
 
+// ShowAbout triggers the About dialog in the frontend
+func (a *App) ShowAbout() {
+	runtime.EventsEmit(a.ctx, "show-about")
+}
+
 type TransactionInput struct {
 	Date        string  `json:"date"`
 	Description string  `json:"description"`

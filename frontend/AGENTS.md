@@ -1,6 +1,11 @@
 ## Frontend Rules You MUST Follow
 
 - Check types with `npx tsc --noEmit` in this directory after editing .ts, .tsx files.
+- **Wails Event Pattern** (for Go → Frontend communication):
+    - When Go needs to trigger UI state (e.g., open modal, show dialog), use `runtime.EventsEmit(ctx, "event-name")` in Go
+    - In React, import `EventsOn` from `wailsjs/runtime/runtime` and set up listener: `const off = EventsOn('event-name', callback)`
+    - Always clean up event listeners in useEffect cleanup: `return () => off?.()`
+    - Example: `ShowAbout()` in app.go emits "show-about" event, App.tsx listens and shows About modal
 - **Terminology & Icons**:
     - Use "Owner" (corresponds to `owner_name` in DB).
     - Icons: `User` for Owner, `ArrowUpDown` for sort.
