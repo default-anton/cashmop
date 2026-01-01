@@ -21,6 +21,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/wailsapp/wails/v2/pkg/menu"
+	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"github.com/xuri/excelize/v2"
 )
@@ -64,6 +66,42 @@ func (a *App) GetVersion() string {
 // ShowAbout triggers the About dialog in the frontend
 func (a *App) ShowAbout() {
 	runtime.EventsEmit(a.ctx, "show-about")
+}
+
+// makeMenu creates the application menu
+func (a *App) makeMenu() *menu.Menu {
+	appMenu := menu.NewMenu()
+
+	if stdlibRuntime.GOOS == "darwin" {
+		// On macOS, the first menu added is the "Application Menu" (named after your app)
+		applicationMenu := appMenu.AddSubmenu("Cashflow Tracker")
+
+		applicationMenu.AddText("About Cashflow Tracker", nil, func(_ *menu.CallbackData) {
+			a.ShowAbout()
+		})
+
+		applicationMenu.AddSeparator()
+		applicationMenu.AddText("Services", nil, nil)
+		applicationMenu.AddSeparator()
+		applicationMenu.AddText("Hide Cashflow Tracker", keys.CmdOrCtrl("h"), func(_ *menu.CallbackData) {
+			runtime.WindowHide(a.ctx)
+		})
+		applicationMenu.AddText("Quit", keys.CmdOrCtrl("q"), func(_ *menu.CallbackData) {
+			runtime.Quit(a.ctx)
+		})
+	}
+
+	appMenu.Append(menu.WindowMenu())
+
+	// Windows/Linux usually put "About" under a "Help" menu
+	if stdlibRuntime.GOOS != "darwin" {
+		helpMenu := appMenu.AddSubmenu("Help")
+		helpMenu.AddText("About Cashflow Tracker", nil, func(_ *menu.CallbackData) {
+			a.ShowAbout()
+		})
+	}
+
+	return appMenu
 }
 
 type TransactionInput struct {
