@@ -97,10 +97,10 @@ function App() {
           <button
             onClick={() => setScreen('categorize')}
             aria-label="Navigate to Categorize"
-            className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'categorize' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all whitespace-nowrap ${screen === 'categorize' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
               }`}
           >
-            Categorize {hasUncategorized && <span className="inline-block w-2 h-2 bg-finance-expense rounded-full ml-1" />}
+            Categorize {hasUncategorized && <span className="w-2 h-2 bg-finance-expense rounded-full" />}
           </button>
         )}
         <button
