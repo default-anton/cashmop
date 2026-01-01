@@ -9,7 +9,6 @@ import (
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/menu"
-	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
@@ -28,7 +27,7 @@ func main() {
 
 	// Add Help menu with About item
 	helpMenu := appMenu.AddSubmenu("Help")
-	helpMenu.AddText("About Cashflow Tracker", keys.CmdOrCtrl("a"), func(_ *menu.CallbackData) {
+	helpMenu.AddText("About Cashflow Tracker", nil, func(_ *menu.CallbackData) {
 		app.ShowAbout()
 	})
 

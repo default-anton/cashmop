@@ -67,7 +67,7 @@ function App() {
   // Render About modal overlay when triggered
   if (showAbout) {
     return (
-      <About onClose={() => setShowAbout(false)} />
+      <About isOpen={showAbout} onClose={() => setShowAbout(false)} />
     );
   }
 

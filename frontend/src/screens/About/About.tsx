@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Info, Code, Heart, ExternalLink, GitBranch, Shield, Users, Zap, X } from 'lucide-react';
-import { Card, Button } from '../../components';
+import { Card, Button, Modal } from '../../components';
 
 interface AboutProps {
-  onClose?: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-const About: React.FC<AboutProps> = ({ onClose }) => {
+const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
   const [version, setVersion] = useState<string>('');
   const [loading, setLoading] = useState(true);
+
+  const year = new Date().getFullYear();
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -22,49 +25,31 @@ const About: React.FC<AboutProps> = ({ onClose }) => {
       }
     };
     fetchVersion();
-
-    // Handle ESC key to close
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && onClose) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  }, []);
 
   const handleCheckForUpdates = () => {
-    // Open GitHub releases page
-    window.open('https://github.com/1917237/cashflow/releases', '_blank');
+    window.open('https://github.com/default-anton/cashflow/releases', '_blank');
   };
 
   const handleViewLicense = () => {
-    // Open LICENSE file or the Apache License page
     window.open('https://www.apache.org/licenses/LICENSE-2.0', '_blank');
   };
 
   const handleViewSource = () => {
-    window.open('https://github.com/1917237/cashflow', '_blank');
+    window.open('https://github.com/default-anton/cashflow', '_blank');
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[100] min-h-screen bg-black/60 backdrop-blur-sm flex items-center justify-center p-8 animate-snap-in"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && onClose) onClose();
-      }}
-    >
-      <div className="max-w-2xl w-full bg-gradient-to-br from-canvas-50 to-canvas-100 rounded-3xl shadow-glass relative overflow-hidden">
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-canvas-400 hover:text-canvas-800 hover:bg-canvas-200/50 rounded-full transition-all z-10"
-            aria-label="Close"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        )}
+    <Modal isOpen={isOpen} onClose={onClose} variant="full" size="full">
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 p-2 text-canvas-400 hover:text-canvas-800 hover:bg-canvas-200/50 rounded-full transition-all z-10"
+        aria-label="Close"
+      >
+        <X className="w-6 h-6" />
+      </button>
 
+      <div className="max-h-[80vh] overflow-y-auto custom-scrollbar">
         {/* Header */}
         <div className="text-center pt-8 pb-6 px-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-brand to-brand/70 text-white rounded-3xl shadow-brand-glow mb-6">
@@ -85,8 +70,10 @@ const About: React.FC<AboutProps> = ({ onClose }) => {
                 <p className="text-xs uppercase text-canvas-500 font-bold tracking-wider mb-1">Version</p>
                 {loading ? (
                   <p className="text-canvas-800 font-semibold text-lg">Loading...</p>
-                ) : (
+                ) : version ? (
                   <p className="text-canvas-900 font-bold text-lg">{version}</p>
+                ) : (
+                  <p className="text-canvas-600 font-semibold text-lg">Unknown</p>
                 )}
               </div>
             </div>
@@ -136,7 +123,7 @@ const About: React.FC<AboutProps> = ({ onClose }) => {
                 <p className="text-sm text-canvas-600">Design, Development, & Product</p>
               </div>
               <a
-                href="https://github.com/1917237"
+                href="https://github.com/default-anton"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-canvas-400 hover:text-brand transition-colors"
@@ -202,11 +189,11 @@ const About: React.FC<AboutProps> = ({ onClose }) => {
           <p className="text-sm text-canvas-500 flex items-center justify-center gap-2">
             Made with <Heart className="w-4 h-4 text-finance-expense fill-finance-expense" /> by Anton Kuzmenko
           </p>
-          <p className="text-xs text-canvas-400 mt-1">© 2026 Anton Kuzmenko. All rights reserved.</p>
+          <p className="text-xs text-canvas-400 mt-1">© {year} Anton Kuzmenko. All rights reserved.</p>
           <p className="text-xs text-canvas-300 mt-2">Press ESC or click outside to close</p>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
 
