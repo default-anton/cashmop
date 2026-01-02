@@ -50,6 +50,36 @@ function App() {
     return () => off?.();
   }, []);
 
+  // Keyboard shortcuts for screen navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key) {
+        case '1':
+          if (hasData) setScreen('analysis');
+          break;
+        case '2':
+          setScreen('import');
+          break;
+        case '3':
+          if (hasData) setScreen('categorize');
+          break;
+        case '4':
+          setScreen('categories');
+          break;
+        case '5':
+          setScreen('settings');
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [hasData]);
+
   const handleImportComplete = async () => {
     const { anyUncategorized } = await checkStatus();
     if (anyUncategorized) {
