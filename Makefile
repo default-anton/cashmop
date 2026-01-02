@@ -1,8 +1,11 @@
 # All targets: show output only on failure (silent success)
 
-.PHONY: check test vet tidy vulncheck build typescript integration
+.PHONY: check dev test vet tidy vulncheck build typescript integration
 
 check: test vet tidy vulncheck build typescript integration
+
+dev:
+	@wails dev -nogorebuild
 
 test:
 	@echo "==> go test ./..."

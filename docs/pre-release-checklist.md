@@ -41,9 +41,7 @@ This checklist covers all items that should be addressed before releasing to cus
 ## 🟢 LOW
 
 ### 1. Polish
-- [ ] **Add about screen** - Show version, license, and credits (version available via `GetVersion()` binding).
 - [ ] **Add check for updates** - Notify users when new versions are available.
-- [ ] **Add keyboard shortcuts** - Beyond Cmd+K for web search, add shortcuts for common actions (import, export, settings).
 
 ### 2. Documentation
 - [ ] **Add user guide** - No end-user documentation exists.
