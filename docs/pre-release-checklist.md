@@ -30,10 +30,7 @@ This checklist covers all items that should be addressed before releasing to cus
 
 ## 🟡 MEDIUM
 
-### 1. User Experience
-- [ ] **Add undo functionality** - No way to undo accidental categorization or deletion.
-
-### 2. Test Coverage
+### 1. Test Coverage
 - [ ] **Test migration failures** - Add tests for migration rollback scenarios when schema updates fail.
 
 ---
@@ -46,9 +43,6 @@ This checklist covers all items that should be addressed before releasing to cus
 ### 2. Documentation
 - [ ] **Add user guide** - No end-user documentation exists.
 - [ ] **Add architecture overview** - Document architecture for maintainers.
-
-### 3. Code Quality
-- [ ] **Implement auto-categorization** - `ImportFlow.tsx:288` has TODO comment for automatic categorization during import.
 
 ---
 
