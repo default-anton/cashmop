@@ -22,3 +22,15 @@ uncategorized_amazon:
   description: "Amazon.ca"
   amount: -45.00
   category: null
+uncategorized_netflix:
+  account: "Credit Card"
+  date: "2023-10-06"
+  description: "Netflix"
+  amount: -15.99
+  category: null
+uncategorized_starbucks:
+  account: "Credit Card"
+  date: "2023-10-07"
+  description: "Starbucks"
+  amount: -6.50
+  category: null

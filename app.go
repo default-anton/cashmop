@@ -113,6 +113,16 @@ type TransactionInput struct {
 	Owner       string  `json:"owner"`   // Name of the owner
 }
 
+type CategorizeResult struct {
+	TransactionID int64   `json:"transaction_id"`
+	AffectedIds    []int64 `json:"affected_ids"`
+}
+
+type RuleResult struct {
+	RuleID       int64   `json:"rule_id"`
+	AffectedIds  []int64 `json:"affected_ids"`
+}
+
 func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	var txModels []database.TransactionModel
 
@@ -206,15 +216,15 @@ func (a *App) GetUncategorizedTransactions() ([]database.TransactionModel, error
 }
 
 // CategorizeTransaction updates a single transaction's category
-func (a *App) CategorizeTransaction(id int64, categoryName string) error {
+func (a *App) CategorizeTransaction(id int64, categoryName string) (*CategorizeResult, error) {
 	if strings.TrimSpace(categoryName) == "" {
-		return database.UpdateTransactionCategory(id, 0)
+		return &CategorizeResult{TransactionID: id, AffectedIds: []int64{id}}, database.UpdateTransactionCategory(id, 0)
 	}
 	catID, err := database.GetOrCreateCategory(categoryName)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return database.UpdateTransactionCategory(id, catID)
+	return &CategorizeResult{TransactionID: id, AffectedIds: []int64{id}}, database.UpdateTransactionCategory(id, catID)
 }
 
 // RenameCategory renames an existing category
@@ -223,21 +233,29 @@ func (a *App) RenameCategory(id int64, newName string) error {
 }
 
 // SaveCategorizationRule saves a new rule and applies it to existing uncategorized transactions
-func (a *App) SaveCategorizationRule(rule database.CategorizationRule) (int64, error) {
+func (a *App) SaveCategorizationRule(rule database.CategorizationRule) (*RuleResult, error) {
 	if rule.CategoryID == 0 && rule.CategoryName != "" {
 		id, err := database.GetOrCreateCategory(rule.CategoryName)
 		if err != nil {
-			return 0, err
+			return nil, err
 		}
 		rule.CategoryID = id
 	}
 	id, err := database.SaveRule(rule)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	// Auto-apply rule immediately
-	_, _ = database.ApplyRule(id)
-	return id, nil
+	// Auto-apply rule immediately and get affected transaction IDs
+	_, affectedIds, err := database.ApplyRuleWithIds(id)
+	if err != nil {
+		return nil, err
+	}
+	return &RuleResult{RuleID: id, AffectedIds: affectedIds}, nil
+}
+
+// UndoCategorizationRule undoes a rule-based categorization by deleting the rule and reverting affected transactions
+func (a *App) UndoCategorizationRule(ruleId int64, transactionIds []int64) error {
+	return database.UndoRule(ruleId, transactionIds)
 }
 
 // GetCategorizationRulesCount returns the number of existing categorization rules

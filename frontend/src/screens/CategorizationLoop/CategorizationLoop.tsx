@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { database } from '../../../wailsjs/go/models';
+import { useToast } from '../../contexts/ToastContext';
 import {
   InboxZero,
   ProgressHeader,
@@ -7,6 +8,7 @@ import {
   RuleEditor,
   CategoryInput,
   WebSearchResults,
+  UndoToast,
 } from './components';
 
 interface Transaction {
@@ -20,6 +22,17 @@ interface Transaction {
   account_name: string;
   owner_id: number | null;
   owner_name: string;
+}
+
+type UndoActionType = 'single' | 'rule' | 'skip' | null;
+
+interface UndoState {
+  type: UndoActionType;
+  transactionId: number;
+  ruleId?: number;
+  affectedTransactionIds?: number[];
+  categoryName?: string;
+  matchValue?: string;
 }
 
 interface Category {
@@ -51,6 +64,14 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [matchingTransactions, setMatchingTransactions] = useState<Transaction[]>([]);
   const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
   const [hasRules, setHasRules] = useState<boolean | null>(null);
+
+  // Undo/Redo state
+  const [undoStack, setUndoStack] = useState<UndoState[]>([]);
+  const [redoStack, setRedoStack] = useState<UndoState[]>([]);
+  const [showUndoToast, setShowUndoToast] = useState(false);
+
+  // Toast notifications
+  const { showToast } = useToast();
 
   // Web search state
   const [webSearchResults, setWebSearchResults] = useState<Array<{
@@ -217,20 +238,37 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     fetchMatching();
   }, [debouncedRule, amountFilter, currentTx?.id]);
 
-  // Keyboard shortcut for web search (Cmd+K / Ctrl+K)
+  // Keyboard shortcuts for web search (Cmd+K / Ctrl+K) and undo/redo (Cmd+Z / Cmd+Shift+Z)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Web search
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         if (currentTx) {
           handleWebSearch();
         }
       }
+
+      // Undo: Cmd+Z / Ctrl+Z
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        if (undoStack.length > 0) {
+          handleUndo();
+        }
+      }
+
+      // Redo: Cmd+Shift+Z / Ctrl+Shift+Z
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
+        e.preventDefault();
+        if (redoStack.length > 0) {
+          handleRedo();
+        }
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentTx]);
+  }, [currentTx, undoStack, redoStack]);
 
   const handleWebSearch = async () => {
     if (!currentTx) return;
@@ -254,6 +292,170 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     setWebSearchResults(null);
     setWebSearchError(null);
   };
+
+  const handleUndo = async () => {
+    if (undoStack.length === 0) return;
+
+    const action = undoStack[undoStack.length - 1];
+
+    try {
+      let successMessage = '';
+
+      switch (action.type) {
+        case 'single':
+          await (window as any).go.main.App.CategorizeTransaction(action.transactionId, '');
+          successMessage = 'Undo complete - transaction uncategorized';
+          break;
+        case 'rule':
+          await (window as any).go.main.App.UndoCategorizationRule(
+            action.ruleId || 0,
+            action.affectedTransactionIds || []
+          );
+          const count = (action.affectedTransactionIds || []).length;
+          successMessage = `Undo complete - ${count} transaction${count !== 1 ? 's' : ''} reverted, rule removed`;
+          break;
+        case 'skip':
+          setSkippedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(action.transactionId);
+            return next;
+          });
+          successMessage = 'Undo complete - transaction back in queue';
+          break;
+      }
+
+      // Move action from undo stack to redo stack
+      setUndoStack((prev) => prev.slice(0, -1));
+      setRedoStack((prev) => [...prev, action]);
+
+      const updated = await fetchTransactions();
+      if (updated.length === 0) {
+        setShowUndoToast(false);
+        if (onFinish) onFinish();
+      } else {
+        // Set current ID to the undone transaction (it should now be uncategorized)
+        // Fall back to first transaction if the undone one isn't in the list
+        const undoneTxExists = updated.some(t => t.id === action.transactionId);
+        setCurrentTxId(undoneTxExists ? action.transactionId : updated[0].id);
+      }
+
+      setCategoryInput('');
+      setSuggestions([]);
+      setSelectionRule(null);
+      setAmountFilter({ operator: 'none', value1: '', value2: '' });
+      setWebSearchResults(null);
+      setWebSearchError(null);
+
+      setShowUndoToast(true);
+      showToast(successMessage, 'success', 2000);
+    } catch (e) {
+      console.error('Undo failed', e);
+    }
+  };
+
+  const handleRedo = async () => {
+    if (redoStack.length === 0) return;
+
+    const action = redoStack[redoStack.length - 1];
+
+    try {
+      let successMessage = '';
+
+      switch (action.type) {
+        case 'single':
+          await (window as any).go.main.App.CategorizeTransaction(action.transactionId, action.categoryName || '');
+          successMessage = 'Redo complete - transaction categorized';
+          break;
+        case 'rule':
+          // Re-create and re-apply the rule
+          const rule = new database.CategorizationRule();
+          rule.match_type = 'contains';
+          rule.match_value = action.matchValue || '';
+          rule.category_id = 0;
+          rule.category_name = action.categoryName || '';
+
+          const ruleResult = await (window as any).go.main.App.SaveCategorizationRule(rule);
+          successMessage = `Redo complete - rule applied to ${(action.affectedTransactionIds || []).length} transaction${(action.affectedTransactionIds || []).length !== 1 ? 's' : ''}`;
+          break;
+        case 'skip':
+          setSkippedIds((prev) => new Set([...prev, action.transactionId]));
+          successMessage = 'Redo complete - transaction skipped';
+          break;
+      }
+
+      // Move action from redo stack back to undo stack
+      setRedoStack((prev) => prev.slice(0, -1));
+      setUndoStack((prev) => [...prev, action]);
+
+      const updated = await fetchTransactions();
+      if (updated.length === 0) {
+        setShowUndoToast(false);
+        if (onFinish) onFinish();
+      } else {
+        // Navigate to next transaction after re-applying the categorization
+        const currentIdx = updated.findIndex(t => t.id === action.transactionId);
+        if (currentIdx !== -1) {
+          // Transaction still exists, move to next
+          goToNext(updated, action.transactionId, false);
+        } else {
+          // Transaction was categorized and no longer in uncategorized list
+          setCurrentTxId(updated[0].id);
+        }
+      }
+
+      setCategoryInput('');
+      setSuggestions([]);
+      setSelectionRule(null);
+      setAmountFilter({ operator: 'none', value1: '', value2: '' });
+      setWebSearchResults(null);
+      setWebSearchError(null);
+
+      setShowUndoToast(true);
+      showToast(successMessage, 'success', 2000);
+    } catch (e) {
+      console.error('Redo failed', e);
+    }
+  };
+
+  const getUndoMessage = useCallback((): string => {
+    // If we have redo actions, show redo message
+    if (redoStack.length > 0) {
+      const action = redoStack[redoStack.length - 1];
+      switch (action.type) {
+        case 'single':
+          return `Redo ${action.categoryName || 'categorization'}`;
+        case 'rule':
+          const count = (action.affectedTransactionIds || []).length;
+          if (count === 1) {
+            return `Redo rule: ${action.matchValue} → ${action.categoryName || 'category'}`;
+          }
+          return `Redo rule: ${action.matchValue} → ${action.categoryName || 'category'} (${count} transactions)`;
+        case 'skip':
+          return 'Redo skip';
+        default:
+          return '';
+      }
+    }
+
+    // Otherwise show undo message
+    const action = undoStack.length > 0 ? undoStack[undoStack.length - 1] : null;
+    if (!action) return '';
+
+    switch (action.type) {
+      case 'single':
+        return `Undo ${action.categoryName || 'categorization'}`;
+      case 'rule':
+        const count = (action.affectedTransactionIds || []).length;
+        if (count === 1) {
+          return `Undo rule: ${action.matchValue} → ${action.categoryName || 'category'}`;
+        }
+        return `Undo rule: ${action.matchValue} → ${action.categoryName || 'category'} (${count} transactions)`;
+      case 'skip':
+        return 'Undo skip';
+      default:
+        return '';
+    }
+  }, [undoStack, redoStack]);
 
   const handleCategorize = async (categoryName: string, categoryId?: number) => {
     if (!currentTxId) return;
@@ -299,12 +501,31 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           }
         }
 
-        await (window as any).go.main.App.SaveCategorizationRule(rule);
+        const ruleResult = await (window as any).go.main.App.SaveCategorizationRule(rule);
+        const newAction: UndoState = {
+          type: 'rule',
+          transactionId: oldId,
+          ruleId: ruleResult.rule_id,
+          affectedTransactionIds: ruleResult.affected_ids,
+          categoryName,
+          matchValue: selectionRule.text,
+        };
+        setUndoStack((prev) => [...prev, newAction]);
+        setRedoStack([]);
+        setShowUndoToast(true);
         setSelectionRule(null);
         setAmountFilter({ operator: 'none', value1: '', value2: '' });
         setHasRules(true); // Don't show hint again after first rule is created
       } else {
         await (window as any).go.main.App.CategorizeTransaction(oldId, categoryName);
+        const newAction: UndoState = {
+          type: 'single',
+          transactionId: oldId,
+          categoryName,
+        };
+        setUndoStack((prev) => [...prev, newAction]);
+        setRedoStack([]);
+        setShowUndoToast(true);
       }
 
       const updated = await fetchTransactions();
@@ -324,6 +545,15 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   };
 
   const handleSkip = () => {
+    if (currentTxId !== null) {
+      const newAction: UndoState = {
+        type: 'skip',
+        transactionId: currentTxId,
+      };
+      setUndoStack((prev) => [...prev, newAction]);
+      setRedoStack([]);
+      setShowUndoToast(true);
+    }
     goToNext(transactions, currentTxId, true);
     setCategoryInput('');
     setSuggestions([]);
@@ -440,6 +670,16 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           isRuleMode={!!selectionRule}
         />
       </div>
+
+      <UndoToast
+        show={showUndoToast}
+        message={getUndoMessage()}
+        canUndo={undoStack.length > 0}
+        canRedo={redoStack.length > 0}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onDismiss={() => setShowUndoToast(false)}
+      />
     </div>
   );
 };

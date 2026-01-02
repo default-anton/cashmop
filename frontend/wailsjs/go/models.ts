@@ -130,6 +130,20 @@ export namespace database {
 
 export namespace main {
 	
+	export class CategorizeResult {
+	    transaction_id: number;
+	    affected_ids: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new CategorizeResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.transaction_id = source["transaction_id"];
+	        this.affected_ids = source["affected_ids"];
+	    }
+	}
 	export class ExcelData {
 	    headers: string[];
 	    rows: string[][];
@@ -142,6 +156,20 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.headers = source["headers"];
 	        this.rows = source["rows"];
+	    }
+	}
+	export class RuleResult {
+	    rule_id: number;
+	    affected_ids: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new RuleResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rule_id = source["rule_id"];
+	        this.affected_ids = source["affected_ids"];
 	    }
 	}
 	export class TransactionInput {

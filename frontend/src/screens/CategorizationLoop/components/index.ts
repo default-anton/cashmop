@@ -4,3 +4,4 @@ export * from './TransactionCard';
 export * from './RuleEditor';
 export * from './CategoryInput';
 export * from './WebSearchResults';
+export { default as UndoToast } from './UndoToast';

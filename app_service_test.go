@@ -252,9 +252,15 @@ func TestCategorizeTransaction(t *testing.T) {
 	tx := createTestTransaction(t, accountID, nil, "2024-01-01", "Test", 100.00, nil)
 
 	t.Run("categorize with new category", func(t *testing.T) {
-		err := app.CategorizeTransaction(tx.ID, "Groceries")
+		result, err := app.CategorizeTransaction(tx.ID, "Groceries")
 		if err != nil {
 			t.Fatalf("CategorizeTransaction failed: %v", err)
+		}
+		if result == nil {
+			t.Fatal("Expected non-nil result")
+		}
+		if result.TransactionID != tx.ID {
+			t.Errorf("Expected transaction ID %d, got %d", tx.ID, result.TransactionID)
 		}
 
 		// Verify transaction is now categorized
@@ -272,7 +278,7 @@ func TestCategorizeTransaction(t *testing.T) {
 		tx2 := createTestTransaction(t, accountID, nil, "2024-01-02", "Test2", 50.00, nil)
 		createTestCategory(t, "Transportation")
 
-		err := app.CategorizeTransaction(tx2.ID, "Transportation")
+		_, err := app.CategorizeTransaction(tx2.ID, "Transportation")
 		if err != nil {
 			t.Fatalf("CategorizeTransaction failed: %v", err)
 		}
@@ -294,7 +300,7 @@ func TestCategorizeTransaction(t *testing.T) {
 		}
 
 		// Now uncategorize
-		err = app.CategorizeTransaction(tx3.ID, "")
+		_, err = app.CategorizeTransaction(tx3.ID, "")
 		if err != nil {
 			t.Fatalf("CategorizeTransaction with empty string failed: %v", err)
 		}
@@ -629,12 +635,15 @@ func TestSaveCategorizationRule(t *testing.T) {
 			CategoryID: catID,
 		}
 
-		id, err := app.SaveCategorizationRule(rule)
+		result, err := app.SaveCategorizationRule(rule)
 		if err != nil {
 			t.Fatalf("SaveCategorizationRule failed: %v", err)
 		}
-		if id <= 0 {
-			t.Errorf("Expected positive rule ID, got %d", id)
+		if result == nil {
+			t.Fatal("Expected non-nil result")
+		}
+		if result.RuleID <= 0 {
+			t.Errorf("Expected positive rule ID, got %d", result.RuleID)
 		}
 
 		// Check that matching transactions were categorized
@@ -676,6 +685,183 @@ func TestSaveCategorizationRule(t *testing.T) {
 
 		if uncategorizedCount != 0 {
 			t.Errorf("Expected 0 uncategorized transactions, got %d", uncategorizedCount)
+		}
+	})
+}
+
+func TestUndoCategorizationRule(t *testing.T) {
+	db := setupTestDB(t)
+	defer teardownTestDB(t, db)
+
+	app := NewApp()
+	accountID := createTestAccount(t, "TestAccount")
+	gasCatID := createTestCategory(t, "Gas")
+	groceryCatID := createTestCategory(t, "Groceries")
+
+	t.Run("undo reverts only affected transactions", func(t *testing.T) {
+		tx1 := createTestTransaction(t, accountID, nil, "2024-01-01", "Gas Station", 50.00, nil)
+		_ = createTestTransaction(t, accountID, nil, "2024-01-02", "Grocery Store", 100.00, nil)
+		tx3 := createTestTransaction(t, accountID, nil, "2024-01-03", "Another Gas", 30.00, nil)
+
+		tx4 := createTestTransaction(t, accountID, nil, "2024-01-04", "Grocery Market", 75.00, nil)
+
+		if err := database.UpdateTransactionCategory(tx4.ID, groceryCatID); err != nil {
+			t.Fatalf("Failed to categorize tx4: %v", err)
+		}
+
+		rule := database.CategorizationRule{
+			MatchType:  "contains",
+			MatchValue: "gas",
+			CategoryID: gasCatID,
+		}
+
+		result, err := app.SaveCategorizationRule(rule)
+		if err != nil {
+			t.Fatalf("SaveCategorizationRule failed: %v", err)
+		}
+		if result == nil {
+			t.Fatal("Expected non-nil result")
+		}
+
+		expectedAffectedCount := 2
+		if len(result.AffectedIds) != expectedAffectedCount {
+			t.Errorf("Expected %d affected transactions, got %d", expectedAffectedCount, len(result.AffectedIds))
+		}
+
+		for _, id := range result.AffectedIds {
+			if id != tx1.ID && id != tx3.ID {
+				t.Errorf("Unexpected affected transaction ID: %d", id)
+			}
+		}
+
+		var tx4CatID int64
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx4.ID).Scan(&tx4CatID)
+		if err != nil {
+			t.Fatalf("Failed to get tx4 category: %v", err)
+		}
+		if tx4CatID != groceryCatID {
+			t.Errorf("tx4 should still be categorized as Groceries, got category_id %d", tx4CatID)
+		}
+
+		err = app.UndoCategorizationRule(result.RuleID, result.AffectedIds)
+		if err != nil {
+			t.Fatalf("UndoCategorizationRule failed: %v", err)
+		}
+
+		var tx1CatID sql.NullInt64
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx1.ID).Scan(&tx1CatID)
+		if err != nil {
+			t.Fatalf("Failed to get tx1 category after undo: %v", err)
+		}
+		if tx1CatID.Valid {
+			t.Errorf("tx1 should be uncategorized after undo, got category_id %d", tx1CatID.Int64)
+		}
+
+		var tx3CatID sql.NullInt64
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx3.ID).Scan(&tx3CatID)
+		if err != nil {
+			t.Fatalf("Failed to get tx3 category after undo: %v", err)
+		}
+		if tx3CatID.Valid {
+			t.Errorf("tx3 should be uncategorized after undo, got category_id %d", tx3CatID.Int64)
+		}
+
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx4.ID).Scan(&tx4CatID)
+		if err != nil {
+			t.Fatalf("Failed to get tx4 category after undo: %v", err)
+		}
+		if tx4CatID != groceryCatID {
+			t.Errorf("tx4 should still be categorized as Groceries after undo, got category_id %d", tx4CatID)
+		}
+
+		var ruleExists bool
+		err = database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM categorization_rules WHERE id = ?)", result.RuleID).Scan(&ruleExists)
+		if err != nil {
+			t.Fatalf("Failed to check rule existence: %v", err)
+		}
+		if ruleExists {
+			t.Error("Rule should be deleted after undo")
+		}
+	})
+
+	t.Run("undo with amount filter", func(t *testing.T) {
+		tx1 := createTestTransaction(t, accountID, nil, "2024-01-05", "Big Grocery", 100.00, nil)
+		tx2 := createTestTransaction(t, accountID, nil, "2024-01-06", "Small Grocery", 10.00, nil)
+		tx3 := createTestTransaction(t, accountID, nil, "2024-01-07", "Huge Grocery", 150.00, nil)
+
+		minAmount := 50.00
+		rule := database.CategorizationRule{
+			MatchType:  "contains",
+			MatchValue: "grocery",
+			CategoryID: groceryCatID,
+			AmountMin:  &minAmount,
+		}
+
+		result, err := app.SaveCategorizationRule(rule)
+		if err != nil {
+			t.Fatalf("SaveCategorizationRule failed: %v", err)
+		}
+
+		var tx2CatID sql.NullInt64
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx2.ID).Scan(&tx2CatID)
+		if err != nil {
+			t.Fatalf("Failed to get tx2 category: %v", err)
+		}
+		if tx2CatID.Valid {
+			t.Errorf("tx2 (amount $10) should not be categorized by rule with min_amount $50")
+		}
+
+		var tx1CatID sql.NullInt64
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx1.ID).Scan(&tx1CatID)
+		if err != nil {
+			t.Fatalf("Failed to get tx1 category: %v", err)
+		}
+		if !tx1CatID.Valid {
+			t.Errorf("tx1 (amount $100) should be categorized by rule")
+		}
+
+		var tx3CatID sql.NullInt64
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx3.ID).Scan(&tx3CatID)
+		if err != nil {
+			t.Fatalf("Failed to get tx3 category: %v", err)
+		}
+		if !tx3CatID.Valid {
+			t.Errorf("tx3 (amount $150) should be categorized by rule")
+		}
+
+		affectedIdsMap := make(map[int64]bool)
+		for _, id := range result.AffectedIds {
+			affectedIdsMap[id] = true
+		}
+		if !affectedIdsMap[tx1.ID] {
+			t.Errorf("tx1 ID should be in affectedIds")
+		}
+		if !affectedIdsMap[tx3.ID] {
+			t.Errorf("tx3 ID should be in affectedIds")
+		}
+		if affectedIdsMap[tx2.ID] {
+			t.Errorf("tx2 ID should not be in affectedIds")
+		}
+
+		err = app.UndoCategorizationRule(result.RuleID, result.AffectedIds)
+		if err != nil {
+			t.Fatalf("UndoCategorizationRule failed: %v", err)
+		}
+
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx1.ID).Scan(&tx1CatID)
+		if err != nil {
+			t.Fatalf("Failed to get tx1 category after undo: %v", err)
+		}
+		if tx1CatID.Valid {
+			t.Errorf("tx1 should be uncategorized after undo")
+		}
+
+		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx3.ID).Scan(&tx3CatID)
+		if err != nil {
+			t.Fatalf("Failed to get tx3 category after undo: %v", err)
+		}
+		if tx3CatID.Valid {
+			t.Errorf("tx3 should be uncategorized after undo")
 		}
 	})
 }

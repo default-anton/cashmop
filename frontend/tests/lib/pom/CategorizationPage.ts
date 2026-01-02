@@ -5,12 +5,22 @@ export class CategorizationPage {
   readonly categoryInput: Locator;
   readonly categorizeButton: Locator;
   readonly searchWebButton: Locator;
+  readonly skipButton: Locator;
+  readonly undoToast: Locator;
+  readonly undoButton: Locator;
+  readonly redoButton: Locator;
+  readonly dismissButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
     this.categoryInput = page.getByLabel('Category', { exact: true });
     this.categorizeButton = page.getByTestId('categorize-submit-button');
     this.searchWebButton = page.getByRole('button', { name: /search web for context/i });
+    this.skipButton = page.getByRole('button', { name: /skip/i });
+    this.undoToast = this.page.getByTestId('undo-toast');
+    this.undoButton = this.undoToast.getByRole('button', { name: 'Undo' });
+    this.redoButton = this.undoToast.getByRole('button', { name: 'Redo' });
+    this.dismissButton = this.undoToast.getByLabel('Dismiss');
   }
 
   async goto() {
@@ -25,6 +35,12 @@ export class CategorizationPage {
     await this.categoryInput.waitFor({ state: 'visible', timeout: 10000 });
     await this.categoryInput.fill(categoryName);
     await this.categorizeButton.click();
+    // Wait a bit for async operations to complete
+    await this.page.waitForTimeout(100);
+  }
+
+  async skip() {
+    await this.skipButton.click();
   }
 
   async triggerWebSearch() {
@@ -41,5 +57,24 @@ export class CategorizationPage {
 
   async expectWebSearchResult(title: string) {
     await expect(this.page.getByRole('link', { name: title })).toBeVisible({ timeout: 15000 });
+  }
+
+  async expectUndoToast(message?: string) {
+    await expect(this.undoToast).toBeVisible({ timeout: 5000 });
+    if (message) {
+      await expect(this.undoToast.getByText(new RegExp(message, 'i'))).toBeVisible();
+    }
+  }
+
+  async expectNoUndoToast() {
+    await expect(this.undoToast).not.toBeVisible();
+  }
+
+  async clickUndo() {
+    await this.undoButton.click();
+  }
+
+  async dismissUndo() {
+    await this.dismissButton.click();
   }
 }

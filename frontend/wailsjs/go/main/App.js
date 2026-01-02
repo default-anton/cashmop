@@ -134,6 +134,10 @@ export function TriggerAutoBackup() {
   return window['go']['main']['App']['TriggerAutoBackup']();
 }
 
+export function UndoCategorizationRule(arg1, arg2) {
+  return window['go']['main']['App']['UndoCategorizationRule'](arg1, arg2);
+}
+
 export function ValidateBackupFile(arg1) {
   return window['go']['main']['App']['ValidateBackupFile'](arg1);
 }

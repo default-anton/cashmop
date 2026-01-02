@@ -375,7 +375,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
           date: dateObj.toISOString().split('T')[0], // YYYY-MM-DD
           description: desc,
           amount: amount,
-          category: '', // TODO: auto-categorize later
+          category: '',
           account: accountIdx !== -1 ? row[accountIdx] : mapping.account,
           owner: ownerIdx !== -1 ? row[ownerIdx] : (mapping.defaultOwner || 'Unassigned'),
         });
