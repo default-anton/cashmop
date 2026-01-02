@@ -16,6 +16,11 @@ cleanup() {
     kill "$PID" || true
     rm "$PID_FILE"
   fi
+  # Clean up test database
+  if [ -f "$ROOT_DIR/cashflow_test.db" ]; then
+    echo "Removing test database..."
+    rm "$ROOT_DIR/cashflow_test.db"
+  fi
 }
 trap cleanup EXIT
 

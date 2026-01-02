@@ -20,6 +20,9 @@ import (
 func setupTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
+	// Ensure any previous connection is closed to avoid leaks and locks
+	database.Close()
+
 	// Set test environment to prevent backup file creation
 	t.Setenv("APP_ENV", "test")
 
@@ -63,6 +66,9 @@ func setupTestDB(t *testing.T) *sql.DB {
 func setupTestDBWithFile(t *testing.T) *sql.DB {
 	t.Helper()
 
+	// Ensure any previous connection is closed to avoid leaks and locks
+	database.Close()
+
 	t.Setenv("APP_ENV", "test")
 
 	// Clean up pre-restore backup files from previous test runs
@@ -85,7 +91,9 @@ func setupTestDBWithFile(t *testing.T) *sql.DB {
 		database.Close()
 		dbPath, _ := database.DatabasePath()
 		if dbPath != "" {
-			os.Remove(dbPath)
+			if err := os.Remove(dbPath); err != nil && !os.IsNotExist(err) {
+				t.Errorf("Error: failed to remove test database %s: %v", dbPath, err)
+			}
 		}
 		backupDir, _ := database.EnsureBackupDir()
 		if backupDir != "" {
