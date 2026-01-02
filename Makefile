@@ -1,8 +1,8 @@
 # All targets: show output only on failure (silent success)
 
-.PHONY: check dev test vet tidy vulncheck build typescript integration
+.PHONY: check dev test vet tidy vulncheck typescript build integration
 
-check: test vet tidy vulncheck build typescript integration
+check: test vet tidy vulncheck typescript build integration
 
 dev:
 	@wails dev -nogorebuild
@@ -47,22 +47,22 @@ vulncheck:
 		exit 1; \
 	fi
 
-build:
-	@echo "==> wails build"
-	@if OUTPUT=$$(wails build 2>&1); then \
-		echo "✓ build OK"; \
-	else \
-		echo "✗ build FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
-
 typescript:
 	@echo "==> typescript check"
 	@if OUTPUT=$$(cd frontend && npx tsc --noEmit 2>&1); then \
 		echo "✓ typescript OK"; \
 	else \
 		echo "✗ typescript FAILED"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
+
+build:
+	@echo "==> wails build"
+	@if OUTPUT=$$(wails build 2>&1); then \
+		echo "✓ build OK"; \
+	else \
+		echo "✗ build FAILED"; \
 		echo "$$OUTPUT"; \
 		exit 1; \
 	fi
