@@ -6,7 +6,7 @@ Browser-based, end-to-end tests using Playwright and Wails Dev mode.
 
 From the project root:
 ```bash
-./scripts/run-integration-tests.sh
+make integration
 ```
 
 ## Database State & Fixtures

@@ -19,7 +19,10 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 - Feature specs `docs/specs/`.
 - Frontend dependencies belong in `frontend/package.json`. Never install npm packages in the root directory.
 - Assume `wails dev` is running. If not, start it yourself in background (clean up when you're done). Use the browser skill to verify and test UI changes. The DevServer URL is http://localhost:34115.
-- After changing Go or frontend files, run `make check`. Runs: test, vet, tidy, build, typescript, integration tests.
+- After changing Go or frontend files, run `make check`. Runs: go test, vet, tidy, build, typescript, integration tests.
+- About integration tests `frontend/tests/AGENTS.md`.
+- Frontend rules to follow `frontend/AGENTS.md`.
+- Database migrations are in `internal/database/migrations/*.sql`. Refer to `internal/database/migrations/AGENTS.md` for usage.
 
 ## Database Conventions
 
