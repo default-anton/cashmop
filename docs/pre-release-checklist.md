@@ -21,7 +21,7 @@ This checklist covers all items that should be addressed before releasing to cus
   - Run tests (`make check`) on all PRs
   - Build for all platforms (windows/amd64, darwin/amd64, darwin/arm64, linux/amd64)
   - Generate release artifacts
-- [ ] **Configure code signing** - Set up certificates for each platform:
+- [ ] **Configure code signing** - https://wails.io/docs/guides/signing/ Set up certificates for each platform:
   - Windows: Authenticode certificate
   - macOS: Developer ID certificate
 - [ ] **Configure macOS notarization** - Required for distribution outside App Store.
@@ -30,8 +30,7 @@ This checklist covers all items that should be addressed before releasing to cus
 
 ## 🟡 MEDIUM
 
-### 1. Test Coverage
-- [ ] **Test migration failures** - Add tests for migration rollback scenarios when schema updates fail.
+*No MEDIUM priority items at this time.*
 
 ---
 
@@ -39,10 +38,6 @@ This checklist covers all items that should be addressed before releasing to cus
 
 ### 1. Polish
 - [ ] **Add check for updates** - Notify users when new versions are available.
-
-### 2. Documentation
-- [ ] **Add user guide** - No end-user documentation exists.
-- [ ] **Add architecture overview** - Document architecture for maintainers.
 
 ---
 
