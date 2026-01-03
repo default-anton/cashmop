@@ -1,6 +1,6 @@
 # Cashflow Tracker
 
-A high-performance, desktop-first application for normalizing and categorizing financial transactions. Designed for users who want complete control over their data with minimal time investment.
+Tracking cashflow matters. But I hate spending time on it. So I built this desktop app for myself: dump in transactions from any bank or institution, normalize the messy formats, apply existing rules, and punch through the rest. If you feel the same way about accounting, you'll feel at home here. Open source, local-only, and completely free.
 
 **The Workflow:** Download your CSVs/Excel files once a month, "punch through" them in the app, and export a perfectly cleaned dataset for your spreadsheets or accounting software.
 
