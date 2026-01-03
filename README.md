@@ -1,16 +1,46 @@
-### Product Overview
-* Concept: High-performance, desktop-first cash flow tracking.
-* Target Audience: Tech-savvy users, solo, or couples.
-* Philosophy: Delightful, fast, friction-free.
-* Platform: Cross-platform Desktop (Windows, Linux, macOS). *Note: Explicitly not a web or mobile app.*
+# Cashflow Tracker
 
----
+A high-performance, desktop-first application for normalizing and categorizing financial transactions. Designed for users who want complete control over their data with minimal time investment.
 
-## Feature Specifications
+**The Workflow:** Download your CSVs/Excel files once a month, "punch through" them in the app, and export a perfectly cleaned dataset for your spreadsheets or accounting software.
 
-- [Data Ingestion (Import Flow)](./docs/specs/import-flow.md)
-- [The Categorization Loop](./docs/specs/categorization-loop.md)
-- [Analysis Screen](./docs/specs/analysis.md)
+![Screenshot Placeholder - The Categorization Loop](https://via.placeholder.com/800x450?text=Walkthrough+Video/Screenshot+Coming+Soon)
+
+## Why Cashflow?
+
+*   **Speed-First UI:** A "TikTok-style" categorization loop. One transaction at a time, keyboard-centric, zero friction.
+*   **Local-Only:** Your financial data never leaves your machine. Built on Go + SQLite. No cloud, no trackers, no subscriptions.
+*   **Normalization Engine:** Import messy data from multiple banks, map them once, and export a single, clean format.
+*   **Rule-Based Automation:** Create powerful regex-style rules (Starts With, Ends With, Contains) to automate future imports.
+
+## Features
+
+- **Import Flow:** Vertical "punch-through" column mapping for CSV/XLSX.
+- **Categorization Loop:** Inbox-zero approach to transactions. Automatically advances as you categorize.
+- **Smart Heuristics:** Suggests rules based on text selection in descriptions.
+- **Export:** Cleaned data ready for Google Sheets, Excel, or specialized accounting tools.
+- **Cross-Platform:** Native performance on macOS, Windows, and Linux via Wails.
+
+## Getting Started
+
+### Installation
+Download the latest version for your operating system from the [Releases](https://github.com/your-username/cashflow/releases) page.
+
+### Development
+If you want to build from source:
+1. Install [Go](https://go.dev/) 1.25+ and [Node.js](https://nodejs.org/).
+2. Install [Wails CLI](https://wails.io/docs/gettingstarted/installation).
+3. Clone the repo and run:
+   ```bash
+   make check
+   wails build
+   ```
+
+## Roadmap
+
+- [ ] **Multi-Currency:** Native support for accounts in different currencies.
+- [ ] **Sole-Proprietor Tools:** Flag business expenses and attach invoices/receipts.
+- [ ] **Advanced Forecasting:** Visualize future cashflow based on historical trends.
 
 ## License
 
