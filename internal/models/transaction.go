@@ -1,6 +1,5 @@
 package models
 
-// Transaction maps to your UI and DB schema
 type Transaction struct {
 	ID          int     `json:"id"`
 	Account     string  `json:"account"`
@@ -8,6 +7,6 @@ type Transaction struct {
 	Amount      float64 `json:"amount"`
 	Description string  `json:"description"`
 	Owner       string  `json:"owner"`
-	Date        string  `json:"date"` // YYYY-MM-DD
+	Date        string  `json:"date"`
 	Category    string  `json:"category"`
 }

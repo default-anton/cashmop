@@ -18,15 +18,12 @@ const (
 	requestTimeout = 15 * time.Second
 )
 
-// Result represents a single search result.
 type Result struct {
 	Title   string
 	URL     string
 	Snippet string
 }
 
-// Search performs a web search using Brave Search and returns the results.
-// The count parameter specifies the maximum number of results to return (capped at maxResults).
 func Search(query string, count int) ([]Result, error) {
 	if count <= 0 || count > maxResults {
 		count = 5

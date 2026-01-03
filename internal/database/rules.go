@@ -16,7 +16,7 @@ type CategorizationRule struct {
 	MatchType    string   `json:"match_type"`
 	MatchValue   string   `json:"match_value"`
 	CategoryID   int64    `json:"category_id"`
-	CategoryName string   `json:"category_name"` // For frontend convenience
+	CategoryName string   `json:"category_name"`
 	AmountMin    *float64 `json:"amount_min"`
 	AmountMax    *float64 `json:"amount_max"`
 }
@@ -273,13 +273,11 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 }
 
 func UndoRule(ruleID int64, affectedTxIds []int64) error {
-	// Delete the rule
 	_, err := DB.Exec("DELETE FROM categorization_rules WHERE id = ?", ruleID)
 	if err != nil {
 		return err
 	}
 
-	// Revert all affected transactions to uncategorized
 	if len(affectedTxIds) == 0 {
 		return nil
 	}

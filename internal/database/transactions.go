@@ -6,17 +6,16 @@ import (
 	"strings"
 )
 
-// TransactionModel mirrors the database table structure
 type TransactionModel struct {
 	ID           int64   `json:"id"`
 	AccountID    int64   `json:"account_id"`
 	AccountName  string  `json:"account_name"`
-	OwnerID      *int64  `json:"owner_id"` // Nullable
+	OwnerID      *int64  `json:"owner_id"`
 	OwnerName    string  `json:"owner_name"`
 	Date         string  `json:"date"`
 	Description  string  `json:"description"`
 	Amount       float64 `json:"amount"`
-	CategoryID   *int64  `json:"category_id"` // Nullable
+	CategoryID   *int64  `json:"category_id"`
 	CategoryName string  `json:"category_name"`
 	Currency     string  `json:"currency"`
 	RawMetadata  string  `json:"raw_metadata"`
@@ -140,6 +139,7 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 
 	return tx.Commit()
 }
+
 func GetUncategorizedTransactions() ([]TransactionModel, error) {
 	rows, err := DB.Query(`
 		SELECT
@@ -273,7 +273,6 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 	args := []any{startDate, endDate}
 
 	if len(categoryIDs) > 0 {
-		// Check if 0 (representing NULL/uncategorized) is in the selection
 		hasUncategorized := false
 		var realIDs []int64
 		for _, id := range categoryIDs {
@@ -285,7 +284,6 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 		}
 
 		if hasUncategorized {
-			// Filter for uncategorized (NULL category_id) and/or specific categories
 			query += " AND (t.category_id IS NULL"
 			if len(realIDs) > 0 {
 				placeholders := make([]string, len(realIDs))
@@ -297,7 +295,6 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 			}
 			query += ")"
 		} else if len(realIDs) > 0 {
-			// Filter for specific categories only
 			placeholders := make([]string, len(realIDs))
 			for i, id := range realIDs {
 				placeholders[i] = "?"

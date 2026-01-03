@@ -41,7 +41,6 @@ func TestGetVersion(t *testing.T) {
 	if version == "" {
 		t.Error("GetVersion() returned empty string")
 	}
-	// Version should contain at least a dot (semantic versioning)
 	if !strings.Contains(version, ".") {
 		t.Errorf("Version %q doesn't look like a semantic version", version)
 	}
@@ -52,13 +51,11 @@ func TestFuzzySearch(t *testing.T) {
 
 	items := []string{"Grocery Store", "Gas Station", "Electric Bill", "Water Bill"}
 
-	// Test matching start
 	results := app.FuzzySearch("gas", items)
 	if len(results) == 0 {
 		t.Error("Expected results for 'gas' query")
 	}
 
-	// Test exact match
 	results = app.FuzzySearch("grocery", items)
 	found := false
 	for _, r := range results {
@@ -71,11 +68,8 @@ func TestFuzzySearch(t *testing.T) {
 		t.Error("Expected to find 'grocery' in results")
 	}
 
-	// Test no match
 	results = app.FuzzySearch("xyz", items)
-	// Fuzzy search should return results, just ranked lower
 
-	// Test empty query
 	results = app.FuzzySearch("", items)
 	if len(results) != len(items) {
 		t.Errorf("Empty query should return all items, got %d, want %d", len(results), len(items))
@@ -221,10 +215,8 @@ func TestGetUncategorizedTransactions(t *testing.T) {
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
 
-	// Create uncategorized transaction
 	tx1 := createTestTransaction(t, accountID, nil, "2024-01-01", "Uncategorized 1", 100.00, nil)
 
-	// Create categorized transaction
 	catID := createTestCategory(t, "Groceries")
 	createTestTransaction(t, accountID, nil, "2024-01-02", "Categorized 1", 50.00, &catID)
 
@@ -263,7 +255,6 @@ func TestCategorizeTransaction(t *testing.T) {
 			t.Errorf("Expected transaction ID %d, got %d", tx.ID, result.TransactionID)
 		}
 
-		// Verify transaction is now categorized
 		var catID sql.NullInt64
 		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx.ID).Scan(&catID)
 		if err != nil {
@@ -293,19 +284,16 @@ func TestCategorizeTransaction(t *testing.T) {
 		tx3 := createTestTransaction(t, accountID, nil, "2024-01-03", "Test3", 75.00, nil)
 		catID := createTestCategory(t, "Utilities")
 
-		// First categorize it
 		_, err := database.DB.Exec("UPDATE transactions SET category_id = ? WHERE id = ?", catID, tx3.ID)
 		if err != nil {
 			t.Fatalf("Failed to categorize transaction: %v", err)
 		}
 
-		// Now uncategorize
 		_, err = app.CategorizeTransaction(tx3.ID, "")
 		if err != nil {
 			t.Fatalf("CategorizeTransaction with empty string failed: %v", err)
 		}
 
-		// Verify it's uncategorized
 		var catID2 sql.NullInt64
 		err = database.DB.QueryRow("SELECT category_id FROM transactions WHERE id = ?", tx3.ID).Scan(&catID2)
 		if err != nil {
@@ -340,7 +328,6 @@ func TestGetCategories(t *testing.T) {
 		t.Errorf("Expected 3 categories, got %d", len(categories))
 	}
 
-	// Verify categories are sorted alphabetically
 	for i := 1; i < len(categories); i++ {
 		if categories[i-1].Name > categories[i].Name {
 			t.Error("Expected categories to be sorted alphabetically")
@@ -370,7 +357,6 @@ func TestSearchCategories(t *testing.T) {
 			t.Error("Expected results for 'ga' query")
 		}
 
-		// Check that results contain matching categories
 		found := false
 		for _, cat := range categories {
 			if strings.Contains(strings.ToLower(cat.Name), "ga") {
@@ -389,7 +375,6 @@ func TestSearchCategories(t *testing.T) {
 			t.Fatalf("SearchCategories failed: %v", err)
 		}
 
-		// Should return all 5 categories (less than 10)
 		if len(categories) != 5 {
 			t.Errorf("Expected 5 categories, got %d", len(categories))
 		}
@@ -420,7 +405,6 @@ func TestRenameCategory(t *testing.T) {
 		t.Fatalf("RenameCategory failed: %v", err)
 	}
 
-	// Verify category was renamed
 	var name string
 	err = database.DB.QueryRow("SELECT name FROM categories WHERE id = ?", catID).Scan(&name)
 	if err != nil {
@@ -455,7 +439,6 @@ func TestGetAccounts(t *testing.T) {
 		t.Errorf("Expected 3 accounts, got %d", len(accounts))
 	}
 
-	// Verify accounts are sorted alphabetically
 	for i := 1; i < len(accounts); i++ {
 		if accounts[i-1] > accounts[i] {
 			t.Error("Expected accounts to be sorted alphabetically")
@@ -482,7 +465,6 @@ func TestGetOwners(t *testing.T) {
 		t.Errorf("Expected 3 owners, got %d", len(owners))
 	}
 
-	// Verify owners are sorted alphabetically
 	for i := 1; i < len(owners); i++ {
 		if owners[i-1] > owners[i] {
 			t.Error("Expected owners to be sorted alphabetically")
@@ -595,7 +577,6 @@ func TestGetCategorizationRulesCount(t *testing.T) {
 		t.Errorf("Expected 0 rules, got %d", count)
 	}
 
-	// Create a rule
 	catID := createTestCategory(t, "Groceries")
 	rule := database.CategorizationRule{
 		MatchType:    "contains",
@@ -622,7 +603,6 @@ func TestSaveCategorizationRule(t *testing.T) {
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
 
-	// Create uncategorized transactions that match the rule
 	createTestTransaction(t, accountID, nil, "2024-01-01", "Grocery Store", 100.00, nil)
 	createTestTransaction(t, accountID, nil, "2024-01-02", "Weekly Grocery Shopping", 50.00, nil)
 	createTestTransaction(t, accountID, nil, "2024-01-03", "Gas Station", 30.00, nil)
@@ -646,7 +626,6 @@ func TestSaveCategorizationRule(t *testing.T) {
 			t.Errorf("Expected positive rule ID, got %d", result.RuleID)
 		}
 
-		// Check that matching transactions were categorized
 		var uncategorizedCount int64
 		err = database.DB.QueryRow("SELECT COUNT(*) FROM transactions WHERE category_id IS NULL").Scan(&uncategorizedCount)
 		if err != nil {
@@ -670,13 +649,11 @@ func TestSaveCategorizationRule(t *testing.T) {
 			t.Fatalf("SaveCategorizationRule failed: %v", err)
 		}
 
-		// Verify category was created
 		count := countCategories(t)
 		if count != 2 {
 			t.Errorf("Expected 2 categories, got %d", count)
 		}
 
-		// Check that remaining transaction was categorized
 		var uncategorizedCount int64
 		err = database.DB.QueryRow("SELECT COUNT(*) FROM transactions WHERE category_id IS NULL").Scan(&uncategorizedCount)
 		if err != nil {
@@ -887,7 +864,6 @@ func TestSearchTransactions(t *testing.T) {
 			t.Fatalf("SearchTransactions failed: %v", err)
 		}
 
-		// Debug: print what we found
 		for _, r := range results {
 			t.Logf("Found: %q (ID: %d)", r.Description, r.ID)
 		}
@@ -970,7 +946,6 @@ func TestGetMonthList(t *testing.T) {
 		t.Errorf("Expected 3 months, got %d", len(months))
 	}
 
-	// Should be sorted descending (most recent first)
 	if months[0] != "2024-03" {
 		t.Errorf("Expected first month to be '2024-03', got '%s'", months[0])
 	}
@@ -1023,8 +998,6 @@ func TestGetAnalysisTransactions(t *testing.T) {
 			t.Fatalf("GetAnalysisTransactions failed: %v", err)
 		}
 
-		// Should get 2 uncategorized transactions from Jan (Jan 1, Jan 2)
-		// The categorized transaction (from previous test) has ID 5
 		if len(results) != 2 {
 			t.Errorf("Expected 2 uncategorized transactions in January, got %d", len(results))
 		}
@@ -1050,7 +1023,6 @@ func TestParseExcel(t *testing.T) {
 			t.Fatal("Expected non-nil result")
 		}
 
-		// Verify headers
 		expectedHeaders := []string{"Date", "Description", "Amount", "Account"}
 		if len(result.Headers) != len(expectedHeaders) {
 			t.Errorf("Expected %d headers, got %d", len(expectedHeaders), len(result.Headers))
@@ -1061,12 +1033,10 @@ func TestParseExcel(t *testing.T) {
 			}
 		}
 
-		// Verify we have data rows
 		if len(result.Rows) == 0 {
 			t.Error("Expected at least one data row")
 		}
 
-		// Verify first row
 		if len(result.Rows) > 0 {
 			firstRow := result.Rows[0]
 			expected := []string{"2025-01-15", "Coffee Shop", "4.5", "Checking"}
@@ -1114,19 +1084,13 @@ func TestSearchWeb(t *testing.T) {
 	})
 
 	t.Run("caches results", func(t *testing.T) {
-		// This test verifies caching behavior
-		// Note: Actual web search might fail in tests, so we focus on cache logic
 		query := "test query"
 
-		// First call - will attempt web search
 		_, err := app.SearchWeb(query)
 		if err != nil {
-			// Web search might fail due to network, which is OK for this test
 			t.Logf("Web search failed (expected in tests): %v", err)
 		}
 
-		// Check if cache entry was created
-		// We can't directly check the cache, but we can verify the structure
 		if app.searchCache == nil {
 			t.Error("Expected searchCache to be initialized")
 		}
@@ -1141,7 +1105,6 @@ func TestSearchWeb(t *testing.T) {
 			t.Error("hashQuery should return consistent hash for same input")
 		}
 
-		// Different queries should have different hashes
 		query2 := "different query"
 		hash3 := hashQuery(query2)
 
@@ -1225,13 +1188,11 @@ func TestSaveColumnMapping(t *testing.T) {
 			t.Fatalf("SaveColumnMapping failed: %v", err)
 		}
 
-		// Update with same name - should succeed
 		_, err = app.SaveColumnMapping("Update Test", `{"new": "data"}`)
 		if err != nil {
 			t.Fatalf("SaveColumnMapping failed: %v", err)
 		}
 
-		// Verify only one mapping with this name exists
 		var count int64
 		err = database.DB.QueryRow("SELECT COUNT(*) FROM column_mappings WHERE name = ?", "Update Test").Scan(&count)
 		if err != nil {
@@ -1299,12 +1260,10 @@ func TestExportTransactions(t *testing.T) {
 			t.Errorf("Expected to export 1 row, got %d", count)
 		}
 
-		// Verify file exists
 		if _, err := os.Stat(csvPath); os.IsNotExist(err) {
 			t.Error("CSV file was not created")
 		}
 
-		// Read file and verify it contains expected content
 		content, err := os.ReadFile(csvPath)
 		if err != nil {
 			t.Fatalf("Failed to read CSV file: %v", err)
@@ -1331,7 +1290,6 @@ func TestExportTransactions(t *testing.T) {
 			t.Errorf("Expected to export 1 row, got %d", count)
 		}
 
-		// Verify file exists
 		if _, err := os.Stat(xlsxPath); os.IsNotExist(err) {
 			t.Error("XLSX file was not created")
 		}
@@ -1365,14 +1323,11 @@ func TestGetLastBackupInfo(t *testing.T) {
 	app := NewApp()
 
 	t.Run("returns backup info structure", func(t *testing.T) {
-		// This test just verifies the function returns the expected structure
-		// We can't reliably test "no backup exists" since backups are on the filesystem
 		info, err := app.GetLastBackupInfo()
 		if err != nil {
 			t.Fatalf("GetLastBackupInfo failed: %v", err)
 		}
 
-		// Verify structure has expected keys
 		if _, ok := info["hasBackup"]; !ok {
 			t.Error("Expected info to have 'hasBackup' key")
 		}
@@ -1443,13 +1398,11 @@ func TestRestoreBackup(t *testing.T) {
 	tempDir := t.TempDir()
 	backupPath := tempDir + "/restore_test.db"
 
-	// Create backup
 	err := database.CreateBackup(backupPath)
 	if err != nil {
 		t.Fatalf("Failed to create backup: %v", err)
 	}
 
-	// Add another transaction
 	createTestTransaction(t, accountID, nil, "2024-01-02", "New", 50.00, nil)
 
 	countBeforeRestore := countTransactions(t)
@@ -1457,7 +1410,6 @@ func TestRestoreBackup(t *testing.T) {
 		t.Errorf("Expected 2 transactions before restore, got %d", countBeforeRestore)
 	}
 
-	// Restore
 	err = app.RestoreBackup(backupPath)
 	if err != nil {
 		t.Fatalf("RestoreBackup failed: %v", err)
@@ -1488,9 +1440,7 @@ func TestTriggerAutoBackup(t *testing.T) {
 	app := NewApp()
 
 	t.Run("creates backup when needed", func(t *testing.T) {
-		// This test assumes backup is needed (no recent backup exists)
 		path, err := app.TriggerAutoBackup()
-		// May return empty string if backup not needed, which is OK
 		_ = path
 		if err != nil {
 			t.Logf("TriggerAutoBackup returned error (may be expected): %v", err)
@@ -1507,22 +1457,18 @@ func TestShutdown(t *testing.T) {
 
 	app := NewApp()
 
-	// Create a transaction to ensure DB has data
 	accountID := createTestAccount(t, "TestAccount")
 	createTestTransaction(t, accountID, nil, "2024-01-01", "Test", 100.00, nil)
 
-	// Verify database is open before shutdown
 	var count int64
 	err := database.DB.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&count)
 	if err != nil {
 		t.Fatalf("Failed to query database before shutdown: %v", err)
 	}
 
-	// Call shutdown - should not panic
 	app.shutdown(context.Background())
 
 	// Note: database.DB will be nil after shutdown, which is expected behavior
-	// The test passes if we reach this point without panicking
 }
 
 // ============================================================================

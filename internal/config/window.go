@@ -18,7 +18,6 @@ const (
 	configFile    = "window-state.json"
 )
 
-// WindowState represents the window position and size
 type WindowState struct {
 	X      int `json:"x"`
 	Y      int `json:"y"`
@@ -26,8 +25,6 @@ type WindowState struct {
 	Height int `json:"height"`
 }
 
-// LoadWindowState loads the saved window state from disk
-// Returns default state if file doesn't exist or on error
 func LoadWindowState() (WindowState, error) {
 	path, err := configPath()
 	if err != nil {
@@ -50,7 +47,6 @@ func LoadWindowState() (WindowState, error) {
 	return state, nil
 }
 
-// SaveWindowState saves the window state to disk
 func SaveWindowState(ctx context.Context) error {
 	width, height := runtime.WindowGetSize(ctx)
 	x, y := runtime.WindowGetPosition(ctx)
@@ -83,8 +79,6 @@ func SaveWindowState(ctx context.Context) error {
 	return nil
 }
 
-// IsWindowStateValid checks if the window state is reasonable
-// Returns false if position/size seems invalid (e.g., negative coordinates, extremely large values)
 func IsWindowStateValid(state WindowState) bool {
 	const (
 		minWindowSize = 100
@@ -108,7 +102,6 @@ func IsWindowStateValid(state WindowState) bool {
 	return true
 }
 
-// ApplyWindowState applies the saved window state, centering if invalid
 func ApplyWindowState(ctx context.Context, state WindowState) error {
 	if !IsWindowStateValid(state) {
 		runtime.WindowCenter(ctx)

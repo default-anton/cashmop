@@ -89,12 +89,10 @@ func Close() error {
 	return nil
 }
 
-// DatabasePath returns the current database file path
 func DatabasePath() (string, error) {
 	return resolveDatabasePath()
 }
 
-// EnsureBackupDir creates and returns the backup directory path
 func EnsureBackupDir() (string, error) {
 	dir, err := backupDir()
 	if err != nil {
@@ -108,7 +106,6 @@ func EnsureBackupDir() (string, error) {
 	return dir, nil
 }
 
-// backupDir returns the backup directory next to the active database
 func backupDir() (string, error) {
 	dbPath, err := resolveDatabasePath()
 	if err != nil {
@@ -143,7 +140,6 @@ func GetColumnMappings() ([]ColumnMappingModel, error) {
 }
 
 func SaveColumnMapping(name string, mappingJSON string) (int64, error) {
-	// Upsert based on name
 	res, err := DB.Exec(`
 		INSERT INTO column_mappings (name, mapping_json)
 		VALUES (?, ?)
@@ -155,9 +151,7 @@ func SaveColumnMapping(name string, mappingJSON string) (int64, error) {
 	}
 	id, err := res.LastInsertId()
 	if err != nil {
-		// If it was an update, LastInsertId might not be what we expect or needed,
-		// but typically we just reload or rely on name.
-		// Let's try to get ID if 0.
+		// If it was an update, LastInsertId might be 0.
 		var existingID int64
 		err2 := DB.QueryRow("SELECT id FROM column_mappings WHERE name = ?", name).Scan(&existingID)
 		if err2 == nil {

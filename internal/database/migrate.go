@@ -76,7 +76,6 @@ func runDownMigration(version int64, sql string) error {
 	return tx.Commit()
 }
 
-// Rollback rolls back the most recent migration
 func Rollback() error {
 	if err := createMigrationsTable(); err != nil {
 		return fmt.Errorf("Unable to access the database.")

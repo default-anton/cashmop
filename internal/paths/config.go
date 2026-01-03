@@ -8,7 +8,6 @@ import (
 
 const appName = "cashflow"
 
-// AppConfigDir returns the application config directory, creating it if needed
 func AppConfigDir() (string, error) {
 	var dir string
 
