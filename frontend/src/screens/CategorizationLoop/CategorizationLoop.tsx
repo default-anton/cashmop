@@ -65,15 +65,12 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
   const [hasRules, setHasRules] = useState<boolean | null>(null);
 
-  // Undo/Redo state
   const [undoStack, setUndoStack] = useState<UndoState[]>([]);
   const [redoStack, setRedoStack] = useState<UndoState[]>([]);
   const [showUndoToast, setShowUndoToast] = useState(false);
 
-  // Toast notifications
   const { showToast } = useToast();
 
-  // Web search state
   const [webSearchResults, setWebSearchResults] = useState<Array<{
     title: string;
     url: string;
@@ -238,10 +235,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     fetchMatching();
   }, [debouncedRule, amountFilter, currentTx?.id]);
 
-  // Keyboard shortcuts for web search (Cmd+K / Ctrl+K) and undo/redo (Cmd+Z / Cmd+Shift+Z)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Web search
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         if (currentTx) {
@@ -249,7 +244,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         }
       }
 
-      // Undo: Cmd+Z / Ctrl+Z
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         if (undoStack.length > 0) {
@@ -257,7 +251,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         }
       }
 
-      // Redo: Cmd+Shift+Z / Ctrl+Shift+Z
       if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
         e.preventDefault();
         if (redoStack.length > 0) {
@@ -324,7 +317,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           break;
       }
 
-      // Move action from undo stack to redo stack
       setUndoStack((prev) => prev.slice(0, -1));
       setRedoStack((prev) => [...prev, action]);
 
@@ -333,8 +325,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         setShowUndoToast(false);
         if (onFinish) onFinish();
       } else {
-        // Set current ID to the undone transaction (it should now be uncategorized)
-        // Fall back to first transaction if the undone one isn't in the list
         const undoneTxExists = updated.some(t => t.id === action.transactionId);
         setCurrentTxId(undoneTxExists ? action.transactionId : updated[0].id);
       }
@@ -367,7 +357,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           successMessage = 'Redo complete - transaction categorized';
           break;
         case 'rule':
-          // Re-create and re-apply the rule
           const rule = new database.CategorizationRule();
           rule.match_type = 'contains';
           rule.match_value = action.matchValue || '';
@@ -383,7 +372,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           break;
       }
 
-      // Move action from redo stack back to undo stack
       setRedoStack((prev) => prev.slice(0, -1));
       setUndoStack((prev) => [...prev, action]);
 
@@ -392,13 +380,10 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         setShowUndoToast(false);
         if (onFinish) onFinish();
       } else {
-        // Navigate to next transaction after re-applying the categorization
         const currentIdx = updated.findIndex(t => t.id === action.transactionId);
         if (currentIdx !== -1) {
-          // Transaction still exists, move to next
           goToNext(updated, action.transactionId, false);
         } else {
-          // Transaction was categorized and no longer in uncategorized list
           setCurrentTxId(updated[0].id);
         }
       }
@@ -418,7 +403,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   };
 
   const getUndoMessage = useCallback((): string => {
-    // If we have redo actions, show redo message
     if (redoStack.length > 0) {
       const action = redoStack[redoStack.length - 1];
       switch (action.type) {
@@ -437,7 +421,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       }
     }
 
-    // Otherwise show undo message
     const action = undoStack.length > 0 ? undoStack[undoStack.length - 1] : null;
     if (!action) return '';
 
@@ -515,7 +498,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         setShowUndoToast(true);
         setSelectionRule(null);
         setAmountFilter({ operator: 'none', value1: '', value2: '' });
-        setHasRules(true); // Don't show hint again after first rule is created
+        setHasRules(true);
       } else {
         await (window as any).go.main.App.CategorizeTransaction(oldId, categoryName);
         const newAction: UndoState = {

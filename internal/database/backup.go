@@ -16,8 +16,6 @@ import (
 
 var backupMu sync.Mutex
 
-// BackupMetadata describes a validated backup file
-// (kept in database package for reuse between backend layers)
 type BackupMetadata struct {
 	Path             string    `json:"path"`
 	Size             int64     `json:"size"`
@@ -25,7 +23,6 @@ type BackupMetadata struct {
 	CreatedAt        time.Time `json:"created_at"`
 }
 
-// CreateBackup creates a backup using VACUUM INTO to the specified destination
 func CreateBackup(destination string) error {
 	backupMu.Lock()
 	defer backupMu.Unlock()
@@ -33,8 +30,6 @@ func CreateBackup(destination string) error {
 	return createBackupUnsafe(destination)
 }
 
-// CreateAutoBackup creates an automatic backup in the default backup directory
-// Handles cleanup of old backups based on retention policy
 func CreateAutoBackup() (string, error) {
 	backupDir, err := EnsureBackupDir()
 	if err != nil {
@@ -54,8 +49,6 @@ func CreateAutoBackup() (string, error) {
 	return backupPath, nil
 }
 
-// ValidateBackup checks if a file is a valid SQLite database
-// Returns transaction count and error
 func ValidateBackup(path string) (int64, error) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -93,7 +86,6 @@ func ValidateBackup(path string) (int64, error) {
 		return 0, fmt.Errorf("Unable to read the backup file.")
 	}
 
-	// additional sanity: file size > 0 already ensured by Stat above
 	if info.Size() == 0 {
 		return 0, fmt.Errorf("The backup file is empty.")
 	}
@@ -101,8 +93,6 @@ func ValidateBackup(path string) (int64, error) {
 	return count, nil
 }
 
-// RestoreBackup replaces the current database with a backup
-// Creates a backup of current database first (safety net)
 func RestoreBackup(backupPath string) error {
 	backupMu.Lock()
 	defer backupMu.Unlock()
@@ -151,8 +141,6 @@ func RestoreBackup(backupPath string) error {
 	return nil
 }
 
-// GetLastBackupTime returns the timestamp of the most recent auto-backup
-// Returns zero time if no backups exist
 func GetLastBackupTime() (time.Time, error) {
 	backupDir, err := EnsureBackupDir()
 	if err != nil {
@@ -187,8 +175,6 @@ func GetLastBackupTime() (time.Time, error) {
 	return latestMod, nil
 }
 
-// ShouldAutoBackup determines if enough time has passed since last backup
-// Returns true if 24+ hours since last backup
 func ShouldAutoBackup() (bool, error) {
 	lastBackup, err := GetLastBackupTime()
 	if err != nil {
@@ -202,8 +188,6 @@ func ShouldAutoBackup() (bool, error) {
 	return time.Since(lastBackup) >= 24*time.Hour, nil
 }
 
-// CleanupOldBackups removes old backups based on retention policy
-// Keeps last 10 daily, last 5 weekly
 func CleanupOldBackups() error {
 	backupDir, err := EnsureBackupDir()
 	if err != nil {
@@ -275,7 +259,6 @@ func CleanupOldBackups() error {
 	return nil
 }
 
-// CreatePreMigrationBackup creates a backup before running migrations
 func CreatePreMigrationBackup(version int64) (string, error) {
 	backupDir, err := EnsureBackupDir()
 	if err != nil {
@@ -392,7 +375,6 @@ func schemaVersion(db *sql.DB) (int64, error) {
 	return version.Int64, nil
 }
 
-// CurrentSchemaVersion returns max applied migration version
 func CurrentSchemaVersion() (int64, error) {
 	if DB == nil {
 		return 0, fmt.Errorf("Database not ready. Please restart the application.")

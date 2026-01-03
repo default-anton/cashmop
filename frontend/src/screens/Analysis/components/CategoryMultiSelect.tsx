@@ -115,7 +115,6 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
 
       {isOpen && (
         <div className="absolute top-full mt-2 left-0 w-72 bg-canvas-50 border border-canvas-200 rounded-2xl shadow-glass z-50 overflow-hidden animate-snap-in flex flex-col max-h-96">
-          {/* Header & Search */}
           <div className="p-3 border-b border-canvas-100 space-y-3">
             <div className="flex justify-between items-center px-1">
                <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest">Select Categories</span>
@@ -150,7 +149,6 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
             </div>
           </div>
 
-          {/* List */}
           <div className="overflow-y-auto flex-1 py-1">
             {filteredCategories.map((category) => {
               const isSelected = selectedCategoryIds.includes(category.id);
@@ -174,7 +172,6 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
                     </div>
                   </button>
 
-                  {/* "Only" button visible on hover */}
                   <button
                     onClick={(e) => selectOnly(category.id, e)}
                     className="absolute right-12 opacity-0 group-hover:opacity-100 px-2 py-1 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 hover:bg-canvas-300 transition-all z-10"
@@ -192,7 +189,6 @@ const CategoryMultiSelect: React.FC<CategoryMultiSelectProps> = ({
             )}
           </div>
 
-          {/* Footer for quick summary if needed or just padding */}
           <div className="h-2" />
         </div>
       )}

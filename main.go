@@ -17,8 +17,6 @@ var assets embed.FS
 
 func main() {
 	app := NewApp()
-
-	// Create application menu
 	appMenu := app.makeMenu()
 
 	err := wails.Run(&options.App{

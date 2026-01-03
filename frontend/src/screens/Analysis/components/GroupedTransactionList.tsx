@@ -207,7 +207,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       grouped.set(key, group);
     });
 
-    // Sort transactions within each group
     grouped.forEach((data) => {
       data.transactions.sort((a, b) => {
         let comparison = 0;
@@ -220,7 +219,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       });
     });
 
-    // Convert to array and sort groups
     const result = Array.from(grouped.entries());
 
     result.sort((a, b) => {
@@ -228,7 +226,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       if (groupSortField === 'name') {
         comparison = a[0].localeCompare(b[0]);
       } else {
-        // Sort by absolute total amount (usually what people want for expenses)
         comparison = Math.abs(a[1].total) - Math.abs(b[1].total);
       }
       return groupSortOrder === 'asc' ? comparison : -comparison;
@@ -248,7 +245,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
 
   return (
     <div className="w-full space-y-6">
-      {/* Summary Cards */}
       {showSummary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card variant="elevated" className="p-6">
@@ -272,7 +268,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         </div>
       )}
 
-      {/* Grouped Lists */}
       <div className="space-y-4 relative">
         <AnimatePresence mode="popLayout" initial={false}>
           {groups.map(([name, data]) => (

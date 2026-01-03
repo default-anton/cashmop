@@ -90,7 +90,6 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
   };
 
   const handleBlur = (e: React.FocusEvent) => {
-    // If we click on a suggestion, don't trigger blur immediately
     if (dropdownRef.current?.contains(e.relatedTarget as Node)) {
       return;
     }
@@ -112,7 +111,7 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
             width: coords.width,
           }}
           className="mt-1 bg-white border border-canvas-200 rounded-lg shadow-xl z-[100] overflow-hidden"
-          onMouseDown={(e: React.MouseEvent) => e.preventDefault()} // Prevent blur when clicking dropdown
+          onMouseDown={(e: React.MouseEvent) => e.preventDefault()}
         >
           {suggestions.map((suggestion, index) => (
             <div
