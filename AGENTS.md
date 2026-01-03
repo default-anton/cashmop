@@ -23,20 +23,7 @@ Desktop-first cash flow tracking application for tech-savvy users. Cross-platfor
 - About integration tests `frontend/tests/AGENTS.md`.
 - Frontend rules to follow `frontend/AGENTS.md`.
 - Database migrations are in `internal/database/migrations/*.sql`. Refer to `internal/database/migrations/AGENTS.md` for usage.
-
-## Database Conventions
-
 - Uncategorized state: Use `NULL` in the database to represent uncategorized items (transactions, rules, etc.). In Go helpers, allow passing `0` to signify `NULL` for foreign keys where appropriate.
-
-## External Links
-
-- All external links MUST use Wails' `BrowserOpenURL` from `wailsjs/runtime/runtime`, not `window.open()` or `<a>` tags with `href`.
-- Import: `import { BrowserOpenURL } from '<path>/wailsjs/runtime/runtime'`
-- Usage: `onClick={() => BrowserOpenURL('https://example.com')}`
-- Reference: `frontend/src/screens/CategorizationLoop/components/WebSearchResults.tsx`
-
-## Fuzzy Matching
-
 - All fuzzy search uses `internal/fuzzy` (fzf).
-- Ranking: word/string starts outrank mid-string; ties favor shorter strings (see `internal/fuzzy/fuzzy_test.go`).
-- Lists must call Wails bindings; never client-side `.includes()` or JS fuzzy libs.
+    - Ranking: word/string starts outrank mid-string; ties favor shorter strings (see `internal/fuzzy/fuzzy_test.go`).
+    - Lists must call Wails bindings; never client-side `.includes()` or JS fuzzy libs.
