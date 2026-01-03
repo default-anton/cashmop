@@ -32,7 +32,6 @@ function App() {
   };
 
   useEffect(() => {
-    // Listen for show-about event from Go
     const off = EventsOn('show-about', () => {
       setShowAbout(true);
     });
@@ -50,7 +49,6 @@ function App() {
     return () => off?.();
   }, []);
 
-  // Keyboard shortcuts for screen navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -94,7 +92,6 @@ function App() {
     setScreen('analysis');
   };
 
-  // Render About modal overlay when triggered
   if (showAbout) {
     return (
       <About isOpen={showAbout} onClose={() => setShowAbout(false)} />

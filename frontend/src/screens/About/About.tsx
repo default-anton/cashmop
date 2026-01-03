@@ -51,7 +51,6 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
       </button>
 
       <div className="max-h-[80vh] overflow-y-auto custom-scrollbar">
-        {/* Header */}
         <div className="text-center pt-8 pb-6 px-8">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-brand to-brand/70 text-white rounded-3xl shadow-brand-glow mb-6">
             <Zap className="w-10 h-10" />
@@ -60,7 +59,6 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
           <p className="text-lg text-canvas-600 font-medium">Desktop-first cash flow tracking application</p>
         </div>
 
-        {/* Version Card */}
         <Card variant="glass" className="p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -90,7 +88,6 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
           </div>
         </Card>
 
-        {/* License Card */}
         <Card variant="glass" className="p-6 mb-6">
           <div className="flex items-center gap-3 mb-3">
             <Shield className="w-6 h-6 text-brand" />
@@ -110,7 +107,6 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
           </Button>
         </Card>
 
-        {/* Credits Card */}
         <Card variant="glass" className="p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Users className="w-6 h-6 text-brand" />
@@ -164,7 +160,6 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
           </div>
         </Card>
 
-        {/* Source Code Card */}
         <Card variant="glass" className="p-6 mb-6">
           <div className="flex items-center gap-3 mb-3">
             <Info className="w-6 h-6 text-brand" />
@@ -183,7 +178,6 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
           </Button>
         </Card>
 
-        {/* Footer */}
         <div className="text-center pb-8 pt-4 px-8">
           <p className="text-sm text-canvas-500 flex items-center justify-center gap-2">
             Made with <Heart className="w-4 h-4 text-finance-expense fill-finance-expense" /> by Anton Kuzmenko

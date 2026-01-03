@@ -55,7 +55,6 @@ const Analysis: React.FC = () => {
 
     if (!silent) setLoading(true);
     try {
-      // Create date range for the selected month
       const [year, month] = selectedMonth.split('-');
       const startDate = `${year}-${month}-01`;
       const endDate = `${year}-${month}-31`; // SQL handles this fine even if month has 30 days
@@ -81,7 +80,6 @@ const Analysis: React.FC = () => {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
@@ -112,19 +110,16 @@ const Analysis: React.FC = () => {
   };
 
   const handleCategorize = async (txId: number, categoryName: string) => {
-    // Optimistic update
     setTransactions(prev => prev.map(tx =>
       tx.id === txId ? { ...tx, category_name: categoryName } : tx
     ));
 
     try {
       await (window as any).go.main.App.CategorizeTransaction(txId, categoryName);
-      // Silent refresh in background to ensure consistency
       fetchTransactions(true);
       fetchData();
     } catch (e) {
       console.error('Failed to categorize transaction', e);
-      // Revert on error if necessary, though fetchTransactions will also fix it
       fetchTransactions(true);
     }
   };
@@ -172,7 +167,6 @@ const Analysis: React.FC = () => {
     <div className="min-h-screen bg-canvas-100 texture-delight pt-24 pb-12 px-8">
       <div className="max-w-5xl mx-auto space-y-8">
 
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-brand/10 text-brand rounded-2xl shadow-brand/5 shadow-inner">
@@ -196,7 +190,6 @@ const Analysis: React.FC = () => {
               onChange={setSelectedCategoryIds}
             />
 
-            {/* Export Dropdown */}
             <div className="relative" ref={exportDropdownRef}>
               <button
                 onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
@@ -239,7 +232,6 @@ const Analysis: React.FC = () => {
           </div>
         </div>
 
-        {/* Summary Cards */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
@@ -272,7 +264,6 @@ const Analysis: React.FC = () => {
           </div>
         )}
 
-        {/* Grouping Toggle */}
         <div className="flex items-center justify-between pb-2 border-b border-canvas-200">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
@@ -323,7 +314,6 @@ const Analysis: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content */}
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center space-y-4">
             <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>

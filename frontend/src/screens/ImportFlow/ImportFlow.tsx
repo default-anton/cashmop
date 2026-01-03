@@ -49,13 +49,10 @@ function parseCSVLine(line: string): string[] {
 }
 
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
-  // Remove BOM and normalize line endings
   const normalized = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-  // Split lines, preserving empty lines for error detection
   const lines = normalized.split('\n');
 
-  // Find first non-empty line for header detection (skip leading empty lines)
   let firstLineIdx = -1;
   for (let i = 0; i < lines.length; i++) {
     if (lines[i].trim().length > 0) {
@@ -68,13 +65,11 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
     throw new Error('File appears to be empty or contains only whitespace.');
   }
 
-  // Parse headers from first non-empty line
   const headers = parseCSVLine(lines[firstLineIdx]).filter(Boolean);
   if (headers.length === 0) {
     throw new Error('No columns detected in the first non-empty row. Ensure your CSV uses commas (,) as separators.');
   }
 
-  // Process remaining lines (skip empty lines but keep track)
   const rows: string[][] = [];
   let maxColumns = headers.length;
   let skippedEmpty = 0;
@@ -93,7 +88,6 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
       inconsistentColumns++;
     }
 
-    // Ensure each row has exactly headers.length columns (pad or truncate)
     const padded = row.slice(0, headers.length);
     if (padded.length < headers.length) {
       padded.push(...Array(headers.length - padded.length).fill(''));
@@ -134,7 +128,6 @@ async function validateFileSignature(file: File, expectedExtension: string): Pro
 
 async function parseFile(file: File): Promise<ParsedFile> {
   const name = file.name.toLowerCase();
-  // Basic file validation
   if (file.size === 0) {
     throw new Error('File is empty (0 bytes). Please select a valid CSV or Excel export.');
   }
@@ -243,11 +236,9 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
       return;
     }
 
-    // Use first file for mapping
     const firstFile = parsedResults[0];
     setParsed(firstFile);
 
-    // Try to auto-select mapping
     try {
       const dbMappings: any[] = await (window as any).go.main.App.GetColumnMappings();
       const savedMappings = dbMappings.map(m => ({
@@ -343,30 +334,25 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     const selectedSet = new Set(selectedKeys);
 
     for (const pf of parsedFiles) {
-      // Find indices
       const headers = pf.headers;
       const dateIdx = headers.indexOf(mapping.csv.date);
       const descIdxs = mapping.csv.description.map(d => headers.indexOf(d)).filter(i => i !== -1);
 
       const amountFn = createAmountParser(mapping, headers);
 
-      // Owner/Account
       const ownerIdx = mapping.csv.owner ? headers.indexOf(mapping.csv.owner) : -1;
       const accountIdx = mapping.csv.account ? headers.indexOf(mapping.csv.account) : -1;
 
       for (const row of pf.rows) {
-        // Date parse
         const dStr = row[dateIdx];
         const dateObj = parseDateLoose(dStr);
         if (!dateObj) continue;
 
-        // Check if in selected months
         const year = dateObj.getFullYear();
         const month = dateObj.getMonth() + 1;
         const key = `${year}-${String(month).padStart(2, '0')}`;
         if (!selectedSet.has(key)) continue;
 
-        // Description
         const desc = descIdxs.map(i => row[i]).filter(Boolean).join(' ');
 
         const amount = amountFn(row);
@@ -387,7 +373,6 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   const handleMonthsComplete = async (keys: string[]) => {
     if (!mapping) return;
 
-    // Normalize and send
     const txs = normalizeTransactions(mapping, parsedFiles, keys);
 
     try {
