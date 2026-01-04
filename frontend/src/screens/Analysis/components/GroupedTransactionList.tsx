@@ -168,7 +168,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
             type: 'category',
             isActive: selectedCategoryIds.length > 0,
             label: selectedCategoryIds.length > 0
-              ? `${selectedCategoryIds.length} selected`
+              ? `✓${selectedCategoryIds.length}`
               : undefined,
           } as FilterConfig,
           onClear: () => {
