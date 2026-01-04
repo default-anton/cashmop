@@ -23,7 +23,6 @@
     - "Select All" / "Deselect All" bulk toggles
     - "ONLY" button on item hover to quickly isolate a single selection
     - Clear typography showing current selection count (or "All selected")
-    - Reference: `./src/screens/Analysis/components/CategoryMultiSelect.tsx`
 - All external links MUST use Wails' `BrowserOpenURL` from `wailsjs/runtime/runtime`, not `window.open()` or `<a>` tags with `href`.
     - Import: `import { BrowserOpenURL } from '<path>/wailsjs/runtime/runtime'`
     - Usage: `onClick={() => BrowserOpenURL('https://example.com')}`
