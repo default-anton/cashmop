@@ -20,3 +20,5 @@ export { default as ProgressBar } from './ProgressBar';
 export { default as Tabs } from './Tabs';
 export { default as Accordion } from './Accordion';
 export { default as Table } from './Table';
+export { TableHeaderFilter, CategoryFilterContent, TextFilterContent } from './TableHeaderFilter';
+export type { FilterConfig, FilterType } from './TableHeaderFilter';

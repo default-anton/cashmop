@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { database } from '../../../../wailsjs/go/models';
 import { User, Tag, Landmark, List, Calendar, FileText, DollarSign, Check } from 'lucide-react';
-import { Card } from '../../../components';
+import { Card, CategoryFilterContent, FilterConfig } from '../../../components';
 import Table from '../../../components/Table';
 import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
 import CategoryGhostInput from './CategoryGhostInput';
@@ -20,6 +20,8 @@ interface GroupedTransactionListProps {
   transactionSortOrder: SortOrder;
   onSortTransaction: (field: TransactionSortField) => void;
   onCategorize: (txId: number, categoryName: string) => Promise<void>;
+  selectedCategoryIds?: number[];
+  onCategoryFilterChange?: (ids: number[]) => void;
 }
 
 const EditableCategoryCell: React.FC<{
@@ -84,7 +86,11 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   transactionSortOrder,
   onSortTransaction,
   onCategorize,
+  selectedCategoryIds = [],
+  onCategoryFilterChange,
 }) => {
+  const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
+  const [categoryFilterSearch, setCategoryFilterSearch] = useState('');
   const formatCurrency = (amount: number) => {
     const formatter = new Intl.NumberFormat('en-CA', {
       style: 'currency',
@@ -150,12 +156,51 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       header: renderHeader('Category', Tag),
       className: 'w-40',
       render: (_val: string, tx: database.TransactionModel) => (
-        <EditableCategoryCell 
-          transaction={tx} 
-          categories={categories} 
-          onSave={onCategorize} 
+        <EditableCategoryCell
+          transaction={tx}
+          categories={categories}
+          onSave={onCategorize}
         />
       ),
+      ...(onCategoryFilterChange && {
+        filter: {
+          config: {
+            type: 'category',
+            isActive: selectedCategoryIds.length > 0,
+            label: selectedCategoryIds.length > 0
+              ? `${selectedCategoryIds.length} selected`
+              : undefined,
+          } as FilterConfig,
+          onClear: () => {
+            onCategoryFilterChange([]);
+            setCategoryFilterOpen(false);
+          },
+          isOpen: categoryFilterOpen,
+          onToggle: () => setCategoryFilterOpen(!categoryFilterOpen),
+          children: (
+            <CategoryFilterContent
+              categories={categories}
+              selectedIds={selectedCategoryIds}
+              onSelect={(id) => {
+                const newSelection = selectedCategoryIds.includes(id)
+                  ? selectedCategoryIds.filter((sid) => sid !== id)
+                  : [...selectedCategoryIds, id];
+                onCategoryFilterChange(newSelection);
+              }}
+              onSelectOnly={(id) => {
+                onCategoryFilterChange([id]);
+              }}
+              onSelectAll={() => onCategoryFilterChange([0, ...categories.map(c => c.id)])}
+              onClear={() => {
+                onCategoryFilterChange([]);
+                setCategoryFilterOpen(false);
+              }}
+              searchTerm={categoryFilterSearch}
+              onSearchChange={setCategoryFilterSearch}
+            />
+          ),
+        },
+      }),
     });
 
     if (groupBy !== 'Owner') {
@@ -189,7 +234,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     });
 
     return cols;
-  }, [groupBy, categories, onCategorize]);
+  }, [groupBy, categories, onCategorize, onCategoryFilterChange, selectedCategoryIds, categoryFilterOpen, categoryFilterSearch]);
 
   const groups = useMemo(() => {
     const grouped = new Map<string, { transactions: database.TransactionModel[]; total: number }>();
@@ -320,15 +365,47 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         </AnimatePresence>
 
         {groups.length === 0 && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="py-20 text-center"
           >
-            <div className="inline-flex p-6 bg-canvas-100 rounded-full mb-4">
-              <Tag className="w-8 h-8 text-canvas-300" />
+            <Card variant="elevated" className="overflow-hidden">
+              <div className="px-6 py-4 bg-canvas-100/50 border-b border-canvas-200 flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400">
+                    {getIcon()}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-canvas-800">
+                      {groupBy === 'Owner' ? 'No Owner' :
+                       groupBy === 'Category' ? 'Uncategorized' :
+                       groupBy === 'Account' ? transactions[0]?.account_name || 'No Account' :
+                       'All Transactions'}
+                    </h3>
+                  </div>
+                  <span className="text-xs font-mono text-canvas-600 bg-canvas-200 px-2 py-0.5 rounded-full">
+                    0 txns
+                  </span>
+                </div>
+                <div className="font-mono font-bold text-canvas-400">
+                  $0.00
+                </div>
+              </div>
+
+              <Table
+                columns={columns}
+                data={[]}
+                className="!border-none !rounded-none shadow-none"
+                sortField={transactionSortField}
+                sortOrder={transactionSortOrder}
+                onSort={(field) => onSortTransaction(field as TransactionSortField)}
+              />
+            </Card>
+
+            <div className="py-8 text-center">
+              <p className="text-canvas-500 font-medium">No transactions found for this selection.</p>
+              <p className="text-sm text-canvas-400 mt-1">Use the filter above to adjust your selection.</p>
             </div>
-            <p className="text-canvas-500">No transactions found for this selection.</p>
           </motion.div>
         )}
       </div>

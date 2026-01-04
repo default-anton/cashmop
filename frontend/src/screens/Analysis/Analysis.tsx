@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   AnalysisMonthSelector,
-  CategoryMultiSelect,
   GroupedTransactionList
 } from './components';
 import { database } from '../../../wailsjs/go/models';
@@ -184,11 +183,6 @@ const Analysis: React.FC = () => {
               selectedMonth={selectedMonth}
               onChange={setSelectedMonth}
             />
-            <CategoryMultiSelect
-              categories={categories}
-              selectedCategoryIds={selectedCategoryIds}
-              onChange={setSelectedCategoryIds}
-            />
 
             <div className="relative" ref={exportDropdownRef}>
               <button
@@ -331,6 +325,8 @@ const Analysis: React.FC = () => {
             transactionSortOrder={transactionSortOrder}
             onSortTransaction={handleSortTransaction}
             onCategorize={handleCategorize}
+            selectedCategoryIds={selectedCategoryIds}
+            onCategoryFilterChange={setSelectedCategoryIds}
           />
         )}
       </div>
