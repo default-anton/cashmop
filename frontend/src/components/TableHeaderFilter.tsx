@@ -16,7 +16,9 @@ interface TableHeaderFilterProps {
   children: React.ReactNode;
   onClear?: () => void;
   isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onToggle?: () => void;
+  positionKey?: string | number;
 }
 
 export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
@@ -24,7 +26,9 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
   children,
   onClear,
   isOpen: controlledIsOpen,
+  onOpenChange,
   onToggle,
+  positionKey,
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -32,7 +36,7 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
   const popoverRef = useRef<HTMLDivElement>(null);
 
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
-  const setIsOpen = onToggle || setInternalIsOpen;
+  const setIsOpen = onOpenChange || onToggle || setInternalIsOpen;
 
   const updatePosition = () => {
     if (buttonRef.current) {
@@ -67,6 +71,13 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
+    requestAnimationFrame(() => {
+      updatePosition();
+    });
+  }, [isOpen, positionKey]);
+
+  useEffect(() => {
     const handleScroll = () => {
       if (isOpen) {
         updatePosition();
@@ -90,6 +101,10 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('[data-autocomplete-dropdown="true"]')) {
+        return;
+      }
       if (
         popoverRef.current &&
         !popoverRef.current.contains(event.target as Node) &&

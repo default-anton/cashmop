@@ -13,7 +13,9 @@ interface Column<T> {
     children: React.ReactNode;
     onClear?: () => void;
     isOpen?: boolean;
+    onOpenChange?: (open: boolean) => void;
     onToggle?: () => void;
+    positionKey?: string | number;
   };
 }
 
@@ -90,7 +92,9 @@ const Table = <T,>({
                           config={column.filter.config}
                           onClear={column.filter.onClear}
                           isOpen={column.filter.isOpen}
+                          onOpenChange={column.filter.onOpenChange}
                           onToggle={column.filter.onToggle}
+                          positionKey={column.filter.positionKey}
                         >
                           {column.filter.children}
                         </TableHeaderFilter>

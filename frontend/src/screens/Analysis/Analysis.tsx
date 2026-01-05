@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
-  AnalysisMonthSelector,
   GroupedTransactionList
 } from './components';
 import { database } from '../../../wailsjs/go/models';
@@ -220,9 +219,25 @@ const Analysis: React.FC = () => {
     }))
   ), [fxAmounts, transactions]);
 
+  const formatMonthLabel = useCallback((monthStr: string) => {
+    if (!monthStr) return '';
+    const [year, month] = monthStr.split('-');
+    const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1);
+    return date.toLocaleDateString('default', { month: 'short', year: 'numeric' });
+  }, []);
+
+  const monthOptions = useMemo(() => (
+    months.map((month) => ({ value: month, label: formatMonthLabel(month) }))
+  ), [months, formatMonthLabel]);
+
   const formatCurrency = useCallback((amount: number) => (
     new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(amount))
   ), [mainCurrency]);
+
+  const hasForeignCurrency = useMemo(() => {
+    const main = mainCurrency.toUpperCase();
+    return transactions.some((tx) => (tx.currency || mainCurrency).toUpperCase() !== main);
+  }, [mainCurrency, transactions]);
 
   const totals = useMemo(() => {
     const amounts = transactionsWithFx
@@ -250,23 +265,6 @@ const Analysis: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <AnalysisMonthSelector
-              months={months}
-              selectedMonth={selectedMonth}
-              onChange={setSelectedMonth}
-            />
-
-            <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-canvas-200 bg-canvas-50 text-xs font-semibold text-canvas-600">
-              <input
-                type="checkbox"
-                className="h-3.5 w-3.5 accent-brand"
-                checked={showOriginalCurrency}
-                onChange={(e) => handleShowOriginalToggle(e.target.checked)}
-                disabled={showOriginalSaving}
-              />
-              Original
-            </label>
-
             <div className="relative" ref={exportDropdownRef}>
               <button
                 onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
@@ -400,8 +398,22 @@ const Analysis: React.FC = () => {
             )}
           </div>
           
-          <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest">
-            {transactions.length} Transactions Found
+          <div className="flex items-center gap-3">
+            {hasForeignCurrency && (
+              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-canvas-200 bg-canvas-50 text-xs font-semibold text-canvas-600">
+                <input
+                  type="checkbox"
+                  className="h-3.5 w-3.5 accent-brand"
+                  checked={showOriginalCurrency}
+                  onChange={(e) => handleShowOriginalToggle(e.target.checked)}
+                  disabled={showOriginalSaving}
+                />
+                Show transaction currency
+              </label>
+            )}
+            <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest">
+              {transactions.length} Transactions Found
+            </div>
           </div>
         </div>
 
@@ -424,6 +436,9 @@ const Analysis: React.FC = () => {
             onCategorize={handleCategorize}
             selectedCategoryIds={selectedCategoryIds}
             onCategoryFilterChange={setSelectedCategoryIds}
+            monthOptions={monthOptions}
+            selectedMonth={selectedMonth}
+            onMonthChange={setSelectedMonth}
           />
         )}
       </div>

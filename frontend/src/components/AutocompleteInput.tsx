@@ -11,6 +11,7 @@ interface AutocompleteInputProps {
   options: AutocompleteOption[];
   placeholder?: string;
   className?: string;
+  autoFocus?: boolean;
 }
 
 const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
@@ -20,6 +21,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   options,
   placeholder,
   className,
+  autoFocus,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +103,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
       ref={dropdownRef}
       style={{ position: 'absolute', top: coords.top, left: coords.left, width: coords.width }}
       className="z-20"
+      data-autocomplete-dropdown="true"
       onMouseDown={(event) => event.preventDefault()}
     >
       <ul className="mt-1 bg-canvas-50 border border-canvas-200 rounded-md shadow-lg max-h-60 overflow-auto py-1 text-sm focus:outline-none animate-in fade-in zoom-in-95 duration-100">
@@ -129,6 +132,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         onFocus={() => setIsOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
+        autoFocus={autoFocus}
         className="w-full"
       />
       {dropdown ? createPortal(dropdown, document.body) : null}
