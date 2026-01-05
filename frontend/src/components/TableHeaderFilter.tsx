@@ -211,6 +211,7 @@ export const CategoryFilterContent: React.FC<{
   onClear: () => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
 }> = ({
   categories,
   selectedIds,
@@ -220,6 +221,7 @@ export const CategoryFilterContent: React.FC<{
   onClear,
   searchTerm,
   onSearchChange,
+  inputRef,
 }) => {
   const [filteredCategories, setFilteredCategories] = useState(categories);
 
@@ -278,6 +280,7 @@ export const CategoryFilterContent: React.FC<{
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-canvas-500" />
           <input
+            ref={inputRef}
             type="text"
             placeholder="Search categories..."
             value={searchTerm}

@@ -83,6 +83,8 @@ func (a *App) makeMenu() *menu.Menu {
 		})
 	}
 
+	// Add standard Edit menu (Cut, Copy, Paste, Select All)
+	appMenu.Append(menu.EditMenu())
 	appMenu.Append(menu.WindowMenu())
 
 	if stdlibRuntime.GOOS != "darwin" {

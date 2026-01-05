@@ -1,6 +1,14 @@
 #!/bin/bash
 set -e
 
+# Kill any existing wails dev processes
+echo "Checking for existing wails dev processes..."
+if pgrep -f "wails dev" > /dev/null; then
+  echo "Killing existing wails dev processes..."
+  pkill -f "wails dev" || true
+  sleep 2  # Give processes time to terminate
+fi
+
 # Build test helper once
 echo "Building test-helper..."
 mkdir -p build/bin
