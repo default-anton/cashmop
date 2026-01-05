@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { database } from '../../../../wailsjs/go/models';
 import { User, Tag, Landmark, List, Calendar, FileText, DollarSign, Check } from 'lucide-react';
 import { Card, CategoryFilterContent, FilterConfig } from '../../../components';
@@ -91,6 +91,16 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
 }) => {
   const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
   const [categoryFilterSearch, setCategoryFilterSearch] = useState('');
+  const categoryFilterInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (categoryFilterOpen && categoryFilterInputRef.current) {
+      // Small delay to ensure the popover is rendered
+      setTimeout(() => {
+        categoryFilterInputRef.current?.focus();
+      }, 50);
+    }
+  }, [categoryFilterOpen]);
   const formatCurrency = (amount: number) => {
     const formatter = new Intl.NumberFormat('en-CA', {
       style: 'currency',
@@ -197,6 +207,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
               }}
               searchTerm={categoryFilterSearch}
               onSearchChange={setCategoryFilterSearch}
+              inputRef={categoryFilterInputRef}
             />
           ),
         },
