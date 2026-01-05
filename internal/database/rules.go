@@ -189,7 +189,7 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 		return 0, nil, err
 	}
 
-	selectQuery := "SELECT id FROM transactions WHERE category_id IS NULL"
+	selectQuery := "SELECT id, amount, currency, date FROM transactions WHERE category_id IS NULL"
 	var matchClause string
 	selectArgs := []interface{}{}
 
@@ -212,56 +212,65 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 		selectQuery += " AND " + matchClause
 	}
 
-	if r.AmountMin != nil {
-		selectQuery += " AND amount >= ?"
-		selectArgs = append(selectArgs, *r.AmountMin)
-	}
-	if r.AmountMax != nil {
-		selectQuery += " AND amount <= ?"
-		selectArgs = append(selectArgs, *r.AmountMax)
-	}
-
 	rows, err := DB.Query(selectQuery, selectArgs...)
 	if err != nil {
 		return 0, nil, err
 	}
 	defer rows.Close()
 
+	var baseCurrency string
+	needsAmountFilter := r.AmountMin != nil || r.AmountMax != nil
+	if needsAmountFilter {
+		settings, err := GetCurrencySettings()
+		if err != nil {
+			return 0, nil, err
+		}
+		baseCurrency = strings.TrimSpace(settings.MainCurrency)
+		if baseCurrency == "" {
+			baseCurrency = defaultMainCurrency
+		}
+	}
+
 	var affectedIds []int64
 	for rows.Next() {
 		var id int64
-		if err := rows.Scan(&id); err != nil {
+		var amount float64
+		var currency string
+		var date string
+		if err := rows.Scan(&id, &amount, &currency, &date); err != nil {
 			return 0, nil, err
+		}
+		if needsAmountFilter {
+			converted, err := ConvertAmount(amount, baseCurrency, currency, date)
+			if err != nil {
+				return 0, nil, err
+			}
+			if converted == nil {
+				continue
+			}
+			if r.AmountMin != nil && *converted < *r.AmountMin {
+				continue
+			}
+			if r.AmountMax != nil && *converted > *r.AmountMax {
+				continue
+			}
 		}
 		affectedIds = append(affectedIds, id)
 	}
 
-	updateQuery := "UPDATE transactions SET category_id = ? WHERE category_id IS NULL"
-	updateArgs := []interface{}{r.CategoryID}
-
-	if matchClause != "" {
-		updateQuery += " AND " + matchClause
-		switch r.MatchType {
-		case "contains":
-			updateArgs = append(updateArgs, "%"+r.MatchValue+"%")
-		case "starts_with":
-			updateArgs = append(updateArgs, r.MatchValue+"%")
-		case "ends_with":
-			updateArgs = append(updateArgs, "%"+r.MatchValue)
-		case "exact":
-			updateArgs = append(updateArgs, r.MatchValue)
-		}
+	if len(affectedIds) == 0 {
+		return 0, affectedIds, nil
 	}
 
-	if r.AmountMin != nil {
-		updateQuery += " AND amount >= ?"
-		updateArgs = append(updateArgs, *r.AmountMin)
-	}
-	if r.AmountMax != nil {
-		updateQuery += " AND amount <= ?"
-		updateArgs = append(updateArgs, *r.AmountMax)
+	placeholders := make([]string, len(affectedIds))
+	updateArgs := make([]interface{}, 0, len(affectedIds)+1)
+	updateArgs = append(updateArgs, r.CategoryID)
+	for i, id := range affectedIds {
+		placeholders[i] = "?"
+		updateArgs = append(updateArgs, id)
 	}
 
+	updateQuery := "UPDATE transactions SET category_id = ? WHERE id IN (" + strings.Join(placeholders, ",") + ")"
 	res, err := DB.Exec(updateQuery, updateArgs...)
 	if err != nil {
 		return 0, nil, err

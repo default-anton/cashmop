@@ -22,6 +22,8 @@ interface RuleEditorProps {
   amountInputRef: React.RefObject<HTMLInputElement | null>;
   currentAmount?: number;
   matchingTransactions?: any[];
+  mainCurrency: string;
+  showOriginalCurrency: boolean;
 }
 
 export const RuleEditor: React.FC<RuleEditorProps> = ({
@@ -32,6 +34,8 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
   amountInputRef,
   currentAmount,
   matchingTransactions = [],
+  mainCurrency,
+  showOriginalCurrency,
 }) => {
   return (
     <div className={`mb-4 relative w-full transition-all duration-300 ${selectionRule ? 'min-h-[220px]' : 'h-44'}`}>
@@ -162,7 +166,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                           <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest text-right">
                             <div className="flex items-center gap-1 justify-end">
                               <DollarSign className="w-2.5 h-2.5 opacity-70" />
-                              <span>Amount</span>
+                              <span>Amount ({mainCurrency})</span>
                             </div>
                           </th>
                         </tr>
@@ -176,8 +180,19 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                             <td className="px-3 py-1.5 text-[11px] font-bold text-canvas-700 truncate max-w-[200px]">
                               {tx.description}
                             </td>
-                            <td className={`px-3 py-1.5 text-[10px] font-black text-right ${tx.amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
-                              ${Math.abs(tx.amount).toFixed(2)}
+                            <td className="px-3 py-1.5 text-right">
+                              <div className="flex flex-col items-end">
+                                <span className={`text-[10px] font-black ${tx.main_amount === null ? 'text-canvas-400' : tx.main_amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
+                                  {tx.main_amount === null
+                                    ? '—'
+                                    : new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(tx.main_amount))}
+                                </span>
+                                {showOriginalCurrency && (
+                                  <span className={`text-[9px] ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
+                                    {(tx.currency || mainCurrency).toUpperCase()} {Math.abs(tx.amount).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}

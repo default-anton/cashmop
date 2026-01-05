@@ -8,6 +8,7 @@ interface Transaction {
   date: string;
   description: string;
   amount: number;
+  currency: string;
   account_id: number;
   account_name: string;
   owner_name?: string;
@@ -21,6 +22,9 @@ interface SelectionRule {
 
 interface TransactionCardProps {
   transaction: Transaction;
+  mainAmount: number | null;
+  mainCurrency: string;
+  showOriginalCurrency: boolean;
   onMouseUp: () => void;
   selectionRule?: SelectionRule | null;
   onSelectionChange?: (start: number, end: number) => void;
@@ -29,6 +33,9 @@ interface TransactionCardProps {
 
 export const TransactionCard: React.FC<TransactionCardProps> = ({
   transaction,
+  mainAmount,
+  mainCurrency,
+  showOriginalCurrency,
   onMouseUp,
   onSelectionChange,
   selectionRule,
@@ -173,6 +180,12 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
       </>
     );
   };
+  const displayAmount = mainAmount ?? transaction.amount;
+  const isExpense = displayAmount < 0;
+  const formattedMain = mainAmount === null
+    ? '—'
+    : new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(displayAmount));
+
   return (
     <div className="relative group perspective-1000">
       <Card
@@ -197,12 +210,17 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
             </div>
 
             <div className="flex flex-col items-center">
-              <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-0.5 ${transaction.amount < 0 ? 'text-finance-expense/60' : 'text-finance-income/60'}`}>
-                {transaction.amount < 0 ? 'Expense' : 'Income'}
+              <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-0.5 ${isExpense ? 'text-finance-expense/60' : 'text-finance-income/60'}`}>
+                {isExpense ? 'Expense' : 'Income'}
               </span>
-              <span className={`text-sm font-mono font-black tracking-tight ${transaction.amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
-                ${Math.abs(transaction.amount).toFixed(2)}
+              <span className={`text-sm font-mono font-black tracking-tight ${mainAmount === null ? 'text-canvas-400' : isExpense ? 'text-finance-expense' : 'text-finance-income'}`}>
+                {formattedMain}
               </span>
+              {showOriginalCurrency && (
+                <span className={`text-[10px] font-sans mt-1 ${transaction.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
+                  {(transaction.currency || mainCurrency).toUpperCase()} {Math.abs(transaction.amount).toFixed(2)}
+                </span>
+              )}
             </div>
 
             <div className="flex gap-6">

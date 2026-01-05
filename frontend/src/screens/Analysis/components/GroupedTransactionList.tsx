@@ -6,11 +6,14 @@ import Table from '../../../components/Table';
 import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
 import CategoryGhostInput from './CategoryGhostInput';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useCurrency } from '../../../contexts/CurrencyContext';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
+type TransactionWithFx = database.TransactionModel & { main_amount: number | null };
+
 interface GroupedTransactionListProps {
-  transactions: database.TransactionModel[];
+  transactions: TransactionWithFx[];
   categories: database.Category[];
   groupBy: GroupBy;
   showSummary?: boolean;
@@ -92,6 +95,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   const [categoryFilterOpen, setCategoryFilterOpen] = useState(false);
   const [categoryFilterSearch, setCategoryFilterSearch] = useState('');
   const categoryFilterInputRef = useRef<HTMLInputElement>(null);
+  const { mainCurrency, showOriginalCurrency } = useCurrency();
 
   useEffect(() => {
     if (categoryFilterOpen && categoryFilterInputRef.current) {
@@ -104,7 +108,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   const formatCurrency = (amount: number) => {
     const formatter = new Intl.NumberFormat('en-CA', {
       style: 'currency',
-      currency: 'CAD',
+      currency: mainCurrency,
     });
     return formatter.format(Math.abs(amount));
   };
@@ -229,26 +233,41 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
 
     cols.push({
       key: 'amount',
-      header: renderHeader('Amount', DollarSign, 'justify-end'),
+      header: (
+        <div className="flex flex-col items-end">
+          {renderHeader(`Amount (${mainCurrency})`, DollarSign, 'justify-end')}
+          {showOriginalCurrency && (
+            <span className="text-[9px] font-semibold text-canvas-400 mt-0.5">Original</span>
+          )}
+        </div>
+      ),
       className: 'text-right font-mono font-bold w-32 whitespace-nowrap',
       sortable: true,
-      render: (amount: number) => {
-        const formatted = formatCurrency(amount);
-        const [symbol, value] = [formatted.slice(0, 1), formatted.slice(1)];
+      render: (_amount: number, tx: TransactionWithFx) => {
+        const amount = tx.main_amount;
+        const formatted = amount === null ? '—' : formatCurrency(amount);
+        const [symbol, value] = formatted !== '—' ? [formatted.slice(0, 1), formatted.slice(1)] : ['', '—'];
         return (
-          <div className={`flex items-baseline justify-end gap-0.5 ${amount >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-            <span className="text-[10px] opacity-40 font-sans tracking-tighter">{symbol}</span>
-            <span className="text-sm tracking-tight">{value}</span>
+          <div className="flex flex-col items-end gap-0.5">
+            <div className={`flex items-baseline justify-end gap-0.5 ${amount === null ? 'text-canvas-400' : amount >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
+              {symbol && <span className="text-[10px] opacity-40 font-sans tracking-tighter">{symbol}</span>}
+              <span className="text-sm tracking-tight">{value}</span>
+            </div>
+            {showOriginalCurrency && (
+              <span className={`text-[10px] font-sans ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
+                {tx.currency?.toUpperCase() || mainCurrency} {Math.abs(tx.amount).toFixed(2)}
+              </span>
+            )}
           </div>
         );
       },
     });
 
     return cols;
-  }, [groupBy, categories, onCategorize, onCategoryFilterChange, selectedCategoryIds, categoryFilterOpen, categoryFilterSearch]);
+  }, [groupBy, categories, mainCurrency, onCategorize, onCategoryFilterChange, selectedCategoryIds, categoryFilterOpen, categoryFilterSearch, showOriginalCurrency]);
 
   const groups = useMemo(() => {
-    const grouped = new Map<string, { transactions: database.TransactionModel[]; total: number }>();
+    const grouped = new Map<string, { transactions: TransactionWithFx[]; total: number }>();
 
     transactions.forEach((tx) => {
       let key = '';
@@ -259,7 +278,9 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
 
       const group = grouped.get(key) || { transactions: [], total: 0 };
       group.transactions.push(tx);
-      group.total += tx.amount;
+      if (tx.main_amount !== null) {
+        group.total += tx.main_amount;
+      }
       grouped.set(key, group);
     });
 
@@ -269,7 +290,12 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         if (transactionSortField === 'date') {
           comparison = a.date.localeCompare(b.date);
         } else {
-          comparison = Math.abs(a.amount) - Math.abs(b.amount);
+          const aAmount = a.main_amount;
+          const bAmount = b.main_amount;
+          if (aAmount === null && bAmount === null) comparison = 0;
+          else if (aAmount === null) comparison = 1;
+          else if (bAmount === null) comparison = -1;
+          else comparison = Math.abs(aAmount) - Math.abs(bAmount);
         }
         return transactionSortOrder === 'asc' ? comparison : -comparison;
       });
@@ -297,7 +323,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     return <Landmark className="w-4 h-4" />;
   };
 
-  const netTotal = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+  const netTotal = transactions.reduce((sum, tx) => sum + (tx.main_amount ?? 0), 0);
 
   return (
     <div className="w-full space-y-6">
@@ -306,13 +332,13 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
           <Card variant="elevated" className="p-6">
             <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Income</div>
             <div className="text-2xl font-mono font-bold text-finance-income">
-              {formatCurrency(transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0))}
+              {formatCurrency(transactions.filter(t => (t.main_amount ?? 0) > 0).reduce((s, t) => s + (t.main_amount ?? 0), 0))}
             </div>
           </Card>
           <Card variant="elevated" className="p-6">
             <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Expenses</div>
             <div className="text-2xl font-mono font-bold text-finance-expense">
-              {formatCurrency(transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0))}
+              {formatCurrency(transactions.filter(t => (t.main_amount ?? 0) < 0).reduce((s, t) => s + (t.main_amount ?? 0), 0))}
             </div>
           </Card>
           <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
@@ -399,7 +425,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                   </span>
                 </div>
                 <div className="font-mono font-bold text-canvas-400">
-                  $0.00
+                  {formatCurrency(0)}
                 </div>
               </div>
 

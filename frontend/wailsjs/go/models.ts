@@ -259,6 +259,7 @@ export namespace main {
 	    category: string;
 	    account: string;
 	    owner: string;
+	    currency: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new TransactionInput(source);
@@ -272,6 +273,7 @@ export namespace main {
 	        this.category = source["category"];
 	        this.account = source["account"];
 	        this.owner = source["owner"];
+	        this.currency = source["currency"];
 	    }
 	}
 	export class WebSearchResult {

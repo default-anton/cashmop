@@ -193,6 +193,18 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 	return &FxRateLookup{RateDate: rateDate, Rate: rate, Source: source}, nil
 }
 
+func ConvertAmount(amount float64, baseCurrency, quoteCurrency, date string) (*float64, error) {
+	rate, err := GetFxRate(baseCurrency, quoteCurrency, date)
+	if err != nil {
+		return nil, err
+	}
+	if rate == nil {
+		return nil, nil
+	}
+	converted := amount * rate.Rate
+	return &converted, nil
+}
+
 func GetTransactionCurrencyRanges(baseCurrency string) (map[string]FxDateRange, error) {
 	base := strings.ToUpper(strings.TrimSpace(baseCurrency))
 	rows, err := DB.Query(`

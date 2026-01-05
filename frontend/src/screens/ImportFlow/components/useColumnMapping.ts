@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ImportMapping, CsvFieldKey, AmountMapping } from './ColumnMapperTypes';
 
-export const defaultMapping = (): ImportMapping => ({
+export const defaultMapping = (defaultCurrency: string): ImportMapping => ({
   csv: {
     date: '',
     description: [],
@@ -9,11 +9,11 @@ export const defaultMapping = (): ImportMapping => ({
     amountMapping: { type: 'single', column: '', invertSign: false },
   },
   account: '',
-  currencyDefault: 'CAD',
+  currencyDefault: defaultCurrency,
 });
 
-export const useColumnMapping = (initialMapping?: ImportMapping) => {
-  const [mapping, setMapping] = useState<ImportMapping>(initialMapping || defaultMapping());
+export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency: string = 'CAD') => {
+  const [mapping, setMapping] = useState<ImportMapping>(initialMapping || defaultMapping(defaultCurrency));
 
   // Update mapping if initialMapping changes (e.g. from auto-selection)
   useEffect(() => {

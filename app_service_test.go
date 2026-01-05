@@ -81,8 +81,7 @@ func TestFuzzySearch(t *testing.T) {
 // ============================================================================
 
 func TestImportTransactions(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -209,8 +208,7 @@ func TestImportTransactions(t *testing.T) {
 }
 
 func TestGetUncategorizedTransactions(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -235,8 +233,7 @@ func TestGetUncategorizedTransactions(t *testing.T) {
 }
 
 func TestCategorizeTransaction(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -310,8 +307,7 @@ func TestCategorizeTransaction(t *testing.T) {
 // ============================================================================
 
 func TestGetCategories(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -336,8 +332,7 @@ func TestGetCategories(t *testing.T) {
 }
 
 func TestSearchCategories(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -393,8 +388,7 @@ func TestSearchCategories(t *testing.T) {
 }
 
 func TestRenameCategory(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -421,8 +415,7 @@ func TestRenameCategory(t *testing.T) {
 // ============================================================================
 
 func TestGetAccounts(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -447,8 +440,7 @@ func TestGetAccounts(t *testing.T) {
 }
 
 func TestGetOwners(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -473,8 +465,7 @@ func TestGetOwners(t *testing.T) {
 }
 
 func TestCreateAccount(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -516,8 +507,7 @@ func TestCreateAccount(t *testing.T) {
 }
 
 func TestCreateOwner(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -563,8 +553,7 @@ func TestCreateOwner(t *testing.T) {
 // ============================================================================
 
 func TestGetCategorizationRulesCount(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -597,8 +586,7 @@ func TestGetCategorizationRulesCount(t *testing.T) {
 }
 
 func TestSaveCategorizationRule(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -667,8 +655,7 @@ func TestSaveCategorizationRule(t *testing.T) {
 }
 
 func TestUndoCategorizationRule(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -848,8 +835,7 @@ func TestUndoCategorizationRule(t *testing.T) {
 // ============================================================================
 
 func TestSearchTransactions(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -926,8 +912,7 @@ func TestSearchTransactions(t *testing.T) {
 }
 
 func TestGetMonthList(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -952,8 +937,7 @@ func TestGetMonthList(t *testing.T) {
 }
 
 func TestGetAnalysisTransactions(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -1119,8 +1103,7 @@ func TestSearchWeb(t *testing.T) {
 // ============================================================================
 
 func TestGetColumnMappings(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -1157,8 +1140,7 @@ func TestGetColumnMappings(t *testing.T) {
 }
 
 func TestSaveColumnMapping(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -1206,8 +1188,7 @@ func TestSaveColumnMapping(t *testing.T) {
 }
 
 func TestDeleteColumnMapping(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -1237,8 +1218,7 @@ func TestDeleteColumnMapping(t *testing.T) {
 // ============================================================================
 
 func TestExportTransactions(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -1317,8 +1297,7 @@ func TestExportTransactions(t *testing.T) {
 // ============================================================================
 
 func TestGetLastBackupInfo(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -1338,8 +1317,7 @@ func TestGetLastBackupInfo(t *testing.T) {
 }
 
 func TestValidateBackupFile(t *testing.T) {
-	db := setupTestDBWithFile(t)
-	defer teardownTestDB(t, db)
+	setupTestDBWithFile(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -1387,8 +1365,7 @@ func TestValidateBackupFile(t *testing.T) {
 }
 
 func TestRestoreBackup(t *testing.T) {
-	db := setupTestDBWithFile(t)
-	defer teardownTestDB(t, db)
+	setupTestDBWithFile(t)
 
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
@@ -1422,8 +1399,7 @@ func TestRestoreBackup(t *testing.T) {
 }
 
 func TestRestoreBackup_EmptyPath(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -1434,8 +1410,7 @@ func TestRestoreBackup_EmptyPath(t *testing.T) {
 }
 
 func TestTriggerAutoBackup(t *testing.T) {
-	db := setupTestDB(t)
-	defer teardownTestDB(t, db)
+	setupTestDB(t)
 
 	app := NewApp()
 
@@ -1453,7 +1428,7 @@ func TestTriggerAutoBackup(t *testing.T) {
 // ============================================================================
 
 func TestShutdown(t *testing.T) {
-	_ = setupTestDB(t)
+	setupTestDB(t)
 
 	app := NewApp()
 

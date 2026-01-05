@@ -344,6 +344,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
       const ownerIdx = mapping.csv.owner ? headers.indexOf(mapping.csv.owner) : -1;
       const accountIdx = mapping.csv.account ? headers.indexOf(mapping.csv.account) : -1;
+      const currencyIdx = mapping.csv.currency ? headers.indexOf(mapping.csv.currency) : -1;
 
       for (const row of pf.rows) {
         const dStr = row[dateIdx];
@@ -359,6 +360,9 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
         const amount = amountFn(row);
 
+        const rawCurrency = currencyIdx !== -1 ? row[currencyIdx] : '';
+        const currency = (rawCurrency || mapping.currencyDefault || '').trim().toUpperCase();
+
         out.push({
           date: dateObj.toISOString().split('T')[0], // YYYY-MM-DD
           description: desc,
@@ -366,6 +370,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
           category: '',
           account: accountIdx !== -1 ? row[accountIdx] : mapping.account,
           owner: ownerIdx !== -1 ? row[ownerIdx] : (mapping.defaultOwner || 'Unassigned'),
+          currency: currency || mapping.currencyDefault,
         });
       }
     }

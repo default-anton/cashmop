@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   AnalysisMonthSelector,
   GroupedTransactionList
@@ -28,7 +28,10 @@ const Analysis: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
-  const { warning } = useCurrency();
+  const { warning, mainCurrency, showOriginalCurrency, updateSettings, convertAmount, settings } = useCurrency();
+  const [showOriginalSaving, setShowOriginalSaving] = useState(false);
+  const [fxAmounts, setFxAmounts] = useState<Map<number, number | null>>(new Map());
+  const [hasMissingRates, setHasMissingRates] = useState(false);
 
   const [groupSortField, setGroupSortField] = useState<GroupSortField>('name');
   const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>('asc');
@@ -82,6 +85,32 @@ const Analysis: React.FC = () => {
   }, [fetchTransactions]);
 
   useEffect(() => {
+    let cancelled = false;
+    const compute = async () => {
+      if (transactions.length === 0) {
+        setFxAmounts(new Map());
+        setHasMissingRates(false);
+        return;
+      }
+      const next = new Map<number, number | null>();
+      let missing = false;
+      await Promise.all(transactions.map(async (tx) => {
+        const converted = await convertAmount(tx.amount, tx.currency || mainCurrency, tx.date);
+        if (converted === null) missing = true;
+        next.set(tx.id, converted);
+      }));
+      if (!cancelled) {
+        setFxAmounts(next);
+        setHasMissingRates(missing);
+      }
+    };
+    compute();
+    return () => {
+      cancelled = true;
+    };
+  }, [convertAmount, mainCurrency, transactions]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (exportDropdownRef.current && !exportDropdownRef.current.contains(event.target as Node)) {
         setExportDropdownOpen(false);
@@ -107,6 +136,19 @@ const Analysis: React.FC = () => {
     } else {
       setTransactionSortField(field);
       setTransactionSortOrder(field === 'date' ? 'desc' : 'asc');
+    }
+  };
+
+  const handleShowOriginalToggle = async (value: boolean) => {
+    if (showOriginalSaving) return;
+    setShowOriginalSaving(true);
+    try {
+      if (!settings) return;
+      await updateSettings({ ...settings, show_original_currency: value });
+    } catch (e) {
+      console.error('Failed to update currency display setting', e);
+    } finally {
+      setShowOriginalSaving(false);
     }
   };
 
@@ -163,6 +205,34 @@ const Analysis: React.FC = () => {
   };
 
   const groupingOptions: GroupBy[] = ['All', 'Category', 'Owner', 'Account'];
+  const displayWarning = hasMissingRates
+    ? {
+        tone: 'error' as const,
+        title: 'Exchange rates missing',
+        detail: 'Some transactions are missing rates. Converted totals exclude those items.',
+      }
+    : warning;
+
+  const transactionsWithFx = useMemo(() => (
+    transactions.map((tx) => ({
+      ...tx,
+      main_amount: fxAmounts.get(tx.id) ?? null,
+    }))
+  ), [fxAmounts, transactions]);
+
+  const formatCurrency = useCallback((amount: number) => (
+    new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(amount))
+  ), [mainCurrency]);
+
+  const totals = useMemo(() => {
+    const amounts = transactionsWithFx
+      .map((tx) => tx.main_amount)
+      .filter((val): val is number => typeof val === 'number');
+    const income = amounts.filter((val) => val > 0).reduce((sum, val) => sum + val, 0);
+    const expenses = amounts.filter((val) => val < 0).reduce((sum, val) => sum + val, 0);
+    const net = amounts.reduce((sum, val) => sum + val, 0);
+    return { income, expenses, net };
+  }, [transactionsWithFx]);
 
   return (
     <div className="min-h-screen bg-canvas-100 texture-delight pt-24 pb-12 px-8">
@@ -185,6 +255,17 @@ const Analysis: React.FC = () => {
               selectedMonth={selectedMonth}
               onChange={setSelectedMonth}
             />
+
+            <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-canvas-200 bg-canvas-50 text-xs font-semibold text-canvas-600">
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 accent-brand"
+                checked={showOriginalCurrency}
+                onChange={(e) => handleShowOriginalToggle(e.target.checked)}
+                disabled={showOriginalSaving}
+              />
+              Original
+            </label>
 
             <div className="relative" ref={exportDropdownRef}>
               <button
@@ -228,16 +309,16 @@ const Analysis: React.FC = () => {
           </div>
         </div>
 
-        {warning && (
+        {displayWarning && (
           <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
-            warning.tone === 'error'
+            displayWarning.tone === 'error'
               ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
               : 'bg-yellow-100 border-yellow-300 text-yellow-800'
           }`}>
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-semibold">{warning.title}</p>
-              <p className="text-sm">{warning.detail}</p>
+              <p className="text-sm font-semibold">{displayWarning.title}</p>
+              <p className="text-sm">{displayWarning.detail}</p>
             </div>
           </div>
         )}
@@ -256,19 +337,19 @@ const Analysis: React.FC = () => {
             <Card variant="elevated" className="p-6">
               <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Income</div>
               <div className="text-2xl font-mono font-bold text-finance-income">
-                {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(Math.abs(transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0)))}
+                {formatCurrency(totals.income)}
               </div>
             </Card>
             <Card variant="elevated" className="p-6">
               <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Expenses</div>
               <div className="text-2xl font-mono font-bold text-finance-expense">
-                {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(Math.abs(transactions.filter(t => t.amount < 0).reduce((s, t) => s + t.amount, 0)))}
+                {formatCurrency(totals.expenses)}
               </div>
             </Card>
             <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
               <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">Net Flow</div>
-              <div className={`text-2xl font-mono font-bold ${transactions.reduce((s, t) => s + t.amount, 0) >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-                {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(Math.abs(transactions.reduce((s, t) => s + t.amount, 0)))}
+              <div className={`text-2xl font-mono font-bold ${totals.net >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
+                {formatCurrency(totals.net)}
               </div>
             </Card>
           </div>
@@ -331,7 +412,7 @@ const Analysis: React.FC = () => {
           </div>
         ) : (
           <GroupedTransactionList
-            transactions={transactions}
+            transactions={transactionsWithFx}
             categories={categories}
             groupBy={groupBy}
             showSummary={false}

@@ -18,6 +18,7 @@ interface Transaction {
   date: string;
   description: string;
   amount: number;
+  currency: string;
   category_id: number | null;
   category_name: string;
   account_id: number;
@@ -72,7 +73,11 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [showUndoToast, setShowUndoToast] = useState(false);
 
   const { showToast } = useToast();
-  const { warning } = useCurrency();
+  const { warning, mainCurrency, showOriginalCurrency, updateSettings, convertAmount, settings } = useCurrency();
+  const [showOriginalSaving, setShowOriginalSaving] = useState(false);
+  const [fxAmounts, setFxAmounts] = useState<Map<number, number | null>>(new Map());
+  const [matchingFxAmounts, setMatchingFxAmounts] = useState<Map<number, number | null>>(new Map());
+  const [hasMissingRates, setHasMissingRates] = useState(false);
 
   const [webSearchResults, setWebSearchResults] = useState<Array<{
     title: string;
@@ -148,6 +153,32 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    const compute = async () => {
+      if (transactions.length === 0) {
+        setFxAmounts(new Map());
+        setHasMissingRates(false);
+        return;
+      }
+      const next = new Map<number, number | null>();
+      let missing = false;
+      await Promise.all(transactions.map(async (tx) => {
+        const converted = await convertAmount(tx.amount, tx.currency || mainCurrency, tx.date);
+        if (converted === null) missing = true;
+        next.set(tx.id, converted);
+      }));
+      if (!cancelled) {
+        setFxAmounts(next);
+        setHasMissingRates(missing);
+      }
+    };
+    compute();
+    return () => {
+      cancelled = true;
+    };
+  }, [convertAmount, mainCurrency, transactions]);
+
+  useEffect(() => {
     if (currentTxId !== null && !loading) {
       inputRef.current?.focus();
     }
@@ -176,6 +207,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
   const currentTx = transactions.find((t) => t.id === currentTxId);
   const currentIndex = transactions.findIndex((t) => t.id === currentTxId);
+  const currentMainAmount = currentTx ? fxAmounts.get(currentTx.id) ?? currentTx.amount : 0;
 
   useEffect(() => {
     if (!selectionRule) {
@@ -204,7 +236,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           let v2 = parseFloat(amountFilter.value2) || 0;
           if (amountFilter.operator === 'between' && v1 > v2) [v1, v2] = [v2, v1];
 
-          const isExpense = currentTx && currentTx.amount < 0;
+          const currentMainAmount = currentTx ? (fxAmounts.get(currentTx.id) ?? currentTx.amount) : 0;
+          const isExpense = currentMainAmount < 0;
 
           if (isExpense) {
             if (amountFilter.operator === 'gt') amountMax = -v1;
@@ -236,7 +269,29 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     };
 
     fetchMatching();
-  }, [debouncedRule, amountFilter, currentTx?.id]);
+  }, [debouncedRule, amountFilter, currentTx?.id, fxAmounts]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const compute = async () => {
+      if (matchingTransactions.length === 0) {
+        setMatchingFxAmounts(new Map());
+        return;
+      }
+      const next = new Map<number, number | null>();
+      await Promise.all(matchingTransactions.map(async (tx) => {
+        const converted = await convertAmount(tx.amount, tx.currency || mainCurrency, tx.date);
+        next.set(tx.id, converted);
+      }));
+      if (!cancelled) {
+        setMatchingFxAmounts(next);
+      }
+    };
+    compute();
+    return () => {
+      cancelled = true;
+    };
+  }, [convertAmount, mainCurrency, matchingTransactions]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -464,7 +519,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           }
 
           const currentTx = transactions.find(t => t.id === oldId);
-          const isExpense = currentTx && currentTx.amount < 0;
+          const isExpense = (currentTx ? (fxAmounts.get(currentTx.id) ?? currentTx.amount) : 0) < 0;
 
           if (isExpense) {
             if (amountFilter.operator === 'gt') {
@@ -611,27 +666,64 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     return <InboxZero onRefresh={() => window.location.reload()} />;
   }
 
+  const displayWarning = hasMissingRates
+    ? {
+        tone: 'error' as const,
+        title: 'Exchange rates missing',
+        detail: 'Some transactions are missing rates. Converted amounts exclude those items.',
+      }
+    : warning;
+
+  const handleShowOriginalToggle = async (value: boolean) => {
+    if (showOriginalSaving) return;
+    setShowOriginalSaving(true);
+    try {
+      if (!settings) return;
+      await updateSettings({ ...settings, show_original_currency: value });
+    } catch (e) {
+      console.error('Failed to update currency display setting', e);
+    } finally {
+      setShowOriginalSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100 texture-delight">
       <div className="w-full max-w-2xl">
-        {warning && (
+        {displayWarning && (
           <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${
-            warning.tone === 'error'
+            displayWarning.tone === 'error'
               ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
               : 'bg-yellow-100 border-yellow-300 text-yellow-800'
           }`}>
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-semibold">{warning.title}</p>
-              <p className="text-sm">{warning.detail}</p>
+              <p className="text-sm font-semibold">{displayWarning.title}</p>
+              <p className="text-sm">{displayWarning.detail}</p>
             </div>
           </div>
         )}
+
+        <div className="flex justify-end mb-4">
+          <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-canvas-200 bg-canvas-50 text-xs font-semibold text-canvas-600">
+            <input
+              type="checkbox"
+              className="h-3.5 w-3.5 accent-brand"
+              checked={showOriginalCurrency}
+              onChange={(e) => handleShowOriginalToggle(e.target.checked)}
+              disabled={showOriginalSaving}
+            />
+            Original
+          </label>
+        </div>
 
         <ProgressHeader currentIndex={currentIndex} totalTransactions={transactions.length} />
 
         <TransactionCard
           transaction={currentTx}
+          mainAmount={fxAmounts.get(currentTx.id) ?? null}
+          mainCurrency={mainCurrency}
+          showOriginalCurrency={showOriginalCurrency}
           onMouseUp={handleSelectionMouseUp}
           onSelectionChange={handleManualSelection}
           selectionRule={selectionRule}
@@ -656,8 +748,13 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           amountFilter={amountFilter}
           setAmountFilter={setAmountFilter}
           amountInputRef={amountInputRef}
-          currentAmount={currentTx?.amount}
-          matchingTransactions={matchingTransactions}
+          currentAmount={currentMainAmount}
+          matchingTransactions={matchingTransactions.map((tx) => ({
+            ...tx,
+            main_amount: matchingFxAmounts.get(tx.id) ?? null,
+          }))}
+          mainCurrency={mainCurrency}
+          showOriginalCurrency={showOriginalCurrency}
         />
 
         <CategoryInput

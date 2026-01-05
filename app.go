@@ -132,6 +132,7 @@ type TransactionInput struct {
 	Category    string  `json:"category"`
 	Account     string  `json:"account"`
 	Owner       string  `json:"owner"`
+	Currency    string  `json:"currency"`
 }
 
 type CategorizeResult struct {
@@ -150,6 +151,14 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	accountCache := make(map[string]int64)
 	userCache := make(map[string]*int64)
 	categoryCache := make(map[string]int64)
+	settings, err := database.GetCurrencySettings()
+	if err != nil {
+		return err
+	}
+	defaultCurrency := strings.ToUpper(strings.TrimSpace(settings.MainCurrency))
+	if defaultCurrency == "" {
+		defaultCurrency = "CAD"
+	}
 
 	for _, t := range transactions {
 		accID, ok := accountCache[t.Account]
@@ -191,6 +200,11 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 			catID = &id
 		}
 
+		currency := strings.ToUpper(strings.TrimSpace(t.Currency))
+		if currency == "" {
+			currency = defaultCurrency
+		}
+
 		txModels = append(txModels, database.TransactionModel{
 			AccountID:   accID,
 			OwnerID:     ownerID,
@@ -198,7 +212,7 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 			Description: t.Description,
 			Amount:      t.Amount,
 			CategoryID:  catID,
-			Currency:    "CAD",
+			Currency:    currency,
 		})
 	}
 
@@ -483,11 +497,20 @@ func (a *App) ExportTransactions(startDate, endDate string, categoryIDs []int64,
 		return 0, fmt.Errorf("No transactions found for this date range.")
 	}
 
+	settings, err := database.GetCurrencySettings()
+	if err != nil {
+		return 0, fmt.Errorf("Unable to load currency settings. Please try again.")
+	}
+	mainCurrency := strings.TrimSpace(settings.MainCurrency)
+	if mainCurrency == "" {
+		mainCurrency = "CAD"
+	}
+
 	switch strings.ToLower(format) {
 	case "csv":
-		return exportToCSV(transactions, destinationPath)
+		return exportToCSV(transactions, destinationPath, mainCurrency)
 	case "xlsx":
-		return exportToXLSX(transactions, destinationPath)
+		return exportToXLSX(transactions, destinationPath, mainCurrency)
 	default:
 		return 0, fmt.Errorf("Unsupported format. Please choose CSV or Excel.")
 	}
@@ -510,7 +533,7 @@ func sanitizeCSVField(field string) string {
 	return field
 }
 
-func exportToCSV(transactions []database.TransactionModel, destinationPath string) (int, error) {
+func exportToCSV(transactions []database.TransactionModel, destinationPath string, mainCurrency string) (int, error) {
 	file, err := os.Create(destinationPath)
 	if err != nil {
 		return 0, fmt.Errorf("Unable to create the export file. Please check your folder permissions.")
@@ -525,7 +548,7 @@ func exportToCSV(transactions []database.TransactionModel, destinationPath strin
 	writer.UseCRLF = true
 	defer writer.Flush()
 
-	header := []string{"Date", "Description", "Amount", "Category", "Account", "Owner", "Currency"}
+	header := []string{"Date", "Description", "Amount (Main)", "Amount (Original)", "Currency (Original)", "Category", "Account", "Owner"}
 	if err := writer.Write(header); err != nil {
 		return 0, fmt.Errorf("Unable to write the export file. Please check disk space and permissions.")
 	}
@@ -536,14 +559,22 @@ func exportToCSV(transactions []database.TransactionModel, destinationPath strin
 			category = ""
 		}
 
+		mainAmount := ""
+		if converted, err := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date); err != nil {
+			return 0, err
+		} else if converted != nil {
+			mainAmount = strconv.FormatFloat(*converted, 'f', -1, 64)
+		}
+
 		row := []string{
 			tx.Date,
 			sanitizeCSVField(tx.Description),
+			mainAmount,
 			strconv.FormatFloat(tx.Amount, 'f', -1, 64),
+			sanitizeCSVField(tx.Currency),
 			sanitizeCSVField(category),
 			sanitizeCSVField(tx.AccountName),
 			sanitizeCSVField(tx.OwnerName),
-			sanitizeCSVField(tx.Currency),
 		}
 		if err := writer.Write(row); err != nil {
 			return 0, fmt.Errorf("Unable to write the export file. Please check disk space and permissions.")
@@ -553,13 +584,13 @@ func exportToCSV(transactions []database.TransactionModel, destinationPath strin
 	return len(transactions), nil
 }
 
-func exportToXLSX(transactions []database.TransactionModel, destinationPath string) (int, error) {
+func exportToXLSX(transactions []database.TransactionModel, destinationPath string, mainCurrency string) (int, error) {
 	f := excelize.NewFile()
 	sheetName := "Transactions"
 	f.SetSheetName("Sheet1", sheetName)
 
-	headers := []string{"Date", "Description", "Amount", "Category", "Account", "Owner", "Currency"}
-	cols := []string{"A", "B", "C", "D", "E", "F", "G"}
+	headers := []string{"Date", "Description", "Amount (Main)", "Amount (Original)", "Currency (Original)", "Category", "Account", "Owner"}
+	cols := []string{"A", "B", "C", "D", "E", "F", "G", "H"}
 
 	headerStyle, err := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{Bold: true},
@@ -586,14 +617,22 @@ func exportToXLSX(transactions []database.TransactionModel, destinationPath stri
 			category = ""
 		}
 
+		var mainAmount interface{} = ""
+		if converted, err := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date); err != nil {
+			return 0, err
+		} else if converted != nil {
+			mainAmount = *converted
+		}
+
 		values := []interface{}{
 			tx.Date,
 			tx.Description,
+			mainAmount,
 			tx.Amount,
+			tx.Currency,
 			category,
 			tx.AccountName,
 			tx.OwnerName,
-			tx.Currency,
 		}
 
 		for j, val := range values {
@@ -615,19 +654,23 @@ func exportToXLSX(transactions []database.TransactionModel, destinationPath stri
 			case 1:
 				value = tx.Description
 			case 2:
-				value = strconv.FormatFloat(tx.Amount, 'f', -1, 64)
+				if converted, err := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date); err == nil && converted != nil {
+					value = strconv.FormatFloat(*converted, 'f', -1, 64)
+				}
 			case 3:
+				value = strconv.FormatFloat(tx.Amount, 'f', -1, 64)
+			case 4:
+				value = tx.Currency
+			case 5:
 				if tx.CategoryID != nil {
 					value = tx.CategoryName
 				} else {
 					value = ""
 				}
-			case 4:
-				value = tx.AccountName
-			case 5:
-				value = tx.OwnerName
 			case 6:
-				value = tx.Currency
+				value = tx.AccountName
+			case 7:
+				value = tx.OwnerName
 			}
 
 			width := float64(len(value))

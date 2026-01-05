@@ -206,22 +206,26 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *fl
 		}
 	}
 
-	if amountMin != nil {
-		query += " AND t.amount >= ?"
-		args = append(args, *amountMin)
-	}
-	if amountMax != nil {
-		query += " AND t.amount <= ?"
-		args = append(args, *amountMax)
-	}
-
-	query += " ORDER BY t.date DESC LIMIT 50"
+	query += " ORDER BY t.date DESC"
 
 	rows, err := DB.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
+	var baseCurrency string
+	needsAmountFilter := amountMin != nil || amountMax != nil
+	if needsAmountFilter {
+		settings, err := GetCurrencySettings()
+		if err != nil {
+			return nil, err
+		}
+		baseCurrency = strings.TrimSpace(settings.MainCurrency)
+		if baseCurrency == "" {
+			baseCurrency = defaultMainCurrency
+		}
+	}
 
 	var txs []TransactionModel
 	for rows.Next() {
@@ -232,7 +236,25 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *fl
 		); err != nil {
 			return nil, err
 		}
+		if needsAmountFilter {
+			converted, err := ConvertAmount(t.Amount, baseCurrency, t.Currency, t.Date)
+			if err != nil {
+				return nil, err
+			}
+			if converted == nil {
+				continue
+			}
+			if amountMin != nil && *converted < *amountMin {
+				continue
+			}
+			if amountMax != nil && *converted > *amountMax {
+				continue
+			}
+		}
 		txs = append(txs, t)
+		if len(txs) >= 50 {
+			break
+		}
 	}
 	return txs, nil
 }

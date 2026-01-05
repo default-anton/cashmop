@@ -9,7 +9,7 @@
 - [x] 2. FX provider (BoC) + sync orchestration + Wails events
 - [x] 2b. BoC provider record/replay integration test (cassette pattern)
 - [x] 3. Currency settings UI + global context + warnings
-- [ ] 4. Transaction display + import/export/analysis conversions
+- [x] 4. Transaction display + import/export/analysis conversions
 - [ ] 5. Integration/UI test coverage updates
 
 ## Progress Log
@@ -22,3 +22,7 @@
 - 2026-01-05: Added CurrencyContext, settings card, and main currency/show-original wiring; warning banners in amount screens next.
 - 2026-01-05: Added FX warning banners across Analysis/Import/Categorization and completed milestone 3.
 - 2026-01-05: Swapped Settings main currency selector to AutocompleteInput and updated frontend rules.
+- 2026-01-05: Wired import flow to carry currency, defaulting to main currency when unmapped.
+- 2026-01-05: Updated analysis + categorization to compute main-currency amounts client-side, show original toggles, and flag missing-rate banners.
+- 2026-01-05: Adjusted rule matching/search + exports to use main-currency conversions and include original/main amounts on export.
+- 2026-01-05: make check timed out during go test ./... (retry with a longer timeout or run go test ./... separately).

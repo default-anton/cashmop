@@ -11,10 +11,11 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 
-import { Button, Card, Input, Select, AutocompleteInput } from '../../../components';
+import { Button, Card, Input, AutocompleteInput } from '../../../components';
 import { type ImportMapping, type AmountMapping } from './ColumnMapperTypes';
 import { useColumnMapping } from './useColumnMapping';
 import { sampleUniqueRows } from '../utils';
+import { useCurrency } from '../../../contexts/CurrencyContext';
 
 interface MappingPunchThroughProps {
   csvHeaders: string[];
@@ -75,13 +76,6 @@ const STEPS: Step[] = [
   },
 ];
 
-const CURRENCY_OPTIONS = [
-  { value: 'CAD', label: 'CAD' },
-  { value: 'USD', label: 'USD' },
-  { value: 'EUR', label: 'EUR' },
-  { value: 'GBP', label: 'GBP' },
-];
-
 export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
   csvHeaders,
   rows,
@@ -89,6 +83,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
   onComplete,
   initialMapping,
 }) => {
+  const { currencyOptions, mainCurrency } = useCurrency();
   const {
     mapping,
     setMapping,
@@ -99,12 +94,20 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     isAmountMappingValid,
     handleAmountMappingTypeChange,
     assignAmountMappingColumn,
-  } = useColumnMapping(initialMapping || undefined);
+  } = useColumnMapping(initialMapping || undefined, mainCurrency || 'CAD');
+
+  const [currencyInput, setCurrencyInput] = useState(mainCurrency || 'CAD');
 
   const mappingRef = useRef(mapping);
   useEffect(() => {
     mappingRef.current = mapping;
   }, [mapping]);
+
+  useEffect(() => {
+    if (!mapping?.currencyDefault) return;
+    const label = currencyOptions.find((option) => option.value === mapping.currencyDefault)?.label || mapping.currencyDefault;
+    setCurrencyInput(label);
+  }, [currencyOptions, mapping?.currencyDefault]);
 
   const getStartStepIdx = (m: ImportMapping) => {
     const idx = (key: StepKey) => Math.max(0, STEPS.findIndex((s) => s.key === key));
@@ -807,11 +810,19 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
           <div className="mt-6 grid gap-3 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
             <div>
               <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2">Default currency</div>
-              <Select
-                value={mapping.currencyDefault}
-                onChange={(e) => setMapping((prev) => ({ ...prev, currencyDefault: e.target.value }))}
-                options={CURRENCY_OPTIONS}
-              />
+              <div className="w-full max-w-sm">
+                <AutocompleteInput
+                  value={currencyInput}
+                  onChange={setCurrencyInput}
+                  onSelect={(value) => {
+                    setMapping((prev) => ({ ...prev, currencyDefault: value }));
+                    const label = currencyOptions.find((option) => option.value === value)?.label || value;
+                    setCurrencyInput(label);
+                  }}
+                  options={currencyOptions}
+                  placeholder="Search currency"
+                />
+              </div>
               {mapping.csv.currency && (
                 <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2">
                   Currently mapped from file: <span className="font-mono">{mapping.csv.currency}</span>
