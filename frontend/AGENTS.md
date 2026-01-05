@@ -1,30 +1,13 @@
 ## Frontend Rules You MUST Follow
 
-- Always read `./tailwind.config.js` when creating or editing UI components to ensure consistency (colors, fonts, shadows, animations, etc.).
-- Check types with `make typescript` after editing .ts, .tsx files.
-- Wails Event Pattern (for Go → Frontend communication):
-    - When Go needs to trigger UI state (e.g., open modal, show dialog), use `runtime.EventsEmit(ctx, "event-name")` in Go
-    - In React, import `EventsOn` from `wailsjs/runtime/runtime` and set up listener: `const off = EventsOn('event-name', callback)`
-    - Always clean up event listeners in useEffect cleanup: `return () => off?.()`
-    - Example: `ShowAbout()` in app.go emits "show-about" event, App.tsx listens and shows About modal
-- Use "Owner" (corresponds to `owner_name` in DB).
-- Visual Stability & Motion:
-    - Use Optimistic Updates for data changes. Never trigger a global loading state that unmounts the list.
-    - Use `framer-motion` (`layout` prop) to animate items moving and `AnimatePresence` (mode="popLayout") for items appearing/disappearing to prevent layout jumps.
-    - Subtle Animations: Prefer subtle (4-8px) vertical offsets and simple `easeOut` or high-damping springs for a professional, purposeful feel. Avoid scaling on exit.
-    - Success Feedback: Provide immediate in-place feedback (e.g., success flash on a tag) after a save, while syncing the backend in the background.
-- Typography & Casing:
-    - Use `text-canvas-600` and `uppercase` for small labels/metadata (e.g. table headers like DATE, OWNER) to ensure readability.
-    - No Caps for Data Names: Do NOT use `uppercase` for actual names. Use normal sentence or title casing.
-- Finance Formatting: When rendering negative currency amounts, never show the minus sign. Use the absolute value and indicate the negative state using red text (e.g., `text-finance-expense`).
-- Use React Portals (`createPortal`) for suggestions/dropdowns to prevent clipping by `overflow-hidden` or causing unwanted height changes.
-- Use `AutocompleteInput` for basic select lists (especially long option lists) instead of native `<select>`.
-- Snappy Multi-selects: All dropdown filters with >5 items MUST include:
-    - Search input (auto-focused on open)
-    - "Select All" / "Deselect All" bulk toggles
-    - "ONLY" button on item hover to quickly isolate a single selection
-    - Clear typography showing current selection count (or "All selected")
-- All external links MUST use Wails' `BrowserOpenURL` from `wailsjs/runtime/runtime`, not `window.open()` or `<a>` tags with `href`.
-    - Import: `import { BrowserOpenURL } from '<path>/wailsjs/runtime/runtime'`
-    - Usage: `onClick={() => BrowserOpenURL('https://example.com')}`
-    - Reference: `frontend/src/screens/CategorizationLoop/components/WebSearchResults.tsx`
+- Read `./tailwind.config.js` before UI edits; match tokens (colors/fonts/shadows/animations)
+- After .ts/.tsx edits: `make typescript`
+- Wails events: Go `runtime.EventsEmit(ctx, "event")`; React `EventsOn` + cleanup `return () => off?.()`; example `ShowAbout()` emits "show-about"
+- Use label "Owner" for `owner_name`
+- Visual stability/motion: optimistic updates; no global loading that unmounts lists; `framer-motion` `layout` + `AnimatePresence` mode="popLayout"; subtle 4–8px vertical offsets; `easeOut` or high-damping springs; no exit scale; in-place success feedback while backend syncs
+- Typography/casing: small labels `text-canvas-600` + `uppercase`; data names no `uppercase`
+- Finance: negative amounts no minus; abs value + red `text-finance-expense`
+- Suggestions/dropdowns: `createPortal` to avoid clipping/height jumps
+- Selects: use `AutocompleteInput` for basic selects, esp long lists
+- Multi-select filters >5 items: search input (auto-focus), select all/deselect all, "ONLY" on item hover, clear selection count (or "All selected")
+- External links: `BrowserOpenURL` only; no `window.open()` or `<a href>`; ref `frontend/src/screens/CategorizationLoop/components/WebSearchResults.tsx`
