@@ -24,7 +24,7 @@ UI Location: `frontend/src/screens/Settings/`, `frontend/src/screens/Analysis/`,
   - `key TEXT PRIMARY KEY`, `value TEXT NOT NULL`
   - Keys:
     - `main_currency` (default `CAD`)
-    - `show_original_currency` (`true`/`false`, default `true`)
+    - `show_original_currency` (`true`/`false`, default `false`)
     - `fx_last_sync` (ISO date string; last date fetched for the main currency)
 - New table: `fx_rates`
   - `base_currency TEXT NOT NULL` (the main currency)

@@ -82,6 +82,8 @@ func loadFixtures() error {
 		"accounts",
 		"column_mappings",
 		"categorization_rules",
+		"app_settings",
+		"fx_rates",
 		"transactions",
 	}
 
@@ -176,9 +178,22 @@ func insertFixture(table string, attrs map[string]interface{}) error {
 			Description: attrs["description"].(string),
 			Amount:      getFloat(attrs["amount"]),
 			CategoryID:  catID,
-			Currency:    "CAD",
+			Currency:    getStringWithDefault(attrs["currency"], "CAD"),
 		}
 		return database.BatchInsertTransactions([]database.TransactionModel{tx})
+	case "app_settings":
+		key := attrs["key"].(string)
+		value := attrs["value"].(string)
+		return database.SetAppSetting(key, value)
+	case "fx_rates":
+		rate := database.FxRate{
+			BaseCurrency:  attrs["base_currency"].(string),
+			QuoteCurrency: attrs["quote_currency"].(string),
+			RateDate:      attrs["rate_date"].(string),
+			Rate:          getFloat(attrs["rate"]),
+			Source:        attrs["source"].(string),
+		}
+		return database.UpsertFxRates([]database.FxRate{rate})
 	}
 	return nil
 }
@@ -192,4 +207,14 @@ func getFloat(v interface{}) float64 {
 	default:
 		return 0
 	}
+}
+
+func getStringWithDefault(v interface{}, fallback string) string {
+	if v == nil {
+		return fallback
+	}
+	if s, ok := v.(string); ok && s != "" {
+		return s
+	}
+	return fallback
 }

@@ -1,6 +1,11 @@
 import { test, expect } from './lib/fixtures';
 
-test('should successfully import transactions from a CSV file', async ({ importFlowPage, categorizationPage }) => {
+test('should successfully import transactions from a CSV file', async ({ page, settingsPage, importFlowPage, categorizationPage }) => {
+  await page.goto('/');
+  await settingsPage.navigateTo();
+  const showOriginalToggle = page.getByRole('checkbox', { name: 'Show original transaction currency' });
+  await showOriginalToggle.check();
+
   await importFlowPage.goto();
 
   // 1. Choose file
@@ -13,8 +18,9 @@ test('should successfully import transactions from a CSV file', async ({ importF
   await importFlowPage.mapDescription('Description');
   await importFlowPage.setAccountStatic('Checking');
 
-  // Skip optional steps (Owner, Currency)
+  // Skip optional steps (Owner)
   await importFlowPage.nextStep(); // Owner
+  await importFlowPage.mapColumn('Currency');
   await importFlowPage.nextStep(); // Currency
 
   // 3. Month Selector
@@ -34,6 +40,12 @@ test('should successfully import transactions from a CSV file', async ({ importF
     const text = await descLocator.innerText();
     
     if (expectedDescriptions.includes(text)) {
+      if (text === 'Groceries') {
+        await expect(importFlowPage.page.getByText('USD 50.00', { exact: true })).toBeVisible();
+      }
+      if (text === 'Salary') {
+        await expect(importFlowPage.page.getByText('USD 3000.00', { exact: true })).toBeVisible();
+      }
       found = true;
       break;
     }

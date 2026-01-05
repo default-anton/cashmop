@@ -16,6 +16,20 @@ salary:
   description: "Employer Inc"
   amount: 3000.00
   category: "Income"
+usd_bagel:
+  account: "Credit Card"
+  date: "2023-10-03"
+  description: "Brooklyn Bagel"
+  amount: -20.00
+  category: "Dining Out"
+  currency: "USD"
+jpy_taxi:
+  account: "Credit Card"
+  date: "2023-10-04"
+  description: "Tokyo Taxi"
+  amount: -100000
+  category: "Transport"
+  currency: "ZZZ"
 uncategorized_amazon:
   account: "Credit Card"
   date: "2023-10-05"

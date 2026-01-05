@@ -1,0 +1,6 @@
+usd_cad_oct:
+  base_currency: "CAD"
+  quote_currency: "USD"
+  rate_date: "2023-10-02"
+  rate: 1.25
+  source: "boc"
