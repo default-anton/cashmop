@@ -4,6 +4,7 @@ import (
 	"cashflow/internal/brave"
 	"cashflow/internal/database"
 	"cashflow/internal/fuzzy"
+	"cashflow/internal/fx"
 	"cashflow/internal/version"
 	"context"
 	"crypto/sha256"
@@ -47,6 +48,8 @@ func (a *App) startup(ctx context.Context) {
 			log.Printf("Auto-backup failed: %v", err)
 		}
 	}()
+
+	go a.syncFxRates()
 }
 
 func (a *App) Greet(name string) string {
@@ -55,6 +58,31 @@ func (a *App) Greet(name string) string {
 
 func (a *App) GetVersion() string {
 	return version.Version
+}
+
+func (a *App) GetCurrencySettings() (database.CurrencySettings, error) {
+	return database.GetCurrencySettings()
+}
+
+func (a *App) UpdateCurrencySettings(settings database.CurrencySettings) (database.CurrencySettings, error) {
+	return database.UpdateCurrencySettings(settings)
+}
+
+func (a *App) GetFxRate(baseCurrency, quoteCurrency, date string) (*database.FxRateLookup, error) {
+	return database.GetFxRate(baseCurrency, quoteCurrency, date)
+}
+
+func (a *App) GetFxRateStatus() (database.FxRateStatus, error) {
+	settings, err := database.GetCurrencySettings()
+	if err != nil {
+		return database.FxRateStatus{}, err
+	}
+	return database.GetFxRateStatus(settings.MainCurrency)
+}
+
+func (a *App) SyncFxRates() error {
+	go a.syncFxRates()
+	return nil
 }
 
 func (a *App) ShowAbout() {
@@ -108,12 +136,12 @@ type TransactionInput struct {
 
 type CategorizeResult struct {
 	TransactionID int64   `json:"transaction_id"`
-	AffectedIds    []int64 `json:"affected_ids"`
+	AffectedIds   []int64 `json:"affected_ids"`
 }
 
 type RuleResult struct {
-	RuleID       int64   `json:"rule_id"`
-	AffectedIds  []int64 `json:"affected_ids"`
+	RuleID      int64   `json:"rule_id"`
+	AffectedIds []int64 `json:"affected_ids"`
 }
 
 func (a *App) ImportTransactions(transactions []TransactionInput) error {
@@ -177,7 +205,11 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	if err := database.BatchInsertTransactions(txModels); err != nil {
 		return err
 	}
-	return database.ApplyAllRules()
+	if err := database.ApplyAllRules(); err != nil {
+		return err
+	}
+	go a.syncFxRates()
+	return nil
 }
 
 func (a *App) GetColumnMappings() ([]database.ColumnMappingModel, error) {
@@ -779,4 +811,27 @@ func (a *App) shutdown(ctx context.Context) {
 	}
 
 	database.Close()
+}
+
+func (a *App) syncFxRates() {
+	if a.ctx == nil {
+		return
+	}
+	settings, err := database.GetCurrencySettings()
+	if err != nil {
+		log.Printf("FX sync settings error: %v", err)
+		return
+	}
+	if err := fx.EnsureProviderSupported(settings.MainCurrency); err != nil {
+		log.Printf("FX sync unsupported: %v", err)
+		return
+	}
+	result, err := fx.SyncRates(a.ctx, settings.MainCurrency)
+	if err != nil {
+		log.Printf("FX sync failed: %v", err)
+		return
+	}
+	if result.Updated > 0 {
+		runtime.EventsEmit(a.ctx, "fx-rates-updated", result)
+	}
 }

@@ -6,7 +6,8 @@ import {
 import { database } from '../../../wailsjs/go/models';
 import { Card } from '../../components';
 import { useToast } from '../../components';
-import { BarChart3, ArrowUpDown, Download } from 'lucide-react';
+import { BarChart3, ArrowUpDown, Download, AlertTriangle } from 'lucide-react';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 export type SortOrder = 'asc' | 'desc';
@@ -27,6 +28,7 @@ const Analysis: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
+  const { warning } = useCurrency();
 
   const [groupSortField, setGroupSortField] = useState<GroupSortField>('name');
   const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>('asc');
@@ -225,6 +227,20 @@ const Analysis: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {warning && (
+          <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
+            warning.tone === 'error'
+              ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
+              : 'bg-yellow-100 border-yellow-300 text-yellow-800'
+          }`}>
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold">{warning.title}</p>
+              <p className="text-sm">{warning.detail}</p>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -91,6 +91,86 @@ export namespace database {
 	        this.mapping_json = source["mapping_json"];
 	    }
 	}
+	export class CurrencySettings {
+	    main_currency: string;
+	    show_original_currency: boolean;
+	    fx_last_sync: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CurrencySettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.main_currency = source["main_currency"];
+	        this.show_original_currency = source["show_original_currency"];
+	        this.fx_last_sync = source["fx_last_sync"];
+	    }
+	}
+	export class FxRateLookup {
+	    rate_date: string;
+	    rate: number;
+	    source: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FxRateLookup(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rate_date = source["rate_date"];
+	        this.rate = source["rate"];
+	        this.source = source["source"];
+	    }
+	}
+	export class FxRatePairStatus {
+	    quote_currency: string;
+	    latest_rate_date: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new FxRatePairStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.quote_currency = source["quote_currency"];
+	        this.latest_rate_date = source["latest_rate_date"];
+	    }
+	}
+	export class FxRateStatus {
+	    base_currency: string;
+	    last_sync: string;
+	    pairs: FxRatePairStatus[];
+	
+	    static createFrom(source: any = {}) {
+	        return new FxRateStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.base_currency = source["base_currency"];
+	        this.last_sync = source["last_sync"];
+	        this.pairs = this.convertValues(source["pairs"], FxRatePairStatus);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class TransactionModel {
 	    id: number;
 	    account_id: number;

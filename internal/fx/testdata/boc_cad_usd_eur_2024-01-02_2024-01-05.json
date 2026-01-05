@@ -1,0 +1,60 @@
+{
+  "recorded_at": "2026-01-04T18:47:53-08:00",
+  "request": {
+    "method": "GET",
+    "url": "https://www.bankofcanada.ca/valet/observations/FXUSDCAD,FXEURCAD/json?end_date=2024-01-05\u0026order_dir=asc\u0026start_date=2024-01-02",
+    "headers": {
+      "Accept": [
+        "application/json"
+      ],
+      "User-Agent": [
+        "CashflowTracker/1.0"
+      ]
+    }
+  },
+  "response": {
+    "status_code": 200,
+    "headers": {
+      "Access-Control-Allow-Origin": [
+        "*"
+      ],
+      "Cache-Control": [
+        "max-age=30"
+      ],
+      "Connection": [
+        "keep-alive"
+      ],
+      "Content-Disposition": [
+        "attachment; filename=\"FXUSDCAD,FXEURCAD-sd-2024-01-02-ed-2024-01-05.json\""
+      ],
+      "Content-Type": [
+        "application/json; charset=utf-8"
+      ],
+      "Date": [
+        "Mon, 05 Jan 2026 02:47:53 GMT"
+      ],
+      "Expires": [
+        "Mon, 05 Jan 2026 02:48:23 GMT"
+      ],
+      "Server": [
+        "BoC"
+      ],
+      "Strict-Transport-Security": [
+        "max-age=31536000; includeSubDomains"
+      ],
+      "Vary": [
+        "Accept-Encoding"
+      ],
+      "X-Dc": [
+        "a"
+      ],
+      "X-Generated": [
+        "2026-01-04 21:47:31"
+      ],
+      "X-Valet-Mode": [
+        "l10"
+      ]
+    },
+    "body": "{\n    \"terms\": {\n        \"url\": \"https://www.bankofcanada.ca/terms/\"\n    },\n    \"seriesDetail\": {\n        \"FXEURCAD\": {\n            \"label\": \"EUR/CAD\",\n            \"description\": \"European euro to Canadian dollar daily exchange rate\",\n            \"dimension\": {\n                \"key\": \"d\",\n                \"name\": \"Date\"\n            }\n        },\n        \"FXUSDCAD\": {\n            \"label\": \"USD/CAD\",\n            \"description\": \"US dollar to Canadian dollar daily exchange rate\",\n            \"dimension\": {\n                \"key\": \"d\",\n                \"name\": \"Date\"\n            }\n        }\n    },\n    \"observations\": [\n        {\n            \"d\": \"2024-01-02\",\n            \"FXEURCAD\": {\n                \"v\": \"1.4584\"\n            },\n            \"FXUSDCAD\": {\n                \"v\": \"1.3316\"\n            }\n        },\n        {\n            \"d\": \"2024-01-03\",\n            \"FXEURCAD\": {\n                \"v\": \"1.4577\"\n            },\n            \"FXUSDCAD\": {\n                \"v\": \"1.3356\"\n            }\n        },\n        {\n            \"d\": \"2024-01-04\",\n            \"FXEURCAD\": {\n                \"v\": \"1.4623\"\n            },\n            \"FXUSDCAD\": {\n                \"v\": \"1.3354\"\n            }\n        },\n        {\n            \"d\": \"2024-01-05\",\n            \"FXEURCAD\": {\n                \"v\": \"1.4614\"\n            },\n            \"FXUSDCAD\": {\n                \"v\": \"1.3347\"\n            }\n        }\n    ]\n}"
+  }
+}

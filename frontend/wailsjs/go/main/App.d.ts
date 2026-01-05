@@ -29,6 +29,12 @@ export function GetCategorizationRulesCount():Promise<number>;
 
 export function GetColumnMappings():Promise<Array<database.ColumnMappingModel>>;
 
+export function GetCurrencySettings():Promise<database.CurrencySettings>;
+
+export function GetFxRate(arg1:string,arg2:string,arg3:string):Promise<database.FxRateLookup>;
+
+export function GetFxRateStatus():Promise<database.FxRateStatus>;
+
 export function GetLastBackupInfo():Promise<Record<string, any>>;
 
 export function GetMonthList():Promise<Array<string>>;
@@ -67,8 +73,12 @@ export function SelectBackupFile():Promise<database.BackupMetadata>;
 
 export function ShowAbout():Promise<void>;
 
+export function SyncFxRates():Promise<void>;
+
 export function TriggerAutoBackup():Promise<string>;
 
 export function UndoCategorizationRule(arg1:number,arg2:Array<number>):Promise<void>;
+
+export function UpdateCurrencySettings(arg1:database.CurrencySettings):Promise<database.CurrencySettings>;
 
 export function ValidateBackupFile(arg1:string):Promise<database.BackupMetadata>;

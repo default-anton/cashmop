@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { database } from '../../../wailsjs/go/models';
 import { useToast } from '../../contexts/ToastContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 import {
   InboxZero,
   ProgressHeader,
@@ -70,6 +72,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [showUndoToast, setShowUndoToast] = useState(false);
 
   const { showToast } = useToast();
+  const { warning } = useCurrency();
 
   const [webSearchResults, setWebSearchResults] = useState<Array<{
     title: string;
@@ -611,6 +614,20 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100 texture-delight">
       <div className="w-full max-w-2xl">
+        {warning && (
+          <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${
+            warning.tone === 'error'
+              ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
+              : 'bg-yellow-100 border-yellow-300 text-yellow-800'
+          }`}>
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold">{warning.title}</p>
+              <p className="text-sm">{warning.detail}</p>
+            </div>
+          </div>
+        )}
+
         <ProgressHeader currentIndex={currentIndex} totalTransactions={transactions.length} />
 
         <TransactionCard

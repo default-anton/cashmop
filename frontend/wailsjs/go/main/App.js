@@ -54,6 +54,18 @@ export function GetColumnMappings() {
   return window['go']['main']['App']['GetColumnMappings']();
 }
 
+export function GetCurrencySettings() {
+  return window['go']['main']['App']['GetCurrencySettings']();
+}
+
+export function GetFxRate(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GetFxRate'](arg1, arg2, arg3);
+}
+
+export function GetFxRateStatus() {
+  return window['go']['main']['App']['GetFxRateStatus']();
+}
+
 export function GetLastBackupInfo() {
   return window['go']['main']['App']['GetLastBackupInfo']();
 }
@@ -130,12 +142,20 @@ export function ShowAbout() {
   return window['go']['main']['App']['ShowAbout']();
 }
 
+export function SyncFxRates() {
+  return window['go']['main']['App']['SyncFxRates']();
+}
+
 export function TriggerAutoBackup() {
   return window['go']['main']['App']['TriggerAutoBackup']();
 }
 
 export function UndoCategorizationRule(arg1, arg2) {
   return window['go']['main']['App']['UndoCategorizationRule'](arg1, arg2);
+}
+
+export function UpdateCurrencySettings(arg1) {
+  return window['go']['main']['App']['UpdateCurrencySettings'](arg1);
 }
 
 export function ValidateBackupFile(arg1) {

@@ -6,6 +6,7 @@ import Analysis from './screens/Analysis/Analysis';
 import Settings from './screens/Settings/Settings';
 import About from './screens/About/About';
 import { ToastProvider } from './contexts/ToastContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 
 function App() {
@@ -100,6 +101,7 @@ function App() {
 
   return (
     <ToastProvider>
+      <CurrencyProvider>
       <div className="min-h-screen bg-canvas-100">
       <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 bg-canvas-50/80 backdrop-blur-md border border-canvas-200 rounded-full shadow-lg">
         {hasData && (
@@ -160,6 +162,7 @@ function App() {
         <Analysis />
       )}
     </div>
+      </CurrencyProvider>
     </ToastProvider>
   );
 }

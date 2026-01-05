@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
 import { Button } from '../../components';
 import { useToast } from '../../contexts/ToastContext';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 import FileDropZone from './components/FileDropZone';
 import { MappingPunchThrough } from './components/MappingPunchThrough';
@@ -198,6 +199,7 @@ interface ImportFlowProps {
 
 export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   const toast = useToast();
+  const { warning } = useCurrency();
   const [step, setStep] = useState(1); // 1: Choose file(s), 2: Map, 3: Month Select, 4: Done
 
   const [parseBusy, setParseBusy] = useState(false);
@@ -392,6 +394,20 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   return (
     <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100 texture-delight font-sans text-canvas-800">
       <div className="w-full max-w-5xl">
+        {warning && (
+          <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${
+            warning.tone === 'error'
+              ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
+              : 'bg-yellow-100 border-yellow-300 text-yellow-800'
+          }`}>
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold">{warning.title}</p>
+              <p className="text-sm">{warning.detail}</p>
+            </div>
+          </div>
+        )}
+
         {step === 1 && (
           <div className="bg-canvas-50/30 border border-canvas-200/50 rounded-2xl p-8 backdrop-blur-sm shadow-card">
             <h2 className="text-2xl font-bold mb-6 text-center">Import Transactions</h2>

@@ -18,6 +18,7 @@
     - No Caps for Data Names: Do NOT use `uppercase` for actual names. Use normal sentence or title casing.
 - Finance Formatting: When rendering negative currency amounts, never show the minus sign. Use the absolute value and indicate the negative state using red text (e.g., `text-finance-expense`).
 - Use React Portals (`createPortal`) for suggestions/dropdowns to prevent clipping by `overflow-hidden` or causing unwanted height changes.
+- Use `AutocompleteInput` for basic select lists (especially long option lists) instead of native `<select>`.
 - Snappy Multi-selects: All dropdown filters with >5 items MUST include:
     - Search input (auto-focused on open)
     - "Select All" / "Deselect All" bulk toggles
