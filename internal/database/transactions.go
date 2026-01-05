@@ -208,12 +208,8 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *fl
 
 	query += " ORDER BY t.date DESC"
 
-	rows, err := DB.Query(query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
+	// Get currency settings BEFORE opening the query to avoid issues with
+	// SQLite's single connection limit (SetMaxOpenConns=1)
 	var baseCurrency string
 	needsAmountFilter := amountMin != nil || amountMax != nil
 	if needsAmountFilter {
@@ -226,6 +222,12 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *fl
 			baseCurrency = defaultMainCurrency
 		}
 	}
+
+	rows, err := DB.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
 	var txs []TransactionModel
 	for rows.Next() {

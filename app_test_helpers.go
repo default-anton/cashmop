@@ -36,6 +36,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 	if err != nil {
 		t.Fatalf("Failed to open test database: %v", err)
 	}
+	db.SetMaxOpenConns(1)
 
 	database.DB = db
 
