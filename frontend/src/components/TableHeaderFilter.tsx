@@ -122,22 +122,7 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, setIsOpen]);
 
-  const getFilterIcon = () => {
-    switch (config.type) {
-      case 'category':
-        return Filter;
-      case 'text':
-        return Search;
-      case 'amount':
-        return MoreHorizontal;
-      case 'date':
-        return Calendar;
-      default:
-        return Filter;
-    }
-  };
-
-  const FilterIcon = getFilterIcon();
+  const FilterIcon = Search;
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
