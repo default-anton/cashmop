@@ -5,7 +5,7 @@ import {
 import { database } from '../../../wailsjs/go/models';
 import { Card } from '../../components';
 import { useToast } from '../../components';
-import { BarChart3, ArrowUpDown, Download, AlertTriangle } from 'lucide-react';
+import { BarChart3, ArrowUpDown, Download, AlertTriangle, Search, X } from 'lucide-react';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
@@ -31,6 +31,9 @@ const Analysis: React.FC = () => {
   const [showOriginalSaving, setShowOriginalSaving] = useState(false);
   const [fxAmounts, setFxAmounts] = useState<Map<number, number | null>>(new Map());
   const [hasMissingRates, setHasMissingRates] = useState(false);
+  const [transactionSearch, setTransactionSearch] = useState('');
+  const [filteredTransactions, setFilteredTransactions] = useState<database.TransactionModel[]>([]);
+  const transactionSearchRequestId = useRef(0);
 
   const [groupSortField, setGroupSortField] = useState<GroupSortField>('name');
   const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>('asc');
@@ -211,12 +214,59 @@ const Analysis: React.FC = () => {
       }
     : warning;
 
-  const transactionsWithFx = useMemo(() => (
-    transactions.map((tx) => ({
+  const buildTransactionSearchLabel = useCallback((tx: database.TransactionModel) => {
+    const parts = [
+      tx.description || '',
+      tx.account_name || '',
+      tx.category_name || 'Uncategorized',
+      tx.owner_name || 'No Owner',
+      tx.date,
+      Math.abs(tx.amount).toFixed(2),
+      tx.currency || mainCurrency,
+    ];
+    return `${parts.join(' | ')} ::${tx.id}`;
+  }, [mainCurrency]);
+
+  const transactionSearchIndex = useMemo(() => {
+    const labels: string[] = [];
+    const lookup = new Map<string, database.TransactionModel>();
+    transactions.forEach((tx) => {
+      const label = buildTransactionSearchLabel(tx);
+      labels.push(label);
+      lookup.set(label, tx);
+    });
+    return { labels, lookup };
+  }, [buildTransactionSearchLabel, transactions]);
+
+  useEffect(() => {
+    const query = transactionSearch.trim();
+    if (!query) {
+      setFilteredTransactions(transactions);
+      return;
+    }
+    const runSearch = async () => {
+      const requestId = ++transactionSearchRequestId.current;
+      const ranked: string[] = await (window as any).go.main.App.FuzzySearch(query, transactionSearchIndex.labels);
+      if (requestId !== transactionSearchRequestId.current) return;
+      const next = ranked
+        .map((label: string) => transactionSearchIndex.lookup.get(label))
+        .filter((tx): tx is database.TransactionModel => !!tx);
+      setFilteredTransactions(next);
+    };
+    runSearch();
+  }, [transactionSearch, transactionSearchIndex, transactions]);
+
+  const searchActive = transactionSearch.trim().length > 0;
+  const displayedTransactions = useMemo(() => (
+    searchActive ? filteredTransactions : transactions
+  ), [filteredTransactions, searchActive, transactions]);
+
+  const displayedTransactionsWithFx = useMemo(() => (
+    displayedTransactions.map((tx) => ({
       ...tx,
       main_amount: fxAmounts.get(tx.id) ?? null,
     }))
-  ), [fxAmounts, transactions]);
+  ), [displayedTransactions, fxAmounts]);
 
   const formatMonthLabel = useCallback((monthStr: string) => {
     if (!monthStr) return '';
@@ -239,14 +289,14 @@ const Analysis: React.FC = () => {
   }, [mainCurrency, transactions]);
 
   const totals = useMemo(() => {
-    const amounts = transactionsWithFx
+    const amounts = displayedTransactionsWithFx
       .map((tx) => tx.main_amount)
       .filter((val): val is number => typeof val === 'number');
     const income = amounts.filter((val) => val > 0).reduce((sum, val) => sum + val, 0);
     const expenses = amounts.filter((val) => val < 0).reduce((sum, val) => sum + val, 0);
     const net = amounts.reduce((sum, val) => sum + val, 0);
     return { income, expenses, net };
-  }, [transactionsWithFx]);
+  }, [displayedTransactionsWithFx]);
 
   const uniqueGroups = useMemo(() => {
     if (transactions.length === 0) {
@@ -291,7 +341,7 @@ const Analysis: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="relative" ref={exportDropdownRef}>
               <button
                 onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
@@ -438,8 +488,34 @@ const Analysis: React.FC = () => {
                 Show transaction currency
               </label>
             )}
+            <div className="relative flex items-center bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
+              <Search className="w-3.5 h-3.5 text-canvas-500 ml-2" />
+              <input
+                value={transactionSearch}
+                onChange={(event) => setTransactionSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    setTransactionSearch('');
+                  }
+                }}
+                placeholder="Search transactions..."
+                className="w-56 md:w-64 bg-transparent text-sm text-canvas-700 placeholder:text-canvas-500 focus:outline-none px-2"
+              />
+              {transactionSearch && (
+                <button
+                  type="button"
+                  onClick={() => setTransactionSearch('')}
+                  className="p-1 text-canvas-400 hover:text-canvas-700 transition-colors"
+                  title="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest">
-              {transactions.length} Transactions Found
+              {searchActive
+                ? `${displayedTransactions.length} of ${transactions.length} Transactions`
+                : `${transactions.length} Transactions Found`}
             </div>
           </div>
         </div>
@@ -451,7 +527,7 @@ const Analysis: React.FC = () => {
           </div>
         ) : (
           <GroupedTransactionList
-            transactions={transactionsWithFx}
+            transactions={displayedTransactionsWithFx}
             categories={categories}
             groupBy={groupBy}
             showSummary={false}
