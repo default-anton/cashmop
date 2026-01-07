@@ -186,6 +186,12 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         let comparison = 0;
         if (transactionSortField === 'date') {
           comparison = a.date.localeCompare(b.date);
+        } else if (transactionSortField === 'account_name') {
+          comparison = (a.account_name || '').localeCompare(b.account_name || '');
+        } else if (transactionSortField === 'category_name') {
+          comparison = (a.category_name || 'Uncategorized').localeCompare(b.category_name || 'Uncategorized');
+        } else if (transactionSortField === 'owner_name') {
+          comparison = (a.owner_name || 'No Owner').localeCompare(b.owner_name || 'No Owner');
         } else {
           const aAmount = a.main_amount;
           const bAmount = b.main_amount;
@@ -346,6 +352,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         key: 'account_name',
         header: renderHeader('Account', Landmark),
         className: 'w-40',
+        sortable: true,
         render: (val: string) => (
           <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-100 text-[10px] font-bold text-canvas-600 border border-canvas-200 tracking-tight">
             {val}
@@ -358,6 +365,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       key: 'category_name',
       header: renderHeader('Category', Tag),
       className: 'w-40',
+      sortable: true,
       render: (_val: string, tx: database.TransactionModel) => (
         <EditableCategoryCell
           transaction={tx}
@@ -412,6 +420,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         key: 'owner_name',
         header: renderHeader('Owner', User),
         className: 'w-32',
+        sortable: true,
         render: (val: string) => (
           <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 tracking-tight">
             {val || 'No Owner'}

@@ -11,7 +11,7 @@ import { useCurrency } from '../../contexts/CurrencyContext';
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 export type SortOrder = 'asc' | 'desc';
 export type GroupSortField = 'name' | 'amount';
-export type TransactionSortField = 'date' | 'amount';
+export type TransactionSortField = 'date' | 'amount' | 'account_name' | 'category_name' | 'owner_name';
 type ExportFormat = 'csv' | 'xlsx';
 
 const Analysis: React.FC = () => {

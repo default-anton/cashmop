@@ -60,9 +60,9 @@ const Table = <T,>({
                 <th
                   key={column.key as string}
                   className={`px-6 py-3 text-left text-[10px] font-bold text-canvas-500 uppercase tracking-widest transition-colors group relative ${
-                    canSort && !hasFilter ? 'cursor-pointer hover:bg-canvas-200/50 hover:text-canvas-700' : ''
+                    canSort ? 'cursor-pointer hover:bg-canvas-200/50 hover:text-canvas-700' : ''
                   } ${column.className || ''}`}
-                  onClick={() => canSort && !hasFilter && onSort(column.key)}
+                  onClick={() => canSort && onSort(column.key)}
                   title={canSort ? `Sort by ${column.key}` : undefined}
                 >
                   <div className={`flex items-center gap-2 ${column.className?.includes('text-right') || column.className?.includes('justify-end') ? 'justify-end' : ''}`}>
