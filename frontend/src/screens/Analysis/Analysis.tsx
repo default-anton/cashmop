@@ -203,7 +203,6 @@ const Analysis: React.FC = () => {
     }
   };
 
-  const groupingOptions: GroupBy[] = ['All', 'Category', 'Owner', 'Account'];
   const displayWarning = hasMissingRates
     ? {
         tone: 'error' as const,
@@ -249,8 +248,36 @@ const Analysis: React.FC = () => {
     return { income, expenses, net };
   }, [transactionsWithFx]);
 
+  const uniqueGroups = useMemo(() => {
+    if (transactions.length === 0) {
+      return { category: false, owner: false, account: false };
+    }
+    const categories = new Set(transactions.map(tx => tx.category_name));
+    const owners = new Set(transactions.map(tx => tx.owner_name));
+    const accounts = new Set(transactions.map(tx => tx.account_name));
+    return {
+      category: categories.size > 1,
+      owner: owners.size > 1,
+      account: accounts.size > 1,
+    };
+  }, [transactions]);
+
+  const groupingOptions: GroupBy[] = useMemo(() => {
+    const options: GroupBy[] = ['All'];
+    if (uniqueGroups.category) options.push('Category');
+    if (uniqueGroups.owner) options.push('Owner');
+    if (uniqueGroups.account) options.push('Account');
+    return options;
+  }, [uniqueGroups]);
+
+  useEffect(() => {
+    if (!groupingOptions.includes(groupBy)) {
+      setGroupBy('All');
+    }
+  }, [groupingOptions, groupBy]);
+
   return (
-    <div className="min-h-screen bg-canvas-100 texture-delight pt-24 pb-12 px-8">
+    <div className="min-h-screen bg-canvas-100 pt-24 pb-12 px-8">
       <div className="max-w-5xl mx-auto space-y-8">
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
