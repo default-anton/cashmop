@@ -59,7 +59,7 @@ const Table = <T,>({
               return (
                 <th
                   key={column.key as string}
-                  className={`px-6 py-3 text-left text-[10px] font-bold text-canvas-500 uppercase tracking-widest transition-colors group relative ${
+                  className={`px-6 py-3 text-left text-[10px] font-bold text-canvas-500 uppercase tracking-widest transition-colors group relative select-none ${
                     canSort ? 'cursor-pointer hover:bg-canvas-200/50 hover:text-canvas-700' : ''
                   } ${column.className || ''}`}
                   onClick={() => canSort && onSort(column.key)}
@@ -74,7 +74,7 @@ const Table = <T,>({
                             e.stopPropagation();
                             onSort(column.key);
                           }}
-                          className={`cursor-pointer hover:text-brand ${hasFilter ? '' : ''}`}
+                          className={`cursor-pointer hover:text-brand select-none ${hasFilter ? '' : ''}`}
                         >
                           {isSorted ? (
                             sortOrder === 'asc' ? (
