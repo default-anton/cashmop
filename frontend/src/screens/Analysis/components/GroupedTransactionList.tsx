@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { database } from '../../../../wailsjs/go/models';
-import { User, Tag, Landmark, List, Calendar, FileText, DollarSign, Check } from 'lucide-react';
+import { Check, User, Tag, Landmark, List } from 'lucide-react';
 import { Card, CategoryFilterContent, FilterConfig, Input } from '../../../components';
 import Table from '../../../components/Table';
 import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
@@ -235,17 +235,10 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   }, [activeFilter, groupBy, monthIds]);
 
   const buildColumns = useCallback((tableId: string) => {
-    const renderHeader = (label: string, Icon: React.ElementType, alignment: string = 'justify-start') => (
-      <div className={`flex items-center gap-1.5 ${alignment}`}>
-        <Icon className="w-3 h-3 opacity-90 text-canvas-500" />
-        <span className="text-canvas-600">{label}</span>
-      </div>
-    );
-
     const cols: any[] = [
       {
         key: 'date',
-        header: renderHeader('Date', Calendar),
+        header: 'Date',
         className: 'w-24',
         sortable: true,
         ...(monthOptions.length > 0 && {
@@ -343,14 +336,14 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       },
       {
         key: 'description',
-        header: renderHeader('Description', FileText),
+        header: 'Description',
       },
     ];
 
     if (groupBy !== 'Account') {
       cols.push({
         key: 'account_name',
-        header: renderHeader('Account', Landmark),
+        header: 'Account',
         className: 'w-40',
         sortable: true,
         render: (val: string) => (
@@ -363,7 +356,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
 
     cols.push({
       key: 'category_name',
-      header: renderHeader('Category', Tag),
+      header: 'Category',
       className: 'w-40',
       sortable: true,
       render: (_val: string, tx: database.TransactionModel) => (
@@ -418,7 +411,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     if (groupBy !== 'Owner') {
       cols.push({
         key: 'owner_name',
-        header: renderHeader('Owner', User),
+        header: 'Owner',
         className: 'w-32',
         sortable: true,
         render: (val: string) => (
@@ -433,7 +426,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       key: 'amount',
       header: (
         <div className="flex flex-col items-end">
-          {renderHeader(`Amount (${mainCurrency})`, DollarSign, 'justify-end')}
+          <span className="text-canvas-600">Amount ({mainCurrency})</span>
           {showOriginalCurrency && hasDifferentCurrency && (
             <span className="text-[9px] font-semibold text-canvas-400 mt-0.5">Transaction currency</span>
           )}
