@@ -688,7 +688,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100 texture-delight">
+    <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100">
       <div className="w-full max-w-2xl">
         {displayWarning && (
           <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${
