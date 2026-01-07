@@ -18,6 +18,10 @@ export function CreateOwner(arg1) {
   return window['go']['main']['App']['CreateOwner'](arg1);
 }
 
+export function DeleteCategorizationRule(arg1, arg2) {
+  return window['go']['main']['App']['DeleteCategorizationRule'](arg1, arg2);
+}
+
 export function DeleteColumnMapping(arg1) {
   return window['go']['main']['App']['DeleteColumnMapping'](arg1);
 }
@@ -44,6 +48,10 @@ export function GetAnalysisTransactions(arg1, arg2, arg3) {
 
 export function GetCategories() {
   return window['go']['main']['App']['GetCategories']();
+}
+
+export function GetCategorizationRules() {
+  return window['go']['main']['App']['GetCategorizationRules']();
 }
 
 export function GetCategorizationRulesCount() {
@@ -78,6 +86,10 @@ export function GetOwners() {
   return window['go']['main']['App']['GetOwners']();
 }
 
+export function GetRuleMatchCount(arg1) {
+  return window['go']['main']['App']['GetRuleMatchCount'](arg1);
+}
+
 export function GetUncategorizedTransactions() {
   return window['go']['main']['App']['GetUncategorizedTransactions']();
 }
@@ -100,6 +112,10 @@ export function OpenBackupFolder() {
 
 export function ParseExcel(arg1) {
   return window['go']['main']['App']['ParseExcel'](arg1);
+}
+
+export function PreviewRuleMatches(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['PreviewRuleMatches'](arg1, arg2, arg3, arg4);
 }
 
 export function RenameCategory(arg1, arg2) {
@@ -152,6 +168,10 @@ export function TriggerAutoBackup() {
 
 export function UndoCategorizationRule(arg1, arg2) {
   return window['go']['main']['App']['UndoCategorizationRule'](arg1, arg2);
+}
+
+export function UpdateCategorizationRule(arg1, arg2) {
+  return window['go']['main']['App']['UpdateCategorizationRule'](arg1, arg2);
 }
 
 export function UpdateCurrencySettings(arg1) {

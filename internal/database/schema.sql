@@ -50,6 +50,6 @@ CREATE TABLE IF NOT EXISTS categorization_rules (
     amount_min REAL,
     amount_max REAL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(category_id) REFERENCES categories(id)
+    FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 

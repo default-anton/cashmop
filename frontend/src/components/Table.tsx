@@ -23,6 +23,7 @@ interface TableProps<T> {
   columns: Column<T>[];
   data: T[];
   emptyMessage?: string;
+  emptyDetail?: string;
   className?: string;
   sortField?: string;
   sortOrder?: 'asc' | 'desc';
@@ -33,7 +34,8 @@ interface TableProps<T> {
 const Table = <T,>({
   columns,
   data,
-  emptyMessage = 'No data available',
+  emptyMessage = 'No transactions found for this selection.',
+  emptyDetail = 'Use the filter above to adjust your selection.',
   className = '',
   sortField,
   sortOrder,
@@ -111,8 +113,8 @@ const Table = <T,>({
             <tr>
               <td colSpan={columns.length} className="px-6 py-8 text-center text-sm text-canvas-500">
                 <div className="space-y-2">
-                  <p>No transactions found for this selection.</p>
-                  <p className="text-xs">Use the filter above to adjust your selection.</p>
+                  <p>{emptyMessage}</p>
+                  {emptyDetail && <p className="text-xs">{emptyDetail}</p>}
                 </div>
               </td>
             </tr>

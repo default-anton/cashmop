@@ -11,6 +11,8 @@ export function CreateManualBackup():Promise<string>;
 
 export function CreateOwner(arg1:string):Promise<number>;
 
+export function DeleteCategorizationRule(arg1:number,arg2:boolean):Promise<main.RuleDeleteResult>;
+
 export function DeleteColumnMapping(arg1:number):Promise<void>;
 
 export function ExportTransactions(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:string):Promise<number>;
@@ -24,6 +26,8 @@ export function GetAccounts():Promise<Array<string>>;
 export function GetAnalysisTransactions(arg1:string,arg2:string,arg3:Array<number>):Promise<Array<database.TransactionModel>>;
 
 export function GetCategories():Promise<Array<database.Category>>;
+
+export function GetCategorizationRules():Promise<Array<database.CategorizationRule>>;
 
 export function GetCategorizationRulesCount():Promise<number>;
 
@@ -41,6 +45,8 @@ export function GetMonthList():Promise<Array<string>>;
 
 export function GetOwners():Promise<Array<string>>;
 
+export function GetRuleMatchCount(arg1:number):Promise<number>;
+
 export function GetUncategorizedTransactions():Promise<Array<database.TransactionModel>>;
 
 export function GetVersion():Promise<string>;
@@ -52,6 +58,8 @@ export function ImportTransactions(arg1:Array<main.TransactionInput>):Promise<vo
 export function OpenBackupFolder():Promise<string>;
 
 export function ParseExcel(arg1:string):Promise<main.ExcelData>;
+
+export function PreviewRuleMatches(arg1:string,arg2:string,arg3:any,arg4:any):Promise<Array<database.TransactionModel>>;
 
 export function RenameCategory(arg1:number,arg2:string):Promise<void>;
 
@@ -78,6 +86,8 @@ export function SyncFxRates():Promise<void>;
 export function TriggerAutoBackup():Promise<string>;
 
 export function UndoCategorizationRule(arg1:number,arg2:Array<number>):Promise<void>;
+
+export function UpdateCategorizationRule(arg1:database.CategorizationRule,arg2:boolean):Promise<main.RuleUpdateResult>;
 
 export function UpdateCurrencySettings(arg1:database.CurrencySettings):Promise<database.CurrencySettings>;
 

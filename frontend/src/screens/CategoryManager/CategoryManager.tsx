@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Tag, Edit2, Check, X, Search } from 'lucide-react';
-import { Card, Button, Input } from '../../components';
+import { Tag, Edit2, Check, X, Search, List } from 'lucide-react';
+import { Card } from '../../components';
 
 interface Category {
     id: number;
     name: string;
 }
 
-const CategoryManager: React.FC = () => {
+interface CategoryManagerProps {
+    onViewRules?: (categoryId: number) => void;
+}
+
+const CategoryManager: React.FC<CategoryManagerProps> = ({ onViewRules }) => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editName, setEditName] = useState('');
@@ -115,12 +119,26 @@ const CategoryManager: React.FC = () => {
                                                 </div>
                                                 <span className="font-bold text-canvas-700 text-lg group-hover:text-canvas-900 transition-colors">{category.name}</span>
                                             </div>
-                                            <button
-                                                onClick={() => handleStartEdit(category)}
-                                                className="p-2 opacity-0 group-hover:opacity-100 text-canvas-400 hover:text-brand hover:bg-brand/5 rounded-lg transition-all"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
+                                            <div className="flex items-center gap-2">
+                                                {onViewRules && (
+                                                    <button
+                                                        onClick={() => onViewRules(category.id)}
+                                                        className="px-3 py-1.5 text-xs font-bold uppercase tracking-widest bg-canvas-100 text-canvas-600 hover:text-brand hover:bg-brand/5 rounded-lg transition-all"
+                                                        title="View Rules"
+                                                    >
+                                                        <span className="flex items-center gap-1">
+                                                            <List className="w-3.5 h-3.5" />
+                                                            Rules
+                                                        </span>
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleStartEdit(category)}
+                                                    className="p-2 opacity-0 group-hover:opacity-100 text-canvas-400 hover:text-brand hover:bg-brand/5 rounded-lg transition-all"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </>
                                     )}
                                 </div>

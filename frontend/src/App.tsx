@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ImportFlow from './screens/ImportFlow/ImportFlow';
 import CategorizationLoop from './screens/CategorizationLoop/CategorizationLoop';
 import CategoryManager from './screens/CategoryManager/CategoryManager';
+import RuleManager from './screens/RuleManager/RuleManager';
 import Analysis from './screens/Analysis/Analysis';
 import Settings from './screens/Settings/Settings';
 import About from './screens/About/About';
@@ -11,9 +12,10 @@ import { EventsOn } from '../wailsjs/runtime/runtime';
 
 function App() {
   const [showAbout, setShowAbout] = useState(false);
-  const [screen, setScreen] = useState<'import' | 'categorize' | 'categories' | 'analysis' | 'settings'>('analysis');
+  const [screen, setScreen] = useState<'import' | 'categorize' | 'categories' | 'rules' | 'analysis' | 'settings'>('analysis');
   const [hasUncategorized, setHasUncategorized] = useState(false);
   const [hasData, setHasData] = useState(false);
+  const [ruleCategoryFilterIds, setRuleCategoryFilterIds] = useState<number[]>([]);
 
   const checkStatus = async () => {
     try {
@@ -67,9 +69,15 @@ function App() {
           if (hasData) setScreen('categorize');
           break;
         case '4':
-          setScreen('categories');
+          if (hasData) {
+            setRuleCategoryFilterIds([]);
+            setScreen('rules');
+          }
           break;
         case '5':
+          setScreen('categories');
+          break;
+        case '6':
           setScreen('settings');
           break;
       }
@@ -132,6 +140,19 @@ function App() {
             Categorize {hasUncategorized && <span className="w-2 h-2 bg-finance-expense rounded-full" />}
           </button>
         )}
+        {hasData && (
+          <button
+            onClick={() => {
+              setRuleCategoryFilterIds([]);
+              setScreen('rules');
+            }}
+            aria-label="Navigate to Rules"
+            className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${screen === 'rules' ? 'bg-brand text-white' : 'text-canvas-500 hover:text-canvas-800'
+              }`}
+          >
+            Rules
+          </button>
+        )}
         <button
           onClick={() => setScreen('categories')}
           aria-label="Navigate to Categories"
@@ -154,8 +175,13 @@ function App() {
         <ImportFlow onImportComplete={handleImportComplete} />
       ) : screen === 'categorize' ? (
         <CategorizationLoop onFinish={handleCategorizationFinish} />
+      ) : screen === 'rules' ? (
+        <RuleManager initialCategoryIds={ruleCategoryFilterIds} />
       ) : screen === 'categories' ? (
-        <CategoryManager />
+        <CategoryManager onViewRules={(categoryId) => {
+          setRuleCategoryFilterIds([categoryId]);
+          setScreen('rules');
+        }} />
       ) : screen === 'settings' ? (
         <Settings />
       ) : (

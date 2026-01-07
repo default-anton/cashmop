@@ -1,14 +1,14 @@
 import React, { RefObject } from 'react';
-import { Wand2, X, MousePointer2, Calendar, FileText, DollarSign } from 'lucide-react';
+import { Wand2, X, MousePointer2, Calendar, FileText, DollarSign, Tag } from 'lucide-react';
 
 
-interface SelectionRule {
+export interface SelectionRule {
   text: string;
-  mode: 'contains' | 'starts_with' | 'ends_with';
+  mode: 'contains' | 'starts_with' | 'ends_with' | 'exact';
   startIndex?: number;
 }
 
-interface AmountFilter {
+export interface AmountFilter {
   operator: 'none' | 'gt' | 'lt' | 'between';
   value1: string;
   value2: string;
@@ -24,6 +24,8 @@ interface RuleEditorProps {
   matchingTransactions?: any[];
   mainCurrency: string;
   showOriginalCurrency: boolean;
+  showCategoryColumn?: boolean;
+  showCategoryHint?: boolean;
 }
 
 export const RuleEditor: React.FC<RuleEditorProps> = ({
@@ -36,7 +38,17 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
   matchingTransactions = [],
   mainCurrency,
   showOriginalCurrency,
+  showCategoryColumn = false,
+  showCategoryHint = true,
 }) => {
+  const modeLabel = selectionRule?.mode === 'starts_with'
+    ? 'starting with'
+    : selectionRule?.mode === 'ends_with'
+      ? 'ending with'
+      : selectionRule?.mode === 'exact'
+        ? 'matching exactly'
+        : 'containing';
+
   return (
     <div className={`mb-4 relative w-full transition-all duration-300 ${selectionRule ? 'min-h-[220px]' : 'h-44'}`}>
       {selectionRule ? (
@@ -53,19 +65,17 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                       Auto-Rule
                     </span>
                     <span className="text-sm font-bold text-canvas-800">
-                      Matching descriptions {
-                        selectionRule.mode === 'starts_with' ? 'starting with' :
-                          selectionRule.mode === 'ends_with' ? 'ending with' :
-                            'containing'
-                      }{' '}
+                      Matching descriptions {modeLabel}{' '}
                       <span className="text-brand underline underline-offset-4 decoration-2">
                         "{selectionRule.text}"
                       </span>
                     </span>
                   </div>
-                  <p className="text-xs text-canvas-500 mt-0.5">
-                    Enter a category name below to save this rule.
-                  </p>
+                  {showCategoryHint && (
+                    <p className="text-xs text-canvas-500 mt-0.5">
+                      Enter a category name below to save this rule.
+                    </p>
+                  )}
                 </div>
               </div>
               <button
@@ -169,6 +179,14 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                               <span>Amount ({mainCurrency})</span>
                             </div>
                           </th>
+                          {showCategoryColumn && (
+                            <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
+                              <div className="flex items-center gap-1">
+                                <Tag className="w-2.5 h-2.5 opacity-70" />
+                                <span>Current Category</span>
+                              </div>
+                            </th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-canvas-200/30">
@@ -194,6 +212,13 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                                 )}
                               </div>
                             </td>
+                            {showCategoryColumn && (
+                              <td className="px-3 py-1.5">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-tight ${tx.category_name ? 'bg-brand/5 text-brand border border-brand/10' : 'bg-canvas-200 text-canvas-600 border border-canvas-300'}`}>
+                                  {tx.category_name || 'Uncategorized'}
+                                </span>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>

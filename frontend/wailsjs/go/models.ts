@@ -45,6 +45,7 @@ export namespace database {
 	    category_name: string;
 	    amount_min?: number;
 	    amount_max?: number;
+	    created_at: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new CategorizationRule(source);
@@ -59,6 +60,7 @@ export namespace database {
 	        this.category_name = source["category_name"];
 	        this.amount_min = source["amount_min"];
 	        this.amount_max = source["amount_max"];
+	        this.created_at = source["created_at"];
 	    }
 	}
 	export class Category {
@@ -238,6 +240,20 @@ export namespace main {
 	        this.rows = source["rows"];
 	    }
 	}
+	export class RuleDeleteResult {
+	    rule_id: number;
+	    uncategorized_count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new RuleDeleteResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rule_id = source["rule_id"];
+	        this.uncategorized_count = source["uncategorized_count"];
+	    }
+	}
 	export class RuleResult {
 	    rule_id: number;
 	    affected_ids: number[];
@@ -250,6 +266,22 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.rule_id = source["rule_id"];
 	        this.affected_ids = source["affected_ids"];
+	    }
+	}
+	export class RuleUpdateResult {
+	    rule_id: number;
+	    uncategorize_count: number;
+	    applied_count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new RuleUpdateResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.rule_id = source["rule_id"];
+	        this.uncategorize_count = source["uncategorize_count"];
+	        this.applied_count = source["applied_count"];
 	    }
 	}
 	export class TransactionInput {

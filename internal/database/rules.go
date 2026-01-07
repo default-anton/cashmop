@@ -19,6 +19,7 @@ type CategorizationRule struct {
 	CategoryName string   `json:"category_name"`
 	AmountMin    *float64 `json:"amount_min"`
 	AmountMax    *float64 `json:"amount_max"`
+	CreatedAt    string   `json:"created_at"`
 }
 
 var (
@@ -131,25 +132,26 @@ func SaveRule(rule CategorizationRule) (int64, error) {
 
 func GetRules() ([]CategorizationRule, error) {
 	rows, err := DB.Query(`
-        SELECT id, match_type, match_value, category_id, amount_min, amount_max 
-        FROM categorization_rules
+        SELECT r.id, r.match_type, r.match_value, r.category_id, COALESCE(c.name, ''), r.amount_min, r.amount_max, r.created_at
+        FROM categorization_rules r
+        LEFT JOIN categories c ON r.category_id = c.id
         ORDER BY 
             -- Priority by amount specificity
             CASE 
-                WHEN amount_min IS NOT NULL AND amount_max IS NOT NULL THEN 1
-                WHEN amount_min IS NOT NULL AND amount_max IS NULL THEN 2
-                WHEN amount_min IS NULL AND amount_max IS NOT NULL THEN 3
+                WHEN r.amount_min IS NOT NULL AND r.amount_max IS NOT NULL THEN 1
+                WHEN r.amount_min IS NOT NULL AND r.amount_max IS NULL THEN 2
+                WHEN r.amount_min IS NULL AND r.amount_max IS NOT NULL THEN 3
                 ELSE 4
             END ASC,
             -- Priority by match type specificity
             CASE 
-                WHEN match_type = 'exact' THEN 1
-                WHEN match_type = 'starts_with' THEN 2
-                WHEN match_type = 'ends_with' THEN 2
-                WHEN match_type = 'contains' THEN 3
+                WHEN r.match_type = 'exact' THEN 1
+                WHEN r.match_type = 'starts_with' THEN 2
+                WHEN r.match_type = 'ends_with' THEN 2
+                WHEN r.match_type = 'contains' THEN 3
                 ELSE 4
             END ASC,
-            id ASC -- Fallback to oldest rules first
+            r.id ASC -- Fallback to oldest rules first
     `)
 	if err != nil {
 		return nil, err
@@ -159,12 +161,40 @@ func GetRules() ([]CategorizationRule, error) {
 	var rules []CategorizationRule
 	for rows.Next() {
 		var r CategorizationRule
-		if err := rows.Scan(&r.ID, &r.MatchType, &r.MatchValue, &r.CategoryID, &r.AmountMin, &r.AmountMax); err != nil {
+		if err := rows.Scan(&r.ID, &r.MatchType, &r.MatchValue, &r.CategoryID, &r.CategoryName, &r.AmountMin, &r.AmountMax, &r.CreatedAt); err != nil {
 			return nil, err
 		}
 		rules = append(rules, r)
 	}
 	return rules, nil
+}
+
+func GetRuleByID(id int64) (CategorizationRule, error) {
+	var r CategorizationRule
+	err := DB.QueryRow(`
+        SELECT r.id, r.match_type, r.match_value, r.category_id, COALESCE(c.name, ''), r.amount_min, r.amount_max, r.created_at
+        FROM categorization_rules r
+        LEFT JOIN categories c ON r.category_id = c.id
+        WHERE r.id = ?
+    `, id).Scan(&r.ID, &r.MatchType, &r.MatchValue, &r.CategoryID, &r.CategoryName, &r.AmountMin, &r.AmountMax, &r.CreatedAt)
+	if err != nil {
+		return CategorizationRule{}, err
+	}
+	return r, nil
+}
+
+func UpdateRule(rule CategorizationRule) error {
+	_, err := DB.Exec(`
+        UPDATE categorization_rules
+        SET match_type = ?, match_value = ?, category_id = ?, amount_min = ?, amount_max = ?
+        WHERE id = ?
+    `, rule.MatchType, rule.MatchValue, rule.CategoryID, rule.AmountMin, rule.AmountMax, rule.ID)
+	return err
+}
+
+func DeleteRule(id int64) error {
+	_, err := DB.Exec("DELETE FROM categorization_rules WHERE id = ?", id)
+	return err
 }
 
 func GetRulesCount() (int, error) {

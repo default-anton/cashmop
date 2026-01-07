@@ -145,6 +145,17 @@ type RuleResult struct {
 	AffectedIds []int64 `json:"affected_ids"`
 }
 
+type RuleUpdateResult struct {
+	RuleID             int64 `json:"rule_id"`
+	UncategorizeCount  int   `json:"uncategorize_count"`
+	AppliedCount       int   `json:"applied_count"`
+}
+
+type RuleDeleteResult struct {
+	RuleID            int64 `json:"rule_id"`
+	UncategorizedCount int  `json:"uncategorized_count"`
+}
+
 func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	var txModels []database.TransactionModel
 
@@ -278,6 +289,109 @@ func (a *App) SaveCategorizationRule(rule database.CategorizationRule) (*RuleRes
 		return nil, err
 	}
 	return &RuleResult{RuleID: id, AffectedIds: affectedIds}, nil
+}
+
+func (a *App) GetCategorizationRules() ([]database.CategorizationRule, error) {
+	return database.GetRules()
+}
+
+func (a *App) PreviewRuleMatches(matchValue string, matchType string, amountMin *float64, amountMax *float64) ([]database.TransactionModel, error) {
+	return database.SearchTransactionsByRule(matchValue, matchType, amountMin, amountMax, true)
+}
+
+func (a *App) GetRuleMatchCount(ruleID int64) (int, error) {
+	rule, err := database.GetRuleByID(ruleID)
+	if err != nil {
+		return 0, err
+	}
+	matches, err := database.SearchTransactionsByRule(rule.MatchValue, rule.MatchType, rule.AmountMin, rule.AmountMax, true)
+	if err != nil {
+		return 0, err
+	}
+	return len(matches), nil
+}
+
+func (a *App) UpdateCategorizationRule(rule database.CategorizationRule, recategorize bool) (*RuleUpdateResult, error) {
+	if rule.ID == 0 {
+		return nil, fmt.Errorf("rule id is required")
+	}
+	if rule.MatchValue == "" {
+		return nil, fmt.Errorf("match value cannot be empty")
+	}
+	if rule.CategoryID == 0 && rule.CategoryName != "" {
+		id, err := database.GetOrCreateCategory(rule.CategoryName)
+		if err != nil {
+			return nil, err
+		}
+		rule.CategoryID = id
+	}
+
+	uncategorizeCount := 0
+	if recategorize {
+		oldRule, err := database.GetRuleByID(rule.ID)
+		if err != nil {
+			return nil, err
+		}
+		matches, err := database.SearchTransactionsByRule(oldRule.MatchValue, oldRule.MatchType, oldRule.AmountMin, oldRule.AmountMax, true)
+		if err != nil {
+			return nil, err
+		}
+		ids := make([]int64, 0, len(matches))
+		for _, tx := range matches {
+			ids = append(ids, tx.ID)
+		}
+		if err := database.ClearTransactionCategories(ids); err != nil {
+			return nil, err
+		}
+		uncategorizeCount = len(ids)
+	}
+
+	if err := database.UpdateRule(rule); err != nil {
+		return nil, err
+	}
+
+	appliedCount := 0
+	if recategorize {
+		_, affectedIds, err := database.ApplyRuleWithIds(rule.ID)
+		if err != nil {
+			return nil, err
+		}
+		appliedCount = len(affectedIds)
+	}
+
+	return &RuleUpdateResult{RuleID: rule.ID, UncategorizeCount: uncategorizeCount, AppliedCount: appliedCount}, nil
+}
+
+func (a *App) DeleteCategorizationRule(ruleID int64, uncategorize bool) (*RuleDeleteResult, error) {
+	if ruleID == 0 {
+		return nil, fmt.Errorf("rule id is required")
+	}
+	if !uncategorize {
+		if err := database.DeleteRule(ruleID); err != nil {
+			return nil, err
+		}
+		return &RuleDeleteResult{RuleID: ruleID, UncategorizedCount: 0}, nil
+	}
+
+	rule, err := database.GetRuleByID(ruleID)
+	if err != nil {
+		return nil, err
+	}
+	matches, err := database.SearchTransactionsByRule(rule.MatchValue, rule.MatchType, rule.AmountMin, rule.AmountMax, true)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]int64, 0, len(matches))
+	for _, tx := range matches {
+		ids = append(ids, tx.ID)
+	}
+	if err := database.ClearTransactionCategories(ids); err != nil {
+		return nil, err
+	}
+	if err := database.DeleteRule(ruleID); err != nil {
+		return nil, err
+	}
+	return &RuleDeleteResult{RuleID: ruleID, UncategorizedCount: len(ids)}, nil
 }
 
 func (a *App) UndoCategorizationRule(ruleId int64, transactionIds []int64) error {
