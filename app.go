@@ -295,8 +295,8 @@ func (a *App) GetCategorizationRules() ([]database.CategorizationRule, error) {
 	return database.GetRules()
 }
 
-func (a *App) PreviewRuleMatches(matchValue string, matchType string, amountMin *float64, amountMax *float64) ([]database.TransactionModel, error) {
-	return database.SearchTransactionsByRule(matchValue, matchType, amountMin, amountMax, true)
+func (a *App) PreviewRuleMatches(matchValue string, matchType string, amountMin *float64, amountMax *float64) (database.RuleMatchPreview, error) {
+	return database.PreviewRuleMatches(matchValue, matchType, amountMin, amountMax, true, 10)
 }
 
 func (a *App) GetRuleMatchCount(ruleID int64) (int, error) {

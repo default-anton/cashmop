@@ -279,6 +279,13 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *fl
 	return txs, nil
 }
 
+type RuleMatchPreview struct {
+	Count        int               `json:"count"`
+	MinAmount    *float64          `json:"min_amount"`
+	MaxAmount    *float64          `json:"max_amount"`
+	Transactions []TransactionModel `json:"transactions"`
+}
+
 func SearchTransactionsByRule(descriptionMatch string, matchType string, amountMin *float64, amountMax *float64, includeCategorized bool) ([]TransactionModel, error) {
 	query := `
 		SELECT
@@ -361,6 +368,113 @@ func SearchTransactionsByRule(descriptionMatch string, matchType string, amountM
 		txs = append(txs, t)
 	}
 	return txs, nil
+}
+
+func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *float64, amountMax *float64, includeCategorized bool, limit int) (RuleMatchPreview, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+
+	query := `
+		SELECT
+			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
+			t.date, t.description, t.amount, t.category_id, COALESCE(c.name, ''), t.currency
+		FROM transactions t
+		JOIN accounts a ON t.account_id = a.id
+		LEFT JOIN users u ON t.owner_id = u.id
+		LEFT JOIN categories c ON t.category_id = c.id
+		WHERE 1=1
+	`
+	args := []any{}
+
+	if !includeCategorized {
+		query += " AND t.category_id IS NULL"
+	}
+
+	if descriptionMatch != "" {
+		switch matchType {
+		case "starts_with":
+			query += " AND t.description LIKE ?"
+			args = append(args, descriptionMatch+"%")
+		case "ends_with":
+			query += " AND t.description LIKE ?"
+			args = append(args, "%"+descriptionMatch)
+		case "exact":
+			query += " AND t.description = ?"
+			args = append(args, descriptionMatch)
+		case "contains":
+			query += " AND t.description LIKE ?"
+			args = append(args, "%"+descriptionMatch+"%")
+		}
+	}
+
+	query += " ORDER BY t.date DESC"
+
+	settings, err := GetCurrencySettings()
+	if err != nil {
+		return RuleMatchPreview{}, err
+	}
+	baseCurrency := strings.TrimSpace(settings.MainCurrency)
+	if baseCurrency == "" {
+		baseCurrency = defaultMainCurrency
+	}
+
+	rows, err := DB.Query(query, args...)
+	if err != nil {
+		return RuleMatchPreview{}, err
+	}
+	defer rows.Close()
+
+	count := 0
+	var minAmount *float64
+	var maxAmount *float64
+	preview := make([]TransactionModel, 0, limit)
+	needsAmountFilter := amountMin != nil || amountMax != nil
+
+	for rows.Next() {
+		var t TransactionModel
+		if err := rows.Scan(
+			&t.ID, &t.AccountID, &t.AccountName, &t.OwnerID, &t.OwnerName,
+			&t.Date, &t.Description, &t.Amount, &t.CategoryID, &t.CategoryName, &t.Currency,
+		); err != nil {
+			return RuleMatchPreview{}, err
+		}
+
+		converted, err := ConvertAmount(t.Amount, baseCurrency, t.Currency, t.Date)
+		if err != nil {
+			return RuleMatchPreview{}, err
+		}
+
+		if needsAmountFilter {
+			if converted == nil {
+				continue
+			}
+			if amountMin != nil && *converted < *amountMin {
+				continue
+			}
+			if amountMax != nil && *converted > *amountMax {
+				continue
+			}
+		}
+
+		count++
+		if converted != nil {
+			if minAmount == nil || *converted < *minAmount {
+				v := *converted
+				minAmount = &v
+			}
+			if maxAmount == nil || *converted > *maxAmount {
+				v := *converted
+				maxAmount = &v
+			}
+		}
+
+		if len(preview) < limit {
+			preview = append(preview, t)
+		}
+	}
+
+	return RuleMatchPreview{Count: count, MinAmount: minAmount, MaxAmount: maxAmount, Transactions: preview}, nil
 }
 
 func GetMonthList() ([]string, error) {

@@ -253,7 +253,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
             },
             positionKey: `${groupOrderKey}-${tableId}-date`,
             children: (
-              <div className="p-3 space-y-3 w-[260px]">
+              <div className="p-3 space-y-3">
                 <div className="flex items-center justify-between px-1">
                   <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest">
                     Filter by Month
@@ -312,7 +312,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                           `}
                         >
                           <span>{option.label}</span>
-                          {isSelected && <span className="text-[10px] uppercase tracking-widest">Current</span>}
+                          {isSelected && <Check className="w-4 h-4" />}
                         </button>
                       );
                     })

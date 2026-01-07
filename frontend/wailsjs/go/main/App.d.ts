@@ -59,7 +59,7 @@ export function OpenBackupFolder():Promise<string>;
 
 export function ParseExcel(arg1:string):Promise<main.ExcelData>;
 
-export function PreviewRuleMatches(arg1:string,arg2:string,arg3:any,arg4:any):Promise<Array<database.TransactionModel>>;
+export function PreviewRuleMatches(arg1:string,arg2:string,arg3:any,arg4:any):Promise<database.RuleMatchPreview>;
 
 export function RenameCategory(arg1:number,arg2:string):Promise<void>;
 

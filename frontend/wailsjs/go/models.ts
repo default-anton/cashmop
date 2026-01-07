@@ -207,6 +207,42 @@ export namespace database {
 	        this.raw_metadata = source["raw_metadata"];
 	    }
 	}
+	export class RuleMatchPreview {
+	    count: number;
+	    min_amount?: number;
+	    max_amount?: number;
+	    transactions: TransactionModel[];
+	
+	    static createFrom(source: any = {}) {
+	        return new RuleMatchPreview(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.count = source["count"];
+	        this.min_amount = source["min_amount"];
+	        this.max_amount = source["max_amount"];
+	        this.transactions = this.convertValues(source["transactions"], TransactionModel);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 
 }
 

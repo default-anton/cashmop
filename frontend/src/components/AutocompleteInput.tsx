@@ -12,6 +12,7 @@ interface AutocompleteInputProps {
   placeholder?: string;
   className?: string;
   autoFocus?: boolean;
+  filterMode?: 'includes' | 'none';
 }
 
 const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
@@ -22,6 +23,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   placeholder,
   className,
   autoFocus,
+  filterMode = 'includes',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,12 +52,13 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   ), [options]);
 
   const filteredOptions = useMemo(() => {
+    if (filterMode === 'none') return normalizedOptions;
     if (!value) return normalizedOptions;
     const needle = value.toLowerCase();
     return normalizedOptions.filter((opt) =>
       opt.label.toLowerCase().includes(needle) || opt.value.toLowerCase().includes(needle)
     );
-  }, [normalizedOptions, value]);
+  }, [filterMode, normalizedOptions, value]);
 
   const showDropdown = isOpen && filteredOptions.length > 0;
 

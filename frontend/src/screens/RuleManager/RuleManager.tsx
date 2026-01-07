@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Wand2, Pencil, Trash2, Check } from 'lucide-react';
 import { database } from '../../../wailsjs/go/models';
-import { AutocompleteInput, Badge, Button, Card, CategoryFilterContent, Input, Modal, Table, useToast } from '../../components';
+import { AutocompleteInput, Button, Card, CategoryFilterContent, Input, Modal, Table, useToast } from '../../components';
 import { FilterConfig } from '../../components/TableHeaderFilter';
 import { RuleEditor, AmountFilter, SelectionRule } from '../CategorizationLoop/components/RuleEditor';
 import { useCurrency } from '../../contexts/CurrencyContext';
@@ -71,6 +71,8 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
   const [matchingTransactions, setMatchingTransactions] = useState<database.TransactionModel[]>([]);
   const [matchingFxAmounts, setMatchingFxAmounts] = useState<Map<number, number | null>>(new Map());
   const [matchingLoading, setMatchingLoading] = useState(false);
+  const [matchingCount, setMatchingCount] = useState(0);
+  const [matchingAmountRange, setMatchingAmountRange] = useState<{ min?: number | null; max?: number | null }>({});
 
   const [confirmAction, setConfirmAction] = useState<'update' | 'delete' | null>(null);
   const [confirmRule, setConfirmRule] = useState<RuleRow | null>(null);
@@ -145,18 +147,26 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
   }, [convertAmount, mainCurrency, matchingTransactions]);
 
   const currentAmountBasis = useMemo(() => {
+    if (matchingTransactions.length > 0) {
+      const first = matchingTransactions[0];
+      const mainAmount = matchingFxAmounts.get(first.id);
+      if (mainAmount !== null && mainAmount !== undefined) return mainAmount;
+      return first.amount;
+    }
     if (activeRule && (activeRule.amount_min !== null && activeRule.amount_min !== undefined)) {
       return activeRule.amount_min || 0;
     }
     if (activeRule && (activeRule.amount_max !== null && activeRule.amount_max !== undefined)) {
       return activeRule.amount_max || 0;
     }
-    if (matchingTransactions.length > 0) {
-      const first = matchingTransactions[0];
-      return matchingFxAmounts.get(first.id) ?? first.amount;
+    if (matchingAmountRange.max !== undefined && matchingAmountRange.max !== null) {
+      return matchingAmountRange.max || 0;
+    }
+    if (matchingAmountRange.min !== undefined && matchingAmountRange.min !== null) {
+      return matchingAmountRange.min || 0;
     }
     return 0;
-  }, [activeRule, matchingFxAmounts, matchingTransactions]);
+  }, [activeRule, matchingAmountRange.max, matchingAmountRange.min, matchingFxAmounts, matchingTransactions]);
 
   const parseAmountValue = (value: string) => {
     const parsed = parseFloat(value);
@@ -202,11 +212,15 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
   useEffect(() => {
     if (!isEditorOpen) {
       setMatchingTransactions([]);
+      setMatchingCount(0);
+      setMatchingAmountRange({});
       setMatchingLoading(false);
       return;
     }
     if (!matchValue.trim()) {
       setMatchingTransactions([]);
+      setMatchingCount(0);
+      setMatchingAmountRange({});
       setMatchingLoading(false);
       return;
     }
@@ -224,12 +238,16 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
           amountMax
         );
         if (!cancelled) {
-          setMatchingTransactions(res || []);
+          setMatchingTransactions(res?.transactions || []);
+          setMatchingCount(res?.count || 0);
+          setMatchingAmountRange({ min: res?.min_amount ?? null, max: res?.max_amount ?? null });
         }
       } catch (e) {
         if (!cancelled) {
           console.error('Failed to fetch matching transactions', e);
           setMatchingTransactions([]);
+          setMatchingCount(0);
+          setMatchingAmountRange({});
         }
       } finally {
         if (!cancelled) {
@@ -252,6 +270,8 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
     setCategoryId(0);
     setAmountFilter({ operator: 'none', value1: '', value2: '' });
     setMatchingTransactions([]);
+    setMatchingCount(0);
+    setMatchingAmountRange({});
     setIsEditorOpen(true);
   };
 
@@ -303,6 +323,8 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
     setIsEditorOpen(false);
     setActiveRule(null);
     setMatchingTransactions([]);
+    setMatchingCount(0);
+    setMatchingAmountRange({});
   };
 
   const buildRulePayload = (): RulePayload => {
@@ -499,7 +521,6 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
   const matchTypeFilterConfig: FilterConfig = {
     type: 'text',
     isActive: selectedMatchTypes.length > 0,
-    label: selectedMatchTypes.length > 0 ? `${selectedMatchTypes.length} type${selectedMatchTypes.length !== 1 ? 's' : ''}` : undefined,
   };
 
   const categoryFilterConfig: FilterConfig = {
@@ -518,8 +539,8 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
         onClear: () => setSelectedMatchTypes([]),
         children: (
           <div className="p-3 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-canvas-600 uppercase tracking-widest">Match Type</span>
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest">Filter by Type</span>
               <button
                 onClick={() => setSelectedMatchTypes([])}
                 className="text-xs text-canvas-400 hover:text-canvas-700"
@@ -540,9 +561,14 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
                           : [...prev, option.value]
                       );
                     }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border transition-all ${isActive ? 'border-brand/40 bg-brand/5 text-brand' : 'border-canvas-200 text-canvas-600 hover:border-canvas-300 hover:text-canvas-700'}`}
+                    className={`
+                      w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors
+                      ${isActive
+                        ? 'bg-brand/10 text-brand font-semibold'
+                        : 'text-canvas-700 hover:bg-canvas-100'}
+                    `}
                   >
-                    <span className="text-sm font-semibold">{option.label}</span>
+                    <span>{option.label}</span>
                     {isActive && <Check className="w-4 h-4" />}
                   </button>
                 );
@@ -553,7 +579,11 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       },
       render: (value: MatchType) => {
         const label = matchTypeOptions.find((opt) => opt.value === value)?.label || value;
-        return <Badge variant="info">{label}</Badge>;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-100 text-[10px] font-bold text-canvas-600 border border-canvas-200 tracking-tight">
+            {label}
+          </span>
+        );
       },
     },
     {
@@ -738,6 +768,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
                 }}
                 options={categorySuggestions.map((cat) => ({ value: String(cat.id), label: cat.name }))}
                 placeholder="Search categories..."
+                filterMode="none"
               />
             </div>
           </div>
@@ -750,15 +781,14 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
             amountInputRef={amountInputRef}
             currentAmount={currentAmountBasis}
             matchingTransactions={matchingPreview}
+            matchingCount={matchingCount}
+            matchingLoading={matchingLoading}
+            amountDefaults={matchingAmountRange}
             mainCurrency={mainCurrency}
             showOriginalCurrency={showOriginalCurrency}
             showCategoryColumn
             showCategoryHint={false}
           />
-
-          {matchingLoading && (
-            <div className="text-xs text-canvas-400">Loading matching transactions...</div>
-          )}
 
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={closeEditor}>Cancel</Button>

@@ -22,6 +22,9 @@ interface RuleEditorProps {
   amountInputRef: React.RefObject<HTMLInputElement | null>;
   currentAmount?: number;
   matchingTransactions?: any[];
+  matchingCount?: number;
+  matchingLoading?: boolean;
+  amountDefaults?: { min?: number | null; max?: number | null };
   mainCurrency: string;
   showOriginalCurrency: boolean;
   showCategoryColumn?: boolean;
@@ -36,6 +39,9 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
   amountInputRef,
   currentAmount,
   matchingTransactions = [],
+  matchingCount,
+  matchingLoading = false,
+  amountDefaults,
   mainCurrency,
   showOriginalCurrency,
   showCategoryColumn = false,
@@ -48,6 +54,29 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
       : selectionRule?.mode === 'exact'
         ? 'matching exactly'
         : 'containing';
+
+  const totalMatches = matchingCount ?? matchingTransactions.length;
+  const hasMatchText = (selectionRule?.text || '').trim().length > 0;
+  const previewVisible = matchingLoading || hasMatchText || totalMatches > 0;
+
+  const buildDefaultAmountValues = (op: AmountFilter['operator']) => {
+    const currentValue = currentAmount ?? 0;
+    const fallback = Math.abs(currentValue) || 0;
+    const minValue = amountDefaults?.min ?? currentValue;
+    const maxValue = amountDefaults?.max ?? currentValue;
+    const minAbs = minValue !== undefined && minValue !== null ? Math.abs(minValue) : fallback;
+    const maxAbs = maxValue !== undefined && maxValue !== null ? Math.abs(maxValue) : fallback;
+
+    if (op === 'between') {
+      return {
+        value1: String(Math.min(minAbs, maxAbs) || ''),
+        value2: String(Math.max(minAbs, maxAbs) || ''),
+      };
+    }
+
+    const value = op === 'gt' ? maxAbs : minAbs;
+    return { value1: String(value || ''), value2: '' };
+  };
 
   return (
     <div className={`mb-4 relative w-full transition-all duration-300 ${selectionRule ? 'min-h-[220px]' : 'h-44'}`}>
@@ -98,12 +127,11 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                   <button
                     key={op}
                     onClick={() => {
-                      const absAmount = currentAmount ? Math.abs(currentAmount) : 0;
-                      const amountStr = absAmount > 0 ? absAmount.toString() : '';
+                      const defaults = op === 'none' ? { value1: '', value2: '' } : buildDefaultAmountValues(op);
                       setAmountFilter({
                         operator: op,
-                        value1: op !== 'none' ? amountStr : '',
-                        value2: op === 'between' ? amountStr : '',
+                        value1: defaults.value1,
+                        value2: defaults.value2,
                       });
                       if (op !== 'none') {
                         setTimeout(() => amountInputRef.current?.focus(), 0);
@@ -149,80 +177,97 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                 </div>
               )}
             </div>
-            {matchingTransactions.length > 0 && (
+            {previewVisible && (
               <div className="mt-2 animate-snap-in">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em]">
-                    {matchingTransactions.length} Matching Transaction{matchingTransactions.length !== 1 ? 's' : ''}
+                    {totalMatches} Matching Transaction{totalMatches !== 1 ? 's' : ''}
                   </span>
+                  {totalMatches > matchingTransactions.length && (
+                    <span className="text-[10px] font-semibold text-canvas-400">
+                      Showing {matchingTransactions.length} most recent
+                    </span>
+                  )}
                 </div>
                 <div className="bg-white/50 rounded-xl border border-brand/10 overflow-hidden">
-                  <div className="max-h-32 overflow-y-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 bg-canvas-100/80 backdrop-blur-sm shadow-sm">
-                        <tr>
-                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-2.5 h-2.5 opacity-70" />
-                              <span>Date</span>
-                            </div>
-                          </th>
-                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
-                            <div className="flex items-center gap-1">
-                              <FileText className="w-2.5 h-2.5 opacity-70" />
-                              <span>Description</span>
-                            </div>
-                          </th>
-                          <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest text-right">
-                            <div className="flex items-center gap-1 justify-end">
-                              <DollarSign className="w-2.5 h-2.5 opacity-70" />
-                              <span>Amount ({mainCurrency})</span>
-                            </div>
-                          </th>
-                          {showCategoryColumn && (
+                  <div className="max-h-32 min-h-[120px] overflow-y-auto custom-scrollbar">
+                    {matchingLoading ? (
+                      <div className="p-3 space-y-2 animate-pulse">
+                        {[0, 1, 2].map((idx) => (
+                          <div key={idx} className="h-6 rounded-lg bg-canvas-200/70" />
+                        ))}
+                      </div>
+                    ) : matchingTransactions.length === 0 ? (
+                      <div className="px-4 py-10 text-center text-xs text-canvas-400">
+                        No matching transactions found.
+                      </div>
+                    ) : (
+                      <table className="w-full text-left border-collapse">
+                        <thead className="sticky top-0 bg-canvas-100/80 backdrop-blur-sm shadow-sm">
+                          <tr>
                             <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
                               <div className="flex items-center gap-1">
-                                <Tag className="w-2.5 h-2.5 opacity-70" />
-                                <span>Current Category</span>
+                                <Calendar className="w-2.5 h-2.5 opacity-70" />
+                                <span>Date</span>
                               </div>
                             </th>
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-canvas-200/30">
-                        {matchingTransactions.map((tx) => (
-                          <tr key={tx.id} className="hover:bg-brand/5 transition-colors group">
-                            <td className="px-3 py-1.5 text-[10px] font-medium text-canvas-500 whitespace-nowrap">
-                              {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </td>
-                            <td className="px-3 py-1.5 text-[11px] font-bold text-canvas-700 truncate max-w-[200px]">
-                              {tx.description}
-                            </td>
-                            <td className="px-3 py-1.5 text-right">
-                              <div className="flex flex-col items-end">
-                                <span className={`text-[10px] font-black ${tx.main_amount === null ? 'text-canvas-400' : tx.main_amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
-                                  {tx.main_amount === null
-                                    ? '—'
-                                    : new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(tx.main_amount))}
-                                </span>
-                                {showOriginalCurrency && (
-                                  <span className={`text-[9px] ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
-                                    {(tx.currency || mainCurrency).toUpperCase()} {Math.abs(tx.amount).toFixed(2)}
-                                  </span>
-                                )}
+                            <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
+                              <div className="flex items-center gap-1">
+                                <FileText className="w-2.5 h-2.5 opacity-70" />
+                                <span>Description</span>
                               </div>
-                            </td>
+                            </th>
+                            <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest text-right">
+                              <div className="flex items-center gap-1 justify-end">
+                                <DollarSign className="w-2.5 h-2.5 opacity-70" />
+                                <span>Amount ({mainCurrency})</span>
+                              </div>
+                            </th>
                             {showCategoryColumn && (
-                              <td className="px-3 py-1.5">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-tight ${tx.category_name ? 'bg-brand/5 text-brand border border-brand/10' : 'bg-canvas-200 text-canvas-600 border border-canvas-300'}`}>
-                                  {tx.category_name || 'Uncategorized'}
-                                </span>
-                              </td>
+                              <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
+                                <div className="flex items-center gap-1">
+                                  <Tag className="w-2.5 h-2.5 opacity-70" />
+                                  <span>Current Category</span>
+                                </div>
+                              </th>
                             )}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-canvas-200/30">
+                          {matchingTransactions.map((tx) => (
+                            <tr key={tx.id} className="hover:bg-brand/5 transition-colors group">
+                              <td className="px-3 py-1.5 text-[10px] font-medium text-canvas-500 whitespace-nowrap">
+                                {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </td>
+                              <td className="px-3 py-1.5 text-[11px] font-bold text-canvas-700 truncate max-w-[200px]">
+                                {tx.description}
+                              </td>
+                              <td className="px-3 py-1.5 text-right">
+                                <div className="flex flex-col items-end">
+                                  <span className={`text-[10px] font-black ${tx.main_amount === null ? 'text-canvas-400' : tx.main_amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
+                                    {tx.main_amount === null
+                                      ? '—'
+                                      : new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(tx.main_amount))}
+                                  </span>
+                                  {showOriginalCurrency && (
+                                    <span className={`text-[9px] ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
+                                      {(tx.currency || mainCurrency).toUpperCase()} {Math.abs(tx.amount).toFixed(2)}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              {showCategoryColumn && (
+                                <td className="px-3 py-1.5">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-tight ${tx.category_name ? 'bg-brand/5 text-brand border border-brand/10' : 'bg-canvas-200 text-canvas-600 border border-canvas-300'}`}>
+                                    {tx.category_name || 'Uncategorized'}
+                                  </span>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
                   </div>
                 </div>
               </div>
