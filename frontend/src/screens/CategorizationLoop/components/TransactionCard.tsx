@@ -216,11 +216,16 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
               <span className={`text-sm font-mono font-black tracking-tight ${mainAmount === null ? 'text-canvas-400' : isExpense ? 'text-finance-expense' : 'text-finance-income'}`}>
                 {formattedMain}
               </span>
-              {showOriginalCurrency && (
-                <span className={`text-[10px] font-sans mt-1 ${transaction.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
-                  {(transaction.currency || mainCurrency).toUpperCase()} {Math.abs(transaction.amount).toFixed(2)}
-                </span>
-              )}
+              {(() => {
+                const txCurrency = (transaction.currency || mainCurrency).toUpperCase();
+                const main = mainCurrency.toUpperCase();
+                const showOriginal = showOriginalCurrency && txCurrency !== main;
+                return showOriginal ? (
+                  <span className={`text-[10px] font-sans mt-1 ${transaction.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
+                    {txCurrency} {Math.abs(transaction.amount).toFixed(2)}
+                  </span>
+                ) : null;
+              })()}
             </div>
 
             <div className="flex gap-6">

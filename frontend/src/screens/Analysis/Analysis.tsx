@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useFuzzySearch } from '../../hooks/useFuzzySearch';
 import {
   GroupedTransactionList
 } from './components';
 import { database } from '../../../wailsjs/go/models';
 import { Card } from '../../components';
 import { useToast } from '../../components';
-import { BarChart3, ArrowUpDown, Download, AlertTriangle, Search, X } from 'lucide-react';
+import { BarChart3, ArrowUpDown, Download, AlertTriangle } from 'lucide-react';
+import TransactionSearch from './components/TransactionSearch';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
@@ -32,14 +34,10 @@ const Analysis: React.FC = () => {
   const [fxAmounts, setFxAmounts] = useState<Map<number, number | null>>(new Map());
   const [hasMissingRates, setHasMissingRates] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState('');
-  const [filteredTransactions, setFilteredTransactions] = useState<database.TransactionModel[]>([]);
-  const transactionSearchRequestId = useRef(0);
-
   const [groupSortField, setGroupSortField] = useState<GroupSortField>('name');
   const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>('asc');
   const [transactionSortField, setTransactionSortField] = useState<TransactionSortField>('date');
   const [transactionSortOrder, setTransactionSortOrder] = useState<SortOrder>('desc');
-
   const fetchData = useCallback(async () => {
     try {
       const monthList = await (window as any).go.main.App.GetMonthList();
@@ -81,7 +79,6 @@ const Analysis: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
@@ -122,7 +119,6 @@ const Analysis: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
   const handleSortGroup = (field: GroupSortField) => {
     if (groupSortField === field) {
       setGroupSortOrder(groupSortOrder === 'asc' ? 'desc' : 'asc');
@@ -131,7 +127,6 @@ const Analysis: React.FC = () => {
       setGroupSortOrder(field === 'amount' ? 'desc' : 'asc');
     }
   };
-
   const handleSortTransaction = (field: TransactionSortField) => {
     if (transactionSortField === field) {
       setTransactionSortOrder(transactionSortOrder === 'asc' ? 'desc' : 'asc');
@@ -140,7 +135,6 @@ const Analysis: React.FC = () => {
       setTransactionSortOrder(field === 'date' ? 'desc' : 'asc');
     }
   };
-
   const handleShowOriginalToggle = async (value: boolean) => {
     if (showOriginalSaving) return;
     setShowOriginalSaving(true);
@@ -153,7 +147,6 @@ const Analysis: React.FC = () => {
       setShowOriginalSaving(false);
     }
   };
-
   const handleCategorize = async (txId: number, categoryName: string) => {
     setTransactions(prev => prev.map(tx =>
       tx.id === txId ? { ...tx, category_name: categoryName } : tx
@@ -168,7 +161,6 @@ const Analysis: React.FC = () => {
       fetchTransactions(true);
     }
   };
-
   const handleExport = async (format?: ExportFormat) => {
     const targetFormat = format || exportFormat;
 
@@ -213,7 +205,6 @@ const Analysis: React.FC = () => {
         detail: 'Some transactions are missing rates. Converted totals exclude those items.',
       }
     : warning;
-
   const buildTransactionSearchLabel = useCallback((tx: database.TransactionModel) => {
     const parts = [
       tx.description || '',
@@ -227,40 +218,15 @@ const Analysis: React.FC = () => {
     return `${parts.join(' | ')} ::${tx.id}`;
   }, [mainCurrency]);
 
-  const transactionSearchIndex = useMemo(() => {
-    const labels: string[] = [];
-    const lookup = new Map<string, database.TransactionModel>();
-    transactions.forEach((tx) => {
-      const label = buildTransactionSearchLabel(tx);
-      labels.push(label);
-      lookup.set(label, tx);
-    });
-    return { labels, lookup };
-  }, [buildTransactionSearchLabel, transactions]);
-
-  useEffect(() => {
-    const query = transactionSearch.trim();
-    if (!query) {
-      setFilteredTransactions(transactions);
-      return;
-    }
-    const runSearch = async () => {
-      const requestId = ++transactionSearchRequestId.current;
-      const ranked: string[] = await (window as any).go.main.App.FuzzySearch(query, transactionSearchIndex.labels);
-      if (requestId !== transactionSearchRequestId.current) return;
-      const next = ranked
-        .map((label: string) => transactionSearchIndex.lookup.get(label))
-        .filter((tx): tx is database.TransactionModel => !!tx);
-      setFilteredTransactions(next);
-    };
-    runSearch();
-  }, [transactionSearch, transactionSearchIndex, transactions]);
-
+  const filteredTransactions = useFuzzySearch(
+    transactions,
+    buildTransactionSearchLabel,
+    transactionSearch
+  );
   const searchActive = transactionSearch.trim().length > 0;
   const displayedTransactions = useMemo(() => (
     searchActive ? filteredTransactions : transactions
   ), [filteredTransactions, searchActive, transactions]);
-
   const displayedTransactionsWithFx = useMemo(() => (
     displayedTransactions.map((tx) => ({
       ...tx,
@@ -278,7 +244,6 @@ const Analysis: React.FC = () => {
   const monthOptions = useMemo(() => (
     months.map((month) => ({ value: month, label: formatMonthLabel(month) }))
   ), [months, formatMonthLabel]);
-
   const formatCurrency = useCallback((amount: number) => (
     new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(amount))
   ), [mainCurrency]);
@@ -488,30 +453,11 @@ const Analysis: React.FC = () => {
                 Show transaction currency
               </label>
             )}
-            <div className="relative flex items-center bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
-              <Search className="w-3.5 h-3.5 text-canvas-500 ml-2 select-none" />
-              <input
-                value={transactionSearch}
-                onChange={(event) => setTransactionSearch(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') {
-                    setTransactionSearch('');
-                  }
-                }}
-                placeholder="Search transactions..."
-                className="w-56 md:w-64 bg-transparent text-sm text-canvas-700 placeholder:text-canvas-500 focus:outline-none px-2"
-              />
-              {transactionSearch && (
-                <button
-                  type="button"
-                  onClick={() => setTransactionSearch('')}
-                  className="p-1 text-canvas-400 hover:text-canvas-700 transition-colors select-none"
-                  title="Clear search"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+            <TransactionSearch
+              value={transactionSearch}
+              onChange={setTransactionSearch}
+              onClear={() => setTransactionSearch('')}
+            />
             <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">
               {searchActive
                 ? `${displayedTransactions.length} of ${transactions.length} Transactions`

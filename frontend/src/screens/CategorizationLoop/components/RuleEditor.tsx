@@ -1,5 +1,5 @@
 import React, { RefObject } from 'react';
-import { Wand2, X, MousePointer2, Calendar, FileText, DollarSign, Tag } from 'lucide-react';
+import { Wand2, X, MousePointer2 } from 'lucide-react';
 
 
 export interface SelectionRule {
@@ -206,29 +206,17 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                         <thead className="sticky top-0 bg-canvas-100/80 backdrop-blur-sm shadow-sm select-none">
                           <tr>
                             <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-2.5 h-2.5 opacity-70" />
-                                <span>Date</span>
-                              </div>
+                              Date
                             </th>
                             <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
-                              <div className="flex items-center gap-1">
-                                <FileText className="w-2.5 h-2.5 opacity-70" />
-                                <span>Description</span>
-                              </div>
+                              Description
                             </th>
                             <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest text-right">
-                              <div className="flex items-center gap-1 justify-end">
-                                <DollarSign className="w-2.5 h-2.5 opacity-70" />
-                                <span>Amount ({mainCurrency})</span>
-                              </div>
+                              Amount ({mainCurrency})
                             </th>
                             {showCategoryColumn && (
                               <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
-                                <div className="flex items-center gap-1">
-                                  <Tag className="w-2.5 h-2.5 opacity-70" />
-                                  <span>Current Category</span>
-                                </div>
+                                Current Category
                               </th>
                             )}
                           </tr>
@@ -249,11 +237,16 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                                       ? '—'
                                       : new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(tx.main_amount))}
                                   </span>
-                                  {showOriginalCurrency && (
-                                    <span className={`text-[9px] ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
-                                      {(tx.currency || mainCurrency).toUpperCase()} {Math.abs(tx.amount).toFixed(2)}
-                                    </span>
-                                  )}
+                                  {(() => {
+                                    const txCurrency = (tx.currency || mainCurrency).toUpperCase();
+                                    const main = mainCurrency.toUpperCase();
+                                    const showOriginal = showOriginalCurrency && txCurrency !== main;
+                                    return showOriginal ? (
+                                      <span className={`text-[9px] ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
+                                        {txCurrency} {Math.abs(tx.amount).toFixed(2)}
+                                      </span>
+                                    ) : null;
+                                  })()}
                                 </div>
                               </td>
                               {showCategoryColumn && (
