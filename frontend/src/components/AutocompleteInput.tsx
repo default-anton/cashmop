@@ -13,6 +13,7 @@ interface AutocompleteInputProps {
   className?: string;
   autoFocus?: boolean;
   filterMode?: 'includes' | 'none';
+  dropdownClassName?: string;
 }
 
 const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
@@ -24,6 +25,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   className,
   autoFocus,
   filterMode = 'includes',
+  dropdownClassName = 'z-20',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -105,7 +107,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
     <div
       ref={dropdownRef}
       style={{ position: 'absolute', top: coords.top, left: coords.left, width: coords.width }}
-      className="z-20"
+      className={dropdownClassName}
       data-autocomplete-dropdown="true"
       onMouseDown={(event) => event.preventDefault()}
     >

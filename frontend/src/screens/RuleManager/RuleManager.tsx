@@ -769,6 +769,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
                 options={categorySuggestions.map((cat) => ({ value: String(cat.id), label: cat.name }))}
                 placeholder="Search categories..."
                 filterMode="none"
+                dropdownClassName="z-[110]"
               />
             </div>
           </div>
