@@ -255,7 +255,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
             children: (
               <div className="p-3 space-y-3">
                 <div className="flex items-center justify-between px-1">
-                  <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest">
+                  <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
                     Filter by Month
                   </span>
                 </div>
@@ -287,7 +287,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                 />
                 <div className="max-h-56 overflow-y-auto -mx-1 px-1">
                   {filteredMonthOptions.length === 0 ? (
-                    <div className="px-3 py-6 text-center text-xs text-canvas-500">
+                    <div className="px-3 py-6 text-center text-xs text-canvas-500 select-none">
                       No months found.
                     </div>
                   ) : (
@@ -303,7 +303,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                             setMonthFilterSearch('');
                           }}
                           className={`
-                            w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors
+                            w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none
                             ${isSelected
                               ? 'bg-brand/10 text-brand font-semibold'
                               : isHighlighted
@@ -426,9 +426,9 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       key: 'amount',
       header: (
         <div className="flex flex-col items-end">
-          <span className="text-canvas-600">Amount ({mainCurrency})</span>
+          <span className="text-canvas-600 select-none">Amount ({mainCurrency})</span>
           {showOriginalCurrency && hasDifferentCurrency && (
-            <span className="text-[9px] font-semibold text-canvas-400 mt-0.5">Transaction currency</span>
+            <span className="text-[9px] font-semibold text-canvas-400 mt-0.5 select-none">Transaction currency</span>
           )}
         </div>
       ),
@@ -474,19 +474,19 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       {showSummary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card variant="elevated" className="p-6">
-            <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Income</div>
+            <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Income</div>
             <div className="text-2xl font-mono font-bold text-finance-income">
               {formatCurrency(transactions.filter(t => (t.main_amount ?? 0) > 0).reduce((s, t) => s + (t.main_amount ?? 0), 0))}
             </div>
           </Card>
           <Card variant="elevated" className="p-6">
-            <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Expenses</div>
+            <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Expenses</div>
             <div className="text-2xl font-mono font-bold text-finance-expense">
               {formatCurrency(transactions.filter(t => (t.main_amount ?? 0) < 0).reduce((s, t) => s + (t.main_amount ?? 0), 0))}
             </div>
           </Card>
           <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
-            <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">Net Flow</div>
+            <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1 select-none">Net Flow</div>
             <div className={`text-2xl font-mono font-bold ${netTotal >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
               {formatCurrency(netTotal)}
             </div>
@@ -515,13 +515,13 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
               <Card variant="elevated" className="overflow-hidden">
                 <div className="px-6 py-4 bg-canvas-100/50 border-b border-canvas-200 flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400">
+                    <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400 select-none">
                       {getIcon()}
                     </div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-canvas-800">{name}</h3>
                     </div>
-                    <span className="text-xs font-mono text-canvas-600 bg-canvas-200 px-2 py-0.5 rounded-full">
+                    <span className="text-xs font-mono text-canvas-600 bg-canvas-200 px-2 py-0.5 rounded-full select-none">
                       {data.transactions.length} transactions
                     </span>
                   </div>
@@ -563,7 +563,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
             <Card variant="elevated" className="overflow-hidden">
               <div className="px-6 py-4 bg-canvas-100/50 border-b border-canvas-200 flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400">
+                  <div className="p-2 bg-white rounded-xl shadow-sm text-canvas-400 select-none">
                     {getIcon()}
                   </div>
                   <div className="flex items-center gap-2">
@@ -574,11 +574,11 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                        'All Transactions'}
                     </h3>
                   </div>
-                  <span className="text-xs font-mono text-canvas-600 bg-canvas-200 px-2 py-0.5 rounded-full">
+                  <span className="text-xs font-mono text-canvas-600 bg-canvas-200 px-2 py-0.5 rounded-full select-none">
                     0 transactions
                   </span>
                 </div>
-                <div className="font-mono font-bold text-canvas-400">
+                <div className="font-mono font-bold text-canvas-400 select-none">
                   {formatCurrency(0)}
                 </div>
               </div>
@@ -594,8 +594,8 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
             </Card>
 
             <div className="py-8 text-center">
-              <p className="text-canvas-500 font-medium">No transactions found for this selection.</p>
-              <p className="text-sm text-canvas-400 mt-1">Use the filter above to adjust your selection.</p>
+              <p className="text-canvas-500 font-medium select-none">No transactions found for this selection.</p>
+              <p className="text-sm text-canvas-400 mt-1 select-none">Use the filter above to adjust your selection.</p>
             </div>
           </motion.div>
         )}

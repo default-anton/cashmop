@@ -406,24 +406,24 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
               : 'bg-yellow-100 border-yellow-300 text-yellow-800'
           }`}>
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-semibold">{warning.title}</p>
-              <p className="text-sm">{warning.detail}</p>
+            <div className="select-none">
+              <p className="text-sm font-semibold select-none">{warning.title}</p>
+              <p className="text-sm select-none">{warning.detail}</p>
             </div>
           </div>
         )}
 
         {step === 1 && (
           <div className="bg-canvas-50/30 border border-canvas-200/50 rounded-2xl p-8 backdrop-blur-sm shadow-card">
-            <h2 className="text-2xl font-bold mb-6 text-center">Import Transactions</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center select-none">Import Transactions</h2>
             <FileDropZone busy={parseBusy} error={parseError} multiple={true} onFilesSelected={handleFilesSelected} />
             {fileErrors.size > 0 && (
               <div className="mt-6">
-                <h4 className="text-sm font-semibold text-finance-expense mb-2">File Errors</h4>
+                <h4 className="text-sm font-semibold text-finance-expense mb-2 select-none">File Errors</h4>
                 <div className="space-y-2">
                   {Array.from(fileErrors.entries()).map(([fileName, error]) => (
-                    <div key={fileName} className="text-xs text-canvas-600 bg-canvas-300/60 border border-canvas-400 rounded-lg px-3 py-2">
-                      <span className="font-mono">{fileName}</span>: {error}
+                    <div key={fileName} className="text-xs text-canvas-600 bg-canvas-300/60 border border-canvas-400 rounded-lg px-3 py-2 select-none">
+                      <span className="font-mono select-none">{fileName}</span>: {error}
                     </div>
                   ))}
                 </div>
@@ -457,8 +457,8 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
             <div className="w-20 h-20 bg-finance-income/10 rounded-full flex items-center justify-center mb-6 text-finance-income">
               <CheckCircle2 className="w-10 h-10" />
             </div>
-            <h2 className="text-3xl font-bold text-canvas-800 mb-2">Import Complete!</h2>
-            <p className="text-canvas-500 text-center max-w-md">
+            <h2 className="text-3xl font-bold text-canvas-800 mb-2 select-none">Import Complete!</h2>
+            <p className="text-canvas-500 text-center max-w-md select-none">
               Your transactions have been successfully imported.
             </p>
             <Button

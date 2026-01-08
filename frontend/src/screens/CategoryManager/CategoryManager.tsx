@@ -62,8 +62,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onViewRules }) => {
                             <Tag className="w-8 h-8" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black text-canvas-800">Categories</h1>
-                            <p className="text-canvas-500 font-medium">Manage and rename your transaction categories</p>
+                            <h1 className="select-none text-3xl font-black text-canvas-800">Categories</h1>
+                            <p className="select-none text-canvas-500 font-medium">Manage and rename your transaction categories</p>
                         </div>
                     </div>
 
@@ -80,11 +80,11 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onViewRules }) => {
                 </div>
 
                 {loading ? (
-                    <div className="flex justify-center py-20 text-canvas-400">Loading categories...</div>
+                    <div className="select-none flex justify-center py-20 text-canvas-400">Loading categories...</div>
                 ) : filteredCategories.length === 0 ? (
                     <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-canvas-200">
                         <Tag className="w-12 h-12 text-canvas-200 mx-auto mb-4" />
-                        <p className="text-canvas-500 font-bold">No categories found matching "{search}"</p>
+                        <p className="select-none text-canvas-500 font-bold">No categories found matching "{search}"</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -126,7 +126,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onViewRules }) => {
                                                         className="px-3 py-1.5 text-xs font-bold uppercase tracking-widest bg-canvas-100 text-canvas-600 hover:text-brand hover:bg-brand/5 rounded-lg transition-all"
                                                         title="View Rules"
                                                     >
-                                                        <span className="flex items-center gap-1">
+                                                        <span className="select-none flex items-center gap-1">
                                                             <List className="w-3.5 h-3.5" />
                                                             Rules
                                                         </span>

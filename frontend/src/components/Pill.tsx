@@ -28,7 +28,7 @@ const Pill: React.FC<PillProps> = ({
   onDragEnd,
   className = '',
 }) => {
-  const baseClasses = 'inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border';
+  const baseClasses = 'inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border select-none';
   const stateClasses = isDragOver
     ? 'border-brand bg-brand/10'
     : 'border-canvas-200 bg-canvas-50';

@@ -7,7 +7,7 @@ interface BadgeProps {
 }
 
 const Badge: React.FC<BadgeProps> = ({ children, variant = 'default', className = '' }) => {
-  const baseClasses = 'inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded';
+  const baseClasses = 'inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded select-none';
   
   const variantClasses = {
     default: 'bg-canvas-200 text-canvas-700',

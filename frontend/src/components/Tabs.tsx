@@ -19,7 +19,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, activeTab, onChange, className = '' }
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+          className={`px-4 py-2 text-sm font-medium transition-colors relative select-none ${
             activeTab === tab.id
               ? 'text-brand border-b-2 border-brand'
               : 'text-canvas-600 hover:text-canvas-800'

@@ -12,8 +12,8 @@ export const InboxZero: React.FC<InboxZeroProps> = ({ onRefresh }) => {
       <div className="w-20 h-20 bg-finance-income/10 rounded-full flex items-center justify-center mb-6 text-finance-income">
         <CheckCircle2 className="w-10 h-10" />
       </div>
-      <h2 className="text-3xl font-bold text-canvas-800 mb-2">Inbox Zero!</h2>
-      <p className="text-canvas-500 max-w-md">
+      <h2 className="text-3xl font-bold text-canvas-800 mb-2 select-none">Inbox Zero!</h2>
+      <p className="text-canvas-500 max-w-md select-none">
         All your transactions are categorized. You're a financial wizard!
       </p>
       <Button onClick={onRefresh} variant="primary" className="mt-8">

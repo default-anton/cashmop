@@ -698,14 +698,14 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           }`}>
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-semibold">{displayWarning.title}</p>
-              <p className="text-sm">{displayWarning.detail}</p>
+              <p className="text-sm font-semibold select-none">{displayWarning.title}</p>
+              <p className="text-sm select-none">{displayWarning.detail}</p>
             </div>
           </div>
         )}
 
         <div className="flex justify-end mb-4">
-          <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-canvas-200 bg-canvas-50 text-xs font-semibold text-canvas-600">
+          <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-canvas-200 bg-canvas-50 text-xs font-semibold text-canvas-600 select-none">
             <input
               type="checkbox"
               className="h-3.5 w-3.5 accent-brand"

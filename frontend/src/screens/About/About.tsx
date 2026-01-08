@@ -55,8 +55,8 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-brand to-brand/70 text-white rounded-3xl shadow-brand-glow mb-6">
             <Zap className="w-10 h-10" />
           </div>
-          <h1 className="text-4xl font-black text-canvas-900 mb-2">Cashflow Tracker</h1>
-          <p className="text-lg text-canvas-600 font-medium">Desktop-first cash flow tracking application</p>
+          <h1 className="text-4xl font-black text-canvas-900 mb-2 select-none">Cashflow Tracker</h1>
+          <p className="text-lg text-canvas-600 font-medium select-none">Desktop-first cash flow tracking application</p>
         </div>
 
         <Card variant="glass" className="p-6 mb-6">
@@ -66,7 +66,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
                 <GitBranch className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-xs uppercase text-canvas-500 font-bold tracking-wider mb-1">Version</p>
+                <p className="text-xs uppercase text-canvas-500 font-bold tracking-wider mb-1 select-none">Version</p>
                 {loading ? (
                   <p className="text-canvas-800 font-semibold text-lg">Loading...</p>
                 ) : version ? (
@@ -91,7 +91,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
         <Card variant="glass" className="p-6 mb-6">
           <div className="flex items-center gap-3 mb-3">
             <Shield className="w-6 h-6 text-brand" />
-            <h2 className="text-xl font-bold text-canvas-800">License</h2>
+            <h2 className="text-xl font-bold text-canvas-800 select-none">License</h2>
           </div>
           <p className="text-canvas-600 mb-4">
             This application is licensed under the <span className="font-semibold text-canvas-800">Apache License 2.0</span>, a permissive free software license.
@@ -110,7 +110,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
         <Card variant="glass" className="p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Users className="w-6 h-6 text-brand" />
-            <h2 className="text-xl font-bold text-canvas-800">Credits</h2>
+            <h2 className="text-xl font-bold text-canvas-800 select-none">Credits</h2>
           </div>
 
           <div className="space-y-4">
@@ -129,7 +129,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <p className="text-sm font-bold uppercase text-canvas-500 mb-3">Built With</p>
+              <p className="text-sm font-bold uppercase text-canvas-500 mb-3 select-none">Built With</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex items-center gap-2 text-sm text-canvas-700">
                   <Code className="w-4 h-4 text-canvas-400" />
@@ -163,7 +163,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
         <Card variant="glass" className="p-6 mb-6">
           <div className="flex items-center gap-3 mb-3">
             <Info className="w-6 h-6 text-brand" />
-            <h2 className="text-xl font-bold text-canvas-800">Open Source</h2>
+            <h2 className="text-xl font-bold text-canvas-800 select-none">Open Source</h2>
           </div>
           <p className="text-canvas-600 mb-4">
             Cashflow Tracker is open source. Contribute, report issues, or fork the project on GitHub.
@@ -182,8 +182,8 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
           <p className="text-sm text-canvas-500 flex items-center justify-center gap-2">
             Made with <Heart className="w-4 h-4 text-finance-expense fill-finance-expense" /> by Anton Kuzmenko
           </p>
-          <p className="text-xs text-canvas-400 mt-1">© {year} Anton Kuzmenko. All rights reserved.</p>
-          <p className="text-xs text-canvas-300 mt-2">Press ESC or click outside to close</p>
+          <p className="text-xs text-canvas-400 mt-1 select-none">© {year} Anton Kuzmenko. All rights reserved.</p>
+          <p className="text-xs text-canvas-300 mt-2 select-none">Press ESC or click outside to close</p>
         </div>
       </div>
     </Modal>

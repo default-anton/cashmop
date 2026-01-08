@@ -128,8 +128,8 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
               <Calendar className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-canvas-800">Select Range</h2>
-              <p className="text-canvas-500">
+              <h2 className="text-xl font-bold text-canvas-800 select-none">Select Range</h2>
+              <p className="text-canvas-500 select-none">
                 Found transactions spanning {months.length} month{months.length === 1 ? '' : 's'}.
               </p>
             </div>
@@ -150,13 +150,13 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
         </div>
 
         <div className="flex items-center justify-between mb-4">
-          <div className="text-xs font-bold text-canvas-500 uppercase tracking-widest">
-            Selected: <span className="font-mono text-brand">{totalSelectedTxns}</span> transactions
+          <div className="text-xs font-bold text-canvas-500 uppercase tracking-widest select-none">
+            Selected: <span className="font-mono text-brand select-none">{totalSelectedTxns}</span> transactions
           </div>
           <div className="flex gap-2">
-            <button onClick={selectAll} className="text-[10px] font-bold text-brand uppercase hover:underline">Select All</button>
-            <span className="text-canvas-300">|</span>
-            <button onClick={deselectAll} className="text-[10px] font-bold text-canvas-500 uppercase hover:underline">Deselect All</button>
+            <button onClick={selectAll} className="text-[10px] font-bold text-brand uppercase hover:underline select-none">Select All</button>
+            <span className="text-canvas-300 select-none">|</span>
+            <button onClick={deselectAll} className="text-[10px] font-bold text-canvas-500 uppercase hover:underline select-none">Deselect All</button>
           </div>
         </div>
 
@@ -174,7 +174,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
                     : 'bg-canvas-100 border-transparent text-canvas-500 hover:bg-canvas-200')
                 }
               >
-                <div className="flex flex-col items-start">
+                <div className="flex flex-col items-start select-none">
                   <span className={`text-sm font-bold ${isSelected ? 'text-canvas-800' : 'text-canvas-600'}`}>{m.label}</span>
                   <span className={`text-[10px] font-mono ${isSelected ? 'text-brand' : 'text-canvas-500'}`}>{m.count} items</span>
                 </div>
@@ -194,7 +194,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
         <div className="px-6 py-3 bg-canvas-100 border-b border-canvas-200 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <TableIcon className="w-4 h-4 text-canvas-400" />
-            <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest">Mapped Data Preview</span>
+            <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest select-none">Mapped Data Preview</span>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -204,7 +204,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
                 {previewColumns.map((col: any) => (
                   <th
                     key={col.key}
-                    className={`px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-canvas-600 border-b border-canvas-200 ${col.className}`}
+                    className={`px-4 py-4 text-left text-xs font-bold uppercase tracking-wider text-canvas-600 border-b border-canvas-200 select-none ${col.className}`}
                   >
                     {col.header}
                   </th>

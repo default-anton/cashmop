@@ -113,8 +113,8 @@ const Table = <T,>({
             <tr>
               <td colSpan={columns.length} className="px-6 py-8 text-center text-sm text-canvas-500">
                 <div className="space-y-2">
-                  <p>{emptyMessage}</p>
-                  {emptyDetail && <p className="text-xs">{emptyDetail}</p>}
+                  <p className="select-none">{emptyMessage}</p>
+                  {emptyDetail && <p className="text-xs select-none">{emptyDetail}</p>}
                 </div>
               </td>
             </tr>

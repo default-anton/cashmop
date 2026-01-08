@@ -90,7 +90,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-brand/10 px-2 py-0.5 rounded">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-brand/10 px-2 py-0.5 rounded select-none">
                       Auto-Rule
                     </span>
                     <span className="text-sm font-bold text-canvas-800">
@@ -101,7 +101,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                     </span>
                   </div>
                   {showCategoryHint && (
-                    <p className="text-xs text-canvas-500 mt-0.5">
+                    <p className="text-xs text-canvas-500 mt-0.5 select-none">
                       Enter a category name below to save this rule.
                     </p>
                   )}
@@ -109,7 +109,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
               </div>
               <button
                 onClick={onClearRule}
-                className="p-2 hover:bg-brand/10 text-canvas-500 hover:text-brand rounded-xl transition-all"
+                className="p-2 hover:bg-brand/10 text-canvas-500 hover:text-brand rounded-xl transition-all select-none"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -118,7 +118,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
             <div className="h-px bg-brand/10 w-full" />
 
             <div className="flex items-center gap-2 w-full">
-              <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest mr-2">
+              <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest mr-2 select-none">
                 Amount:
               </span>
 
@@ -137,7 +137,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                         setTimeout(() => amountInputRef.current?.focus(), 0);
                       }
                     }}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${amountFilter.operator === op
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all select-none ${amountFilter.operator === op
                       ? 'bg-brand text-white shadow-sm'
                       : 'text-canvas-500 hover:text-brand hover:bg-brand/5'
                       }`}
@@ -162,7 +162,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                   />
                   {amountFilter.operator === 'between' && (
                     <>
-                      <span className="text-xs text-canvas-500 font-bold">AND</span>
+                      <span className="text-xs text-canvas-500 font-bold select-none">AND</span>
                       <input
                         type="number"
                         placeholder="Max"
@@ -180,11 +180,11 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
             {previewVisible && (
               <div className="mt-2 animate-snap-in">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em]">
+                  <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em] select-none">
                     {totalMatches} Matching Transaction{totalMatches !== 1 ? 's' : ''}
                   </span>
                   {totalMatches > matchingTransactions.length && (
-                    <span className="text-[10px] font-semibold text-canvas-400">
+                    <span className="text-[10px] font-semibold text-canvas-400 select-none">
                       Showing {matchingTransactions.length} most recent
                     </span>
                   )}
@@ -198,12 +198,12 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                         ))}
                       </div>
                     ) : matchingTransactions.length === 0 ? (
-                      <div className="px-4 py-10 text-center text-xs text-canvas-400">
+                      <div className="px-4 py-10 text-center text-xs text-canvas-400 select-none">
                         No matching transactions found.
                       </div>
                     ) : (
                       <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 bg-canvas-100/80 backdrop-blur-sm shadow-sm">
+                        <thead className="sticky top-0 bg-canvas-100/80 backdrop-blur-sm shadow-sm select-none">
                           <tr>
                             <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
                               <div className="flex items-center gap-1">
@@ -285,8 +285,8 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
             </div>
           </div>
           <div className="text-center px-10">
-            <span className="text-sm font-bold block mb-1 text-canvas-700">Automation Rule Wizard</span>
-            <span className="text-xs font-medium text-canvas-500">
+            <span className="text-sm font-bold block mb-1 text-canvas-700 select-none">Automation Rule Wizard</span>
+            <span className="text-xs font-medium text-canvas-500 select-none">
               Select text in the description above to automatically match future transactions.
             </span>
           </div>

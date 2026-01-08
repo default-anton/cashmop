@@ -87,7 +87,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
         </Button>
       </div>
 
-      <p className="mt-4 text-center text-canvas-500 text-sm">
+      <p className="mt-4 text-center text-canvas-500 text-sm select-none">
         Press{' '}
         <kbd className="px-2 py-1 bg-canvas-200 rounded text-xs font-mono text-canvas-800">
           ENTER

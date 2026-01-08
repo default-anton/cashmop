@@ -336,8 +336,8 @@ const Analysis: React.FC = () => {
               <BarChart3 className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-canvas-800 tracking-tight">Financial Analysis</h1>
-              <p className="text-canvas-600 font-medium">Deep dive into your cash flow and spending habits.</p>
+              <h1 className="text-3xl font-black text-canvas-800 tracking-tight select-none">Financial Analysis</h1>
+              <p className="text-canvas-600 font-medium select-none">Deep dive into your cash flow and spending habits.</p>
             </div>
           </div>
 
@@ -367,14 +367,14 @@ const Analysis: React.FC = () => {
                   <button
                     onClick={() => handleExport('csv')}
                     disabled={!selectedMonth}
-                    className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors"
+                    className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors select-none"
                   >
                     CSV
                   </button>
                   <button
                     onClick={() => handleExport('xlsx')}
                     disabled={!selectedMonth}
-                    className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors"
+                    className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors select-none"
                   >
                     Excel
                   </button>
@@ -390,10 +390,10 @@ const Analysis: React.FC = () => {
               ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
               : 'bg-yellow-100 border-yellow-300 text-yellow-800'
           }`}>
-            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 select-none" />
             <div>
-              <p className="text-sm font-semibold">{displayWarning.title}</p>
-              <p className="text-sm">{displayWarning.detail}</p>
+              <p className="text-sm font-semibold select-none">{displayWarning.title}</p>
+              <p className="text-sm select-none">{displayWarning.detail}</p>
             </div>
           </div>
         )}
@@ -410,19 +410,19 @@ const Analysis: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card variant="elevated" className="p-6">
-              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Income</div>
+              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Income</div>
               <div className="text-2xl font-mono font-bold text-finance-income">
                 {formatCurrency(totals.income)}
               </div>
             </Card>
             <Card variant="elevated" className="p-6">
-              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1">Total Expenses</div>
+              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Expenses</div>
               <div className="text-2xl font-mono font-bold text-finance-expense">
                 {formatCurrency(totals.expenses)}
               </div>
             </Card>
             <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
-              <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1">Net Flow</div>
+              <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1 select-none">Net Flow</div>
               <div className={`text-2xl font-mono font-bold ${totals.net >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
                 {formatCurrency(totals.net)}
               </div>
@@ -438,7 +438,7 @@ const Analysis: React.FC = () => {
                   key={option}
                   onClick={() => setGroupBy(option)}
                   className={`
-                    px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200
+                    px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none
                     ${groupBy === option
                       ? 'bg-brand text-white shadow-brand-glow'
                       : 'text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100'}
@@ -454,7 +454,7 @@ const Analysis: React.FC = () => {
                 <button
                   onClick={() => handleSortGroup('name')}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
+                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all select-none
                     ${groupSortField === 'name' ? 'bg-brand text-white shadow-brand-glow' : 'text-canvas-600 hover:bg-canvas-100'}
                   `}
                 >
@@ -464,7 +464,7 @@ const Analysis: React.FC = () => {
                 <button
                   onClick={() => handleSortGroup('amount')}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all
+                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all select-none
                     ${groupSortField === 'amount' ? 'bg-brand text-white shadow-brand-glow' : 'text-canvas-600 hover:bg-canvas-100'}
                   `}
                 >
@@ -477,7 +477,7 @@ const Analysis: React.FC = () => {
           
           <div className="flex items-center gap-3">
             {hasForeignCurrency && (
-              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-canvas-200 bg-canvas-50 text-xs font-semibold text-canvas-600">
+              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-canvas-200 bg-canvas-50 text-xs font-semibold text-canvas-600 select-none">
                 <input
                   type="checkbox"
                   className="h-3.5 w-3.5 accent-brand"
@@ -489,7 +489,7 @@ const Analysis: React.FC = () => {
               </label>
             )}
             <div className="relative flex items-center bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
-              <Search className="w-3.5 h-3.5 text-canvas-500 ml-2" />
+              <Search className="w-3.5 h-3.5 text-canvas-500 ml-2 select-none" />
               <input
                 value={transactionSearch}
                 onChange={(event) => setTransactionSearch(event.target.value)}
@@ -505,14 +505,14 @@ const Analysis: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setTransactionSearch('')}
-                  className="p-1 text-canvas-400 hover:text-canvas-700 transition-colors"
+                  className="p-1 text-canvas-400 hover:text-canvas-700 transition-colors select-none"
                   title="Clear search"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
-            <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest">
+            <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">
               {searchActive
                 ? `${displayedTransactions.length} of ${transactions.length} Transactions`
                 : `${transactions.length} Transactions Found`}
@@ -523,7 +523,7 @@ const Analysis: React.FC = () => {
         {loading ? (
           <div className="py-20 flex flex-col items-center justify-center space-y-4">
             <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>
-            <p className="text-canvas-600 font-medium animate-pulse">Analyzing your finances...</p>
+            <p className="text-canvas-600 font-medium animate-pulse select-none">Analyzing your finances...</p>
           </div>
         ) : (
           <GroupedTransactionList

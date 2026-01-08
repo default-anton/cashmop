@@ -28,7 +28,7 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }
       </div>
       {isVisible && (
         <div
-          className={`absolute z-50 px-2 py-1 text-xs font-medium text-canvas-800 bg-canvas-100 border border-canvas-300 rounded shadow-glass whitespace-nowrap ${positionClasses[position]}`}
+          className={`absolute z-50 px-2 py-1 text-xs font-medium text-canvas-800 bg-canvas-100 border border-canvas-300 rounded shadow-glass whitespace-nowrap select-none ${positionClasses[position]}`}
         >
           {content}
           <div className={`absolute w-2 h-2 bg-canvas-100 border border-canvas-300 transform rotate-45 ${

@@ -34,11 +34,11 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
       <div className="my-4">
         <button
           onClick={onSearch}
-          className="w-full flex items-center justify-center gap-2 bg-canvas-100 hover:bg-canvas-200 border-2 border-canvas-200 hover:border-brand/30 text-canvas-600 hover:text-brand rounded-xl py-3 px-4 font-bold transition-all duration-200 group"
+          className="w-full flex items-center justify-center gap-2 bg-canvas-100 hover:bg-canvas-200 border-2 border-canvas-200 hover:border-brand/30 text-canvas-600 hover:text-brand rounded-xl py-3 px-4 font-bold transition-all duration-200 group select-none"
         >
           <Globe className="w-4 h-4" />
           Search Web for Context
-          <kbd className="ml-auto px-2 py-0.5 bg-canvas-200 rounded text-xs font-mono opacity-60 group-hover:opacity-100">
+          <kbd className="ml-auto px-2 py-0.5 bg-canvas-200 rounded text-xs font-mono opacity-60 group-hover:opacity-100 select-none">
             ⌘K
           </kbd>
         </button>
@@ -65,7 +65,7 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
         >
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-brand" />
-            <span className="text-sm font-bold text-canvas-700">
+            <span className="text-sm font-bold text-canvas-700 select-none">
               Web Search Context
             </span>
             {query && (
@@ -108,12 +108,12 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
                 {loading && (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-6 h-6 text-brand animate-spin" />
-                    <span className="ml-2 text-canvas-600 font-medium">Searching web...</span>
+                    <span className="ml-2 text-canvas-600 font-medium select-none">Searching web...</span>
                   </div>
                 )}
 
                 {error && (
-                  <div className="py-6 text-center text-canvas-500">
+                  <div className="py-6 text-center text-canvas-500 select-none">
                     <p className="text-sm">{error}</p>
                     <button
                       onClick={onSearch}
@@ -125,7 +125,7 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
                 )}
 
                 {results && results.length === 0 && (
-                  <div className="py-6 text-center text-canvas-500 text-sm">
+                  <div className="py-6 text-center text-canvas-500 text-sm select-none">
                     No results found for this transaction
                   </div>
                 )}

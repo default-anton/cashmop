@@ -540,10 +540,10 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
         children: (
           <div className="p-3 space-y-3">
             <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest">Filter by Type</span>
+              <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">Filter by Type</span>
               <button
                 onClick={() => setSelectedMatchTypes([])}
-                className="text-xs text-canvas-400 hover:text-canvas-700"
+                className="text-xs text-canvas-400 hover:text-canvas-700 select-none"
               >
                 Clear
               </button>
@@ -562,7 +562,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
                       );
                     }}
                     className={`
-                      w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors
+                      w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none
                       ${isActive
                         ? 'bg-brand/10 text-brand font-semibold'
                         : 'text-canvas-700 hover:bg-canvas-100'}
@@ -653,14 +653,14 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
         <div className="flex items-center gap-2">
           <button
             onClick={() => openEditModal(row)}
-            className="p-2 text-canvas-500 hover:text-brand hover:bg-brand/5 rounded-lg transition-colors"
+            className="p-2 text-canvas-500 hover:text-brand hover:bg-brand/5 rounded-lg transition-colors select-none"
             aria-label={`Edit rule ${row.match_value}`}
           >
             <Pencil className="w-4 h-4" />
           </button>
           <button
             onClick={() => openConfirmModal('delete', row)}
-            className="p-2 text-canvas-500 hover:text-finance-expense hover:bg-finance-expense/10 rounded-lg transition-colors"
+            className="p-2 text-canvas-500 hover:text-finance-expense hover:bg-finance-expense/10 rounded-lg transition-colors select-none"
             aria-label={`Delete rule ${row.match_value}`}
           >
             <Trash2 className="w-4 h-4" />
@@ -689,8 +689,8 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
               <Wand2 className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-canvas-800">Rules</h1>
-              <p className="text-canvas-500 font-medium">Manage categorization rules and keep your automation tidy</p>
+              <h1 className="text-3xl font-black text-canvas-800 select-none">Rules</h1>
+              <p className="text-canvas-500 font-medium select-none">Manage categorization rules and keep your automation tidy</p>
             </div>
           </div>
           <Button onClick={openCreateModal}>
@@ -701,7 +701,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
 
         <Card variant="elevated" className="p-4">
           {loading ? (
-            <div className="py-12 text-center text-canvas-400">Loading rules...</div>
+            <div className="py-12 text-center text-canvas-400 select-none">Loading rules...</div>
           ) : (
             <Table
               columns={columns}
@@ -725,13 +725,13 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
         <div className="space-y-6">
           <div className="space-y-4">
             <div>
-              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2">Match Type</div>
+              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 select-none">Match Type</div>
               <div className="flex bg-white rounded-xl p-1 border border-canvas-200">
                 {matchTypeOptions.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => setMatchType(option.value)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${matchType === option.value
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all select-none ${matchType === option.value
                       ? 'bg-brand text-white shadow-sm'
                       : 'text-canvas-500 hover:text-brand hover:bg-brand/5'
                     }`}
@@ -743,7 +743,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block">Match Value</label>
+              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block select-none">Match Value</label>
               <Input
                 value={matchValue}
                 onChange={(e) => setMatchValue(e.target.value)}
@@ -753,7 +753,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block">Category</label>
+              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block select-none">Category</label>
               <AutocompleteInput
                 value={categoryInput}
                 onChange={(value) => {
@@ -811,12 +811,12 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-sm text-canvas-600">
+          <p className="text-sm text-canvas-600 select-none">
             {confirmAction === 'delete'
               ? 'Choose how to handle existing categorizations for this rule.'
               : 'Choose how to apply your updated rule.'}
           </p>
-          <div className="text-xs text-canvas-500">
+          <div className="text-xs text-canvas-500 select-none">
             {confirmLoading ? 'Checking matches...' : `${confirmMatchCount} matching transaction${confirmMatchCount !== 1 ? 's' : ''}`}
           </div>
           <div className="flex justify-end gap-2">

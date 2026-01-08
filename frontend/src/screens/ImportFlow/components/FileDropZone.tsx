@@ -82,10 +82,10 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
               <Upload className="w-8 h-8 text-brand" />
             </div>
 
-            <h3 className="text-xl font-bold text-canvas-800 mb-2">
+            <h3 className="text-xl font-bold text-canvas-800 mb-2 select-none">
               {multiple ? 'Choose your bank exports' : 'Choose your bank export'}
             </h3>
-            <p className="text-canvas-500 text-sm">CSV or Excel (.xlsx)</p>
+            <p className="text-canvas-500 text-sm select-none">CSV or Excel (.xlsx)</p>
           </>
         ) : (
           <div className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
@@ -95,10 +95,10 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
                   <FileText className="w-6 h-6 text-brand" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-canvas-800">
+                  <h3 className="text-lg font-bold text-canvas-800 select-none">
                     {selectedFiles.length} file{selectedFiles.length === 1 ? '' : 's'} selected
                   </h3>
-                  <p className="text-sm text-canvas-500">{multiple ? 'Add more files or continue' : 'Replace file'}</p>
+                  <p className="text-sm text-canvas-500 select-none">{multiple ? 'Add more files or continue' : 'Replace file'}</p>
                 </div>
               </div>
               <Button
@@ -127,7 +127,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono px-2 py-1 rounded bg-canvas-300 border border-canvas-400 text-canvas-600">
+                    <span className="text-xs font-mono px-2 py-1 rounded bg-canvas-300 border border-canvas-400 text-canvas-600 select-none">
                       {file.name.endsWith('.csv') ? 'CSV' : 'Excel'}
                     </span>
                     <Button
@@ -155,7 +155,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
         )}
 
         {busy && (
-          <div className="mt-6 text-sm font-mono text-canvas-500 bg-canvas-200/60 border border-canvas-300 rounded-lg px-3 py-2">
+          <div className="mt-6 text-sm font-mono text-canvas-500 bg-canvas-200/60 border border-canvas-300 rounded-lg px-3 py-2 select-none">
             Parsing file{selectedFiles.length > 1 ? 's...' : '...'}
           </div>
         )}
@@ -166,13 +166,13 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
           </div>
         )}
 
-        <div className="absolute bottom-8 flex gap-3 text-xs font-mono text-canvas-500">
-          <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300">.CSV</span>
-          <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300">.XLSX</span>
+        <div className="absolute bottom-8 flex gap-3 text-xs font-mono text-canvas-500 select-none">
+          <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300 select-none">.CSV</span>
+          <span className="bg-canvas-200 px-2 py-1 rounded border border-canvas-300 select-none">.XLSX</span>
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-canvas-500 text-center">Transactions are parsed locally and never leave your device.</p>
+      <p className="mt-4 text-xs text-canvas-500 text-center select-none">Transactions are parsed locally and never leave your device.</p>
     </div>
   );
 };

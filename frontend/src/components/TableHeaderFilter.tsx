@@ -250,7 +250,7 @@ export const CategoryFilterContent: React.FC<{
     <div className="flex flex-col max-h-[360px]">
       <div className="p-3 border-b border-canvas-100 space-y-3">
         <div className="flex justify-between items-center px-1">
-          <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest">
+          <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
             Filter by Category
           </span>
           <div className="flex gap-3">
@@ -259,7 +259,7 @@ export const CategoryFilterContent: React.FC<{
                 e.stopPropagation();
                 isAllSelected ? onClear() : onSelectAll();
               }}
-              className="text-[10px] font-bold text-brand uppercase hover:underline"
+              className="text-[10px] font-bold text-brand uppercase hover:underline select-none"
             >
               {isAllSelected ? 'Deselect All' : 'Select All'}
             </button>
@@ -269,7 +269,7 @@ export const CategoryFilterContent: React.FC<{
                   e.stopPropagation();
                   onClear();
                 }}
-                className="text-[10px] font-bold text-canvas-600 uppercase hover:text-canvas-800 hover:underline"
+                className="text-[10px] font-bold text-canvas-600 uppercase hover:text-canvas-800 hover:underline select-none"
               >
                 Reset
               </button>
@@ -278,7 +278,7 @@ export const CategoryFilterContent: React.FC<{
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-canvas-500" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-canvas-500 select-none" />
           <input
             ref={inputRef}
             type="text"
@@ -297,7 +297,7 @@ export const CategoryFilterContent: React.FC<{
             <div key={category.id} className="group relative flex items-center">
               <button
                 onClick={() => onSelect(category.id)}
-                className="flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-canvas-100 transition-colors"
+                className="flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-canvas-100 transition-colors select-none"
               >
                 <span className={`text-sm ${isSelected ? 'font-bold text-canvas-800' : 'text-canvas-600'}`}>
                   {category.name}
@@ -312,7 +312,7 @@ export const CategoryFilterContent: React.FC<{
 
               <button
                 onClick={(e) => onSelectOnly(category.id, e)}
-                className="absolute right-14 opacity-0 group-hover:opacity-100 px-2 py-1 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 hover:bg-canvas-300 transition-all z-10"
+                className="absolute right-14 opacity-0 group-hover:opacity-100 px-2 py-1 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 hover:bg-canvas-300 transition-all z-10 select-none"
               >
                 ONLY
               </button>
@@ -321,14 +321,14 @@ export const CategoryFilterContent: React.FC<{
         })}
 
         {filteredCategories.length === 0 && (
-          <div className="px-4 py-8 text-center text-canvas-500 text-sm italic">
+          <div className="px-4 py-8 text-center text-canvas-500 text-sm italic select-none">
             {searchTerm ? 'No matches found' : 'No categories found'}
           </div>
         )}
       </div>
 
       <div className="px-3 py-2 border-t border-canvas-100 flex items-center justify-between">
-        <span className="text-[10px] text-canvas-500 font-medium">
+        <span className="text-[10px] text-canvas-500 font-medium select-none">
           {selectedCount === 0
             ? 'No filters applied'
             : `${selectedCount} of ${totalCount} selected`}
@@ -347,11 +347,11 @@ export const TextFilterContent: React.FC<{
 }> = ({ value, onChange, onClear, placeholder = 'Search...' }) => {
   return (
     <div className="p-3 space-y-3">
-      <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest">
+      <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
         Text Filter
       </div>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-canvas-500" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-canvas-500 select-none" />
         <input
           type="text"
           placeholder={placeholder}
@@ -365,7 +365,7 @@ export const TextFilterContent: React.FC<{
         <div className="flex justify-end">
           <button
             onClick={onClear}
-            className="text-[10px] font-bold text-canvas-600 uppercase hover:text-canvas-800 hover:underline"
+            className="text-[10px] font-bold text-canvas-600 uppercase hover:text-canvas-800 hover:underline select-none"
           >
             Clear
           </button>

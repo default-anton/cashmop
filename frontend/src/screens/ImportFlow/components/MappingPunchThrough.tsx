@@ -463,12 +463,12 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-canvas-800">{currentStep.label}</h2>
-                <span className="text-xs font-mono text-canvas-500 uppercase tracking-widest">
+                <h2 className="text-xl font-bold text-canvas-800 select-none">{currentStep.label}</h2>
+                <span className="text-xs font-mono text-canvas-500 uppercase tracking-widest select-none">
                   {currentStepIdx + 1} / {STEPS.length}
                 </span>
               </div>
-              <p className="text-canvas-500">{currentStep.instruction}</p>
+              <p className="text-canvas-500 select-none">{currentStep.instruction}</p>
             </div>
           </div>
 
@@ -543,7 +543,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                 <ArrowUpDown className="w-4 h-4" />
                 {invertSignEnabled ? 'Flip sign: On' : 'Flip sign: Off'}
               </button>
-              <span className="text-xs text-canvas-500">
+              <span className="text-xs text-canvas-500 select-none">
                 Turn on if your file shows expenses as positive numbers.
               </span>
             </div>
@@ -602,7 +602,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                     </button>
                   )}
                 </div>
-                <div className="text-xs text-canvas-500">
+                <div className="text-xs text-canvas-500 select-none">
                   Tip: you can proceed with just one of these mapped. Use Next when you're happy.
                 </div>
               </div>
@@ -667,7 +667,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                 {mapping.csv.amountMapping?.type === 'amountWithType' && (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1">Negative value</div>
+                      <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1 select-none">Negative value</div>
                       <Input
                         value={mapping.csv.amountMapping.negativeValue ?? 'debit'}
                         onChange={(e) =>
@@ -687,7 +687,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                       />
                     </div>
                     <div>
-                      <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1">Positive value</div>
+                      <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1 select-none">Positive value</div>
                       <Input
                         value={mapping.csv.amountMapping.positiveValue ?? 'credit'}
                         onChange={(e) =>
@@ -716,7 +716,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
         {currentStep.key === 'description' && (
           <div className="mt-6 min-h-[44px] flex flex-wrap gap-2 items-center border-t border-canvas-100 pt-4">
             {mapping.csv.description.length === 0 ? (
-              <span className="text-xs text-canvas-400 italic">No columns selected yet...</span>
+              <span className="text-xs text-canvas-400 italic select-none">No columns selected yet...</span>
             ) : (
               mapping.csv.description.map((h) => (
                 <button
@@ -735,7 +735,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
         {currentStep.key === 'account' && (
           <div className="mt-6 grid gap-4 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
             <div>
-              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2">Static account (fast)</div>
+              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2 select-none">Static account (fast)</div>
               <div className="flex items-center gap-2">
                 <div className="w-full max-w-sm">
                   <AutocompleteInput
@@ -751,8 +751,8 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                 </div>
               </div>
               {mapping.csv.account && (
-                <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2">
-                  Currently mapped from file: <span className="font-mono">{mapping.csv.account}</span>
+                <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2 select-none">
+                  Currently mapped from file: <span className="font-mono select-none">{mapping.csv.account}</span>
                   <button
                     type="button"
                     onClick={() => removeHeaderEverywhere(mapping.csv.account || '')}
@@ -764,7 +764,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
               )}
             </div>
 
-            <div className="border-t border-canvas-200 pt-3 text-xs text-canvas-500">
+            <div className="border-t border-canvas-200 pt-3 text-xs text-canvas-500 select-none">
               Or click a column header to map account per-row.
             </div>
           </div>
@@ -773,7 +773,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
         {currentStep.key === 'owner' && (
           <div className="mt-6 grid gap-4 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
             <div>
-              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2">Default owner</div>
+              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2 select-none">Default owner</div>
               <div className="flex items-center gap-2">
                 <div className="w-full max-w-sm">
                   <AutocompleteInput
@@ -789,8 +789,8 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                 </div>
               </div>
               {mapping.csv.owner && (
-                <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2">
-                  Currently mapped from file: <span className="font-mono">{mapping.csv.owner}</span>
+                <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2 select-none">
+                  Currently mapped from file: <span className="font-mono select-none">{mapping.csv.owner}</span>
                   <button
                     type="button"
                     onClick={() => removeHeaderEverywhere(mapping.csv.owner || '')}
@@ -802,14 +802,14 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
               )}
             </div>
 
-            <div className="border-t border-canvas-200 pt-3 text-xs text-canvas-500">Or click a column header to map owner per-row.</div>
+            <div className="border-t border-canvas-200 pt-3 text-xs text-canvas-500 select-none">Or click a column header to map owner per-row.</div>
           </div>
         )}
 
         {currentStep.key === 'currency' && (
           <div className="mt-6 grid gap-3 p-4 bg-canvas-100 rounded-xl border border-canvas-200">
             <div>
-              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2">Default currency</div>
+              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2 select-none">Default currency</div>
               <div className="w-full max-w-sm">
                 <AutocompleteInput
                   value={currencyInput}
@@ -824,8 +824,8 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                 />
               </div>
               {mapping.csv.currency && (
-                <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2">
-                  Currently mapped from file: <span className="font-mono">{mapping.csv.currency}</span>
+                <div className="mt-2 text-xs text-canvas-500 flex items-center gap-2 select-none">
+                  Currently mapped from file: <span className="font-mono select-none">{mapping.csv.currency}</span>
                   <button
                     type="button"
                     onClick={() => removeHeaderEverywhere(mapping.csv.currency || '')}
@@ -837,12 +837,12 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
               )}
             </div>
 
-            <div className="border-t border-canvas-200 pt-3 text-xs text-canvas-500">Or click a column header to map currency per-row.</div>
+            <div className="border-t border-canvas-200 pt-3 text-xs text-canvas-500 select-none">Or click a column header to map currency per-row.</div>
           </div>
         )}
 
         {!canProceed && currentStepIdx >= STEPS.findIndex((s) => s.key === 'account') && (
-          <div className="mt-6 text-xs text-canvas-500">
+          <div className="mt-6 text-xs text-canvas-500 select-none">
             Required to continue: Date, Amount, Description, and Account.
           </div>
         )}
@@ -850,12 +850,12 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
       <div className={`bg-canvas-50 rounded-2xl border transition-all duration-300 overflow-hidden shadow-sm ${hoveredColIdx !== null ? 'border-brand/40 ring-1 ring-brand/10' : 'border-canvas-200'}`}>
         <div className="px-6 py-3 bg-canvas-100 border-b border-canvas-200 flex justify-between items-center">
-          <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest">
+          <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest select-none">
             File preview ({fileCount} file{fileCount === 1 ? '' : 's'})
           </span>
           <div className="flex items-center gap-2 px-2 py-1 bg-brand/10 border border-brand/20 rounded-lg animate-in fade-in slide-in-from-right-2">
             <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
-            <span className="text-[10px] text-brand font-bold uppercase tracking-tight">
+            <span className="text-[10px] text-brand font-bold uppercase tracking-tight select-none">
               Click any column to map {currentStep.label}
             </span>
           </div>
@@ -875,7 +875,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                       onClick={() => handleHeaderClick(header)}
                       onMouseEnter={() => setHoveredColIdx(index)}
                       className={
-                        'px-4 py-4 text-left text-xs font-bold uppercase tracking-wider transition-all duration-200 border-b-2 min-w-[150px] relative ' +
+                        'px-4 py-4 text-left text-xs font-bold uppercase tracking-wider transition-all duration-200 border-b-2 min-w-[150px] relative select-none ' +
                         (status === 'current'
                           ? 'bg-brand/20 border-brand text-brand cursor-pointer '
                           : status === 'other'

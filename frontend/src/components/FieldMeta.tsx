@@ -15,11 +15,11 @@ const FieldMeta: React.FC<FieldMetaProps> = ({ label, required, hint }) => {
           (required ? 'bg-canvas-300 text-canvas-600' : 'bg-canvas-200 text-canvas-500')
         }
       >
-        <span className="text-xs font-bold">{label[0]}</span>
+        <span className="text-xs font-bold select-none">{label[0]}</span>
       </div>
       <div>
-        <p className="text-sm font-semibold text-canvas-700">{label}</p>
-        <p className="text-xs text-canvas-500">
+        <p className="text-sm font-semibold text-canvas-700 select-none">{label}</p>
+        <p className="text-xs text-canvas-500 select-none">
           {required ? 'Required' : 'Optional'}
           {hint ? ` • ${hint}` : ''}
         </p>

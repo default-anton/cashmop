@@ -197,7 +197,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
         <div className="text-center">
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-canvas-200/30">
             <div className="flex flex-col items-start text-left">
-              <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5">
+              <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5 select-none">
                 Date
               </span>
               <span className="text-sm font-bold text-canvas-700">
@@ -210,7 +210,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
             </div>
 
             <div className="flex flex-col items-center">
-              <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-0.5 ${isExpense ? 'text-finance-expense/60' : 'text-finance-income/60'}`}>
+              <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-0.5 select-none ${isExpense ? 'text-finance-expense/60' : 'text-finance-income/60'}`}>
                 {isExpense ? 'Expense' : 'Income'}
               </span>
               <span className={`text-sm font-mono font-black tracking-tight ${mainAmount === null ? 'text-canvas-400' : isExpense ? 'text-finance-expense' : 'text-finance-income'}`}>
@@ -225,7 +225,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
 
             <div className="flex gap-6">
               <div className="flex flex-col items-end text-right">
-                <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5">
+                <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5 select-none">
                   Account
                 </span>
                 <span className="text-sm font-black text-brand tracking-tight">
@@ -234,7 +234,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
               </div>
               {transaction.owner_name && (
                 <div className="flex flex-col items-end text-right border-l border-canvas-200/50 pl-6">
-                  <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5">
+                  <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5 select-none">
                     Owner
                   </span>
                   <span className="text-sm font-black text-canvas-800 tracking-tight">
@@ -247,14 +247,14 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
 
           <div className="mb-4 flex flex-col items-center">
             <div className="flex items-center gap-3 mb-2">
-              <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em]">
+              <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] select-none">
                 Description
               </span>
             </div>
             <div className="relative group/desc w-full">
               {showOnboardingHint && !selectionRule && (
                 <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center animate-snap-in pointer-events-none">
-                  <div className="bg-brand text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg shadow-brand-glow uppercase tracking-widest flex items-center gap-2 border border-brand/20 backdrop-blur-sm">
+                  <div className="bg-brand text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg shadow-brand-glow uppercase tracking-widest flex items-center gap-2 border border-brand/20 backdrop-blur-sm select-none">
                     <Wand2 className="w-3 h-3" />
                     Select text to create rule
                   </div>

@@ -48,7 +48,7 @@ const Toast: React.FC<ToastProps> = ({ message, type = 'info', duration = 5000, 
   return (
     <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${bg} ${border} ${text} shadow-glass animate-in slide-in-from-right-2`}>
       <Icon className="w-5 h-5" />
-      <span className="text-sm font-medium">{message}</span>
+      <span className="text-sm font-medium select-none">{message}</span>
       <button
         onClick={onClose}
         className="ml-2 p-1 hover:opacity-70"

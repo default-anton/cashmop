@@ -182,8 +182,8 @@ const Settings: React.FC = () => {
             <Database className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-canvas-800">Settings</h1>
-            <p className="text-canvas-500 font-medium">Backup and restore your data</p>
+            <h1 className="text-3xl font-black text-canvas-800 select-none">Settings</h1>
+            <p className="text-canvas-500 font-medium select-none">Backup and restore your data</p>
           </div>
         </div>
 
@@ -200,7 +200,7 @@ const Settings: React.FC = () => {
         <Card variant="glass" className="p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Globe className="w-6 h-6 text-brand" />
-            <h2 className="text-xl font-bold text-canvas-800">Currency</h2>
+            <h2 className="text-xl font-bold text-canvas-800 select-none">Currency</h2>
           </div>
 
           {!isBaseSupported && (
@@ -216,7 +216,7 @@ const Settings: React.FC = () => {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <p className="text-xs uppercase text-canvas-500 font-bold mb-2">Main Currency</p>
+              <p className="text-xs uppercase text-canvas-500 font-bold mb-2 select-none">Main Currency</p>
               <AutocompleteInput
                 value={mainCurrencyInput}
                 onChange={setMainCurrencyInput}
@@ -231,7 +231,7 @@ const Settings: React.FC = () => {
             </div>
 
             <div>
-              <p className="text-xs uppercase text-canvas-500 font-bold mb-2">Original Currency Display</p>
+              <p className="text-xs uppercase text-canvas-500 font-bold mb-2 select-none">Original Currency Display</p>
               <label className="flex items-center gap-3 bg-canvas-50 border border-canvas-200 rounded-lg px-3 py-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -252,7 +252,7 @@ const Settings: React.FC = () => {
             <div className="flex items-start gap-3">
               <Clock className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isStale ? 'text-finance-expense' : 'text-canvas-500'}`} />
               <div>
-                <p className="text-sm font-semibold text-canvas-800">Exchange rate freshness</p>
+                <p className="text-sm font-semibold text-canvas-800 select-none">Exchange rate freshness</p>
                 <p className={`text-sm ${isStale ? 'text-finance-expense' : 'text-canvas-600'}`}>
                   {latestRateDate ? `Latest rate date: ${formatDateOnly(latestRateDate)}.` : 'No exchange rates cached yet.'}
                   {isStale && latestRateDate ? ` Rates are ${staleDays} days old.` : ''}
@@ -269,7 +269,7 @@ const Settings: React.FC = () => {
                 <Clock className="w-6 h-6 text-canvas-500" />
               </div>
               <div>
-                <p className="text-sm uppercase text-canvas-500 font-bold mb-1">Last Auto Backup</p>
+                <p className="text-sm uppercase text-canvas-500 font-bold mb-1 select-none">Last Auto Backup</p>
                 {loading ? (
                   <p className="text-canvas-700">Loading...</p>
                 ) : backupInfo?.hasBackup ? (
@@ -294,7 +294,7 @@ const Settings: React.FC = () => {
         <Card variant="glass" className="p-6 mb-6">
           <div className="flex items-center gap-3 mb-4">
             <Download className="w-6 h-6 text-brand" />
-            <h2 className="text-xl font-bold text-canvas-800">Manual Backup</h2>
+            <h2 className="text-xl font-bold text-canvas-800 select-none">Manual Backup</h2>
           </div>
           <p className="text-canvas-600 mb-4">
             Create a backup of your entire database. You can save it anywhere on your computer.
@@ -322,7 +322,7 @@ const Settings: React.FC = () => {
         <Card variant="glass" className="p-6">
           <div className="flex items-center gap-3 mb-4">
             <Upload className="w-6 h-6 text-finance-expense" />
-            <h2 className="text-xl font-bold text-canvas-800">Restore from Backup</h2>
+            <h2 className="text-xl font-bold text-canvas-800 select-none">Restore from Backup</h2>
           </div>
           <p className="text-canvas-600 mb-4">
             Restore your database from a backup file. This will replace all current data.
@@ -351,16 +351,16 @@ const Settings: React.FC = () => {
               <div className="flex items-start gap-3 mb-4">
                 <HardDrive className="w-5 h-5 text-canvas-500 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="font-semibold text-canvas-800 mb-2">Backup Details</p>
+                  <p className="font-semibold text-canvas-800 mb-2 select-none">Backup Details</p>
                   <div className="space-y-1 text-sm">
                     <p className="text-canvas-600">
-                      <span className="font-medium">Transactions:</span> {selectedBackup?.transaction_count?.toLocaleString()}
+                      <span className="font-medium select-none">Transactions:</span> {selectedBackup?.transaction_count?.toLocaleString()}
                     </p>
                     <p className="text-canvas-600">
-                      <span className="font-medium">Size:</span> {formatBytes(selectedBackup?.size || 0)}
+                      <span className="font-medium select-none">Size:</span> {formatBytes(selectedBackup?.size || 0)}
                     </p>
                     <p className="text-canvas-600">
-                      <span className="font-medium">Created:</span> {formatDate(selectedBackup?.created_at || '')}
+                      <span className="font-medium select-none">Created:</span> {formatDate(selectedBackup?.created_at || '')}
                     </p>
                   </div>
                 </div>
@@ -399,7 +399,7 @@ const Settings: React.FC = () => {
         <Card variant="glass" className="p-6 mt-6">
           <div className="flex items-center gap-3 mb-3">
             <Clock className="w-5 h-5 text-canvas-500" />
-            <h3 className="font-semibold text-canvas-800">Automatic Backups</h3>
+            <h3 className="font-semibold text-canvas-800 select-none">Automatic Backups</h3>
           </div>
           <p className="text-sm text-canvas-600">
             Automatic backups run daily when 24+ hours have passed since the last backup, before database migrations, and on app exit. The last 10 daily and 5 weekly backups are retained in your backup folder.

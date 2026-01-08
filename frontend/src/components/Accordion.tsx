@@ -37,7 +37,7 @@ const Accordion: React.FC<AccordionProps> = ({ items, allowMultiple = false, cla
               onClick={() => toggleItem(item.id)}
               className="w-full flex items-center justify-between p-4 text-left bg-canvas-50 hover:bg-canvas-100 transition-colors"
             >
-              <span className="font-semibold text-canvas-800">{item.title}</span>
+              <span className="font-semibold text-canvas-800 select-none">{item.title}</span>
               <ChevronDown
                 className={`w-5 h-5 text-canvas-500 transition-transform ${
                   isOpen ? 'transform rotate-180' : ''
