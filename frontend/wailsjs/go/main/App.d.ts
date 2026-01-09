@@ -55,6 +55,8 @@ export function Greet(arg1:string):Promise<string>;
 
 export function ImportTransactions(arg1:Array<main.TransactionInput>):Promise<void>;
 
+export function IsTestEnv():Promise<boolean>;
+
 export function OpenBackupFolder():Promise<string>;
 
 export function ParseExcel(arg1:string):Promise<main.ExcelData>;
@@ -78,6 +80,8 @@ export function SearchTransactions(arg1:string,arg2:string,arg3:any,arg4:any):Pr
 export function SearchWeb(arg1:string):Promise<Array<main.WebSearchResult>>;
 
 export function SelectBackupFile():Promise<database.BackupMetadata>;
+
+export function SetTestDialogPaths(arg1:main.TestDialogPaths):Promise<void>;
 
 export function ShowAbout():Promise<void>;
 

@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	osexec "os/exec"
+	"path/filepath"
 	stdlibRuntime "runtime"
 	"strconv"
 	"strings"
@@ -28,15 +29,29 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+type TestDialogPaths struct {
+	BackupSavePath  string `json:"backup_save_path"`
+	ExportSavePath  string `json:"export_save_path"`
+	RestoreOpenPath string `json:"restore_open_path"`
+}
+
 type App struct {
-	ctx         context.Context
-	searchCache *sync.Map
+	ctx             context.Context
+	searchCache     *sync.Map
+	testDialogMu    sync.RWMutex
+	testDialogPaths TestDialogPaths
+	testDirMu       sync.Mutex
+	testDir         string
 }
 
 func NewApp() *App {
 	return &App{
 		searchCache: &sync.Map{},
 	}
+}
+
+func isTestEnv() bool {
+	return strings.EqualFold(os.Getenv("APP_ENV"), "test")
 }
 
 func (a *App) startup(ctx context.Context) {
@@ -50,6 +65,113 @@ func (a *App) startup(ctx context.Context) {
 	}()
 
 	go a.syncFxRates()
+}
+
+func (a *App) IsTestEnv() bool {
+	return isTestEnv()
+}
+
+func (a *App) SetTestDialogPaths(paths TestDialogPaths) {
+	a.testDialogMu.Lock()
+	a.testDialogPaths = paths
+	a.testDialogMu.Unlock()
+}
+
+func (a *App) getTestDialogPaths() TestDialogPaths {
+	a.testDialogMu.RLock()
+	defer a.testDialogMu.RUnlock()
+	return a.testDialogPaths
+}
+
+func (a *App) ensureTestDir() (string, error) {
+	a.testDirMu.Lock()
+	defer a.testDirMu.Unlock()
+
+	if a.testDir != "" {
+		return a.testDir, nil
+	}
+
+	base := filepath.Join(os.TempDir(), "cashflow-test")
+	runID := strings.TrimSpace(os.Getenv("CASHFLOW_TEST_RUN_ID"))
+	if runID != "" {
+		base = filepath.Join(base, runID)
+	}
+
+	if err := os.MkdirAll(base, 0o755); err != nil {
+		return "", fmt.Errorf("create test dir: %w", err)
+	}
+
+	a.testDir = base
+	return base, nil
+}
+
+func ensureUniquePath(path string) string {
+	if _, err := os.Stat(path); err != nil {
+		return path
+	}
+
+	ext := filepath.Ext(path)
+	base := strings.TrimSuffix(path, ext)
+	timestamp := time.Now().Format("20060102_150405_000000000")
+	return fmt.Sprintf("%s_%s%s", base, timestamp, ext)
+}
+
+func (a *App) testSavePath(kind, ext string) (string, error) {
+	paths := a.getTestDialogPaths()
+	switch kind {
+	case "backup":
+		if paths.BackupSavePath != "" {
+			return ensureUniquePath(paths.BackupSavePath), nil
+		}
+	case "export":
+		if paths.ExportSavePath != "" {
+			return ensureUniquePath(paths.ExportSavePath), nil
+		}
+	}
+
+	dir, err := a.ensureTestDir()
+	if err != nil {
+		return "", err
+	}
+
+	timestamp := time.Now().Format("20060102_150405_000000000")
+	filename := fmt.Sprintf("cashflow_%s_%s.%s", kind, timestamp, ext)
+	return filepath.Join(dir, filename), nil
+}
+
+func (a *App) testRestorePath() (string, error) {
+	paths := a.getTestDialogPaths()
+	if paths.RestoreOpenPath != "" {
+		return paths.RestoreOpenPath, nil
+	}
+
+	dir, err := a.ensureTestDir()
+	if err != nil {
+		return "", err
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", err
+	}
+
+	var latestPath string
+	var latestTime time.Time
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".db" {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		if latestPath == "" || info.ModTime().After(latestTime) {
+			latestPath = filepath.Join(dir, entry.Name())
+			latestTime = info.ModTime()
+		}
+	}
+
+	return latestPath, nil
 }
 
 func (a *App) Greet(name string) string {
@@ -146,14 +268,14 @@ type RuleResult struct {
 }
 
 type RuleUpdateResult struct {
-	RuleID             int64 `json:"rule_id"`
-	UncategorizeCount  int   `json:"uncategorize_count"`
-	AppliedCount       int   `json:"applied_count"`
+	RuleID            int64 `json:"rule_id"`
+	UncategorizeCount int   `json:"uncategorize_count"`
+	AppliedCount      int   `json:"applied_count"`
 }
 
 type RuleDeleteResult struct {
-	RuleID            int64 `json:"rule_id"`
-	UncategorizedCount int  `json:"uncategorized_count"`
+	RuleID             int64 `json:"rule_id"`
+	UncategorizedCount int   `json:"uncategorized_count"`
 }
 
 func (a *App) ImportTransactions(transactions []TransactionInput) error {
@@ -563,20 +685,26 @@ func (a *App) SearchWeb(query string) ([]WebSearchResult, error) {
 func (a *App) ExportTransactionsWithDialog(startDate, endDate string, categoryIDs []int64, format string) (int, error) {
 	defaultFilename := generateDefaultFilename(startDate, endDate, format)
 
-	destinationPath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Export Transactions",
-		DefaultFilename: defaultFilename,
-		Filters: []runtime.FileFilter{
-			{
-				DisplayName: format + " Files",
-				Pattern:     "*." + format,
+	var destinationPath string
+	var err error
+	if isTestEnv() {
+		destinationPath, err = a.testSavePath("export", format)
+	} else {
+		destinationPath, err = runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+			Title:           "Export Transactions",
+			DefaultFilename: defaultFilename,
+			Filters: []runtime.FileFilter{
+				{
+					DisplayName: format + " Files",
+					Pattern:     "*." + format,
+				},
+				{
+					DisplayName: "All Files",
+					Pattern:     "*.*",
+				},
 			},
-			{
-				DisplayName: "All Files",
-				Pattern:     "*.*",
-			},
-		},
-	})
+		})
+	}
 	if err != nil {
 		return 0, fmt.Errorf("dialog cancelled or failed: %w", err)
 	}
@@ -816,20 +944,26 @@ func (a *App) CreateManualBackup() (string, error) {
 	timestamp := time.Now().Format("20060102_150405")
 	defaultFilename := fmt.Sprintf("cashflow_backup_%s.db", timestamp)
 
-	destinationPath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Create Backup",
-		DefaultFilename: defaultFilename,
-		Filters: []runtime.FileFilter{
-			{
-				DisplayName: "SQLite Database",
-				Pattern:     "*.db",
+	var destinationPath string
+	var err error
+	if isTestEnv() {
+		destinationPath, err = a.testSavePath("backup", "db")
+	} else {
+		destinationPath, err = runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+			Title:           "Create Backup",
+			DefaultFilename: defaultFilename,
+			Filters: []runtime.FileFilter{
+				{
+					DisplayName: "SQLite Database",
+					Pattern:     "*.db",
+				},
+				{
+					DisplayName: "All Files",
+					Pattern:     "*.*",
+				},
 			},
-			{
-				DisplayName: "All Files",
-				Pattern:     "*.*",
-			},
-		},
-	})
+		})
+	}
 	if err != nil {
 		return "", err
 	}
@@ -882,12 +1016,18 @@ func (a *App) ValidateBackupFile(path string) (*database.BackupMetadata, error) 
 }
 
 func (a *App) SelectBackupFile() (*database.BackupMetadata, error) {
-	backupPath, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select Backup to Restore",
-		Filters: []runtime.FileFilter{
-			{DisplayName: "SQLite Database", Pattern: "*.db"},
-		},
-	})
+	var backupPath string
+	var err error
+	if isTestEnv() {
+		backupPath, err = a.testRestorePath()
+	} else {
+		backupPath, err = runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+			Title: "Select Backup to Restore",
+			Filters: []runtime.FileFilter{
+				{DisplayName: "SQLite Database", Pattern: "*.db"},
+			},
+		})
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -922,6 +1062,10 @@ func (a *App) OpenBackupFolder() (string, error) {
 	backupDir, err := database.EnsureBackupDir()
 	if err != nil {
 		return "", err
+	}
+
+	if isTestEnv() {
+		return backupDir, nil
 	}
 
 	var cmd *osexec.Cmd

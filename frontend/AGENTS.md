@@ -10,4 +10,4 @@
 - Suggestions/dropdowns: `createPortal` to avoid clipping/height jumps
 - Selects: use `AutocompleteInput` for basic selects, esp long lists
 - Multi-select filters >5 items: search input (auto-focus), select all/deselect all, "ONLY" on item hover, clear selection count (or "All selected")
-- External links: `BrowserOpenURL` only; no `window.open()` or `<a href>`; ref `frontend/src/screens/CategorizationLoop/components/WebSearchResults.tsx`
+- External links: use `openExternal` wrapper; no `BrowserOpenURL` direct, no `window.open()` or `<a href>`

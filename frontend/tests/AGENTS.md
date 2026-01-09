@@ -9,6 +9,11 @@ From project root:
 make integration
 ```
 
+## Test Environment
+
+- `APP_ENV=test` disables OS dialogs/opens; dialogs return temp paths
+- Temp dir: `$TMPDIR/cashflow-test/$CASHFLOW_TEST_RUN_ID` (set in `scripts/run-integration-tests.sh`)
+
 ## Database State & Fixtures
 
 - Reset: DB reset `beforeEach` via `./build/bin/test-helper reset`

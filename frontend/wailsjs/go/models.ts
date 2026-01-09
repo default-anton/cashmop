@@ -320,6 +320,22 @@ export namespace main {
 	        this.applied_count = source["applied_count"];
 	    }
 	}
+	export class TestDialogPaths {
+	    backup_save_path: string;
+	    export_save_path: string;
+	    restore_open_path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TestDialogPaths(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.backup_save_path = source["backup_save_path"];
+	        this.export_save_path = source["export_save_path"];
+	        this.restore_open_path = source["restore_open_path"];
+	    }
+	}
 	export class TransactionInput {
 	    date: string;
 	    description: string;

@@ -106,6 +106,10 @@ export function ImportTransactions(arg1) {
   return window['go']['main']['App']['ImportTransactions'](arg1);
 }
 
+export function IsTestEnv() {
+  return window['go']['main']['App']['IsTestEnv']();
+}
+
 export function OpenBackupFolder() {
   return window['go']['main']['App']['OpenBackupFolder']();
 }
@@ -152,6 +156,10 @@ export function SearchWeb(arg1) {
 
 export function SelectBackupFile() {
   return window['go']['main']['App']['SelectBackupFile']();
+}
+
+export function SetTestDialogPaths(arg1) {
+  return window['go']['main']['App']['SetTestDialogPaths'](arg1);
 }
 
 export function ShowAbout() {

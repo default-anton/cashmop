@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Info, Code, Heart, ExternalLink, GitBranch, Shield, Users, Zap, X } from 'lucide-react';
 import { Card, Button, Modal } from '../../components';
-import { BrowserOpenURL } from '../../../wailsjs/runtime/runtime';
+import { openExternal } from '../../utils/openExternal';
 
 interface AboutProps {
   isOpen: boolean;
@@ -29,15 +29,15 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
   }, []);
 
   const handleCheckForUpdates = () => {
-    BrowserOpenURL('https://github.com/default-anton/cashflow/releases');
+    openExternal('https://github.com/default-anton/cashflow/releases');
   };
 
   const handleViewLicense = () => {
-    BrowserOpenURL('https://www.apache.org/licenses/LICENSE-2.0');
+    openExternal('https://www.apache.org/licenses/LICENSE-2.0');
   };
 
   const handleViewSource = () => {
-    BrowserOpenURL('https://github.com/default-anton/cashflow');
+    openExternal('https://github.com/default-anton/cashflow');
   };
 
   return (
@@ -120,7 +120,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
                 <p className="text-sm text-canvas-600">Design, Development, & Product</p>
               </div>
               <button
-                onClick={() => BrowserOpenURL('https://github.com/default-anton')}
+                onClick={() => openExternal('https://github.com/default-anton')}
                 className="text-canvas-400 hover:text-brand transition-colors"
                 aria-label="View GitHub profile"
               >

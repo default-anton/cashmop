@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ExternalLink, Globe, Loader2, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BrowserOpenURL } from '../../../../wailsjs/runtime/runtime';
+import { openExternal } from '../../../utils/openExternal';
 
 interface WebSearchResult {
   title: string;
@@ -139,7 +139,7 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.05 }}
                         className="p-3 rounded-lg border border-canvas-200 hover:border-brand/30 hover:bg-brand/5 transition-all duration-200 group cursor-pointer"
-                        onClick={() => BrowserOpenURL(result.url)}
+                        onClick={() => openExternal(result.url)}
                       >
                         <div className="flex items-start gap-3">
                           <div className="flex-1 min-w-0">

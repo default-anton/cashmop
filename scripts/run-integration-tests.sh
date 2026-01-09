@@ -9,6 +9,9 @@ if pgrep -f "wails dev" > /dev/null; then
   sleep 2  # Give processes time to terminate
 fi
 
+TEST_RUN_ID="${CASHFLOW_TEST_RUN_ID:-$(date +%s)-$$}"
+export CASHFLOW_TEST_RUN_ID="$TEST_RUN_ID"
+
 # Build test helper once
 echo "Building test-helper..."
 mkdir -p build/bin
@@ -28,6 +31,15 @@ cleanup() {
   if [ -f "$ROOT_DIR/cashflow_test.db" ]; then
     echo "Removing test database..."
     rm "$ROOT_DIR/cashflow_test.db"
+  fi
+
+  if [ -n "$CASHFLOW_TEST_RUN_ID" ]; then
+    TMP_BASE="${TMPDIR:-/tmp}"
+    TEST_DIR="${TMP_BASE%/}/cashflow-test/$CASHFLOW_TEST_RUN_ID"
+    if [ -d "$TEST_DIR" ]; then
+      echo "Removing test temp dir..."
+      rm -rf "$TEST_DIR"
+    fi
   fi
 }
 trap cleanup EXIT
