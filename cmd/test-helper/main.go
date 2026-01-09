@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -104,13 +106,43 @@ func loadFixtures() error {
 		}
 
 		for _, attrs := range fixtures {
-			if err := insertFixture(table, attrs); err != nil {
+			if err := withBusyRetry(func() error {
+				return insertFixture(table, attrs)
+			}); err != nil {
 				return fmt.Errorf("failed to insert fixture into %s: %w", table, err)
 			}
 		}
 	}
 
 	return nil
+}
+
+func withBusyRetry(fn func() error) error {
+	backoff := 100 * time.Millisecond
+	var lastErr error
+	for i := 0; i < 8; i++ {
+		if err := fn(); err != nil {
+			lastErr = err
+			if !isBusyError(err) {
+				return err
+			}
+			time.Sleep(backoff)
+			if backoff < 2*time.Second {
+				backoff *= 2
+			}
+			continue
+		}
+		return nil
+	}
+	return lastErr
+}
+
+func isBusyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "database is locked") || strings.Contains(msg, "sqlite_busy")
 }
 
 func insertFixture(table string, attrs map[string]interface{}) error {

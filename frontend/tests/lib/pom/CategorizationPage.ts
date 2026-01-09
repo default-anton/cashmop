@@ -25,6 +25,31 @@ export class CategorizationPage {
 
   async goto() {
     await this.page.goto('/');
+    await this.page.getByLabel('Navigate to Categories', { exact: true }).waitFor({ state: 'visible', timeout: 10000 });
+
+    if (await this.categoryInput.isVisible()) {
+      return;
+    }
+
+    await this.page.waitForFunction(async () => {
+      const app = (window as any).go?.main?.App;
+      if (!app?.GetUncategorizedTransactions) return false;
+      try {
+        const txs = await app.GetUncategorizedTransactions();
+        return Array.isArray(txs) && txs.length > 0;
+      } catch {
+        return false;
+      }
+    }, null, { timeout: 10000 });
+
+    const categorizeNav = this.page.getByLabel('Navigate to Categorize', { exact: true });
+    try {
+      await categorizeNav.waitFor({ state: 'visible', timeout: 5000 });
+      await categorizeNav.click();
+      await this.categoryInput.waitFor({ state: 'visible', timeout: 10000 });
+    } catch {
+      // fall through
+    }
   }
 
   async expectTransaction(description: string) {

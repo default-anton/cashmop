@@ -58,6 +58,10 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	database.InitDB()
 
+	if isTestEnv() {
+		return
+	}
+
 	go func() {
 		if _, err := a.TriggerAutoBackup(); err != nil {
 			log.Printf("Auto-backup failed: %v", err)

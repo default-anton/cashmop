@@ -17,20 +17,30 @@ function App() {
   const [hasData, setHasData] = useState(false);
   const [ruleCategoryFilterIds, setRuleCategoryFilterIds] = useState<number[]>([]);
 
+  const loadStatus = async () => {
+    const months = await (window as any).go.main.App.GetMonthList();
+    const anyData = months && months.length > 0;
+    setHasData(anyData);
+
+    const txs = await (window as any).go.main.App.GetUncategorizedTransactions();
+    const anyUncategorized = txs && txs.length > 0;
+    setHasUncategorized(anyUncategorized);
+
+    return { anyData, anyUncategorized };
+  };
+
   const checkStatus = async () => {
     try {
-      const months = await (window as any).go.main.App.GetMonthList();
-      const anyData = months && months.length > 0;
-      setHasData(anyData);
-
-      const txs = await (window as any).go.main.App.GetUncategorizedTransactions();
-      const anyUncategorized = txs && txs.length > 0;
-      setHasUncategorized(anyUncategorized);
-
-      return { anyData, anyUncategorized };
+      return await loadStatus();
     } catch (e) {
       console.error('Failed to check app status', e);
-      return { anyData: false, anyUncategorized: false };
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      try {
+        return await loadStatus();
+      } catch (err) {
+        console.error('Failed to check app status after retry', err);
+        return { anyData: false, anyUncategorized: false };
+      }
     }
   };
 

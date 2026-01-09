@@ -11,7 +11,7 @@ make integration
 
 ## Test Environment
 
-- `APP_ENV=test` disables OS dialogs/opens; dialogs return temp paths
+- `APP_ENV=test` disables OS dialogs/opens + background auto backup/FX sync; dialogs return temp paths
 - Temp dir: `$TMPDIR/cashflow-test/$CASHFLOW_TEST_RUN_ID` (set in `scripts/run-integration-tests.sh`)
 
 ## Database State & Fixtures

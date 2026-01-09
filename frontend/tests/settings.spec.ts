@@ -161,4 +161,29 @@ test.describe('Restore Flow', () => {
     // This test verifies the UI structure is in place
     await expect(settingsPage.selectBackupFileButton).toBeVisible();
   });
+
+  test('should restore from backup using test dialog path', async ({ page, settingsPage }) => {
+    await page.goto('/');
+    await settingsPage.navigateTo();
+
+    const backupPath = await page.evaluate(async () => {
+      return await (window as any).go.main.App.CreateManualBackup();
+    });
+    expect(backupPath).toBeTruthy();
+
+    await page.evaluate((path) => {
+      const win = window as any;
+      const next = { ...(win.__cashflowTestDialogPaths || {}) };
+      next.restore_open_path = path;
+      win.__cashflowTestDialogPaths = next;
+      win.go.main.App.SetTestDialogPaths(next);
+    }, backupPath);
+
+    await settingsPage.clickSelectBackupFile();
+    await settingsPage.expectBackupDetailsVisible();
+    await expect(settingsPage.transactionCountLabel).toBeVisible();
+
+    await settingsPage.clickRestoreBackup();
+    await expect(page.getByText(/Database restored successfully/i)).toBeVisible();
+  });
 });
