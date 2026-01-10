@@ -18,7 +18,9 @@ UI Location: `frontend/src/screens/Settings/`, `frontend/src/screens/Analysis/`,
 - `converted_amount = amount * rate`.
 - `rate` is base per 1 quote (e.g., CAD per USD when base is CAD).
 - Same-currency conversion = 1.
-- If no rate exists on/before date: converted amount `null`, UI shows `—`, totals exclude missing-rate items.
+- If no rate exists on/before date:
+  - For future-dated transactions: use the latest available rate (covers scheduled/recurring imports).
+  - For past transactions: converted amount `null`, UI shows `—`, totals exclude missing-rate items.
 - Closest previous rate used for weekends/holidays.
 
 ## Rates & Providers
@@ -45,4 +47,4 @@ UI Location: `frontend/src/screens/Settings/`, `frontend/src/screens/Analysis/`,
 
 ## Warnings
 - Stale rates (>7 days): banner on all amount screens.
-- Missing rates: stronger banner; amounts show `—` and excluded from totals.
+- Missing rates: stronger banner only when past transactions lack rates. Future-dated transactions use latest available rate without warning.

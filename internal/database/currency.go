@@ -184,6 +184,28 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 		LIMIT 1
 	`, base, quote, date).Scan(&rateDate, &rate, &source)
 	if err == sql.ErrNoRows {
+		// No rate on/before transaction date. Check if date is in the future
+		// by comparing with the latest available rate date.
+		var latestDate string
+		errLatest := DB.QueryRow(`
+			SELECT rate_date
+			FROM fx_rates
+			WHERE base_currency = ? AND quote_currency = ?
+			ORDER BY rate_date DESC
+			LIMIT 1
+		`, base, quote).Scan(&latestDate)
+		if errLatest == sql.ErrNoRows {
+			return nil, nil
+		}
+		if errLatest != nil {
+			return nil, errLatest
+		}
+		// If transaction date is after the latest rate date (i.e., in the future),
+		// use the latest available rate (for scheduled/recurring imports).
+		if date > latestDate {
+			return GetFxRate(base, quote, latestDate)
+		}
+		// Past transaction with no available rate: return nil
 		return nil, nil
 	}
 	if err != nil {
