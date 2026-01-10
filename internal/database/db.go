@@ -39,10 +39,15 @@ func InitDB() {
 
 func resolveDatabasePath() (string, error) {
 	env := strings.ToLower(os.Getenv("APP_ENV"))
+	workerID := os.Getenv("CASHFLOW_WORKER_ID")
 
 	switch env {
 	case "test":
-		return devTestPath("test")
+		suffix := "test"
+		if workerID != "" {
+			suffix = fmt.Sprintf("test_w%s", workerID)
+		}
+		return devTestPath(suffix)
 	case "dev", "development":
 		return devTestPath("dev")
 	}

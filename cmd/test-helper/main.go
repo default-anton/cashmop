@@ -32,46 +32,54 @@ func main() {
 }
 
 func resetDB() error {
-	// Don't remove the file, just re-init it to avoid inode issues with running app
-	os.Setenv("APP_ENV", "test")
-	database.InitDB()
-
-	// Dynamically find all tables to drop
-	rows, err := database.DB.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
-	if err != nil {
-		return fmt.Errorf("failed to fetch tables: %w", err)
+	// Preserve worker ID for DB path resolution
+	workerID := os.Getenv("CASHFLOW_WORKER_ID")
+	if workerID == "" {
+		workerID = "0" // Default to worker 0
 	}
-	defer rows.Close()
+	os.Setenv("APP_ENV", "test")
+	os.Setenv("CASHFLOW_WORKER_ID", workerID) // RE-SET for db.go
 
-	var tables []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
+	return withBusyRetry(func() error {
+		database.InitDB()
+
+		// Dynamically find all tables to drop
+		rows, err := database.DB.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+		if err != nil {
+			return fmt.Errorf("failed to fetch tables: %w", err)
+		}
+		defer rows.Close()
+
+		var tables []string
+		for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				return err
+			}
+			tables = append(tables, name)
+		}
+
+		// Disable foreign keys temporarily to drop everything without order issues
+		if _, err := database.DB.Exec("PRAGMA foreign_keys = OFF"); err != nil {
 			return err
 		}
-		tables = append(tables, name)
-	}
 
-	// Disable foreign keys temporarily to drop everything without order issues
-	if _, err := database.DB.Exec("PRAGMA foreign_keys = OFF"); err != nil {
-		return err
-	}
-
-	for _, table := range tables {
-		if _, err := database.DB.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", table)); err != nil {
-			return fmt.Errorf("failed to drop table %s: %w", table, err)
+		for _, table := range tables {
+			if _, err := database.DB.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", table)); err != nil {
+				return fmt.Errorf("failed to drop table %s: %w", table, err)
+			}
 		}
-	}
 
-	// Re-enable and re-run migrations
-	if _, err := database.DB.Exec("PRAGMA foreign_keys = ON"); err != nil {
-		return err
-	}
-	if err := database.Migrate(); err != nil {
-		return fmt.Errorf("failed to re-run migrations: %w", err)
-	}
+		// Re-enable and re-run migrations
+		if _, err := database.DB.Exec("PRAGMA foreign_keys = ON"); err != nil {
+			return err
+		}
+		if err := database.Migrate(); err != nil {
+			return fmt.Errorf("failed to re-run migrations: %w", err)
+		}
 
-	return loadFixtures()
+		return loadFixtures()
+	})
 }
 
 func loadFixtures() error {

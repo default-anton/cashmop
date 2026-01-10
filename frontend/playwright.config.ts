@@ -2,13 +2,13 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: false, // Better for integration tests that share DB state
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: 1, // Keep it sequential to avoid DB locking issues during reset
+  workers: process.env.WORKER_COUNT ? parseInt(process.env.WORKER_COUNT, 10) : 4,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:34115',
+    baseURL: `http://localhost:34115`, // Default for worker 0
     trace: 'on-first-retry',
   },
   projects: [

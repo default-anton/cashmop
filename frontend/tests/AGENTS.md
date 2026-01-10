@@ -30,10 +30,11 @@ make integration
 ## Parallel Testing (Dev Only)
 
 Wails dev server multi-instance:
-- Flag: `wails dev -devserver localhost:$PORT` (NOT `-port`)
-- Port range: 34115 + workerIndex (e.g., 34115-34118 for 4 workers)
+- Flag: `wails dev -devserver localhost:$PORT -m -nogorebuild -noreload -skipbindings`
+- Port range: 34115 + parallelIndex (e.g., 34115-34118 for 4 workers)
 - DB isolation: `CASHFLOW_WORKER_ID=<index>` → DB suffix `_w<id>`
-- Playwright: override `baseURL` fixture with `testInfo.workerIndex`
+- Playwright: override `baseURL` fixture with `testInfo.parallelIndex`
+- Shared Frontend: uses single Vite instance via `-frontenddevserverurl`
 - See: `docs/specs/integration-test-parallelization.md`
 
 ## Reference Examples

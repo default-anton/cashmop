@@ -27,18 +27,31 @@ const getTestDir = () => {
   return dir;
 };
 
+// Worker-specific baseURL helper
 export const test = base.extend<MyFixtures>({
+  // Override baseURL for worker-specific instance
+  baseURL: async ({}, use, testInfo) => {
+    const port = 34115 + testInfo.parallelIndex;
+    await use(`http://localhost:${port}`);
+  },
+
   // Auto-reset database before each test
-  dbReset: [async ({}, use) => {
-    execSync('./build/bin/test-helper reset', { cwd: '..' });
+  dbReset: [async ({}, use, testInfo) => {
+    execSync('./build/bin/test-helper reset', {
+      cwd: '..',
+      env: {
+        ...process.env,
+        CASHFLOW_WORKER_ID: testInfo.parallelIndex.toString(),
+      },
+    });
     await use();
   }, { auto: true }],
 
   testDialogPaths: [async ({ page }, use, testInfo) => {
     const dir = getTestDir();
     const slug = sanitize(testInfo.titlePath.join('_'));
-    const backupSavePath = path.join(dir, `backup_${testInfo.workerIndex}_${slug}.db`);
-    const exportSavePath = path.join(dir, `export_${testInfo.workerIndex}_${slug}.csv`);
+    const backupSavePath = path.join(dir, `backup_${testInfo.parallelIndex}_${slug}.db`);
+    const exportSavePath = path.join(dir, `export_${testInfo.parallelIndex}_${slug}.csv`);
     const paths = {
       backup_save_path: backupSavePath,
       export_save_path: exportSavePath,
