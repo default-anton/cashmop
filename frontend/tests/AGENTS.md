@@ -27,6 +27,15 @@ make integration
 - Fixtures: use custom fixtures `frontend/tests/lib/fixtures.ts` (auto DB reset)
 - Timing: `await page.goto('/')` each test for fresh React mount + status check
 
+## Parallel Testing (Dev Only)
+
+Wails dev server multi-instance:
+- Flag: `wails dev -devserver localhost:$PORT` (NOT `-port`)
+- Port range: 34115 + workerIndex (e.g., 34115-34118 for 4 workers)
+- DB isolation: `CASHFLOW_WORKER_ID=<index>` → DB suffix `_w<id>`
+- Playwright: override `baseURL` fixture with `testInfo.workerIndex`
+- See: `docs/specs/integration-test-parallelization.md`
+
 ## Reference Examples
 
 - `frontend/tests/basic.spec.ts`: entry journey categorization → analysis
