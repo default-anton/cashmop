@@ -23,7 +23,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
   onSaved,
 }) => {
   const toast = useToast();
-  const { mainCurrency, showOriginalCurrency, convertAmount } = useCurrency();
+  const { mainCurrency, convertAmount } = useCurrency();
   const [matchType, setMatchType] = useState<MatchType>('contains');
   const [matchValue, setMatchValue] = useState('');
   const [categoryInput, setCategoryInput] = useState('');
@@ -431,7 +431,6 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
             matchingLoading={matchingLoading}
             amountDefaults={matchingAmountRange}
             mainCurrency={mainCurrency}
-            showOriginalCurrency={showOriginalCurrency}
             showCategoryColumn
             showCategoryHint={false}
           />

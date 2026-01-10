@@ -24,7 +24,6 @@ interface TransactionCardProps {
   transaction: Transaction;
   mainAmount: number | null;
   mainCurrency: string;
-  showOriginalCurrency: boolean;
   onMouseUp: () => void;
   selectionRule?: SelectionRule | null;
   onSelectionChange?: (start: number, end: number) => void;
@@ -35,7 +34,6 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   transaction,
   mainAmount,
   mainCurrency,
-  showOriginalCurrency,
   onMouseUp,
   onSelectionChange,
   selectionRule,
@@ -219,7 +217,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
               {(() => {
                 const txCurrency = (transaction.currency || mainCurrency).toUpperCase();
                 const main = mainCurrency.toUpperCase();
-                const showOriginal = showOriginalCurrency && txCurrency !== main;
+                const showOriginal = txCurrency !== main;
                 return showOriginal ? (
                   <span className={`text-[10px] font-sans mt-1 ${transaction.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
                     {txCurrency} {Math.abs(transaction.amount).toFixed(2)}

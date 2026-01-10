@@ -26,7 +26,6 @@ interface RuleEditorProps {
   matchingLoading?: boolean;
   amountDefaults?: { min?: number | null; max?: number | null };
   mainCurrency: string;
-  showOriginalCurrency: boolean;
   showCategoryColumn?: boolean;
   showCategoryHint?: boolean;
 }
@@ -43,7 +42,6 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
   matchingLoading = false,
   amountDefaults,
   mainCurrency,
-  showOriginalCurrency,
   showCategoryColumn = false,
   showCategoryHint = true,
 }) => {
@@ -240,7 +238,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                                   {(() => {
                                     const txCurrency = (tx.currency || mainCurrency).toUpperCase();
                                     const main = mainCurrency.toUpperCase();
-                                    const showOriginal = showOriginalCurrency && txCurrency !== main;
+                                    const showOriginal = txCurrency !== main;
                                     return showOriginal ? (
                                       <span className={`text-[9px] ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
                                         {txCurrency} {Math.abs(tx.amount).toFixed(2)}

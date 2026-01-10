@@ -29,8 +29,7 @@ const Analysis: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
-  const { warning, mainCurrency, showOriginalCurrency, updateSettings, convertAmount, settings } = useCurrency();
-  const [showOriginalSaving, setShowOriginalSaving] = useState(false);
+  const { warning, mainCurrency, updateSettings, convertAmount, settings } = useCurrency();
   const [fxAmounts, setFxAmounts] = useState<Map<number, number | null>>(new Map());
   const [hasMissingRates, setHasMissingRates] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState('');
@@ -133,18 +132,6 @@ const Analysis: React.FC = () => {
     } else {
       setTransactionSortField(field);
       setTransactionSortOrder(field === 'date' ? 'desc' : 'asc');
-    }
-  };
-  const handleShowOriginalToggle = async (value: boolean) => {
-    if (showOriginalSaving) return;
-    setShowOriginalSaving(true);
-    try {
-      if (!settings) return;
-      await updateSettings({ ...settings, show_original_currency: value });
-    } catch (e) {
-      console.error('Failed to update currency display setting', e);
-    } finally {
-      setShowOriginalSaving(false);
     }
   };
   const handleCategorize = async (txId: number, categoryName: string) => {
@@ -441,18 +428,6 @@ const Analysis: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            {hasForeignCurrency && (
-              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-canvas-200 bg-canvas-50 text-xs font-semibold text-canvas-600 select-none">
-                <input
-                  type="checkbox"
-                  className="h-3.5 w-3.5 accent-brand"
-                  checked={showOriginalCurrency}
-                  onChange={(e) => handleShowOriginalToggle(e.target.checked)}
-                  disabled={showOriginalSaving}
-                />
-                Show transaction currency
-              </label>
-            )}
             <TransactionSearch
               value={transactionSearch}
               onChange={setTransactionSearch}

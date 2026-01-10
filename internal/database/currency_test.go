@@ -65,19 +65,15 @@ func TestCurrencySettingsDefaultsAndUpdate(t *testing.T) {
 	if settings.MainCurrency != "CAD" {
 		t.Fatalf("Expected default main currency CAD, got %q", settings.MainCurrency)
 	}
-	if settings.ShowOriginalCurrency != defaultShowOriginalCurrency {
-		t.Fatalf("Expected default show-original %v, got %v", defaultShowOriginalCurrency, settings.ShowOriginalCurrency)
-	}
 
 	updated, err := UpdateCurrencySettings(CurrencySettings{
-		MainCurrency:         "USD",
-		ShowOriginalCurrency: true,
-		FxLastSync:           "2024-01-10",
+		MainCurrency: "USD",
+		FxLastSync:   "2024-01-10",
 	})
 	if err != nil {
 		t.Fatalf("UpdateCurrencySettings failed: %v", err)
 	}
-	if updated.MainCurrency != "USD" || !updated.ShowOriginalCurrency || updated.FxLastSync != "2024-01-10" {
+	if updated.MainCurrency != "USD" || updated.FxLastSync != "2024-01-10" {
 		t.Fatalf("Unexpected updated settings: %+v", updated)
 	}
 }

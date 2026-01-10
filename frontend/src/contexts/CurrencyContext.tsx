@@ -19,7 +19,6 @@ type CurrencyContextValue = {
   settings: CurrencySettings | null;
   fxStatus: FxRateStatus | null;
   mainCurrency: string;
-  showOriginalCurrency: boolean;
   currencyOptions: Array<{ value: string; label: string }>;
   isBaseSupported: boolean;
   latestRateDate: string;
@@ -111,7 +110,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const mainCurrency = settings?.main_currency || 'CAD';
-  const showOriginalCurrency = settings?.show_original_currency ?? false;
   const isBaseSupported = supportedBaseCurrencies.has(mainCurrency.toUpperCase());
 
   const latestRateDate = useMemo(() => {
@@ -187,7 +185,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     settings,
     fxStatus,
     mainCurrency,
-    showOriginalCurrency,
     currencyOptions,
     isBaseSupported,
     latestRateDate,
@@ -201,7 +198,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     settings,
     fxStatus,
     mainCurrency,
-    showOriginalCurrency,
     currencyOptions,
     isBaseSupported,
     latestRateDate,

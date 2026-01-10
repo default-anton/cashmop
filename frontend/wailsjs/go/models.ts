@@ -95,7 +95,6 @@ export namespace database {
 	}
 	export class CurrencySettings {
 	    main_currency: string;
-	    show_original_currency: boolean;
 	    fx_last_sync: string;
 	
 	    static createFrom(source: any = {}) {
@@ -105,7 +104,6 @@ export namespace database {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.main_currency = source["main_currency"];
-	        this.show_original_currency = source["show_original_currency"];
 	        this.fx_last_sync = source["fx_last_sync"];
 	    }
 	}

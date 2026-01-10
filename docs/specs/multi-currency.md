@@ -4,13 +4,12 @@ UI Location: `frontend/src/screens/Settings/`, `frontend/src/screens/Analysis/`,
 
 ## Core Experience
 - Multi-currency transactions; single Main Currency for totals, sorting, filters, rules.
-- Amount display: main-currency amount always; original amount + currency optional via global toggle.
+- Amount display: main-currency amount always; original amount + currency always shown when different.
 - Rates cached locally; app works offline; conversions computed on demand.
 
 ## Settings
 - Currency card
   - Main Currency (default CAD)
-  - Show original transaction currency (default off)
   - Exchange rate freshness (latest rate date; stale warning when >7 days)
 - Settings stored in DB (not config files).
 
@@ -42,7 +41,7 @@ UI Location: `frontend/src/screens/Settings/`, `frontend/src/screens/Analysis/`,
 - Export always includes both amounts + original currency columns.
 
 ## Data Model
-- `app_settings` keys: `main_currency`, `show_original_currency`, `fx_last_sync`.
+- `app_settings` keys: `main_currency`, `fx_last_sync`.
 - `fx_rates` rows keyed by `(base_currency, quote_currency, rate_date, source)` with `rate`.
 
 ## Warnings

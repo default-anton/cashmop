@@ -1,10 +1,7 @@
 import { test, expect } from './lib/fixtures';
 
-test('should successfully import transactions from sample data', async ({ page, settingsPage, categorizationPage }) => {
+test('should successfully import transactions from sample data', async ({ page, categorizationPage }) => {
   await page.goto('/');
-  await settingsPage.navigateTo();
-  const showOriginalToggle = page.getByRole('checkbox', { name: 'Show original transaction currency' });
-  await showOriginalToggle.check();
 
   const txs = [
     {

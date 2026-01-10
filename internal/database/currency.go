@@ -8,20 +8,17 @@ import (
 )
 
 const (
-	AppSettingMainCurrency         = "main_currency"
-	AppSettingShowOriginalCurrency = "show_original_currency"
-	AppSettingFxLastSync           = "fx_last_sync"
+	AppSettingMainCurrency = "main_currency"
+	AppSettingFxLastSync   = "fx_last_sync"
 )
 
 const (
-	defaultMainCurrency         = "CAD"
-	defaultShowOriginalCurrency = false
+	defaultMainCurrency = "CAD"
 )
 
 type CurrencySettings struct {
-	MainCurrency         string `json:"main_currency"`
-	ShowOriginalCurrency bool   `json:"show_original_currency"`
-	FxLastSync           string `json:"fx_last_sync"`
+	MainCurrency string `json:"main_currency"`
+	FxLastSync   string `json:"fx_last_sync"`
 }
 
 type FxRate struct {
@@ -81,20 +78,14 @@ func GetCurrencySettings() (CurrencySettings, error) {
 		return CurrencySettings{}, err
 	}
 
-	showOriginalRaw, err := getOrCreateAppSetting(AppSettingShowOriginalCurrency, strconv.FormatBool(defaultShowOriginalCurrency))
-	if err != nil {
-		return CurrencySettings{}, err
-	}
-
 	fxLastSync, err := getOrCreateAppSetting(AppSettingFxLastSync, "")
 	if err != nil {
 		return CurrencySettings{}, err
 	}
 
 	return CurrencySettings{
-		MainCurrency:         mainCurrency,
-		ShowOriginalCurrency: parseBoolSetting(showOriginalRaw, defaultShowOriginalCurrency),
-		FxLastSync:           fxLastSync,
+		MainCurrency: mainCurrency,
+		FxLastSync:   fxLastSync,
 	}, nil
 }
 
@@ -105,9 +96,6 @@ func UpdateCurrencySettings(settings CurrencySettings) (CurrencySettings, error)
 	}
 
 	if err := SetAppSetting(AppSettingMainCurrency, mainCurrency); err != nil {
-		return CurrencySettings{}, err
-	}
-	if err := SetAppSetting(AppSettingShowOriginalCurrency, strconv.FormatBool(settings.ShowOriginalCurrency)); err != nil {
 		return CurrencySettings{}, err
 	}
 	if err := SetAppSetting(AppSettingFxLastSync, strings.TrimSpace(settings.FxLastSync)); err != nil {

@@ -38,7 +38,6 @@ const Settings: React.FC = () => {
 
   const [mainCurrency, setMainCurrency] = useState('CAD');
   const [mainCurrencyInput, setMainCurrencyInput] = useState('CAD');
-  const [showOriginalCurrency, setShowOriginalCurrency] = useState(false);
 
   const fetchBackupInfo = async () => {
     try {
@@ -78,7 +77,6 @@ const Settings: React.FC = () => {
   useEffect(() => {
     if (!settings) return;
     setMainCurrency(settings.main_currency);
-    setShowOriginalCurrency(settings.show_original_currency);
     const label = currencyOptions.find((option) => option.value === settings.main_currency)?.label || settings.main_currency;
     setMainCurrencyInput(label);
   }, [settings]);
@@ -93,21 +91,6 @@ const Settings: React.FC = () => {
       console.error('Failed to update main currency', e);
       toast.showToast(`Failed to update currency: ${e?.message || 'Unknown error'}`, 'error');
       setMainCurrency(settings.main_currency);
-    } finally {
-      setCurrencySaving(false);
-    }
-  };
-
-  const handleShowOriginalToggle = async (value: boolean) => {
-    if (!settings) return;
-    setShowOriginalCurrency(value);
-    setCurrencySaving(true);
-    try {
-      await updateSettings({ ...settings, show_original_currency: value });
-    } catch (e: any) {
-      console.error('Failed to update currency display setting', e);
-      toast.showToast(`Failed to update setting: ${e?.message || 'Unknown error'}`, 'error');
-      setShowOriginalCurrency(settings.show_original_currency);
     } finally {
       setCurrencySaving(false);
     }
@@ -227,23 +210,6 @@ const Settings: React.FC = () => {
               />
               <p className="text-xs text-canvas-500 mt-2">
                 Only currencies with official providers can be converted.
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs uppercase text-canvas-500 font-bold mb-2 select-none">Original Currency Display</p>
-              <label className="flex items-center gap-3 bg-canvas-50 border border-canvas-200 rounded-lg px-3 py-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 accent-brand"
-                  checked={showOriginalCurrency}
-                  onChange={(e) => handleShowOriginalToggle(e.target.checked)}
-                  disabled={currencySaving}
-                />
-                <span className="text-sm font-medium text-canvas-700">Show original transaction currency</span>
-              </label>
-              <p className="text-xs text-canvas-500 mt-2">
-                Toggle to display original amounts alongside converted totals.
               </p>
             </div>
           </div>

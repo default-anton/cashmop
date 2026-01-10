@@ -104,7 +104,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   const [filteredMonthOptions, setFilteredMonthOptions] = useState(monthOptions);
   const [activeFilter, setActiveFilter] = useState<{ tableId: string; filter: 'category' | 'date' } | null>(null);
   const [monthHighlightedIndex, setMonthHighlightedIndex] = useState(0);
-  const { mainCurrency, showOriginalCurrency } = useCurrency();
+  const { mainCurrency } = useCurrency();
 
   useEffect(() => {
     if (activeFilter?.filter === 'category' && categoryFilterInputRef.current) {
@@ -427,7 +427,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       header: (
         <div className="flex flex-col items-end">
           <span className="text-canvas-600 select-none">Amount ({mainCurrency})</span>
-          {showOriginalCurrency && hasDifferentCurrency && (
+          {hasDifferentCurrency && (
             <span className="text-[9px] font-semibold text-canvas-400 mt-0.5 select-none">Transaction currency</span>
           )}
         </div>
@@ -437,7 +437,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       render: (_amount: number, tx: TransactionWithFx) => {
         const txCurrency = (tx.currency || mainCurrency).toUpperCase();
         const main = mainCurrency.toUpperCase();
-        const showOriginal = showOriginalCurrency && txCurrency !== main;
+        const showOriginal = txCurrency !== main;
         const amount = tx.main_amount;
         const formatted = amount === null ? '—' : formatCurrency(amount);
         const [symbol, value] = formatted !== '—' ? [formatted.slice(0, 1), formatted.slice(1)] : ['', '—'];
@@ -458,7 +458,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     });
 
     return cols;
-  }, [activeFilter, categoryFilterSearch, categories, filteredMonthOptions, groupBy, groupOrderKey, hasDifferentCurrency, mainCurrency, monthFilterSearch, monthHighlightedIndex, monthOptions, onCategorize, onCategoryFilterChange, onMonthChange, selectedCategoryIds, selectedMonth, showOriginalCurrency]);
+  }, [activeFilter, categoryFilterSearch, categories, filteredMonthOptions, groupBy, groupOrderKey, hasDifferentCurrency, mainCurrency, monthFilterSearch, monthHighlightedIndex, monthOptions, onCategorize, onCategoryFilterChange, onMonthChange, selectedCategoryIds, selectedMonth]);
 
   const getIcon = () => {
     if (groupBy === 'Owner') return <User className="w-4 h-4" />;
