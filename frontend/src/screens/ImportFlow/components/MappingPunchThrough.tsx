@@ -21,6 +21,11 @@ interface MappingPunchThroughProps {
   csvHeaders: string[];
   rows: string[][];
   fileCount: number;
+  fileIndex: number;
+  hasHeader: boolean;
+  detectedHasHeader: boolean;
+  headerSource: 'auto' | 'manual';
+  onHeaderChange: (hasHeader: boolean) => void;
   onComplete: (mapping: ImportMapping) => void;
   initialMapping?: ImportMapping | null;
 }
@@ -80,6 +85,11 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
   csvHeaders,
   rows,
   fileCount,
+  fileIndex,
+  hasHeader,
+  detectedHasHeader,
+  headerSource,
+  onHeaderChange,
   onComplete,
   initialMapping,
 }) => {
@@ -169,7 +179,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     if (csvHeaders.length === 0) return [];
     if (rows.length === 0) return csvHeaders.map((_, idx) => idx);
 
-    return csvHeaders
+    const filtered = csvHeaders
       .map((header, idx) => ({ header, idx }))
       .filter(({ header, idx }) => {
         const hasValue = rows.some((row) => (row[idx] ?? '').trim().length > 0);
@@ -177,6 +187,8 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
         return hasValue || isMapped;
       })
       .map(({ idx }) => idx);
+
+    return filtered.length > 0 ? filtered : csvHeaders.map((_, idx) => idx);
   }, [csvHeaders, rows, mappedHeaders]);
 
   const visibleColumns = useMemo(
@@ -485,6 +497,46 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
             >
               {currentStepIdx === STEPS.length - 1 ? 'Continue' : 'Next'} <ArrowRight className="w-4 h-4" />
             </Button>
+          </div>
+        </div>
+
+        <div
+          className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-canvas-200 bg-canvas-50 px-3 py-2"
+          data-testid="header-row-toggle"
+        >
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">Header row</span>
+            <span className="text-xs text-canvas-500 select-none">
+              {headerSource === 'auto'
+                ? (detectedHasHeader ? 'Auto-detected: header row' : 'Auto-detected: no header row')
+                : 'Manual override'}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onHeaderChange(true)}
+              className={
+                'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ' +
+                (hasHeader
+                  ? 'bg-brand text-white border-brand'
+                  : 'bg-canvas-50 text-canvas-700 border-canvas-300 hover:border-canvas-600')
+              }
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              onClick={() => onHeaderChange(false)}
+              className={
+                'px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ' +
+                (!hasHeader
+                  ? 'bg-brand text-white border-brand'
+                  : 'bg-canvas-50 text-canvas-700 border-canvas-300 hover:border-canvas-600')
+              }
+            >
+              No
+            </button>
           </div>
         </div>
 
@@ -851,7 +903,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
       <div className={`bg-canvas-50 rounded-2xl border transition-all duration-300 overflow-hidden shadow-sm ${hoveredColIdx !== null ? 'border-brand/40 ring-1 ring-brand/10' : 'border-canvas-200'}`}>
         <div className="px-6 py-3 bg-canvas-100 border-b border-canvas-200 flex justify-between items-center">
           <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest select-none">
-            File preview ({fileCount} file{fileCount === 1 ? '' : 's'})
+            File preview (File {fileIndex + 1} of {fileCount})
           </span>
           <div className="flex items-center gap-2 px-2 py-1 bg-brand/10 border border-brand/20 rounded-lg animate-in fade-in slide-in-from-right-2">
             <div className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
@@ -861,7 +913,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
           </div>
         </div>
         <div className="overflow-x-auto" onMouseLeave={() => setHoveredColIdx(null)}>
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse" data-testid="mapping-table">
             <thead>
               <tr className="bg-canvas-100/50">
                 {visibleColumns.map(({ header, index }, idx) => {

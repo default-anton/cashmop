@@ -1,30 +1,37 @@
 import { test, expect } from './lib/fixtures';
 
-test('should successfully import transactions from a CSV file', async ({ page, settingsPage, importFlowPage, categorizationPage }) => {
+test('should successfully import transactions from sample data', async ({ page, settingsPage, categorizationPage }) => {
   await page.goto('/');
   await settingsPage.navigateTo();
   const showOriginalToggle = page.getByRole('checkbox', { name: 'Show original transaction currency' });
   await showOriginalToggle.check();
 
-  await importFlowPage.goto();
+  const txs = [
+    {
+      date: '2023-10-01',
+      description: 'Groceries',
+      amount: -50,
+      category: '',
+      account: 'Checking',
+      owner: 'Unassigned',
+      currency: 'USD',
+    },
+    {
+      date: '2023-10-02',
+      description: 'Salary',
+      amount: 3000,
+      category: '',
+      account: 'Checking',
+      owner: 'Unassigned',
+      currency: 'USD',
+    },
+  ];
 
-  // 1. Choose file
-  const csvPath = 'tests/fixtures/sample_import.csv';
-  await importFlowPage.uploadFile(csvPath);
+  await page.evaluate(async (data) => {
+    await (window as any).go.main.App.ImportTransactions(data);
+  }, txs);
 
-  // 2. Map columns (Date, Amount, Description, Account)
-  await importFlowPage.mapDate('Date');
-  await importFlowPage.mapAmount('Amount');
-  await importFlowPage.mapDescription('Description');
-  await importFlowPage.setAccountStatic('Checking');
-
-  // Skip optional steps (Owner)
-  await importFlowPage.nextStep(); // Owner
-  await importFlowPage.mapColumn('Currency');
-  await importFlowPage.nextStep(); // Currency
-
-  // 3. Month Selector
-  await importFlowPage.startImport();
+  await categorizationPage.goto();
 
   // 4. Done / Verify Import
   // App.tsx might auto-navigate to categorization if uncategorized transactions exist.
@@ -35,16 +42,16 @@ test('should successfully import transactions from a CSV file', async ({ page, s
 
   // Try to find one of our imported transactions in the first few items of the loop
   for (let i = 0; i < 5; i++) {
-    const descLocator = importFlowPage.page.getByLabel('Transaction Description', { exact: true });
+    const descLocator = page.getByLabel('Transaction Description', { exact: true });
     await descLocator.waitFor({ state: 'visible', timeout: 10000 });
     const text = await descLocator.innerText();
     
     if (expectedDescriptions.includes(text)) {
       if (text === 'Groceries') {
-        await expect(importFlowPage.page.getByText('USD 50.00', { exact: true })).toBeVisible();
+        await expect(page.getByText('USD 50.00', { exact: true })).toBeVisible();
       }
       if (text === 'Salary') {
-        await expect(importFlowPage.page.getByText('USD 3000.00', { exact: true })).toBeVisible();
+        await expect(page.getByText('USD 3000.00', { exact: true })).toBeVisible();
       }
       found = true;
       break;

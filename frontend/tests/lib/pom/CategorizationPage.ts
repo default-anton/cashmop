@@ -31,16 +31,28 @@ export class CategorizationPage {
       return;
     }
 
-    await this.page.waitForFunction(async () => {
-      const app = (window as any).go?.main?.App;
-      if (!app?.GetUncategorizedTransactions) return false;
-      try {
-        const txs = await app.GetUncategorizedTransactions();
-        return Array.isArray(txs) && txs.length > 0;
-      } catch {
-        return false;
+    const waitForTransactions = async () => {
+      await this.page.waitForFunction(async () => {
+        const app = (window as any).go?.main?.App;
+        if (!app?.GetUncategorizedTransactions) return false;
+        try {
+          const txs = await app.GetUncategorizedTransactions();
+          return Array.isArray(txs) && txs.length > 0;
+        } catch {
+          return false;
+        }
+      }, null, { timeout: 10000 });
+    };
+
+    try {
+      await waitForTransactions();
+    } catch {
+      const inboxZero = this.page.getByText('Inbox Zero!', { exact: true });
+      if (await inboxZero.isVisible()) {
+        await this.page.getByRole('button', { name: 'Refresh' }).click();
       }
-    }, null, { timeout: 10000 });
+      await waitForTransactions();
+    }
 
     const categorizeNav = this.page.getByLabel('Navigate to Categorize', { exact: true });
     try {

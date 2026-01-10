@@ -265,6 +265,7 @@ export namespace main {
 	export class ExcelData {
 	    headers: string[];
 	    rows: string[][];
+	    allRows: string[][];
 	
 	    static createFrom(source: any = {}) {
 	        return new ExcelData(source);
@@ -274,6 +275,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.headers = source["headers"];
 	        this.rows = source["rows"];
+	        this.allRows = source["allRows"];
 	    }
 	}
 	export class RuleDeleteResult {

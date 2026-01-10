@@ -33,13 +33,11 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
       return;
     }
 
-    setSelectedFiles((prev) => {
-      const newFiles = fileArray.filter((f) => !prev.some((p) => p.name === f.name && p.size === f.size));
-      const combined = [...prev, ...newFiles];
-      onFilesSelected?.(combined);
-      if (combined.length === 1) onFileSelected?.(combined[0]);
-      return combined;
-    });
+    const newFiles = fileArray.filter((f) => !selectedFiles.some((p) => p.name === f.name && p.size === f.size));
+    const combined = [...selectedFiles, ...newFiles];
+    setSelectedFiles(combined);
+    onFilesSelected?.(combined);
+    if (combined.length === 1) onFileSelected?.(combined[0]);
   };
 
   const removeFile = (index: number) => {

@@ -578,6 +578,7 @@ func (a *App) GetAnalysisTransactions(startDate string, endDate string, category
 type ExcelData struct {
 	Headers []string   `json:"headers"`
 	Rows    [][]string `json:"rows"`
+	AllRows [][]string `json:"allRows"`
 }
 
 func (a *App) ParseExcel(base64Data string) (*ExcelData, error) {
@@ -611,6 +612,12 @@ func (a *App) ParseExcel(base64Data string) (*ExcelData, error) {
 		return nil, fmt.Errorf("The Excel file is empty. Please choose a file with data.")
 	}
 
+	for i := range rows {
+		for j := range rows[i] {
+			rows[i][j] = strings.TrimSpace(rows[i][j])
+		}
+	}
+
 	headers := rows[0]
 	var dataRows [][]string
 	if len(rows) > 1 {
@@ -636,6 +643,7 @@ func (a *App) ParseExcel(base64Data string) (*ExcelData, error) {
 	return &ExcelData{
 		Headers: headers,
 		Rows:    dataRows,
+		AllRows: rows,
 	}, nil
 }
 

@@ -17,9 +17,21 @@ interface MonthSelectorProps {
   onBack: () => void;
   parsed: ParsedFile | null;
   mapping: ImportMapping | null;
+  fileIndex: number;
+  fileCount: number;
+  primaryActionLabel: string;
 }
 
-const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBack, parsed, mapping }) => {
+const MonthSelector: React.FC<MonthSelectorProps> = ({
+  months,
+  onComplete,
+  onBack,
+  parsed,
+  mapping,
+  fileIndex,
+  fileCount,
+  primaryActionLabel,
+}) => {
   const defaultSelected = useMemo(() => {
     if (months.length === 0) return new Set<string>();
     return new Set<string>([months[months.length - 1].key]);
@@ -130,7 +142,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
             <div>
               <h2 className="text-xl font-bold text-canvas-800 select-none">Select Range</h2>
               <p className="text-canvas-500 select-none">
-                Found transactions spanning {months.length} month{months.length === 1 ? '' : 's'}.
+                Found transactions spanning {months.length} month{months.length === 1 ? '' : 's'}. File {fileIndex + 1} of {fileCount}.
               </p>
             </div>
           </div>
@@ -144,7 +156,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({ months, onComplete, onBac
               onClick={() => onComplete(Array.from(selected))}
               disabled={!canStart}
             >
-              Start Import <ArrowRight className="w-4 h-4 ml-1" />
+              {primaryActionLabel} <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         </div>
