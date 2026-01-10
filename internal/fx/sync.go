@@ -40,6 +40,17 @@ func SyncRates(ctx context.Context, baseCurrency string) (SyncResult, error) {
 		quotes = append(quotes, quote)
 	}
 
+	// Add 7-day buffer before each transaction range
+	for quote, txRange := range txRanges {
+		if txRange.StartDate != "" {
+			bufferedStart := subtractDays(txRange.StartDate, 7)
+			txRanges[quote] = database.FxDateRange{
+				StartDate: bufferedStart,
+				EndDate:   txRange.EndDate,
+			}
+		}
+	}
+
 	existingRanges, err := database.GetFxRateRanges(base, quotes)
 	if err != nil {
 		return SyncResult{}, err
@@ -138,4 +149,12 @@ func EnsureProviderSupported(baseCurrency string) error {
 		return fmt.Errorf("%w", err)
 	}
 	return nil
+}
+
+func subtractDays(dateStr string, days int) string {
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return dateStr
+	}
+	return date.AddDate(0, 0, -days).Format("2006-01-02")
 }

@@ -29,7 +29,7 @@ UI Location: `frontend/src/screens/Settings/`, `frontend/src/screens/Analysis/`,
 
 ## Sync + Cache
 - On startup and after import, async FX sync for currencies + date ranges seen in transactions.
-- Fetch missing ranges only.
+- Fetch missing ranges only, with a 7-day buffer before the minimum transaction date (for weekend/holiday coverage).
 - `fx_last_sync` stored on successful sync; UI listens for rates-updated event + refresh.
 
 ## Import Flow
