@@ -2,6 +2,8 @@
 
 Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linux, macOS); speed + delight focus.
 
+**Release Status:** Pre-release (no v1.0 yet). Backward compatibility NOT a concern.
+
 ---
 
 ## Tech Stack
