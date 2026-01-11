@@ -8,6 +8,7 @@ interface AutocompleteInputProps {
   value: string;
   onChange: (value: string) => void;
   onSelect?: (value: string) => void;
+  onSubmit?: (value: string) => void;
   options: AutocompleteOption[];
   placeholder?: string;
   className?: string;
@@ -20,6 +21,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   value,
   onChange,
   onSelect,
+  onSubmit,
   options,
   placeholder,
   className,
@@ -93,13 +95,17 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter' && filteredOptions.length > 0) {
+    if (event.key === 'Enter') {
       event.preventDefault();
-      const needle = value.trim().toLowerCase();
-      const exact = filteredOptions.find((option) =>
-        option.value.toLowerCase() === needle || option.label.toLowerCase() === needle
-      );
-      handleSelect(exact || filteredOptions[0]);
+      if (showDropdown) {
+        const needle = value.trim().toLowerCase();
+        const exact = filteredOptions.find((option) =>
+          option.value.toLowerCase() === needle || option.label.toLowerCase() === needle
+        );
+        handleSelect(exact || filteredOptions[0]);
+      } else if (onSubmit) {
+        onSubmit(value);
+      }
     }
   };
 

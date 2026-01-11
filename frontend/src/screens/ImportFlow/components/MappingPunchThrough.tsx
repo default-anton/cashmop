@@ -796,6 +796,9 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                       setAccountInput(val);
                       setMapping(prev => ({ ...prev, account: val, csv: { ...prev.csv, account: undefined } }));
                     }}
+                    onSubmit={() => {
+                      if (canGoNext) handleAdvance();
+                    }}
                     options={availableAccounts}
                     placeholder="e.g. RBC Checking"
                     className="w-full"
@@ -833,6 +836,9 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                     onChange={(val) => {
                       setOwnerInput(val);
                       setMapping(prev => ({ ...prev, defaultOwner: val, csv: { ...prev.csv, owner: undefined } }));
+                    }}
+                    onSubmit={() => {
+                      if (canGoNext) handleAdvance();
                     }}
                     options={availableOwners}
                     placeholder="e.g. Alex"
