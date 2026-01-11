@@ -44,10 +44,6 @@ This checklist covers all items that should be addressed before releasing to cus
 ## Post-Release (Future)
 
 - [ ] **Fix currency storage** - `amount` stored as `REAL` may introduce floating-point precision issues (e.g., 0.1 + 0.2 != 0.3). Migrating to INTEGER (cents) storage is deferred to v1.1+ due to migration complexity and risk. Practical impact is minimal for typical transaction amounts.
-- [ ] **Cloud sync** - Multi-device synchronization.
-- [ ] **Plugin system** - Allow user extensions.
-- [ ] **Advanced reporting** - Charts, graphs, spending trends.
-- [ ] **Recurring transactions** - Automatic transaction creation.
 
 ---
 
