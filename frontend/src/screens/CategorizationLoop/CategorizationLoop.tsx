@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { database } from '../../../wailsjs/go/models';
 import { useToast } from '../../contexts/ToastContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { ScreenLayout } from '../../components';
 import {
   InboxZero,
   ProgressHeader,
@@ -674,9 +675,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     : warning;
 
   return (
-    <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100">
-      <div className="w-full max-w-2xl">
-        {displayWarning && (
+    <ScreenLayout size="medium" centerContent>
+      {displayWarning && (
           <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${
             displayWarning.tone === 'error'
               ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
@@ -737,7 +737,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           suggestions={suggestions}
           isRuleMode={!!selectionRule}
         />
-      </div>
 
       <UndoToast
         show={showUndoToast}
@@ -748,7 +747,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         onRedo={handleRedo}
         onDismiss={() => setShowUndoToast(false)}
       />
-    </div>
+    </ScreenLayout>
   );
 };
 

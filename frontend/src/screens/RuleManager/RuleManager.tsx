@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFuzzySearch } from '../../hooks/useFuzzySearch';
 import { Plus, Wand2, Pencil, Trash2, Check } from 'lucide-react';
 import { database } from '../../../wailsjs/go/models';
-import { Button, Card, CategoryFilterContent, Modal, Table, useToast } from '../../components';
+import { Button, Card, CategoryFilterContent, Modal, ScreenLayout, Table, useToast } from '../../components';
 import { FilterConfig } from '../../components/TableHeaderFilter';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import RuleEditorModal from './components/RuleEditorModal';
@@ -371,8 +371,8 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
   ];
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-8 bg-canvas-100">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <ScreenLayout size="wide">
+      <div className="space-y-6">
         <RuleManagerHeader
           ruleSearch={ruleSearch}
           onRuleSearchChange={setRuleSearch}
@@ -435,7 +435,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
           </div>
         </div>
       </Modal>
-    </div>
+    </ScreenLayout>
   );
 };
 

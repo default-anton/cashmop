@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Tag, Edit2, Check, X, Search, List } from 'lucide-react';
-import { Card } from '../../components';
+import { Card, ScreenLayout } from '../../components';
 
 interface Category {
     id: number;
@@ -54,9 +54,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onViewRules }) => {
     );
 
     return (
-        <div className="min-h-screen pt-24 pb-12 px-8 bg-canvas-100">
-            <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
+        <ScreenLayout size="medium">
+            <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-brand/10 text-brand rounded-2xl shadow-brand/5 shadow-inner">
                             <Tag className="w-8 h-8" />
@@ -146,8 +145,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({ onViewRules }) => {
                         ))}
                     </div>
                 )}
-            </div>
-        </div>
+        </ScreenLayout>
     );
 };
 

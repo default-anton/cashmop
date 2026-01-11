@@ -4,7 +4,7 @@ import {
   GroupedTransactionList
 } from './components';
 import { database } from '../../../wailsjs/go/models';
-import { Card } from '../../components';
+import { Card, ScreenLayout } from '../../components';
 import { useToast } from '../../components';
 import { BarChart3, ArrowUpDown, Download, AlertTriangle } from 'lucide-react';
 import TransactionSearch from './components/TransactionSearch';
@@ -279,9 +279,8 @@ const Analysis: React.FC = () => {
   }, [groupingOptions, groupBy]);
 
   return (
-    <div className="min-h-screen bg-canvas-100 pt-24 pb-12 px-8">
-      <div className="max-w-5xl mx-auto space-y-8">
-
+    <ScreenLayout size="wide">
+      <div className="space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-brand/10 text-brand rounded-2xl shadow-brand/5 shadow-inner">
@@ -466,8 +465,7 @@ const Analysis: React.FC = () => {
           />
         )}
       </div>
-
-    </div>
+    </ScreenLayout>
   );
 };
 

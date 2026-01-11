@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
-import { Button } from '../../components';
+import { Button, ScreenLayout } from '../../components';
 import { useToast } from '../../contexts/ToastContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
@@ -656,8 +656,8 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   const primaryActionLabel = isLastFile ? 'Start Import' : 'Map Next File';
 
   return (
-    <div className="min-h-screen flex flex-col items-center pt-24 pb-12 px-8 bg-canvas-100 font-sans text-canvas-800">
-      <div className="w-full max-w-5xl">
+    <ScreenLayout size="wide">
+      <div className="font-sans text-canvas-800">
         {warning && (
           <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${
             warning.tone === 'error'
@@ -756,6 +756,6 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
           </div>
         )}
       </div>
-    </div>
+    </ScreenLayout>
   );
 }

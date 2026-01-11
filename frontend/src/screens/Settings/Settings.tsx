@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Database, Download, Upload, Folder, Clock, Check, AlertTriangle, HardDrive, RefreshCcw, Globe } from 'lucide-react';
-import { Card, Button, AutocompleteInput, useToast } from '../../components';
+import { AutocompleteInput, Button, Card, ScreenLayout, useToast } from '../../components';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
 interface BackupInfo {
@@ -158,9 +158,8 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-12 px-8 bg-canvas-100">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
+    <ScreenLayout size="medium">
+      <div className="flex items-center gap-4 mb-8">
           <div className="p-3 bg-brand/10 text-brand rounded-2xl shadow-brand/5 shadow-inner">
             <Database className="w-8 h-8" />
           </div>
@@ -371,8 +370,7 @@ const Settings: React.FC = () => {
             Automatic backups run daily when 24+ hours have passed since the last backup, before database migrations, and on app exit. The last 10 daily and 5 weekly backups are retained in your backup folder.
           </p>
         </Card>
-      </div>
-    </div>
+    </ScreenLayout>
   );
 };
 
