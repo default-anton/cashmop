@@ -9,7 +9,7 @@ interface ProgressHeaderProps {
 
 export const ProgressHeader: React.FC<ProgressHeaderProps> = ({ currentIndex, totalTransactions }) => {
   return (
-    <div className="flex items-center justify-between mb-8">
+    <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-3">
         <div className="p-2 bg-brand/10 text-brand rounded-lg">
           <Layers className="w-6 h-6" />

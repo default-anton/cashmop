@@ -78,7 +78,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
   };
 
   return (
-    <div className={`mb-4 relative w-full transition-all duration-300 ${selectionRule ? 'min-h-[220px]' : 'h-44'}`}>
+    <div className={`relative w-full transition-all duration-300 ${selectionRule ? 'min-h-[220px]' : 'h-44'}`}>
       {selectionRule ? (
         <div className="w-full h-full animate-snap-in">
           <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex flex-col justify-center gap-4 text-brand shadow-lg backdrop-blur-sm h-full select-none">

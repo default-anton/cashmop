@@ -27,8 +27,8 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
   isRuleMode,
 }) => {
   return (
-    <div className="relative">
-      <div className="flex gap-4">
+    <div className="relative w-full">
+      <div className="flex gap-4 w-full">
         <div className="relative flex-1">
           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-canvas-500">
             <Search className="w-5 h-5" />

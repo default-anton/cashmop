@@ -184,10 +184,10 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   const formattedMain = formatCents(mainAmount, mainCurrency);
 
   return (
-    <div className="relative group perspective-1000">
+    <div className="relative group perspective-1000 w-full">
       <Card
         variant="glass"
-        className="p-6 mb-4 transform transition-all duration-500 hover:rotate-x-1 hover:shadow-2xl border-canvas-200/50"
+        className="p-6 transform transition-all duration-500 hover:rotate-x-1 hover:shadow-2xl border-canvas-200/50 w-full"
         onMouseUp={undefined} // We handle mouse up globally for the drag
         onMouseDown={undefined}
       >

@@ -682,8 +682,9 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
   return (
     <ScreenLayout size="medium" centerContent>
-      {displayWarning && (
-          <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${
+      <div className="w-full max-w-2xl flex flex-col items-stretch gap-6">
+        {displayWarning && (
+          <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
             displayWarning.tone === 'error'
               ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
               : 'bg-yellow-100 border-yellow-300 text-yellow-800'
@@ -745,6 +746,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           suggestions={suggestions}
           isRuleMode={!!selectionRule}
         />
+      </div>
 
       <UndoToast
         show={showUndoToast}

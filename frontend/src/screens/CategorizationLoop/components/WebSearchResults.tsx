@@ -31,7 +31,7 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
 
   if (!results && !loading && !error) {
     return (
-      <div className="my-4">
+      <div className="w-full">
         <button
           onClick={onSearch}
           className="w-full flex items-center justify-center gap-2 bg-canvas-100 hover:bg-canvas-200 border-2 border-canvas-200 hover:border-brand/30 text-canvas-600 hover:text-brand rounded-xl py-3 px-4 font-bold transition-all duration-200 group select-none"
@@ -50,7 +50,7 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mt-4"
+      className="w-full"
     >
       <div className="bg-white rounded-xl border border-canvas-200 shadow-sm overflow-hidden">
         <button
