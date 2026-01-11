@@ -175,11 +175,11 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       rateCache.current.set(key, null);
       return null;
     }
-  }, [mainCurrency]);
+  }, [mainCurrency, fxStatus]);
 
   useEffect(() => {
     rateCache.current.clear();
-  }, [mainCurrency]);
+  }, [mainCurrency, fxStatus]);
 
   const value = useMemo<CurrencyContextValue>(() => ({
     settings,

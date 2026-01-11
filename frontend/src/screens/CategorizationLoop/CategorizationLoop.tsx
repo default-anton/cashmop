@@ -73,7 +73,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [showUndoToast, setShowUndoToast] = useState(false);
 
   const { showToast } = useToast();
-  const { warning, mainCurrency, updateSettings, convertAmount, settings } = useCurrency();
+  const { warning, mainCurrency, convertAmount } = useCurrency();
   const [fxAmounts, setFxAmounts] = useState<Map<number, number | null>>(new Map());
   const [matchingFxAmounts, setMatchingFxAmounts] = useState<Map<number, number | null>>(new Map());
   const [hasMissingRates, setHasMissingRates] = useState(false);
