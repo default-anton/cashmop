@@ -12,14 +12,14 @@ type Category struct {
 }
 
 type CategorizationRule struct {
-	ID           int64    `json:"id"`
-	MatchType    string   `json:"match_type"`
-	MatchValue   string   `json:"match_value"`
-	CategoryID   int64    `json:"category_id"`
-	CategoryName string   `json:"category_name"`
-	AmountMin    *float64 `json:"amount_min"`
-	AmountMax    *float64 `json:"amount_max"`
-	CreatedAt    string   `json:"created_at"`
+	ID           int64   `json:"id"`
+	MatchType    string  `json:"match_type"`
+	MatchValue   string  `json:"match_value"`
+	CategoryID   int64   `json:"category_id"`
+	CategoryName string  `json:"category_name"`
+	AmountMin    *int64  `json:"amount_min"`
+	AmountMax    *int64  `json:"amount_max"`
+	CreatedAt    string  `json:"created_at"`
 }
 
 var (
@@ -266,7 +266,7 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 	var affectedIds []int64
 	for rows.Next() {
 		var id int64
-		var amount float64
+		var amount int64
 		var currency string
 		var date string
 		if err := rows.Scan(&id, &amount, &currency, &date); err != nil {

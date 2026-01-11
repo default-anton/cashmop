@@ -45,6 +45,8 @@ export function GetMonthList():Promise<Array<string>>;
 
 export function GetOwners():Promise<Array<string>>;
 
+export function GetRuleAmountRange(arg1:string,arg2:string):Promise<database.AmountRange>;
+
 export function GetRuleMatchCount(arg1:number):Promise<number>;
 
 export function GetUncategorizedTransactions():Promise<Array<database.TransactionModel>>;

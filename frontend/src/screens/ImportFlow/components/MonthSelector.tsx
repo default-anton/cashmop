@@ -4,6 +4,7 @@ import { Button, Card } from '../../../components';
 import { type ImportMapping } from './ColumnMapperTypes';
 import { type ParsedFile } from '../ImportFlow';
 import { createAmountParser, parseDateLoose, sampleUniqueRows } from '../utils';
+import { formatCentsDecimal } from '../../../utils/currency';
 
 export type MonthOption = {
   key: string;
@@ -122,7 +123,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
       className: 'whitespace-nowrap text-right font-mono text-xs',
       render: (val: number) => (
         <span className={val < 0 ? 'text-finance-expense' : 'text-finance-income'}>
-          {val < 0 ? '-' : '+'}{Math.abs(val).toFixed(2)}
+          {val < 0 ? '-' : '+'}{formatCentsDecimal(Math.abs(val))}
         </span>
       )
     },

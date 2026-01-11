@@ -9,6 +9,7 @@ import { useToast } from '../../components';
 import { BarChart3, ArrowUpDown, Download, AlertTriangle } from 'lucide-react';
 import TransactionSearch from './components/TransactionSearch';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { formatCents, formatCentsDecimal } from '../../utils/currency';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 export type SortOrder = 'asc' | 'desc';
@@ -199,7 +200,7 @@ const Analysis: React.FC = () => {
       tx.category_name || 'Uncategorized',
       tx.owner_name || 'No Owner',
       tx.date,
-      Math.abs(tx.amount).toFixed(2),
+      formatCentsDecimal(tx.amount),
       tx.currency || mainCurrency,
     ];
     return `${parts.join(' | ')} ::${tx.id}`;
@@ -231,9 +232,6 @@ const Analysis: React.FC = () => {
   const monthOptions = useMemo(() => (
     months.map((month) => ({ value: month, label: formatMonthLabel(month) }))
   ), [months, formatMonthLabel]);
-  const formatCurrency = useCallback((amount: number) => (
-    new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(amount))
-  ), [mainCurrency]);
 
   const hasForeignCurrency = useMemo(() => {
     const main = mainCurrency.toUpperCase();
@@ -363,19 +361,19 @@ const Analysis: React.FC = () => {
             <Card variant="elevated" className="p-6">
               <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Income</div>
               <div className="text-2xl font-mono font-bold text-finance-income">
-                {formatCurrency(totals.income)}
+                {formatCents(totals.income, mainCurrency)}
               </div>
             </Card>
             <Card variant="elevated" className="p-6">
               <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Expenses</div>
               <div className="text-2xl font-mono font-bold text-finance-expense">
-                {formatCurrency(totals.expenses)}
+                {formatCents(totals.expenses, mainCurrency)}
               </div>
             </Card>
             <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
               <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1 select-none">Net Flow</div>
               <div className={`text-2xl font-mono font-bold ${totals.net >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-                {formatCurrency(totals.net)}
+                {formatCents(totals.net, mainCurrency)}
               </div>
             </Card>
           </div>

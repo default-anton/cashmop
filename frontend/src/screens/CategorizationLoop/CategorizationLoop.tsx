@@ -4,6 +4,7 @@ import { database } from '../../../wailsjs/go/models';
 import { useToast } from '../../contexts/ToastContext';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { ScreenLayout } from '../../components';
+import { parseCents } from '../../utils/currency';
 import {
   InboxZero,
   ProgressHeader,
@@ -66,6 +67,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     value2: string;
   }>({ operator: 'none', value1: '', value2: '' });
   const [matchingTransactions, setMatchingTransactions] = useState<Transaction[]>([]);
+  const [matchingCount, setMatchingCount] = useState(0);
+  const [matchingAmountRange, setMatchingAmountRange] = useState<{ min?: number | null; max?: number | null }>({});
   const [skippedIds, setSkippedIds] = useState<Set<number>>(new Set());
   const [hasRules, setHasRules] = useState<boolean | null>(null);
 
@@ -223,6 +226,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   useEffect(() => {
     if (!debouncedRule) {
       setMatchingTransactions([]);
+      setMatchingCount(0);
+      setMatchingAmountRange({});
       return;
     }
 
@@ -231,13 +236,13 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         let amountMin: number | null = null;
         let amountMax: number | null = null;
 
-        if (amountFilter.operator !== 'none') {
-          let v1 = parseFloat(amountFilter.value1) || 0;
-          let v2 = parseFloat(amountFilter.value2) || 0;
-          if (amountFilter.operator === 'between' && v1 > v2) [v1, v2] = [v2, v1];
+        const currentMainAmount = currentTx ? (fxAmounts.get(currentTx.id) ?? currentTx.amount) : 0;
+        const isExpense = currentMainAmount < 0;
 
-          const currentMainAmount = currentTx ? (fxAmounts.get(currentTx.id) ?? currentTx.amount) : 0;
-          const isExpense = currentMainAmount < 0;
+        if (amountFilter.operator !== 'none') {
+          let v1 = parseCents(parseFloat(amountFilter.value1) || 0);
+          let v2 = parseCents(parseFloat(amountFilter.value2) || 0);
+          if (amountFilter.operator === 'between' && v1 > v2) [v1, v2] = [v2, v1];
 
           if (isExpense) {
             if (amountFilter.operator === 'gt') amountMax = -v1;
@@ -256,13 +261,14 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           }
         }
 
-        const res = await (window as any).go.main.App.SearchTransactions(
-          debouncedRule.text,
-          debouncedRule.mode,
-          amountMin,
-          amountMax
-        );
-        setMatchingTransactions(res || []);
+        const [amountRange, res] = await Promise.all([
+          (window as any).go.main.App.GetRuleAmountRange(debouncedRule.text, debouncedRule.mode),
+          (window as any).go.main.App.PreviewRuleMatches(debouncedRule.text, debouncedRule.mode, amountMin, amountMax),
+        ]);
+
+        setMatchingTransactions(res?.transactions || []);
+        setMatchingCount(res?.count || 0);
+        setMatchingAmountRange({ min: amountRange?.min ?? null, max: amountRange?.max ?? null });
       } catch (e) {
         console.error('Failed to fetch matching transactions', e);
       }
@@ -511,8 +517,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         rule.category_name = categoryName;
 
         if (amountFilter.operator !== 'none') {
-          let v1 = parseFloat(amountFilter.value1) || 0;
-          let v2 = parseFloat(amountFilter.value2) || 0;
+          let v1 = parseCents(parseFloat(amountFilter.value1) || 0);
+          let v2 = parseCents(parseFloat(amountFilter.value2) || 0);
 
           if (amountFilter.operator === 'between' && v1 > v2) {
             [v1, v2] = [v2, v1];
@@ -725,6 +731,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
             ...tx,
             main_amount: matchingFxAmounts.get(tx.id) ?? null,
           }))}
+          matchingCount={matchingCount}
+          amountDefaults={matchingAmountRange}
           mainCurrency={mainCurrency}
         />
 

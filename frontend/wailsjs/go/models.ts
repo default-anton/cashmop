@@ -1,5 +1,19 @@
 export namespace database {
 	
+	export class AmountRange {
+	    min?: number;
+	    max?: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new AmountRange(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.min = source["min"];
+	        this.max = source["max"];
+	    }
+	}
 	export class BackupMetadata {
 	    path: string;
 	    size: number;

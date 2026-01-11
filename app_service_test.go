@@ -90,7 +90,7 @@ func TestImportTransactions(t *testing.T) {
 			{
 				Date:        "2024-01-15",
 				Description: "Test Transaction",
-				Amount:      100.50,
+				Amount:      10050,
 				Category:    "Groceries",
 				Account:     "Checking",
 				Owner:       "John",
@@ -749,11 +749,11 @@ func TestUndoCategorizationRule(t *testing.T) {
 	})
 
 	t.Run("undo with amount filter", func(t *testing.T) {
-		tx1 := createTestTransaction(t, accountID, nil, "2024-01-05", "Big Grocery", 100.00, nil)
-		tx2 := createTestTransaction(t, accountID, nil, "2024-01-06", "Small Grocery", 10.00, nil)
-		tx3 := createTestTransaction(t, accountID, nil, "2024-01-07", "Huge Grocery", 150.00, nil)
+		tx1 := createTestTransaction(t, accountID, nil, "2024-01-05", "Big Grocery", 10000, nil)
+		tx2 := createTestTransaction(t, accountID, nil, "2024-01-06", "Small Grocery", 1000, nil)
+		tx3 := createTestTransaction(t, accountID, nil, "2024-01-07", "Huge Grocery", 15000, nil)
 
-		minAmount := 50.00
+		minAmount := int64(5000)
 		rule := database.CategorizationRule{
 			MatchType:  "contains",
 			MatchValue: "grocery",
@@ -840,9 +840,9 @@ func TestSearchTransactions(t *testing.T) {
 	app := NewApp()
 	accountID := createTestAccount(t, "TestAccount")
 
-	createTestTransaction(t, accountID, nil, "2024-01-01", "Grocery Store", 100.00, nil)
-	createTestTransaction(t, accountID, nil, "2024-01-02", "Gas Station", 50.00, nil)
-	createTestTransaction(t, accountID, nil, "2024-01-03", "Weekly Grocery Shopping", 75.00, nil)
+	createTestTransaction(t, accountID, nil, "2024-01-01", "Grocery Store", 10000, nil)
+	createTestTransaction(t, accountID, nil, "2024-01-02", "Gas Station", 5000, nil)
+	createTestTransaction(t, accountID, nil, "2024-01-03", "Weekly Grocery Shopping", 7500, nil)
 
 	t.Run("search by description contains", func(t *testing.T) {
 		results, err := app.SearchTransactions("grocery", "contains", nil, nil)
@@ -886,8 +886,8 @@ func TestSearchTransactions(t *testing.T) {
 	})
 
 	t.Run("search with amount range", func(t *testing.T) {
-		min := 60.0
-		max := 100.0
+		min := int64(6000)
+		max := int64(10000)
 		results, err := app.SearchTransactions("", "", &min, &max)
 		if err != nil {
 			t.Fatalf("SearchTransactions failed: %v", err)
@@ -899,7 +899,7 @@ func TestSearchTransactions(t *testing.T) {
 	})
 
 	t.Run("combined filters", func(t *testing.T) {
-		min := 70.0
+		min := int64(7000)
 		results, err := app.SearchTransactions("grocery", "contains", &min, nil)
 		if err != nil {
 			t.Fatalf("SearchTransactions failed: %v", err)
@@ -1225,7 +1225,7 @@ func TestExportTransactions(t *testing.T) {
 	ownerID := createTestOwner(t, "Test Owner")
 	catID := createTestCategory(t, "Groceries")
 
-	createTestTransaction(t, accountID, ownerID, "2024-01-15", "Test Transaction", 100.50, &catID)
+	createTestTransaction(t, accountID, ownerID, "2024-01-15", "Test Transaction", 10050, &catID)
 
 	tempDir := t.TempDir()
 

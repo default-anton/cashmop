@@ -252,13 +252,13 @@ func (a *App) makeMenu() *menu.Menu {
 }
 
 type TransactionInput struct {
-	Date        string  `json:"date"`
-	Description string  `json:"description"`
-	Amount      float64 `json:"amount"`
-	Category    string  `json:"category"`
-	Account     string  `json:"account"`
-	Owner       string  `json:"owner"`
-	Currency    string  `json:"currency"`
+	Date        string `json:"date"`
+	Description string `json:"description"`
+	Amount      int64  `json:"amount"`
+	Category    string `json:"category"`
+	Account     string `json:"account"`
+	Owner       string `json:"owner"`
+	Currency    string `json:"currency"`
 }
 
 type CategorizeResult struct {
@@ -421,8 +421,12 @@ func (a *App) GetCategorizationRules() ([]database.CategorizationRule, error) {
 	return database.GetRules()
 }
 
-func (a *App) PreviewRuleMatches(matchValue string, matchType string, amountMin *float64, amountMax *float64) (database.RuleMatchPreview, error) {
+func (a *App) PreviewRuleMatches(matchValue string, matchType string, amountMin *int64, amountMax *int64) (database.RuleMatchPreview, error) {
 	return database.PreviewRuleMatches(matchValue, matchType, amountMin, amountMax, true, 10)
+}
+
+func (a *App) GetRuleAmountRange(matchValue string, matchType string) (database.AmountRange, error) {
+	return database.GetRuleAmountRange(matchValue, matchType)
 }
 
 func (a *App) GetRuleMatchCount(ruleID int64) (int, error) {
@@ -563,7 +567,7 @@ func (a *App) CreateOwner(name string) (int64, error) {
 	return *res, nil
 }
 
-func (a *App) SearchTransactions(descriptionMatch string, matchType string, amountMin *float64, amountMax *float64) ([]database.TransactionModel, error) {
+func (a *App) SearchTransactions(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64) ([]database.TransactionModel, error) {
 	return database.SearchTransactions(descriptionMatch, matchType, amountMin, amountMax)
 }
 
@@ -787,6 +791,11 @@ func sanitizeCSVField(field string) string {
 	return field
 }
 
+// formatCents converts integer cents to string representation (e.g., 2000 -> "20.00")
+func formatCents(cents int64) string {
+	return fmt.Sprintf("%.2f", float64(cents)/100)
+}
+
 func exportToCSV(transactions []database.TransactionModel, destinationPath string, mainCurrency string) (int, error) {
 	file, err := os.Create(destinationPath)
 	if err != nil {
@@ -817,14 +826,14 @@ func exportToCSV(transactions []database.TransactionModel, destinationPath strin
 		if converted, err := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date); err != nil {
 			return 0, err
 		} else if converted != nil {
-			mainAmount = strconv.FormatFloat(*converted, 'f', -1, 64)
+			mainAmount = formatCents(*converted)
 		}
 
 		row := []string{
 			tx.Date,
 			sanitizeCSVField(tx.Description),
 			mainAmount,
-			strconv.FormatFloat(tx.Amount, 'f', -1, 64),
+			formatCents(tx.Amount),
 			sanitizeCSVField(tx.Currency),
 			sanitizeCSVField(category),
 			sanitizeCSVField(tx.AccountName),
@@ -909,10 +918,10 @@ func exportToXLSX(transactions []database.TransactionModel, destinationPath stri
 				value = tx.Description
 			case 2:
 				if converted, err := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date); err == nil && converted != nil {
-					value = strconv.FormatFloat(*converted, 'f', -1, 64)
+					value = formatCents(*converted)
 				}
 			case 3:
-				value = strconv.FormatFloat(tx.Amount, 'f', -1, 64)
+				value = formatCents(tx.Amount)
 			case 4:
 				value = tx.Currency
 			case 5:

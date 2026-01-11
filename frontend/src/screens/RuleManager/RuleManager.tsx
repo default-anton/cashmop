@@ -8,6 +8,7 @@ import { useCurrency } from '../../contexts/CurrencyContext';
 import RuleEditorModal from './components/RuleEditorModal';
 import RuleManagerHeader from './components/RuleManagerHeader';
 import { MatchType, RuleRow } from './types';
+import { formatCents } from '../../utils/currency';
 
 type SortField = 'match_type' | 'match_value' | 'amount' | 'category_name' | 'created_at';
 type SortOrder = 'asc' | 'desc';
@@ -123,11 +124,6 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
     }
   };
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('en-CA', {
-    style: 'currency',
-    currency: mainCurrency,
-  }).format(Math.abs(amount));
-
   const formatAmountFilter = (rule: RuleRow) => {
     const min = rule.amount_min ?? null;
     const max = rule.amount_max ?? null;
@@ -139,14 +135,14 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       const maxAbs = Math.abs(max);
       const lower = Math.min(minAbs, maxAbs);
       const upper = Math.max(minAbs, maxAbs);
-      return `${formatCurrency(lower)} - ${formatCurrency(upper)}`;
+      return `${formatCents(lower, mainCurrency)} - ${formatCents(upper, mainCurrency)}`;
     }
 
     if (min !== null) {
-      return min < 0 ? `≤ ${formatCurrency(min)}` : `≥ ${formatCurrency(min)}`;
+      return min < 0 ? `≤ ${formatCents(min, mainCurrency)}` : `≥ ${formatCents(min, mainCurrency)}`;
     }
 
-    return max !== null && max < 0 ? `≥ ${formatCurrency(max)}` : `≤ ${formatCurrency(max || 0)}`;
+    return max !== null && max < 0 ? `≥ ${formatCents(max, mainCurrency)}` : `≤ ${formatCents(max || 0, mainCurrency)}`;
   };
 
   const buildRuleSearchLabel = useCallback((rule: RuleRow) => {

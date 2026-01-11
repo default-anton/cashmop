@@ -28,3 +28,7 @@ Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linu
 - Fuzzy search: `internal/fuzzy` (fzf)
   - Ranking: word/string start > mid; tie => shorter (`internal/fuzzy/fuzzy_test.go`)
   - Lists: Wails bindings only; no client `.includes()` / JS fuzzy
+- Monetary amounts: cents only (INTEGER, int64) - never float64
+  - Exception: `fx_rates.rate` stays REAL
+  - Frontend: `utils/currency.ts` (`formatCents`, `parseCents`)
+  - Rounding: Go `math.Round(x + 0.5)`, JS `Math.round(x * 100)`

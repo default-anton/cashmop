@@ -14,7 +14,7 @@ type TransactionModel struct {
 	OwnerName    string  `json:"owner_name"`
 	Date         string  `json:"date"`
 	Description  string  `json:"description"`
-	Amount       float64 `json:"amount"`
+	Amount       int64   `json:"amount"`
 	CategoryID   *int64  `json:"category_id"`
 	CategoryName string  `json:"category_name"`
 	Currency     string  `json:"currency"`
@@ -194,7 +194,7 @@ func ClearTransactionCategories(ids []int64) error {
 	return err
 }
 
-func SearchTransactions(descriptionMatch string, matchType string, amountMin *float64, amountMax *float64) ([]TransactionModel, error) {
+func SearchTransactions(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64) ([]TransactionModel, error) {
 	query := `
 		SELECT
 			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
@@ -281,12 +281,12 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *fl
 
 type RuleMatchPreview struct {
 	Count        int               `json:"count"`
-	MinAmount    *float64          `json:"min_amount"`
-	MaxAmount    *float64          `json:"max_amount"`
+	MinAmount    *int64            `json:"min_amount"`
+	MaxAmount    *int64            `json:"max_amount"`
 	Transactions []TransactionModel `json:"transactions"`
 }
 
-func SearchTransactionsByRule(descriptionMatch string, matchType string, amountMin *float64, amountMax *float64, includeCategorized bool) ([]TransactionModel, error) {
+func SearchTransactionsByRule(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64, includeCategorized bool) ([]TransactionModel, error) {
 	query := `
 		SELECT
 			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
@@ -370,7 +370,7 @@ func SearchTransactionsByRule(descriptionMatch string, matchType string, amountM
 	return txs, nil
 }
 
-func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *float64, amountMax *float64, includeCategorized bool, limit int) (RuleMatchPreview, error) {
+func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64, includeCategorized bool, limit int) (RuleMatchPreview, error) {
 	if limit <= 0 {
 		limit = 10
 	}
@@ -426,8 +426,8 @@ func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *fl
 	defer rows.Close()
 
 	count := 0
-	var minAmount *float64
-	var maxAmount *float64
+	var minAmount *int64
+	var maxAmount *int64
 	preview := make([]TransactionModel, 0, limit)
 	needsAmountFilter := amountMin != nil || amountMax != nil
 
@@ -475,6 +475,80 @@ func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *fl
 	}
 
 	return RuleMatchPreview{Count: count, MinAmount: minAmount, MaxAmount: maxAmount, Transactions: preview}, nil
+}
+
+type AmountRange struct {
+	Min *int64 `json:"min"`
+	Max *int64 `json:"max"`
+}
+
+func GetRuleAmountRange(descriptionMatch string, matchType string) (AmountRange, error) {
+	query := `
+		SELECT t.amount, t.currency, t.date
+		FROM transactions t
+		WHERE 1=1
+	`
+	args := []any{}
+
+	if descriptionMatch != "" {
+		switch matchType {
+		case "starts_with":
+			query += " AND t.description LIKE ?"
+			args = append(args, descriptionMatch+"%")
+		case "ends_with":
+			query += " AND t.description LIKE ?"
+			args = append(args, "%"+descriptionMatch)
+		case "exact":
+			query += " AND t.description = ?"
+			args = append(args, descriptionMatch)
+		default: // contains
+			query += " AND t.description LIKE ?"
+			args = append(args, "%"+descriptionMatch+"%")
+		}
+	}
+
+	settings, err := GetCurrencySettings()
+	if err != nil {
+		return AmountRange{}, err
+	}
+	baseCurrency := strings.TrimSpace(settings.MainCurrency)
+	if baseCurrency == "" {
+		baseCurrency = defaultMainCurrency
+	}
+
+	rows, err := DB.Query(query, args...)
+	if err != nil {
+		return AmountRange{}, err
+	}
+	defer rows.Close()
+
+	var minAmount *int64
+	var maxAmount *int64
+
+	for rows.Next() {
+		var amount int64
+		var currency string
+		var date string
+		if err := rows.Scan(&amount, &currency, &date); err != nil {
+			return AmountRange{}, err
+		}
+
+		converted, err := ConvertAmount(amount, baseCurrency, currency, date)
+		if err != nil {
+			return AmountRange{}, err
+		}
+
+		if converted != nil {
+			if minAmount == nil || *converted < *minAmount {
+				minAmount = converted
+			}
+			if maxAmount == nil || *converted > *maxAmount {
+				maxAmount = converted
+			}
+		}
+	}
+
+	return AmountRange{Min: minAmount, Max: maxAmount}, nil
 }
 
 func GetMonthList() ([]string, error) {

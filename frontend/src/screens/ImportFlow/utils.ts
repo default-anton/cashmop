@@ -1,4 +1,5 @@
 import { ImportMapping } from './components/ColumnMapperTypes';
+import { parseCents } from '../../utils/currency';
 
 export function parseDateLoose(value: string): Date | null {
   const v = value.trim();
@@ -67,7 +68,8 @@ export function createAmountParser(mapping: ImportMapping, headers: string[]) {
     const idx = colIdx(am.column);
     return (row: string[]) => {
       const val = idx >= 0 ? parseFloat(row[idx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
-      return invert ? -val : val;
+      const cents = parseCents(val);
+      return invert ? -cents : cents;
     };
   }
 
@@ -78,7 +80,8 @@ export function createAmountParser(mapping: ImportMapping, headers: string[]) {
       const debit = debitIdx >= 0 ? parseFloat(row[debitIdx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
       const credit = creditIdx >= 0 ? parseFloat(row[creditIdx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
       const amount = Math.abs(credit) - Math.abs(debit);
-      return invert ? -amount : amount;
+      const cents = parseCents(amount);
+      return invert ? -cents : cents;
     };
   }
 
@@ -98,13 +101,15 @@ export function createAmountParser(mapping: ImportMapping, headers: string[]) {
       if (typeVal && neg && typeVal === neg) amount = -abs;
       else if (typeVal && pos && typeVal === pos) amount = abs;
 
-      return invert ? -amount : amount;
+      const cents = parseCents(amount);
+      return invert ? -cents : cents;
     };
   }
 
   const idx = colIdx(mapping.csv.amount);
   return (row: string[]) => {
     const val = idx >= 0 ? parseFloat(row[idx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
-    return invert ? -val : val;
+    const cents = parseCents(val);
+    return invert ? -cents : cents;
   };
 }

@@ -183,10 +183,12 @@ func insertFixture(table string, attrs map[string]interface{}) error {
 			CategoryID: catID,
 		}
 		if v, ok := attrs["amount_min"].(float64); ok {
-			rule.AmountMin = &v
+			centVal := int64(v * 100)
+			rule.AmountMin = &centVal
 		}
 		if v, ok := attrs["amount_max"].(float64); ok {
-			rule.AmountMax = &v
+			centVal := int64(v * 100)
+			rule.AmountMax = &centVal
 		}
 		_, err = database.SaveRule(rule)
 		return err
@@ -216,7 +218,7 @@ func insertFixture(table string, attrs map[string]interface{}) error {
 			OwnerID:     ownerID,
 			Date:        attrs["date"].(string),
 			Description: attrs["description"].(string),
-			Amount:      getFloat(attrs["amount"]),
+			Amount:      int64(getFloat(attrs["amount"]) * 100),
 			CategoryID:  catID,
 			Currency:    getStringWithDefault(attrs["currency"], "CAD"),
 		}

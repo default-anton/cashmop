@@ -7,6 +7,7 @@
 - Visual stability/motion: optimistic updates; no global loading that unmounts lists; `framer-motion` `layout` + `AnimatePresence` mode="popLayout"; subtle 4–8px vertical offsets; `easeOut` or high-damping springs; no exit scale; in-place success feedback while backend syncs
 - Typography/casing: small labels `text-canvas-600` + `uppercase`; data names no `uppercase`
 - Finance: negative amounts no minus; abs value + red `text-finance-expense`
+- Shared utilities: check `src/utils/` before adding helpers (e.g., `currency.ts`)
 - Suggestions/dropdowns: `createPortal` to avoid clipping/height jumps
 - Selects: use `AutocompleteInput` for basic selects, esp long lists
 - Multi-select filters >5 items: search input (auto-focus), select all/deselect all, "ONLY" on item hover, clear selection count (or "All selected")

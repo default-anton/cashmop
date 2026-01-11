@@ -7,6 +7,7 @@ import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
 import CategoryGhostInput from './CategoryGhostInput';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrency } from '../../../contexts/CurrencyContext';
+import { formatCents, formatCentsDecimal } from '../../../utils/currency';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
@@ -142,14 +143,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       setMonthHighlightedIndex(0);
     });
   }, [monthFilterSearch, monthOptions]);
-
-  const formatCurrency = (amount: number) => {
-    const formatter = new Intl.NumberFormat('en-CA', {
-      style: 'currency',
-      currency: mainCurrency,
-    });
-    return formatter.format(Math.abs(amount));
-  };
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00'); // Ensure local timezone
@@ -439,7 +432,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         const main = mainCurrency.toUpperCase();
         const showOriginal = txCurrency !== main;
         const amount = tx.main_amount;
-        const formatted = amount === null ? '—' : formatCurrency(amount);
+        const formatted = formatCents(amount, mainCurrency);
         const [symbol, value] = formatted !== '—' ? [formatted.slice(0, 1), formatted.slice(1)] : ['', '—'];
         return (
           <div className="flex flex-col items-end gap-0.5">
@@ -449,7 +442,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
             </div>
             {showOriginal && (
               <span className={`text-[10px] font-sans ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
-                {txCurrency} {Math.abs(tx.amount).toFixed(2)}
+                {txCurrency} {formatCentsDecimal(Math.abs(tx.amount))}
               </span>
             )}
           </div>
@@ -476,19 +469,19 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
           <Card variant="elevated" className="p-6">
             <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Income</div>
             <div className="text-2xl font-mono font-bold text-finance-income">
-              {formatCurrency(transactions.filter(t => (t.main_amount ?? 0) > 0).reduce((s, t) => s + (t.main_amount ?? 0), 0))}
+              {formatCents(transactions.filter(t => (t.main_amount ?? 0) > 0).reduce((s, t) => s + (t.main_amount ?? 0), 0), mainCurrency)}
             </div>
           </Card>
           <Card variant="elevated" className="p-6">
             <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Expenses</div>
             <div className="text-2xl font-mono font-bold text-finance-expense">
-              {formatCurrency(transactions.filter(t => (t.main_amount ?? 0) < 0).reduce((s, t) => s + (t.main_amount ?? 0), 0))}
+              {formatCents(transactions.filter(t => (t.main_amount ?? 0) < 0).reduce((s, t) => s + (t.main_amount ?? 0), 0), mainCurrency)}
             </div>
           </Card>
           <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
             <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1 select-none">Net Flow</div>
             <div className={`text-2xl font-mono font-bold ${netTotal >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-              {formatCurrency(netTotal)}
+              {formatCents(netTotal, mainCurrency)}
             </div>
           </Card>
         </div>
@@ -527,7 +520,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                   </div>
                   <div>
                     <div className={`font-mono font-bold ${data.total >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-                      {formatCurrency(data.total)}
+                      {formatCents(data.total, mainCurrency)}
                     </div>
                   </div>
                 </div>
@@ -579,7 +572,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                   </span>
                 </div>
                 <div className="font-mono font-bold text-canvas-400 select-none">
-                  {formatCurrency(0)}
+                  {formatCents(0, mainCurrency)}
                 </div>
               </div>
 

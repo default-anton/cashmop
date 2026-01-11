@@ -18,6 +18,7 @@ make integration
 
 - Reset: DB reset `beforeEach` via `./build/bin/test-helper reset`
 - Fixtures: `frontend/tests/fixtures/*.yml`
+- Data format: `page.evaluate()` bindings use backend types (e.g., amounts in cents)
 - Reset gotcha: `test-helper` uses `DROP TABLE` + `SchemaSQL` (sqlite_master) to avoid stale inode/handles with running Wails
 
 ## Conventions

@@ -357,26 +357,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     return null;
   };
 
-  const getHeaderIcon = (header: string) => {
-    if (mapping.csv.date === header) return <Calendar className="w-2 h-2" />;
-
-    const am = mapping.csv.amountMapping;
-    if (am?.type === 'single' && am.column === header) return <DollarSign className="w-2 h-2" />;
-    if (am?.type === 'debitCredit') {
-      if (am.debitColumn === header || am.creditColumn === header) return <DollarSign className="w-2 h-2" />;
-    }
-    if (am?.type === 'amountWithType') {
-      if (am.amountColumn === header || am.typeColumn === header) return <DollarSign className="w-2 h-2" />;
-    }
-
-    if (mapping.csv.description.includes(header)) return <FileText className="w-2 h-2" />;
-    if (mapping.csv.account === header) return <CreditCard className="w-2 h-2" />;
-    if (mapping.csv.owner === header) return <User className="w-2 h-2" />;
-    if (mapping.csv.currency === header) return <Globe className="w-2 h-2" />;
-
-    return null;
-  };
-
   const handleHeaderClick = (header: string) => {
     if (!header) return;
 
@@ -925,43 +905,34 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
                 {visibleColumns.map(({ header, index }, idx) => {
                   const status = getColumnStatus(header);
                   const label = getHeaderLabel(header);
-                  const isHovered = hoveredColIdx === index;
-                  
+
                   return (
                     <th
                       key={header || index}
                       onClick={() => handleHeaderClick(header)}
                       onMouseEnter={() => setHoveredColIdx(index)}
                       className={
-                        'px-4 py-4 text-left text-xs font-bold uppercase tracking-wider transition-all duration-200 border-b-2 min-w-[150px] relative select-none ' +
+                        'px-3 py-3 text-left text-xs font-bold uppercase tracking-wider transition-all duration-200 border-b-2 min-w-[150px] cursor-pointer select-none ' +
                         (status === 'current'
-                          ? 'bg-brand/20 border-brand text-brand cursor-pointer '
+                          ? 'bg-brand/10 border-brand text-brand'
                           : status === 'other'
-                          ? 'bg-brand/5 border-brand/20 text-brand/40 cursor-not-allowed '
-                          : isHovered
-                          ? 'bg-canvas-200 border-canvas-400 text-canvas-800 cursor-pointer '
-                          : 'text-canvas-600 border-transparent hover:bg-canvas-200 hover:text-canvas-800 cursor-pointer ')
+                          ? 'bg-canvas-50 border-canvas-300 text-canvas-400 cursor-not-allowed'
+                          : 'text-canvas-600 border-transparent hover:bg-canvas-100 hover:text-canvas-800')
                       }
                     >
-                      {label ? (
-                        <div
-                          className={
-                            'absolute -top-1 left-4 px-1.5 py-0.5 text-[8px] text-white rounded-b-sm animate-in fade-in slide-in-from-top-1 flex items-center gap-1 ' +
-                            (status === 'current' ? 'bg-brand' : 'bg-brand/40')
-                          }
-                        >
-                          {getHeaderIcon(header)}
-                          <span>{label}</span>
-                        </div>
-                      ) : (
-                        isHovered && status === 'none' && (
-                          <div className="absolute -top-1 left-4 px-1.5 py-0.5 text-[8px] bg-brand/60 text-white rounded-b-sm animate-in fade-in slide-in-from-top-1 flex items-center gap-1">
-                            <currentStep.icon className="w-2 h-2" />
-                            <span>Map as {currentStep.label}</span>
-                          </div>
-                        )
-                      )}
-                      <span>{header}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate">{header}</span>
+                        {status !== 'none' && label && (
+                          <span
+                            className={
+                              'rounded px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap flex-shrink-0 ' +
+                              (status === 'current' ? 'bg-brand text-white' : 'bg-canvas-200 text-canvas-500')
+                            }
+                          >
+                            as {label}
+                          </span>
+                        )}
+                      </div>
                     </th>
                   );
                 })}

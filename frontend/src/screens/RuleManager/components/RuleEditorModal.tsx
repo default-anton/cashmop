@@ -3,6 +3,7 @@ import { database } from '../../../../wailsjs/go/models';
 import { AutocompleteInput, Button, Input, Modal, useToast } from '../../../components';
 import { RuleEditor, AmountFilter, SelectionRule } from '../../CategorizationLoop/components/RuleEditor';
 import { useCurrency } from '../../../contexts/CurrencyContext';
+import { parseCents } from '../../../utils/currency';
 import { MatchType, RulePayload, RuleRow } from '../types';
 
 type MatchTypeOption = { value: MatchType; label: string };
@@ -44,7 +45,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
 
   const parseAmountValue = (value: string) => {
     const parsed = parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : null;
+    return Number.isFinite(parsed) ? parseCents(parsed) : null;
   };
 
   const buildAmountBounds = useCallback((filter: AmountFilter, basis: number) => {
@@ -164,16 +165,14 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
     const timeout = setTimeout(async () => {
       try {
         const { amountMin, amountMax } = buildAmountBounds(amountFilter, currentAmountBasis);
-        const res = await (window as any).go.main.App.PreviewRuleMatches(
-          matchValue.trim(),
-          matchType,
-          amountMin,
-          amountMax
-        );
+        const [amountRange, res] = await Promise.all([
+          (window as any).go.main.App.GetRuleAmountRange(matchValue.trim(), matchType),
+          (window as any).go.main.App.PreviewRuleMatches(matchValue.trim(), matchType, amountMin, amountMax),
+        ]);
         if (!cancelled) {
           setMatchingTransactions(res?.transactions || []);
           setMatchingCount(res?.count || 0);
-          setMatchingAmountRange({ min: res?.min_amount ?? null, max: res?.max_amount ?? null });
+          setMatchingAmountRange({ min: amountRange?.min ?? null, max: amountRange?.max ?? null });
         }
       } catch (e) {
         if (!cancelled) {
@@ -204,8 +203,8 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
     }
 
     if (min !== null && max !== null) {
-      const absMin = Math.abs(min);
-      const absMax = Math.abs(max);
+      const absMin = Math.abs(min) / 100;
+      const absMax = Math.abs(max) / 100;
       return {
         operator: 'between',
         value1: String(Math.min(absMin, absMax)),
@@ -216,14 +215,14 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
     if (min !== null) {
       return {
         operator: min < 0 ? 'lt' : 'gt',
-        value1: String(Math.abs(min)),
+        value1: String(Math.abs(min) / 100),
         value2: '',
       };
     }
 
     return {
       operator: max !== null && max < 0 ? 'gt' : 'lt',
-      value1: String(Math.abs(max || 0)),
+      value1: String(Math.abs(max || 0) / 100),
       value2: '',
     };
   };

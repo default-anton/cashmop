@@ -86,6 +86,10 @@ export function GetOwners() {
   return window['go']['main']['App']['GetOwners']();
 }
 
+export function GetRuleAmountRange(arg1, arg2) {
+  return window['go']['main']['App']['GetRuleAmountRange'](arg1, arg2);
+}
+
 export function GetRuleMatchCount(arg1) {
   return window['go']['main']['App']['GetRuleMatchCount'](arg1);
 }

@@ -1,5 +1,6 @@
 import React, { RefObject } from 'react';
 import { Wand2, X, MousePointer2 } from 'lucide-react';
+import { formatCents, formatCentsDecimal } from '../../../utils/currency';
 
 
 export interface SelectionRule {
@@ -59,11 +60,11 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
 
   const buildDefaultAmountValues = (op: AmountFilter['operator']) => {
     const currentValue = currentAmount ?? 0;
-    const fallback = Math.abs(currentValue) || 0;
+    const fallback = Math.abs(currentValue / 100) || 0;
     const minValue = amountDefaults?.min ?? currentValue;
     const maxValue = amountDefaults?.max ?? currentValue;
-    const minAbs = minValue !== undefined && minValue !== null ? Math.abs(minValue) : fallback;
-    const maxAbs = maxValue !== undefined && maxValue !== null ? Math.abs(maxValue) : fallback;
+    const minAbs = minValue !== undefined && minValue !== null ? Math.abs(minValue / 100) : fallback;
+    const maxAbs = maxValue !== undefined && maxValue !== null ? Math.abs(maxValue / 100) : fallback;
 
     if (op === 'between') {
       return {
@@ -72,7 +73,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
       };
     }
 
-    const value = op === 'gt' ? maxAbs : minAbs;
+    const value = op === 'gt' ? Math.min(minAbs, maxAbs) : Math.max(minAbs, maxAbs);
     return { value1: String(value || ''), value2: '' };
   };
 
@@ -231,9 +232,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                               <td className="px-3 py-1.5 text-right">
                                 <div className="flex flex-col items-end">
                                   <span className={`text-[10px] font-black ${tx.main_amount === null ? 'text-canvas-400' : tx.main_amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
-                                    {tx.main_amount === null
-                                      ? '—'
-                                      : new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(tx.main_amount))}
+                                    {formatCents(tx.main_amount, mainCurrency)}
                                   </span>
                                   {(() => {
                                     const txCurrency = (tx.currency || mainCurrency).toUpperCase();
@@ -241,7 +240,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                                     const showOriginal = txCurrency !== main;
                                     return showOriginal ? (
                                       <span className={`text-[9px] ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
-                                        {txCurrency} {Math.abs(tx.amount).toFixed(2)}
+                                        {txCurrency} {formatCentsDecimal(Math.abs(tx.amount))}
                                       </span>
                                     ) : null;
                                   })()}

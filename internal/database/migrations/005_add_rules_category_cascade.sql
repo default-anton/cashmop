@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS categorization_rules (
     match_type TEXT NOT NULL,
     match_value TEXT NOT NULL,
     category_id INTEGER NOT NULL,
-    amount_min REAL,
-    amount_max REAL,
+    amount_min INTEGER,
+    amount_max INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE
 );

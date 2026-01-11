@@ -124,7 +124,7 @@ func createTestOwner(t *testing.T, name string) *int64 {
 	return id
 }
 
-func createTestTransaction(t *testing.T, accountID int64, ownerID *int64, date, description string, amount float64, categoryID *int64) database.TransactionModel {
+func createTestTransaction(t *testing.T, accountID int64, ownerID *int64, date, description string, amount int64, categoryID *int64) database.TransactionModel {
 	t.Helper()
 
 	tx := database.TransactionModel{

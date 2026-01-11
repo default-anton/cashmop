@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card } from '../../../components';
+import { formatCents, formatCentsDecimal } from '../../../utils/currency';
 
 import { Wand2 } from 'lucide-react';
 
@@ -180,9 +181,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   };
   const displayAmount = mainAmount ?? transaction.amount;
   const isExpense = displayAmount < 0;
-  const formattedMain = mainAmount === null
-    ? '—'
-    : new Intl.NumberFormat('en-CA', { style: 'currency', currency: mainCurrency }).format(Math.abs(displayAmount));
+  const formattedMain = formatCents(mainAmount, mainCurrency);
 
   return (
     <div className="relative group perspective-1000">
@@ -220,7 +219,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
                 const showOriginal = txCurrency !== main;
                 return showOriginal ? (
                   <span className={`text-[10px] font-sans mt-1 ${transaction.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
-                    {txCurrency} {Math.abs(transaction.amount).toFixed(2)}
+                    {txCurrency} {formatCentsDecimal(Math.abs(transaction.amount))}
                   </span>
                 ) : null;
               })()}

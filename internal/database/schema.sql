@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     owner_id INTEGER,
     date TEXT NOT NULL,
     description TEXT,
-    amount REAL NOT NULL,
+    amount INTEGER NOT NULL,
     category_id INTEGER,
     currency TEXT DEFAULT 'CAD',
     raw_metadata TEXT,
@@ -47,8 +47,8 @@ CREATE TABLE IF NOT EXISTS categorization_rules (
     match_type TEXT NOT NULL, -- 'contains', 'starts_with', 'ends_with', 'exact'
     match_value TEXT NOT NULL,
     category_id INTEGER NOT NULL,
-    amount_min REAL,
-    amount_max REAL,
+    amount_min INTEGER,
+    amount_max INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(category_id) REFERENCES categories(id) ON DELETE CASCADE
 );

@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -203,7 +204,7 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 	return &FxRateLookup{RateDate: rateDate, Rate: rate, Source: source}, nil
 }
 
-func ConvertAmount(amount float64, baseCurrency, quoteCurrency, date string) (*float64, error) {
+func ConvertAmount(amount int64, baseCurrency, quoteCurrency, date string) (*int64, error) {
 	rate, err := GetFxRate(baseCurrency, quoteCurrency, date)
 	if err != nil {
 		return nil, err
@@ -211,8 +212,12 @@ func ConvertAmount(amount float64, baseCurrency, quoteCurrency, date string) (*f
 	if rate == nil {
 		return nil, nil
 	}
-	converted := amount * rate.Rate
+	converted := int64(round(float64(amount) * rate.Rate))
 	return &converted, nil
+}
+
+func round(value float64) float64 {
+	return math.Floor(value + 0.5)
 }
 
 func GetTransactionCurrencyRanges(baseCurrency string) (map[string]FxDateRange, error) {
