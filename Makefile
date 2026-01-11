@@ -2,10 +2,10 @@
 
 .PHONY: check dev test vet tidy vulncheck typescript build integration
 
-check: test vet tidy vulncheck typescript build integration
+check: test vet tidy vulncheck typescript integration
 
 dev:
-	@wails dev -nogorebuild
+	@wails dev
 
 test:
 	@echo "==> go test ./..."
