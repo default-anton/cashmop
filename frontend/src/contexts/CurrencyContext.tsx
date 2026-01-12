@@ -81,6 +81,8 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (e) {
       console.error('Failed to load FX status', e);
       setFxStatus(null);
+    } finally {
+      rateCache.current.clear();
     }
   }, []);
 
@@ -105,6 +107,8 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (e) {
       console.error('Failed to refresh FX status', e);
       setFxStatus(null);
+    } finally {
+      rateCache.current.clear();
     }
     return updated;
   }, []);
@@ -179,7 +183,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     rateCache.current.clear();
-  }, [mainCurrency, fxStatus]);
+  }, [mainCurrency]);
 
   const value = useMemo<CurrencyContextValue>(() => ({
     settings,
