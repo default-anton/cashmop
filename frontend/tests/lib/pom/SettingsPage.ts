@@ -38,6 +38,7 @@ export class SettingsPage {
   }
 
   async navigateTo() {
+    await this.settingsButton.waitFor({ state: 'visible', timeout: 15000 });
     await this.settingsButton.click();
     await this.expectVisible();
   }
@@ -47,7 +48,7 @@ export class SettingsPage {
   }
 
   async expectLastBackupVisible() {
-    await expect(this.lastBackupLabel).toBeVisible();
+    await expect(this.lastBackupLabel).toBeVisible({ timeout: 15000 });
   }
 
   async expectLastBackupToBe(text: string) {

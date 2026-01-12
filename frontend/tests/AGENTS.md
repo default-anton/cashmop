@@ -9,6 +9,7 @@ From project root:
 make integration
 ```
 
+
 ## Test Environment
 
 - `APP_ENV=test` disables OS dialogs/opens + background auto backup/FX sync; dialogs return temp paths
@@ -31,8 +32,8 @@ make integration
 ## Parallel Testing (Dev Only)
 
 Wails dev server multi-instance:
-- Flag: `wails dev -devserver localhost:$PORT -m -nogorebuild -noreload -skipbindings`
-- Port range: 34115 + parallelIndex (e.g., 34115-34118 for 4 workers)
+- Flag: `wails dev -devserver localhost:$PORT -m -s -nogorebuild -noreload -skipbindings`
+- Port range: 34115 + parallelIndex (e.g., 34115-34116 for 2 workers)
 - DB isolation: `CASHFLOW_WORKER_ID=<index>` → DB suffix `_w<id>`
 - Playwright: override `baseURL` fixture with `testInfo.parallelIndex`
 - Shared Frontend: uses single Vite instance via `-frontenddevserverurl`

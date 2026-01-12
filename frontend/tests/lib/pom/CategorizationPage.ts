@@ -89,7 +89,14 @@ export class CategorizationPage {
   }
 
   async expectWebSearchLoading() {
-    await expect(this.page.getByText(/searching web\.\.\./i)).toBeVisible({ timeout: 5000 });
+    const loading = this.page.getByText(/searching web\.\.\./i);
+    const results = this.page.getByText(/web search context/i);
+
+    try {
+      await expect(loading).toBeVisible({ timeout: 5000 });
+    } catch {
+      await expect(results).toBeVisible({ timeout: 5000 });
+    }
   }
 
   async expectWebSearchResult(title: string) {

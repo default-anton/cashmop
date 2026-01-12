@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-WORKER_COUNT=${WORKER_COUNT:-4}
+WORKER_COUNT=${WORKER_COUNT:-2}
 
 # Validate WORKER_COUNT
 if [ "$WORKER_COUNT" -lt 1 ] || [ "$WORKER_COUNT" -gt 8 ]; then
@@ -83,67 +83,85 @@ cleanup() {
 
 trap cleanup EXIT INT TERM
 
-# Start Vite once
-echo "Starting Vite dev server..."
-cd frontend
-npm run dev -- --port 5173 --strictPort > ../vite.log 2>&1 &
-VITE_PID=$!
-cd ..
+start_vite() {
+    echo "Starting Vite dev server..."
+    cd frontend
+    npm run dev -- --port 5173 --strictPort > ../vite.log 2>&1 &
+    VITE_PID=$!
+    cd ..
+}
 
-# Wait for Vite
-echo "Waiting for Vite..."
-MAX_RETRIES=60
-RETRY_COUNT=0
-while ! curl -s http://localhost:5173 > /dev/null; do
-    sleep 0.5
-    RETRY_COUNT=$((RETRY_COUNT+1))
-    if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-        echo "  ERROR: Timeout waiting for Vite"
-        cat vite.log
-        exit 1
-    fi
-done
-
-# Start N Wails instances
-echo "Starting $WORKER_COUNT Wails instances..."
-FAILED_STARTUP=0
-for i in $(seq 0 $((WORKER_COUNT-1))); do
-    PORT=$((34115 + i))
-    PID_FILE="$ROOT_DIR/.wails_dev_$i.pid"
-    LOG_FILE="$ROOT_DIR/wails_$i.log"
-
-    echo "  Worker $i on port $PORT..."
-    APP_ENV=test CASHFLOW_WORKER_ID=$i \
-        wails dev -devserver localhost:$PORT -frontenddevserverurl http://localhost:5173 -m -nogorebuild -noreload -skipbindings > "$LOG_FILE" 2>&1 &
-    echo $! > "$PID_FILE"
-    PID_FILES+=("$PID_FILE")
-
-    # Wait for this instance to be ready
-    echo "    Waiting for worker $i to start..."
-    MAX_RETRIES=80
+wait_for_vite() {
+    echo "Waiting for Vite..."
+    MAX_RETRIES=60
     RETRY_COUNT=0
-    while ! curl -s -o /dev/null -w "%{http_code}" http://localhost:$PORT | grep -q "200"; do
+    while ! curl -s http://localhost:5173 > /dev/null; do
         sleep 0.5
         RETRY_COUNT=$((RETRY_COUNT+1))
         if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-            echo "  ERROR: Timeout waiting for worker $i (port $PORT)"
-            echo "  Log output (last 20 lines):"
-            tail -20 "$LOG_FILE"
-            FAILED_STARTUP=1
-            break
+            echo "  ERROR: Timeout waiting for Vite"
+            cat vite.log
+            exit 1
         fi
     done
-    
-    if [ $FAILED_STARTUP -eq 1 ]; then
-        break
-    fi
-    echo "    Worker $i ready."
-done
+}
 
-if [ $FAILED_STARTUP -eq 1 ]; then
-    echo "ERROR: One or more instances failed to start"
-    exit 1
-fi
+start_worker() {
+    local index=$1
+    local port=$((34115 + index))
+    local pid_file="$ROOT_DIR/.wails_dev_$index.pid"
+    local log_file="$ROOT_DIR/wails_$index.log"
+
+    echo "  Worker $index on port $port..."
+    APP_ENV=test CASHFLOW_WORKER_ID=$index \
+        wails dev -devserver localhost:$port -frontenddevserverurl http://localhost:5173 -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
+    echo $! > "$pid_file"
+    PID_FILES+=("$pid_file")
+}
+
+wait_for_workers() {
+    local start_index=$1
+    local end_index=$2
+    local failed_startup=0
+
+    for i in $(seq "$start_index" "$end_index"); do
+        local port=$((34115 + i))
+        local log_file="$ROOT_DIR/wails_$i.log"
+
+        echo "    Waiting for worker $i to start..."
+        MAX_RETRIES=80
+        RETRY_COUNT=0
+        while ! curl -s -o /dev/null -w "%{http_code}" http://localhost:$port | grep -q "200"; do
+            sleep 0.5
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+                echo "  ERROR: Timeout waiting for worker $i (port $port)"
+                echo "  Log output (last 20 lines):"
+                tail -20 "$log_file"
+                failed_startup=1
+                break
+            fi
+        done
+
+        if [ $failed_startup -eq 1 ]; then
+            break
+        fi
+        echo "    Worker $i ready."
+    done
+
+    if [ $failed_startup -eq 1 ]; then
+        echo "ERROR: One or more instances failed to start"
+        exit 1
+    fi
+}
+
+start_vite
+wait_for_vite
+echo "Starting $WORKER_COUNT Wails instances..."
+for i in $(seq 0 $((WORKER_COUNT-1))); do
+    start_worker "$i"
+    wait_for_workers "$i" "$i"
+done
 
 echo "All instances ready. Running Playwright tests..."
 cd frontend

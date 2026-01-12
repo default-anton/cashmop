@@ -4,7 +4,7 @@ Current state: Sequential execution (`workers: 1`, `fullyParallel: false`), sing
 Baseline: 28.8s (`time make integration`)
 
 ## Goal
-- Reduce integration test runtime to ~8-10s (4 workers, ~3.5x speedup)
+- Reduce integration test runtime to ~20-22s (2 workers, ~1.1-1.2x speedup)
 - Maintain test isolation; prevent shared state issues
 
 ## Approach: Multi-Instance + Per-Worker DBs
@@ -15,7 +15,7 @@ Baseline: 28.8s (`time make integration`)
 |-----------|---------|----------|
 | Wails instances | 1 (port 34115) | N (ports 34115 + worker) |
 | DB files | 1 shared (`cashflow_test.db`) | N per-worker files |
-| Playwright workers | 1 | N (configurable, default 4) |
+| Playwright workers | 1 | N (configurable, default 2) |
 | Execution | Sequential | Parallel |
 
 ## Implementation
@@ -152,7 +152,7 @@ for i in $(seq 0 $((WORKER_COUNT-1))); do
 
     echo "  Worker $i on port $PORT..."
     APP_ENV=test CASHFLOW_WORKER_ID=$i \
-        wails dev -devserver localhost:$PORT -m -nogorebuild -noreload > "$LOG_FILE" 2>&1 &
+        wails dev -devserver localhost:$PORT -frontenddevserverurl http://localhost:5173 -m -s -nogorebuild -noreload -skipbindings > "$LOG_FILE" 2>&1 &
     echo $! > "$PID_FILE"
     PID_FILES+=("$PID_FILE")
 
@@ -197,7 +197,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.WORKER_COUNT || 4,
+  workers: process.env.WORKER_COUNT || 2,
   reporter: 'list',
   use: {
     baseURL: `http://localhost:34115`,  // Default for worker 0
@@ -273,11 +273,11 @@ export const test = base.extend<MyFixtures>({
 
 | Factor | Impact |
 |--------|--------|
-| Speed | ~3-3.5x faster (4 workers) minus startup overhead |
-| Resources | ~N× memory (4 instances × ~200MB = ~800MB) |
+| Speed | ~1.1-1.2x faster (2 workers) minus startup overhead |
+| Resources | ~N× memory (2 instances × ~200MB = ~400MB) |
 | Complexity | Moderate (script changes, minor Go/TS changes) |
 | Isolation | Perfect (separate DBs, no shared state) |
-| Startup | ~N× slower initial (~40-50s for 4 workers) |
+| Startup | ~N× slower initial (~20-25s for 2 workers) |
 
 ## Rollout Plan
 
@@ -291,14 +291,14 @@ export const test = base.extend<MyFixtures>({
 - Verify parallel execution, DB isolation
 - Target: ~15s
 
-### Phase 3: Scale Up (workers: 4)
-- Increase to 4 workers
-- Target: ~8-10s
+### Phase 3: Scale Up (workers: 2)
+- Increase to 2 workers
+- Target: ~20-22s
 - Tune based on dev machine resources
 
 ## Verification
 
-- [ ] All tests pass with `WORKER_COUNT=4`
+- [ ] All tests pass with `WORKER_COUNT=2`
 - [ ] Test runtime reduced by ≥2.5x
 - [ ] No flaky tests (run 5+ iterations)
 - [ ] DB files per worker created/cleaned up correctly
