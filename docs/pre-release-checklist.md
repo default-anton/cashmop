@@ -36,14 +36,7 @@ This checklist covers all items that should be addressed before releasing to cus
 
 ## 🟢 LOW
 
-### 1. Polish
-- [ ] **Add check for updates** - Notify users when new versions are available.
-
----
-
-## Post-Release (Future)
-
-- [ ] **Fix currency storage** - `amount` stored as `REAL` may introduce floating-point precision issues (e.g., 0.1 + 0.2 != 0.3). Migrating to INTEGER (cents) storage is deferred to v1.1+ due to migration complexity and risk. Practical impact is minimal for typical transaction amounts.
+*No LOW priority items at this time.*
 
 ---
 
