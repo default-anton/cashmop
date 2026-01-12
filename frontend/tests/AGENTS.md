@@ -6,9 +6,11 @@ Browser E2E; Playwright + Wails dev mode.
 
 From project root:
 ```bash
-make integration
+make integration                           # All
+make integration-file FILE=tests/basic.spec.ts    # Single file
+make integration-test NAME="pattern"       # Pattern match
+./scripts/run-integration-tests.sh <args> # Direct (Playwright args)
 ```
-
 
 ## Test Environment
 

@@ -20,7 +20,7 @@ Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linu
 - Subdir AGENTS.md exist; read relevant
 - Feature specs: `docs/specs/`
 - Frontend deps: `frontend/package.json` only; never root
-- After Go or frontend changes: `make check` (go test/vet/tidy/build, typescript, integration)
+- After Go or frontend changes: `make check` (go test/vet/tidy/build/vulncheck, typescript, integration tests)
 - Integration tests rules: `frontend/tests/AGENTS.md`
 - Frontend rules: `frontend/AGENTS.md`
 - Migrations: `internal/database/migrations/*.sql`; see `internal/database/migrations/AGENTS.md`

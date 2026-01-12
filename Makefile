@@ -69,7 +69,41 @@ build:
 
 integration:
 	@echo "==> integration tests"
-	@if OUTPUT=$$(./scripts/run-integration-tests.sh 2>&1); then \
+	@if OUTPUT=$$(./scripts/run-integration-tests.sh $(INTEGRATION_ARGS) 2>&1); then \
+		echo "✓ integration OK"; \
+	else \
+		echo "✗ integration FAILED"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
+
+# Run single test file: make integration-file FILE=tests/basic.spec.ts
+integration-file:
+	@echo "==> integration tests (file: $(FILE))"
+	@if [ -z "$(FILE)" ]; then \
+		echo "Error: FILE argument required. Usage: make integration-file FILE=tests/basic.spec.ts"; \
+		exit 1; \
+	fi
+	@if [ ! -f "frontend/$(FILE)" ]; then \
+		echo "Error: File not found: frontend/$(FILE)"; \
+		exit 1; \
+	fi
+	@if OUTPUT=$$(./scripts/run-integration-tests.sh $(FILE) 2>&1); then \
+		echo "✓ integration OK"; \
+	else \
+		echo "✗ integration FAILED"; \
+		echo "$$OUTPUT"; \
+		exit 1; \
+	fi
+
+# Run tests matching pattern: make integration-test NAME="add transaction"
+integration-test:
+	@echo "==> integration tests (pattern: '$(NAME)')"
+	@if [ -z "$(NAME)" ]; then \
+		echo "Error: NAME argument required. Usage: make integration-test NAME='test pattern'"; \
+		exit 1; \
+	fi
+	@if OUTPUT=$$(./scripts/run-integration-tests.sh -g "$(NAME)" 2>&1); then \
 		echo "✓ integration OK"; \
 	else \
 		echo "✗ integration FAILED"; \
