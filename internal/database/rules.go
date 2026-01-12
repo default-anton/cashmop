@@ -242,8 +242,6 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 		selectQuery += " AND " + matchClause
 	}
 
-	// Get currency settings BEFORE opening the transaction query to avoid
-	// issues with SQLite's single connection limit (SetMaxOpenConns=1)
 	var baseCurrency string
 	needsAmountFilter := r.AmountMin != nil || r.AmountMax != nil
 	if needsAmountFilter {

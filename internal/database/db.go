@@ -28,9 +28,7 @@ func InitDB() {
 		log.Fatal(err)
 	}
 
-	// SQLite performs best with a single connection.
-	// Multiple connections can cause locking issues with operations like VACUUM.
-	DB.SetMaxOpenConns(1)
+	DB.SetMaxOpenConns(4)
 
 	if err := Migrate(); err != nil {
 		log.Fatalf("Failed to migrate database: %q", err)

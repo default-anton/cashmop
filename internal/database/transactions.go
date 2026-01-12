@@ -226,8 +226,6 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *in
 
 	query += " ORDER BY t.date DESC"
 
-	// Get currency settings BEFORE opening the query to avoid issues with
-	// SQLite's single connection limit (SetMaxOpenConns=1)
 	var baseCurrency string
 	needsAmountFilter := amountMin != nil || amountMax != nil
 	if needsAmountFilter {
