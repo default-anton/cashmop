@@ -22,9 +22,14 @@ export class ImportFlowPage {
   async goto() {
     await this.page.goto('/');
     const importNav = this.page.getByLabel('Navigate to Import', { exact: true });
-    if (await importNav.isVisible()) {
-      await importNav.click();
-    }
+    await importNav.waitFor({ state: 'visible', timeout: 10000 });
+    const inbox = this.page.getByText('Review Inbox', { exact: true });
+    try {
+      await inbox.waitFor({ state: 'visible', timeout: 5000 });
+    } catch {}
+    await this.page.evaluate(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }));
+    });
     await this.page.getByText('Import Transactions', { exact: true }).waitFor({ state: 'visible', timeout: 10000 });
     await this.fileInput.waitFor({ state: 'attached', timeout: 10000 });
   }
