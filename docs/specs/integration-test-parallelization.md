@@ -313,7 +313,6 @@ export const test = base.extend<MyFixtures>({
 - **CI**: Dev machine only; no CI integration planned
 - **Fixtures**: Shared YAML files across all workers
 - **CASHFLOW_TEST_RUN_ID**: Used for temp dir isolation (`$TMPDIR/cashflow-test/$RUN_ID`)
-- **Single-connection limit**: `SetMaxOpenConns(1)` per-instance preserved
 - **No WAL mode**: Separate DBs eliminate locking issues
 - **Wails flag**: Uses `-devserver localhost:$PORT` (not `-port`)
 - **Port range**: 34115-34122 for WORKER_COUNT=1-8

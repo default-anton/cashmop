@@ -133,7 +133,7 @@ func RestoreBackup(backupPath string) error {
 		return fmt.Errorf("Unable to restore the backup file.")
 	}
 
-	DB, err = sql.Open("sqlite", currentDBPath)
+	DB, err = sql.Open("sqlite", sqliteDSN(currentDBPath))
 	if err != nil {
 		return fmt.Errorf("Unable to reopen the database after restore.")
 	}

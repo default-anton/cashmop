@@ -42,6 +42,7 @@ func resetDB() error {
 
 	return withBusyRetry(func() error {
 		database.InitDB()
+		defer database.Close()
 
 		// Dynamically find all tables to drop
 		rows, err := database.DB.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")

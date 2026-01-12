@@ -3,6 +3,9 @@ node_modules
 frontend/dist
 /cashflow
 cashflow*.db
+*.db
+*.db-wal
+*.db-shm
 *.pid
 .DS_Store
 *.log

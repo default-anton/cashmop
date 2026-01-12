@@ -15,7 +15,11 @@ import (
 
 var DB *sql.DB
 
-const storageName = "cashflow"
+const (
+	storageName          = "cashflow"
+	sqliteBusyTimeoutMs  = 5000
+	sqliteJournalModeWal = "WAL"
+)
 
 func InitDB() {
 	dbPath, err := resolveDatabasePath()
@@ -23,7 +27,7 @@ func InitDB() {
 		log.Fatal(err)
 	}
 
-	DB, err = sql.Open("sqlite", dbPath)
+	DB, err = sql.Open("sqlite", sqliteDSN(dbPath))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,6 +37,14 @@ func InitDB() {
 	if err := Migrate(); err != nil {
 		log.Fatalf("Failed to migrate database: %q", err)
 	}
+}
+
+func sqliteDSN(path string) string {
+	pragmas := fmt.Sprintf("_pragma=busy_timeout(%d)&_pragma=journal_mode(%s)", sqliteBusyTimeoutMs, sqliteJournalModeWal)
+	if strings.Contains(path, "?") {
+		return path + "&" + pragmas
+	}
+	return path + "?" + pragmas
 }
 
 func resolveDatabasePath() (string, error) {
