@@ -21,7 +21,7 @@ usd_bagel:
   date: "2023-10-03"
   description: "Brooklyn Bagel"
   amount: -20.00
-  category: "Dining Out"
+  category: null
   currency: "USD"
 jpy_taxi:
   account: "Credit Card"

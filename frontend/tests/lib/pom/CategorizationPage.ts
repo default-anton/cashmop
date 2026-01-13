@@ -13,7 +13,7 @@ export class CategorizationPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.categoryInput = page.getByLabel('Category', { exact: true });
+    this.categoryInput = page.locator('input[aria-label="Category"], input[aria-label="Category for rule"]');
     this.categorizeButton = page.getByTestId('categorize-submit-button');
     this.searchWebButton = page.getByRole('button', { name: /search web for context/i });
     this.skipButton = page.getByRole('button', { name: /skip/i });

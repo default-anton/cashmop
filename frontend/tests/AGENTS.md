@@ -28,6 +28,7 @@ make integration-test NAME="pattern"       # Pattern match
 
 - POM: page objects in `frontend/tests/lib/pom/`
 - Selectors: prefer `aria-label`; always `{ exact: true }` to avoid substring clashes
+- Categorization rules: category input label is `Category for rule` (normal `Category`); POM should match both
 - Fixtures: use custom fixtures `frontend/tests/lib/fixtures.ts` (auto DB reset)
 - Timing: `await page.goto('/')` each test for fresh React mount + status check
 
