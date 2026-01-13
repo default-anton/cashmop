@@ -34,11 +34,7 @@ const runImportFlow = async (importFlowPage: ImportFlowPage, config: ImportFlowC
   }
   await importFlowPage.nextStep();
   await importFlowPage.startImport();
-  try {
-    await importFlowPage.expectComplete();
-  } catch {
-    await importFlowPage.page.getByText('Review Inbox', { exact: true }).waitFor({ state: 'visible', timeout: 10000 });
-  }
+  await importFlowPage.expectComplete();
 };
 
 const fetchImportedTransactions = async (page: Page, descriptions: string[]) =>

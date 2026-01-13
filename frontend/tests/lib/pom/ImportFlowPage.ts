@@ -23,10 +23,6 @@ export class ImportFlowPage {
     await this.page.goto('/');
     const importNav = this.page.getByLabel('Navigate to Import', { exact: true });
     await importNav.waitFor({ state: 'visible', timeout: 10000 });
-    const inbox = this.page.getByText('Review Inbox', { exact: true });
-    try {
-      await inbox.waitFor({ state: 'visible', timeout: 5000 });
-    } catch {}
     await this.page.evaluate(() => {
       window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }));
     });
@@ -78,11 +74,11 @@ export class ImportFlowPage {
       throw new Error(`Mapping headers missing. count=${headerCount} text=${tableText.slice(0, 80)}`);
     }
 
-    const tryClickHeader = async (name: string) => {
+    const tryClickHeader = async (name: string, timeout = 200) => {
       const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const header = this.mappingTable.getByRole('columnheader', { name: new RegExp(escaped, 'i') });
       try {
-        await header.first().waitFor({ state: 'visible', timeout: 2000 });
+        await header.first().waitFor({ state: 'visible', timeout });
         await header.first().click();
         return true;
       } catch {
@@ -90,10 +86,10 @@ export class ImportFlowPage {
       }
     };
 
-    if (await tryClickHeader(headerName)) return;
+    if (await tryClickHeader(headerName, 200)) return;
 
     const fallback = this.getFallbackHeader(headerName);
-    if (fallback && await tryClickHeader(fallback)) return;
+    if (fallback && (await tryClickHeader(fallback, 1000))) return;
 
     let toggleVisible = false;
     try {
@@ -141,6 +137,10 @@ export class ImportFlowPage {
   }
 
   async expectComplete() {
-    await expect(this.page.getByText('Import Complete!', { exact: true })).toBeVisible({ timeout: 10000 });
+    // The app may immediately transition to the Categorize screen after import.
+    // We check for both the success message and the target screen header.
+    const complete = this.page.getByText('Import Complete!', { exact: true });
+    const inbox = this.page.getByText('Review Inbox', { exact: true });
+    await expect(complete.or(inbox)).toBeVisible({ timeout: 5000 });
   }
 }

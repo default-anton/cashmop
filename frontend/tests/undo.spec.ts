@@ -139,8 +139,11 @@ test.describe('Undo/Redo Categorization', () => {
     await expect(categorizationPage.redoButton).not.toBeVisible();
   });
 
-  test('undo toast should auto-dismiss after 5 seconds', async ({ categorizationPage }) => {
+  test('undo toast should auto-dismiss after 5 seconds', async ({ page, categorizationPage }) => {
     await categorizationPage.goto();
+
+    // Use clock to speed up the test
+    await page.clock.install();
 
     // Categorize the transaction
     await categorizationPage.categorize('Shopping');
@@ -148,8 +151,8 @@ test.describe('Undo/Redo Categorization', () => {
     // Verify undo toast appeared
     await categorizationPage.expectUndoToast();
 
-    // Wait for auto-dismiss (5 seconds)
-    await categorizationPage.page.waitForTimeout(5500);
+    // Fast-forward time (5 seconds)
+    await page.clock.fastForward(5500);
 
     // Verify toast is gone
     await categorizationPage.expectNoUndoToast();
