@@ -1,6 +1,24 @@
 # All targets: show output only on failure (silent success)
+# Unless V=1 is passed.
 
-.PHONY: check dev test vet tidy vulncheck typescript build integration
+.PHONY: check dev test vet tidy vulncheck typescript build integration integration-file integration-test
+
+# Macro to run a command with optional verbosity
+# Usage: $(call run,Label,Command)
+define run
+	@echo "==> $(1)"
+	@if [ "$(V)" = "1" ]; then \
+		$(2); \
+	else \
+		if OUTPUT=$$($(2) 2>&1); then \
+			echo "✓ $(1) OK"; \
+		else \
+			echo "✗ $(1) FAILED"; \
+			echo "$$OUTPUT"; \
+			exit 1; \
+		fi; \
+	fi
+endef
 
 check: test vet tidy vulncheck typescript integration
 
@@ -8,78 +26,28 @@ dev:
 	@wails dev
 
 test:
-	@echo "==> go test ./..."
-	@if OUTPUT=$$(go test -p 1 ./... 2>&1); then \
-		echo "✓ test OK"; \
-	else \
-		echo "✗ test FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
+	$(call run,go test ./...,go test -p 1 ./...)
 
 vet:
-	@echo "==> go vet ./..."
-	@if OUTPUT=$$(go vet ./... 2>&1); then \
-		echo "✓ vet OK"; \
-	else \
-		echo "✗ vet FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
+	$(call run,go vet ./...,go vet ./...)
 
 tidy:
-	@echo "==> go mod tidy"
-	@if OUTPUT=$$(go mod tidy 2>&1); then \
-		echo "✓ tidy OK"; \
-	else \
-		echo "✗ tidy FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
+	$(call run,go mod tidy,go mod tidy)
 
 vulncheck:
-	@echo "==> govulncheck ./..."
-	@if OUTPUT=$$(govulncheck ./... 2>&1); then \
-		echo "✓ vulncheck OK"; \
-	else \
-		echo "✗ vulncheck FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
+	$(call run,govulncheck ./...,govulncheck ./...)
 
 typescript:
-	@echo "==> typescript check"
-	@if OUTPUT=$$(cd frontend && npx tsc --noEmit 2>&1); then \
-		echo "✓ typescript OK"; \
-	else \
-		echo "✗ typescript FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
+	$(call run,typescript check,cd frontend && npx tsc --noEmit)
 
 build:
-	@echo "==> wails build"
-	@if OUTPUT=$$(wails build 2>&1); then \
-		echo "✓ build OK"; \
-	else \
-		echo "✗ build FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
+	$(call run,wails build,wails build)
 
 integration:
-	@echo "==> integration tests"
-	@if OUTPUT=$$(./scripts/run-integration-tests.sh $(INTEGRATION_ARGS) 2>&1); then \
-		echo "✓ integration OK"; \
-	else \
-		echo "✗ integration FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
+	$(call run,integration tests,./scripts/run-integration-tests.sh $(INTEGRATION_ARGS))
 
 # Run single test file: make integration-file FILE=tests/basic.spec.ts
 integration-file:
-	@echo "==> integration tests (file: $(FILE))"
 	@if [ -z "$(FILE)" ]; then \
 		echo "Error: FILE argument required. Usage: make integration-file FILE=tests/basic.spec.ts"; \
 		exit 1; \
@@ -88,25 +56,12 @@ integration-file:
 		echo "Error: File not found: frontend/$(FILE)"; \
 		exit 1; \
 	fi
-	@if OUTPUT=$$(./scripts/run-integration-tests.sh $(FILE) 2>&1); then \
-		echo "✓ integration OK"; \
-	else \
-		echo "✗ integration FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
+	$(call run,integration tests (file: $(FILE)),./scripts/run-integration-tests.sh $(FILE))
 
 # Run tests matching pattern: make integration-test NAME="add transaction"
 integration-test:
-	@echo "==> integration tests (pattern: '$(NAME)')"
 	@if [ -z "$(NAME)" ]; then \
 		echo "Error: NAME argument required. Usage: make integration-test NAME='test pattern'"; \
 		exit 1; \
 	fi
-	@if OUTPUT=$$(./scripts/run-integration-tests.sh -g "$(NAME)" 2>&1); then \
-		echo "✓ integration OK"; \
-	else \
-		echo "✗ integration FAILED"; \
-		echo "$$OUTPUT"; \
-		exit 1; \
-	fi
+	$(call run,integration tests (pattern: '$(NAME)'),./scripts/run-integration-tests.sh -g "$(NAME)")
