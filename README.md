@@ -1,46 +1,65 @@
 # Cashflow Tracker
 
-Tracking cashflow matters. But I hate spending time on it. So I built this desktop app for myself: dump in transactions from any bank or institution, normalize the messy formats, apply existing rules, and punch through the rest. If you feel the same way about accounting, you'll feel at home here. Open source, local-only, and completely free.
+Desktop-first cash flow tracking. Import messy bank exports, normalize once, punch through categorization fast, and export clean data. Local-only, open source, no cloud.
 
-**The Workflow:** Download your CSVs/Excel files once a month, "punch through" them in the app, and export a perfectly cleaned dataset for your spreadsheets or accounting software.
+**Status:** Pre-release. Backward compatibility not guaranteed.
 
-![Screenshot Placeholder - The Categorization Loop](https://via.placeholder.com/800x450?text=Walkthrough+Video/Screenshot+Coming+Soon)
+![Cashflow Tracker logo](frontend/src/assets/images/logo-universal.png)
 
-## Why Cashflow?
+Screenshot and walkthrough coming soon.
 
-*   **Speed-First UI:** A "TikTok-style" categorization loop. One transaction at a time, keyboard-centric, zero friction.
-*   **Local-Only:** Your financial data never leaves your machine. Built on Go + SQLite. No cloud, no trackers, no subscriptions.
-*   **Normalization Engine:** Import messy data from multiple banks, map them once, and export a single, clean format.
-*   **Rule-Based Automation:** Create powerful regex-style rules (Starts With, Ends With, Contains) to automate future imports.
+## Workflow
 
-## Features
+1. Import CSV/XLSX exports from banks or apps.
+2. Map columns once, then punch through categorization in the loop.
+3. Review analysis, filter/group, and export cleaned data.
 
-- **Import Flow:** Vertical "punch-through" column mapping for CSV/XLSX.
-- **Categorization Loop:** Inbox-zero approach to transactions. Automatically advances as you categorize.
-- **Smart Heuristics:** Suggests rules based on text selection in descriptions.
-- **Export:** Cleaned data ready for Google Sheets, Excel, or specialized accounting tools.
-- **Cross-Platform:** Native performance on macOS, Windows, and Linux via Wails.
+## Core Features
+
+- **Import Flow:** Vertical punch-through mapping for CSV/XLSX with previews.
+- **Categorization Loop:** One transaction at a time, keyboard-first, inbox-zero flow.
+- **Undo/Redo:** Fast recovery while punching through categories.
+- **Rules:** Contains/Starts With/Ends With/Exact matching with amount filters.
+- **Multi-Currency:** Conversion and display support (main currency must be CAD today).
+- **Analysis + Export:** Month selector, grouping by category/owner/account, export CSV/XLSX.
+- **Backups:** Automatic daily backups, pre-migration backups, manual restore.
+- **Local-Only:** SQLite database stored on your machine.
+
+## Tech Stack
+
+- Go 1.25 + Wails v2
+- React 19 + TypeScript + Vite
+- SQLite + Tailwind CSS
 
 ## Getting Started
 
 ### Installation
-Download the latest version for your operating system from the [Releases](https://github.com/your-username/cashflow/releases) page.
+Download the latest build from `https://github.com/default-anton/cashflow/releases`.
 
 ### Development
-If you want to build from source:
-1. Install [Go](https://go.dev/) 1.25+ and [Node.js](https://nodejs.org/).
-2. Install [Wails CLI](https://wails.io/docs/gettingstarted/installation).
-3. Clone the repo and run:
+1. Install Go 1.25+, Node.js, and the Wails CLI.
+2. Install frontend dependencies:
+   ```bash
+   cd frontend
+   npm install
+   ```
+3. Run the dev app:
+   ```bash
+   make dev
+   ```
+4. Run validation (add `V=1` for verbose output):
    ```bash
    make check
-   wails build
+   ```
+5. Build a production bundle:
+   ```bash
+   make build
    ```
 
 ## Roadmap
 
-- [ ] **Multi-Currency:** Native support for accounts in different currencies.
-- [ ] **Sole-Proprietor Tools:** Flag business expenses and attach invoices/receipts.
-- [ ] **Advanced Forecasting:** Visualize future cashflow based on historical trends.
+- [ ] Sole-proprietor tools (receipts, flags, exports).
+- [ ] Forecasting and cashflow projections.
 
 ## License
 
