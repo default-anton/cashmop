@@ -36,6 +36,13 @@ Screenshot and walkthrough coming soon.
 ### Installation
 Download the latest build from `https://github.com/default-anton/cashflow/releases`.
 
+macOS (Apple Silicon): unzip and drag to Applications. If Gatekeeper blocks it:
+```bash
+xattr -dr com.apple.quarantine Cashflow.app
+```
+
+Linux: use AppImage (recommended; works on Arch) or `.deb` (Debian/Ubuntu).
+
 ### Development
 1. Install Go 1.25+, Node.js, and the Wails CLI.
 2. Install frontend dependencies:
