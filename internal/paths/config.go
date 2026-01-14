@@ -6,7 +6,7 @@ import (
 	"runtime"
 )
 
-const appName = "cashflow"
+const appName = "cashmop"
 
 func AppConfigDir() (string, error) {
 	var dir string

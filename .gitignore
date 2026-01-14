@@ -1,8 +1,8 @@
 build/bin
 node_modules
 frontend/dist
-/cashflow
-cashflow*.db
+/cashmop
+cashmop*.db
 *.db
 *.db-wal
 *.db-shm

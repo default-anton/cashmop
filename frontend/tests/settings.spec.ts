@@ -173,9 +173,9 @@ test.describe('Restore Flow', () => {
 
     await page.evaluate((path) => {
       const win = window as any;
-      const next = { ...(win.__cashflowTestDialogPaths || {}) };
+      const next = { ...(win.__cashmopTestDialogPaths || {}) };
       next.restore_open_path = path;
-      win.__cashflowTestDialogPaths = next;
+      win.__cashmopTestDialogPaths = next;
       win.go.main.App.SetTestDialogPaths(next);
     }, backupPath);
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cashflow/internal/config"
+	"cashmop/internal/config"
 	"context"
 	"embed"
 	"log"
@@ -20,7 +20,7 @@ func main() {
 	appMenu := app.makeMenu()
 
 	err := wails.Run(&options.App{
-		Title:  "Cashflow Tracker",
+		Title:  "CashMop",
 		Width:  1024,
 		Height: 768,
 		AssetServer: &assetserver.Options{

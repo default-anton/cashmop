@@ -29,7 +29,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
   }, []);
 
   const handleCheckForUpdates = () => {
-    openExternal('https://github.com/default-anton/cashflow/releases');
+    openExternal('https://github.com/default-anton/cashmop/releases');
   };
 
   const handleViewLicense = () => {
@@ -37,7 +37,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
   };
 
   const handleViewSource = () => {
-    openExternal('https://github.com/default-anton/cashflow');
+    openExternal('https://github.com/default-anton/cashmop');
   };
 
   return (
@@ -55,7 +55,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-brand to-brand/70 text-white rounded-3xl shadow-brand-glow mb-6">
             <Zap className="w-10 h-10" />
           </div>
-          <h1 className="text-4xl font-black text-canvas-900 mb-2 select-none">Cashflow Tracker</h1>
+          <h1 className="text-4xl font-black text-canvas-900 mb-2 select-none">CashMop</h1>
           <p className="text-lg text-canvas-600 font-medium select-none">Desktop-first cash flow tracking application</p>
         </div>
 
@@ -166,7 +166,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
             <h2 className="text-xl font-bold text-canvas-800 select-none">Open Source</h2>
           </div>
           <p className="text-canvas-600 mb-4">
-            Cashflow Tracker is open source. Contribute, report issues, or fork the project on GitHub.
+            CashMop is open source. Contribute, report issues, or fork the project on GitHub.
           </p>
           <Button
             variant="primary"

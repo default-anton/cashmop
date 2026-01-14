@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cashflow/internal/database"
+	"cashmop/internal/database"
 	"database/sql"
 	"encoding/base64"
 	"os"
@@ -26,7 +26,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 	if err == nil {
 		files, _ := os.ReadDir(backupDir)
 		for _, f := range files {
-			if strings.HasPrefix(f.Name(), "cashflow_pre_restore_") {
+			if strings.HasPrefix(f.Name(), "cashmop_pre_restore_") {
 				_ = os.Remove(filepath.Join(backupDir, f.Name()))
 			}
 		}
@@ -64,7 +64,7 @@ func setupTestDBWithFile(t *testing.T) *sql.DB {
 	if err == nil {
 		files, _ := os.ReadDir(backupDir)
 		for _, f := range files {
-			if strings.HasPrefix(f.Name(), "cashflow_pre_restore_") {
+			if strings.HasPrefix(f.Name(), "cashmop_pre_restore_") {
 				_ = os.Remove(filepath.Join(backupDir, f.Name()))
 			}
 		}

@@ -14,7 +14,7 @@ Baseline: 28.8s (`time make integration`)
 | Component | Current | Parallel |
 |-----------|---------|----------|
 | Wails instances | 1 (port 34115) | N (ports 34115 + worker) |
-| DB files | 1 shared (`cashflow_test.db`) | N per-worker files |
+| DB files | 1 shared (`cashmop_test.db`) | N per-worker files |
 | Playwright workers | 1 | N (configurable, default 2) |
 | Execution | Sequential | Parallel |
 
@@ -27,7 +27,7 @@ Baseline: 28.8s (`time make integration`)
 ```go
 func resolveDatabasePath() (string, error) {
     env := strings.ToLower(os.Getenv("APP_ENV"))
-    workerID := os.Getenv("CASHFLOW_WORKER_ID")
+    workerID := os.Getenv("CASHMOP_WORKER_ID")
 
     switch env {
     case "test":
@@ -51,12 +51,12 @@ func resolveDatabasePath() (string, error) {
 ```go
 func resetDB() error {
     // Preserve worker ID for DB path resolution
-    workerID := os.Getenv("CASHFLOW_WORKER_ID")
+    workerID := os.Getenv("CASHMOP_WORKER_ID")
     if workerID == "" {
         workerID = "0"  // Default to worker 0
     }
     os.Setenv("APP_ENV", "test")
-    os.Setenv("CASHFLOW_WORKER_ID", workerID)  // RE-SET for db.go
+    os.Setenv("CASHMOP_WORKER_ID", workerID)  // RE-SET for db.go
 
     database.InitDB()
     // ... rest of reset logic unchanged
@@ -97,8 +97,8 @@ if pgrep -f "wails dev" > /dev/null; then
     sleep 2
 fi
 
-TEST_RUN_ID="${CASHFLOW_TEST_RUN_ID:-$(date +%s)-$$}"
-export CASHFLOW_TEST_RUN_ID="$TEST_RUN_ID"
+TEST_RUN_ID="${CASHMOP_TEST_RUN_ID:-$(date +%s)-$$}"
+export CASHMOP_TEST_RUN_ID="$TEST_RUN_ID"
 export WORKER_COUNT
 
 # Build test-helper once
@@ -122,7 +122,7 @@ cleanup() {
 
     # Remove per-worker DB files
     for i in $(seq 0 $((WORKER_COUNT-1))); do
-        DB_FILE="$ROOT_DIR/cashflow_test_w$i.db"
+        DB_FILE="$ROOT_DIR/cashmop_test_w$i.db"
         if [ -f "$DB_FILE" ]; then
             echo "Removing test database: $DB_FILE"
             rm -f "$DB_FILE"
@@ -130,9 +130,9 @@ cleanup() {
     done
 
     # Remove temp dirs
-    if [ -n "$CASHFLOW_TEST_RUN_ID" ]; then
+    if [ -n "$CASHMOP_TEST_RUN_ID" ]; then
         TMP_BASE="${TMPDIR:-/tmp}"
-        TEST_DIR="${TMP_BASE%/}/cashflow-test/$CASHFLOW_TEST_RUN_ID"
+        TEST_DIR="${TMP_BASE%/}/cashmop-test/$CASHMOP_TEST_RUN_ID"
         if [ -d "$TEST_DIR" ]; then
             echo "Removing test temp dir..."
             rm -rf "$TEST_DIR"
@@ -151,7 +151,7 @@ for i in $(seq 0 $((WORKER_COUNT-1))); do
     LOG_FILE="$ROOT_DIR/wails_$i.log"
 
     echo "  Worker $i on port $PORT..."
-    APP_ENV=test CASHFLOW_WORKER_ID=$i \
+    APP_ENV=test CASHMOP_WORKER_ID=$i \
         wails dev -devserver localhost:$PORT -frontenddevserverurl http://localhost:5173 -m -s -nogorebuild -noreload -skipbindings > "$LOG_FILE" 2>&1 &
     echo $! > "$PID_FILE"
     PID_FILES+=("$PID_FILE")
@@ -230,7 +230,7 @@ type MyFixtures = {
   settingsPage: SettingsPage;
 };
 
-const testRunId = process.env.CASHFLOW_TEST_RUN_ID || 'local';
+const testRunId = process.env.CASHMOP_TEST_RUN_ID || 'local';
 
 // Worker-specific baseURL helper
 function getWorkerBaseURL(workerIndex: number): string {
@@ -243,7 +243,7 @@ export const test = base.extend<MyFixtures>({
     await use(getWorkerBaseURL(testInfo.workerIndex));
   },
 
-  // DB reset uses CASHFLOW_WORKER_ID env var (set by test-helper)
+  // DB reset uses CASHMOP_WORKER_ID env var (set by test-helper)
   dbReset: [async ({}, use) => {
     execSync('./build/bin/test-helper reset', { cwd: '..' });
     await use();
@@ -256,7 +256,7 @@ export const test = base.extend<MyFixtures>({
     const exportSavePath = path.join(dir, `export_${testInfo.workerIndex}_${slug}.csv`);
 
     await page.evaluate((paths) => {
-      (window as any).__cashflowTestDialogPaths = paths;
+      (window as any).__cashmopTestDialogPaths = paths;
     }, { backupSavePath, exportSavePath });
 
     await use();
@@ -312,7 +312,7 @@ export const test = base.extend<MyFixtures>({
 - **Windows support**: Skipped (Linux/macOS only)
 - **CI**: Dev machine only; no CI integration planned
 - **Fixtures**: Shared YAML files across all workers
-- **CASHFLOW_TEST_RUN_ID**: Used for temp dir isolation (`$TMPDIR/cashflow-test/$RUN_ID`)
+- **CASHMOP_TEST_RUN_ID**: Used for temp dir isolation (`$TMPDIR/cashmop-test/$RUN_ID`)
 - **No WAL mode**: Separate DBs eliminate locking issues
 - **Wails flag**: Uses `-devserver localhost:$PORT` (not `-port`)
 - **Port range**: 34115-34122 for WORKER_COUNT=1-8

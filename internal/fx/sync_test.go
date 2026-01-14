@@ -1,7 +1,7 @@
 package fx
 
 import (
-	"cashflow/internal/database"
+	"cashmop/internal/database"
 	"testing"
 )
 

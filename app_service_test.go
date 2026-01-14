@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cashflow/internal/database"
+	"cashmop/internal/database"
 	"context"
 	"database/sql"
 	"os"
@@ -1453,7 +1453,7 @@ func TestShutdown(t *testing.T) {
 func TestGenerateDefaultFilename(t *testing.T) {
 	t.Run("single month", func(t *testing.T) {
 		filename := generateDefaultFilename("2024-01-01", "2024-01-31", "csv")
-		expected := "cashflow_2024-01.csv"
+		expected := "cashmop_2024-01.csv"
 		if filename != expected {
 			t.Errorf("Expected '%s', got '%s'", expected, filename)
 		}
@@ -1461,7 +1461,7 @@ func TestGenerateDefaultFilename(t *testing.T) {
 
 	t.Run("date range", func(t *testing.T) {
 		filename := generateDefaultFilename("2024-01-01", "2024-03-31", "csv")
-		expected := "cashflow_2024-01-01_to_2024-03-31.csv"
+		expected := "cashmop_2024-01-01_to_2024-03-31.csv"
 		if filename != expected {
 			t.Errorf("Expected '%s', got '%s'", expected, filename)
 		}
@@ -1469,7 +1469,7 @@ func TestGenerateDefaultFilename(t *testing.T) {
 
 	t.Run("different formats", func(t *testing.T) {
 		filename := generateDefaultFilename("2024-01-01", "2024-01-31", "xlsx")
-		expected := "cashflow_2024-01.xlsx"
+		expected := "cashmop_2024-01.xlsx"
 		if filename != expected {
 			t.Errorf("Expected '%s', got '%s'", expected, filename)
 		}

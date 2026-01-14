@@ -244,7 +244,7 @@ func TestGetLastBackupTime(t *testing.T) {
 	}
 
 	// Clean up any existing backups
-	files, _ := filepath.Glob(filepath.Join(backupDir, "cashflow_backup_*.db"))
+	files, _ := filepath.Glob(filepath.Join(backupDir, "cashmop_backup_*.db"))
 	for _, f := range files {
 		os.Remove(f)
 	}
@@ -261,7 +261,7 @@ func TestGetLastBackupTime(t *testing.T) {
 
 	t.Run("backups exist", func(t *testing.T) {
 		// Create a test backup
-		backupPath := filepath.Join(backupDir, "cashflow_backup_20240101_120000.db")
+		backupPath := filepath.Join(backupDir, "cashmop_backup_20240101_120000.db")
 		err := CreateBackup(backupPath)
 		if err != nil {
 			t.Fatalf("Failed to create test backup: %v", err)
@@ -296,7 +296,7 @@ func TestShouldAutoBackup(t *testing.T) {
 	}
 
 	// Clean up any existing backups
-	files, _ := filepath.Glob(filepath.Join(backupDir, "cashflow_backup_*.db"))
+	files, _ := filepath.Glob(filepath.Join(backupDir, "cashmop_backup_*.db"))
 	for _, f := range files {
 		os.Remove(f)
 	}
@@ -313,7 +313,7 @@ func TestShouldAutoBackup(t *testing.T) {
 
 	t.Run("recent backup - should not backup", func(t *testing.T) {
 		// Create a recent backup
-		backupPath := filepath.Join(backupDir, "cashflow_backup_recent.db")
+		backupPath := filepath.Join(backupDir, "cashmop_backup_recent.db")
 		err := CreateBackup(backupPath)
 		if err != nil {
 			t.Fatalf("Failed to create recent backup: %v", err)
@@ -332,7 +332,7 @@ func TestShouldAutoBackup(t *testing.T) {
 
 	t.Run("old backup - should backup", func(t *testing.T) {
 		// Create an old backup (25+ hours ago)
-		backupPath := filepath.Join(backupDir, "cashflow_backup_old.db")
+		backupPath := filepath.Join(backupDir, "cashmop_backup_old.db")
 		err := CreateBackup(backupPath)
 		if err != nil {
 			t.Fatalf("Failed to create old backup: %v", err)
@@ -366,7 +366,7 @@ func TestCleanupOldBackups(t *testing.T) {
 	}
 
 	// Clean up any existing backups
-	files, _ := filepath.Glob(filepath.Join(backupDir, "cashflow_backup_*.db"))
+	files, _ := filepath.Glob(filepath.Join(backupDir, "cashmop_backup_*.db"))
 	for _, f := range files {
 		os.Remove(f)
 	}
@@ -374,7 +374,7 @@ func TestCleanupOldBackups(t *testing.T) {
 	// Create 15 backups with different timestamps
 	now := time.Now()
 	for i := 0; i < 15; i++ {
-		filename := fmt.Sprintf("cashflow_backup_%04d0101_%02d0000.db", 2024, i)
+		filename := fmt.Sprintf("cashmop_backup_%04d0101_%02d0000.db", 2024, i)
 		backupPath := filepath.Join(backupDir, filename)
 
 		// Copy the current DB to create a backup
@@ -408,7 +408,7 @@ func TestCleanupOldBackups(t *testing.T) {
 		if entry.IsDir() {
 			continue
 		}
-		if strings.HasPrefix(entry.Name(), "cashflow_backup_") && strings.HasSuffix(entry.Name(), ".db") {
+		if strings.HasPrefix(entry.Name(), "cashmop_backup_") && strings.HasSuffix(entry.Name(), ".db") {
 			backupCount++
 		}
 	}
@@ -429,7 +429,7 @@ func TestCreateAutoBackup(t *testing.T) {
 	}
 
 	// Clean up any existing backups
-	files, _ := filepath.Glob(filepath.Join(backupDir, "cashflow_backup_*.db"))
+	files, _ := filepath.Glob(filepath.Join(backupDir, "cashmop_backup_*.db"))
 	for _, f := range files {
 		os.Remove(f)
 	}
@@ -447,7 +447,7 @@ func TestCreateAutoBackup(t *testing.T) {
 	}
 
 	// Verify backup is in correct directory with correct naming pattern
-	if !strings.HasPrefix(filepath.Base(backupPath), "cashflow_backup_") {
+	if !strings.HasPrefix(filepath.Base(backupPath), "cashmop_backup_") {
 		t.Errorf("Backup file has wrong name pattern: %s", filepath.Base(backupPath))
 	}
 

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"cashflow/internal/paths"
+	"cashmop/internal/paths"
 
 	_ "modernc.org/sqlite"
 )
@@ -16,7 +16,7 @@ import (
 var DB *sql.DB
 
 const (
-	storageName          = "cashflow"
+	storageName          = "cashmop"
 	sqliteBusyTimeoutMs  = 5000
 	sqliteJournalModeWal = "WAL"
 )
@@ -49,7 +49,7 @@ func sqliteDSN(path string) string {
 
 func resolveDatabasePath() (string, error) {
 	env := strings.ToLower(os.Getenv("APP_ENV"))
-	workerID := os.Getenv("CASHFLOW_WORKER_ID")
+	workerID := os.Getenv("CASHMOP_WORKER_ID")
 
 	switch env {
 	case "test":

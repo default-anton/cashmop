@@ -19,9 +19,9 @@ UI Location: `frontend/src/screens/Analysis/`
 * **XLSX**: Native Excel format with auto-column widths
 
 ## Filename Convention
-* Single month: `cashflow_2025-01.csv`
-* Date range: `cashflow_2025-01-01_to_2025-03-31.csv`
-* All data: `cashflow_full_export.csv`
+* Single month: `cashmop_2025-01.csv`
+* Date range: `cashmop_2025-01-01_to_2025-03-31.csv`
+* All data: `cashmop_full_export.csv`
 
 ## Data Schema
 **Columns (in order):**

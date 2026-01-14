@@ -4,7 +4,7 @@
 base_branch = "main"
 
 # Directory for worktrees (default: .worktrees)
-worktree_dir = "../worktrees/cashflow"
+worktree_dir = "../worktrees/cashmop"
 
 # Preprocessing script (receives input, outputs branch name)
 # Script can be any executable - bash, python, etc.

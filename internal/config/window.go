@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"cashflow/internal/paths"
+	"cashmop/internal/paths"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )

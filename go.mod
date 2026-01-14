@@ -1,4 +1,4 @@
-module cashflow
+module cashmop
 
 go 1.25
 

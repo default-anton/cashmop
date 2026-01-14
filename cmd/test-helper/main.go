@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cashflow/internal/database"
+	"cashmop/internal/database"
 	"fmt"
 	"log"
 	"os"
@@ -33,12 +33,12 @@ func main() {
 
 func resetDB() error {
 	// Preserve worker ID for DB path resolution
-	workerID := os.Getenv("CASHFLOW_WORKER_ID")
+	workerID := os.Getenv("CASHMOP_WORKER_ID")
 	if workerID == "" {
 		workerID = "0" // Default to worker 0
 	}
 	os.Setenv("APP_ENV", "test")
-	os.Setenv("CASHFLOW_WORKER_ID", workerID) // RE-SET for db.go
+	os.Setenv("CASHMOP_WORKER_ID", workerID) // RE-SET for db.go
 
 	return withBusyRetry(func() error {
 		database.InitDB()

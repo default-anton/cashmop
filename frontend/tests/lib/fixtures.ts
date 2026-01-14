@@ -17,12 +17,12 @@ type MyFixtures = {
   settingsPage: SettingsPage;
 };
 
-const testRunId = process.env.CASHFLOW_TEST_RUN_ID || 'local';
+const testRunId = process.env.CASHMOP_TEST_RUN_ID || 'local';
 
 const sanitize = (value: string) => value.replace(/[^a-zA-Z0-9_-]+/g, '_').slice(0, 80) || 'test';
 
 const getTestDir = () => {
-  const dir = path.join(os.tmpdir(), 'cashflow-test', testRunId);
+  const dir = path.join(os.tmpdir(), 'cashmop-test', testRunId);
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 };
@@ -41,7 +41,7 @@ export const test = base.extend<MyFixtures>({
       cwd: '..',
       env: {
         ...process.env,
-        CASHFLOW_WORKER_ID: testInfo.parallelIndex.toString(),
+        CASHMOP_WORKER_ID: testInfo.parallelIndex.toString(),
       },
     });
     await use();
@@ -60,7 +60,7 @@ export const test = base.extend<MyFixtures>({
 
     await page.addInitScript((p) => {
       const win = window as any;
-      win.__cashflowTestDialogPaths = p;
+      win.__cashmopTestDialogPaths = p;
       const apply = () => {
         const app = win.go?.main?.App;
         if (app?.SetTestDialogPaths) {

@@ -15,7 +15,7 @@ import (
 const (
 	bocBaseURL        = "https://www.bankofcanada.ca/valet/observations/"
 	bocRequestTimeout = 15 * time.Second
-	bocUserAgent      = "CashflowTracker/1.0"
+	bocUserAgent      = "CashMop/1.0"
 )
 
 type BoCProvider struct {

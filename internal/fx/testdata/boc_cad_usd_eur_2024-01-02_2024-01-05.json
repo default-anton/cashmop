@@ -8,7 +8,7 @@
         "application/json"
       ],
       "User-Agent": [
-        "CashflowTracker/1.0"
+        "CashMop/1.0"
       ]
     }
   },

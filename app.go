@@ -1,11 +1,11 @@
 package main
 
 import (
-	"cashflow/internal/brave"
-	"cashflow/internal/database"
-	"cashflow/internal/fuzzy"
-	"cashflow/internal/fx"
-	"cashflow/internal/version"
+	"cashmop/internal/brave"
+	"cashmop/internal/database"
+	"cashmop/internal/fuzzy"
+	"cashmop/internal/fx"
+	"cashmop/internal/version"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -95,8 +95,8 @@ func (a *App) ensureTestDir() (string, error) {
 		return a.testDir, nil
 	}
 
-	base := filepath.Join(os.TempDir(), "cashflow-test")
-	runID := strings.TrimSpace(os.Getenv("CASHFLOW_TEST_RUN_ID"))
+	base := filepath.Join(os.TempDir(), "cashmop-test")
+	runID := strings.TrimSpace(os.Getenv("CASHMOP_TEST_RUN_ID"))
 	if runID != "" {
 		base = filepath.Join(base, runID)
 	}
@@ -139,7 +139,7 @@ func (a *App) testSavePath(kind, ext string) (string, error) {
 	}
 
 	timestamp := time.Now().Format("20060102_150405_000000000")
-	filename := fmt.Sprintf("cashflow_%s_%s.%s", kind, timestamp, ext)
+	filename := fmt.Sprintf("cashmop_%s_%s.%s", kind, timestamp, ext)
 	return filepath.Join(dir, filename), nil
 }
 
@@ -220,16 +220,16 @@ func (a *App) makeMenu() *menu.Menu {
 
 	if stdlibRuntime.GOOS == "darwin" {
 		// On macOS, the first menu added is the "Application Menu" (named after your app)
-		applicationMenu := appMenu.AddSubmenu("Cashflow Tracker")
+		applicationMenu := appMenu.AddSubmenu("CashMop")
 
-		applicationMenu.AddText("About Cashflow Tracker", nil, func(_ *menu.CallbackData) {
+		applicationMenu.AddText("About CashMop", nil, func(_ *menu.CallbackData) {
 			a.ShowAbout()
 		})
 
 		applicationMenu.AddSeparator()
 		applicationMenu.AddText("Services", nil, nil)
 		applicationMenu.AddSeparator()
-		applicationMenu.AddText("Hide Cashflow Tracker", keys.CmdOrCtrl("h"), func(_ *menu.CallbackData) {
+		applicationMenu.AddText("Hide CashMop", keys.CmdOrCtrl("h"), func(_ *menu.CallbackData) {
 			runtime.WindowHide(a.ctx)
 		})
 		applicationMenu.AddText("Quit", keys.CmdOrCtrl("q"), func(_ *menu.CallbackData) {
@@ -243,7 +243,7 @@ func (a *App) makeMenu() *menu.Menu {
 
 	if stdlibRuntime.GOOS != "darwin" {
 		helpMenu := appMenu.AddSubmenu("Help")
-		helpMenu.AddText("About Cashflow Tracker", nil, func(_ *menu.CallbackData) {
+		helpMenu.AddText("About CashMop", nil, func(_ *menu.CallbackData) {
 			a.ShowAbout()
 		})
 	}
@@ -742,7 +742,7 @@ func generateDefaultFilename(startDate, endDate, format string) string {
 		datePart = startDate + "_to_" + endDate
 	}
 
-	return fmt.Sprintf("cashflow_%s.%s", datePart, format)
+	return fmt.Sprintf("cashmop_%s.%s", datePart, format)
 }
 
 func (a *App) ExportTransactions(startDate, endDate string, categoryIDs []int64, format, destinationPath string) (int, error) {
@@ -963,7 +963,7 @@ func exportToXLSX(transactions []database.TransactionModel, destinationPath stri
 
 func (a *App) CreateManualBackup() (string, error) {
 	timestamp := time.Now().Format("20060102_150405")
-	defaultFilename := fmt.Sprintf("cashflow_backup_%s.db", timestamp)
+	defaultFilename := fmt.Sprintf("cashmop_backup_%s.db", timestamp)
 
 	var destinationPath string
 	var err error

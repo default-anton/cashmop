@@ -20,15 +20,15 @@ for i in $(seq 0 $((WORKER_COUNT-1))); do
 done
 
 # Kill any existing wails dev or app processes
-if pgrep -f "wails dev" > /dev/null || pgrep -f "cashflow" > /dev/null; then
+if pgrep -f "wails dev" > /dev/null || pgrep -f "cashmop" > /dev/null; then
     echo "Killing existing processes..."
     pkill -f "wails dev" || true
-    pkill -f "cashflow" || true
+    pkill -f "cashmop" || true
     sleep 2
 fi
 
-TEST_RUN_ID="${CASHFLOW_TEST_RUN_ID:-$(date +%s)-$$}"
-export CASHFLOW_TEST_RUN_ID="$TEST_RUN_ID"
+TEST_RUN_ID="${CASHMOP_TEST_RUN_ID:-$(date +%s)-$$}"
+export CASHMOP_TEST_RUN_ID="$TEST_RUN_ID"
 export WORKER_COUNT
 
 # Build test-helper once
@@ -63,7 +63,7 @@ cleanup() {
 
     # Remove per-worker DB files
     for i in $(seq 0 $((WORKER_COUNT-1))); do
-        DB_FILE="$ROOT_DIR/cashflow_test_w$i.db"
+        DB_FILE="$ROOT_DIR/cashmop_test_w$i.db"
         if [ -f "$DB_FILE" ]; then
             echo "Removing test database: $DB_FILE"
             rm -f "$DB_FILE"
@@ -71,9 +71,9 @@ cleanup() {
     done
 
     # Remove temp dirs
-    if [ -n "$CASHFLOW_TEST_RUN_ID" ]; then
+    if [ -n "$CASHMOP_TEST_RUN_ID" ]; then
         TMP_BASE="${TMPDIR:-/tmp}"
-        TEST_DIR="${TMP_BASE%/}/cashflow-test/$CASHFLOW_TEST_RUN_ID"
+        TEST_DIR="${TMP_BASE%/}/cashmop-test/$CASHMOP_TEST_RUN_ID"
         if [ -d "$TEST_DIR" ]; then
             echo "Removing test temp dir..."
             rm -rf "$TEST_DIR"
@@ -113,7 +113,7 @@ start_worker() {
     local log_file="$ROOT_DIR/wails_$index.log"
 
     echo "  Worker $index on port $port..."
-    APP_ENV=test CASHFLOW_WORKER_ID=$index \
+    APP_ENV=test CASHMOP_WORKER_ID=$index \
         wails dev -devserver localhost:$port -frontenddevserverurl http://localhost:5173 -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
     echo $! > "$pid_file"
     PID_FILES+=("$pid_file")

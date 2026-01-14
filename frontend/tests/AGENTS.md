@@ -15,7 +15,7 @@ make integration-test NAME="pattern"       # Pattern match
 ## Test Environment
 
 - `APP_ENV=test` disables OS dialogs/opens + background auto backup/FX sync; dialogs return temp paths
-- Temp dir: `$TMPDIR/cashflow-test/$CASHFLOW_TEST_RUN_ID` (set in `scripts/run-integration-tests.sh`)
+- Temp dir: `$TMPDIR/cashmop-test/$CASHMOP_TEST_RUN_ID` (set in `scripts/run-integration-tests.sh`)
 
 ## Database State & Fixtures
 
@@ -37,7 +37,7 @@ make integration-test NAME="pattern"       # Pattern match
 Wails dev server multi-instance:
 - Flag: `wails dev -devserver localhost:$PORT -m -s -nogorebuild -noreload -skipbindings`
 - Port range: 34115 + parallelIndex (e.g., 34115-34116 for 2 workers)
-- DB isolation: `CASHFLOW_WORKER_ID=<index>` → DB suffix `_w<id>`
+- DB isolation: `CASHMOP_WORKER_ID=<index>` → DB suffix `_w<id>`
 - Playwright: override `baseURL` fixture with `testInfo.parallelIndex`
 - Shared Frontend: uses single Vite instance via `-frontenddevserverurl`
 - See: `docs/specs/integration-test-parallelization.md`

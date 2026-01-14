@@ -1,7 +1,7 @@
 package database
 
 import (
-	"cashflow/internal/fuzzy"
+	"cashmop/internal/fuzzy"
 	"strings"
 	"sync"
 )

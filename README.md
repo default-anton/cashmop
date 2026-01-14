@@ -1,10 +1,10 @@
-# Cashflow Tracker
+# CashMop
 
 Desktop-first cash flow tracking. Import messy bank exports, normalize once, punch through categorization fast, and export clean data. Local-only, open source, no cloud.
 
 **Status:** Pre-release. Backward compatibility not guaranteed.
 
-![Cashflow Tracker logo](frontend/src/assets/images/logo-universal.png)
+![CashMop logo](frontend/src/assets/images/logo-universal.png)
 
 Screenshot and walkthrough coming soon.
 
@@ -34,11 +34,11 @@ Screenshot and walkthrough coming soon.
 ## Getting Started
 
 ### Installation
-Download the latest build from `https://github.com/default-anton/cashflow/releases`.
+Download the latest build from `https://github.com/default-anton/cashmop/releases`.
 
 macOS (Apple Silicon): unzip and drag to Applications. If Gatekeeper blocks it:
 ```bash
-xattr -dr com.apple.quarantine Cashflow.app
+xattr -dr com.apple.quarantine CashMop.app
 ```
 
 Linux: use AppImage (recommended; works on Arch) or `.deb` (Debian/Ubuntu).
@@ -66,7 +66,7 @@ Linux: use AppImage (recommended; works on Arch) or `.deb` (Debian/Ubuntu).
 ## Roadmap
 
 - [ ] Sole-proprietor tools (receipts, flags, exports).
-- [ ] Forecasting and cashflow projections.
+- [ ] Forecasting and cash flow projections.
 
 ## License
 

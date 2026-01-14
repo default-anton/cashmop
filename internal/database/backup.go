@@ -37,7 +37,7 @@ func CreateAutoBackup() (string, error) {
 	}
 
 	timestamp := time.Now().Format("20060102_150405")
-	filename := fmt.Sprintf("cashflow_backup_%s.db", timestamp)
+	filename := fmt.Sprintf("cashmop_backup_%s.db", timestamp)
 	backupPath := filepath.Join(backupDir, filename)
 
 	if err := CreateBackup(backupPath); err != nil {
@@ -115,7 +115,7 @@ func RestoreBackup(backupPath string) error {
 		return fmt.Errorf("Unable to access the backup folder.")
 	}
 
-	safetyBackupPath := filepath.Join(backupDir, fmt.Sprintf("cashflow_pre_restore_%s.db", time.Now().Format("20060102_150405")))
+	safetyBackupPath := filepath.Join(backupDir, fmt.Sprintf("cashmop_pre_restore_%s.db", time.Now().Format("20060102_150405")))
 	if err := createBackupUnsafe(safetyBackupPath); err != nil {
 		return fmt.Errorf("Unable to create a safety backup before restoring.")
 	}
@@ -161,7 +161,7 @@ func GetLastBackupTime() (time.Time, error) {
 			continue
 		}
 		name := entry.Name()
-		if strings.HasPrefix(name, "cashflow_backup_") && strings.HasSuffix(name, ".db") {
+		if strings.HasPrefix(name, "cashmop_backup_") && strings.HasSuffix(name, ".db") {
 			info, err := entry.Info()
 			if err != nil {
 				continue
@@ -213,7 +213,7 @@ func CleanupOldBackups() error {
 			continue
 		}
 		name := entry.Name()
-		if strings.HasPrefix(name, "cashflow_backup_") && strings.HasSuffix(name, ".db") {
+		if strings.HasPrefix(name, "cashmop_backup_") && strings.HasSuffix(name, ".db") {
 			info, err := entry.Info()
 			if err != nil {
 				continue
@@ -266,7 +266,7 @@ func CreatePreMigrationBackup(version int64) (string, error) {
 	}
 
 	timestamp := time.Now().Format("20060102_150405")
-	filename := fmt.Sprintf("cashflow_pre_migration_v%03d_%s.db", version, timestamp)
+	filename := fmt.Sprintf("cashmop_pre_migration_v%03d_%s.db", version, timestamp)
 	backupPath := filepath.Join(backupDir, filename)
 
 	if err := CreateBackup(backupPath); err != nil {
@@ -353,7 +353,7 @@ func ensureHasTransactionsTable(db *sql.DB) error {
 	err := db.QueryRow("SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'").Scan(&tableName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return fmt.Errorf("This is not a valid Cashflow backup file.")
+			return fmt.Errorf("This is not a valid CashMop backup file.")
 		}
 		return fmt.Errorf("Unable to read the backup file.")
 	}

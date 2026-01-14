@@ -1,4 +1,4 @@
-# Cashflow Tracker
+# CashMop
 
 Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linux, macOS); speed + delight focus.
 

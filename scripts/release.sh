@@ -70,13 +70,13 @@ case "$TARGET" in
 
     codesign --force --deep --sign - "$APP_PATH"
 
-    ZIP_NAME="$OUTPUT_DIR/cashflow-macos-$ARCH-$VERSION.zip"
+    ZIP_NAME="$OUTPUT_DIR/cashmop-macos-$ARCH-$VERSION.zip"
     ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
     ;;
   linux)
     wails build --platform linux/$ARCH
 
-    BIN_PATH="build/bin/cashflow"
+    BIN_PATH="build/bin/cashmop"
     if [ ! -f "$BIN_PATH" ]; then
       echo "Missing linux binary: $BIN_PATH"
       exit 1
@@ -85,14 +85,14 @@ case "$TARGET" in
     WORK_DIR=$(mktemp -d)
     APPDIR="$WORK_DIR/AppDir"
     mkdir -p "$APPDIR/usr/bin"
-    cp "$BIN_PATH" "$APPDIR/usr/bin/cashflow"
-    cp build/appicon.png "$APPDIR/cashflow.png"
+    cp "$BIN_PATH" "$APPDIR/usr/bin/cashmop"
+    cp build/appicon.png "$APPDIR/cashmop.png"
 
-    cat > "$APPDIR/cashflow.desktop" <<'EOF'
+    cat > "$APPDIR/cashmop.desktop" <<'EOF'
 [Desktop Entry]
-Name=Cashflow Tracker
-Exec=cashflow
-Icon=cashflow
+Name=CashMop
+Exec=cashmop
+Icon=cashmop
 Type=Application
 Categories=Office;Finance;
 EOF
@@ -100,7 +100,7 @@ EOF
     cat > "$APPDIR/AppRun" <<'EOF'
 #!/bin/sh
 HERE=$(dirname "$(readlink -f "$0")")
-exec "$HERE/usr/bin/cashflow" "$@"
+exec "$HERE/usr/bin/cashmop" "$@"
 EOF
 
     chmod +x "$APPDIR/AppRun"
@@ -110,34 +110,34 @@ EOF
       exit 1
     fi
 
-    APPIMAGE_NAME="$OUTPUT_DIR/cashflow-linux-$ARCH-$VERSION.AppImage"
+    APPIMAGE_NAME="$OUTPUT_DIR/cashmop-linux-$ARCH-$VERSION.AppImage"
     appimagetool "$APPDIR" "$APPIMAGE_NAME"
 
     DEB_DIR="$WORK_DIR/deb"
     mkdir -p "$DEB_DIR/DEBIAN" "$DEB_DIR/usr/bin" "$DEB_DIR/usr/share/applications" "$DEB_DIR/usr/share/icons/hicolor/512x512/apps"
-    cp "$BIN_PATH" "$DEB_DIR/usr/bin/cashflow"
-    cp build/appicon.png "$DEB_DIR/usr/share/icons/hicolor/512x512/apps/cashflow.png"
+    cp "$BIN_PATH" "$DEB_DIR/usr/bin/cashmop"
+    cp build/appicon.png "$DEB_DIR/usr/share/icons/hicolor/512x512/apps/cashmop.png"
 
-    cat > "$DEB_DIR/usr/share/applications/cashflow.desktop" <<'EOF'
+    cat > "$DEB_DIR/usr/share/applications/cashmop.desktop" <<'EOF'
 [Desktop Entry]
-Name=Cashflow Tracker
-Exec=cashflow
-Icon=cashflow
+Name=CashMop
+Exec=cashmop
+Icon=cashmop
 Type=Application
 Categories=Office;Finance;
 EOF
 
     cat > "$DEB_DIR/DEBIAN/control" <<EOF
-Package: cashflow
+Package: cashmop
 Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: $ARCH
 Maintainer: Anton Kuzmenko <1917237+default-anton@users.noreply.github.com>
-Description: Cashflow Tracker desktop app
+Description: CashMop desktop app
 EOF
 
-    DEB_NAME="$OUTPUT_DIR/cashflow-linux-$ARCH-$VERSION.deb"
+    DEB_NAME="$OUTPUT_DIR/cashmop-linux-$ARCH-$VERSION.deb"
     dpkg-deb --build "$DEB_DIR" "$DEB_NAME"
     ;;
   *)
