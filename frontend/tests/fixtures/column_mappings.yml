@@ -1,3 +1,3 @@
 standard_bank:
   name: "Standard Bank"
-  mapping_json: '{"date": "Date", "description": "Description", "amount": "Amount"}'
+  mapping_json: '{"csv":{"date":"Date","description":["Description"],"amountMapping":{"type":"single","column":"Amount","invertSign":false}},"account":"Standard Bank","currencyDefault":"CAD"}'

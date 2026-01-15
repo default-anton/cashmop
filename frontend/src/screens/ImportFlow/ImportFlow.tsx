@@ -404,16 +404,14 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
       if (h.includes(m.csv.date)) score++;
       for (const d of m.csv.description) if (h.includes(d)) score++;
 
-      if (m.csv.amountMapping) {
-        if (m.csv.amountMapping.type === 'single' && h.includes(m.csv.amountMapping.column)) score++;
-        else if (m.csv.amountMapping.type === 'debitCredit') {
-          if (m.csv.amountMapping.debitColumn && h.includes(m.csv.amountMapping.debitColumn)) score++;
-          if (m.csv.amountMapping.creditColumn && h.includes(m.csv.amountMapping.creditColumn)) score++;
-        } else if (m.csv.amountMapping.type === 'amountWithType') {
-          if (h.includes(m.csv.amountMapping.amountColumn)) score++;
-          if (h.includes(m.csv.amountMapping.typeColumn)) score++;
-        }
-      } else if (h.includes(m.csv.amount)) score++;
+      if (m.csv.amountMapping.type === 'single' && h.includes(m.csv.amountMapping.column)) score++;
+      else if (m.csv.amountMapping.type === 'debitCredit') {
+        if (m.csv.amountMapping.debitColumn && h.includes(m.csv.amountMapping.debitColumn)) score++;
+        if (m.csv.amountMapping.creditColumn && h.includes(m.csv.amountMapping.creditColumn)) score++;
+      } else if (m.csv.amountMapping.type === 'amountWithType') {
+        if (h.includes(m.csv.amountMapping.amountColumn)) score++;
+        if (h.includes(m.csv.amountMapping.typeColumn)) score++;
+      }
 
       if (score > maxScore) {
         maxScore = score;
@@ -476,11 +474,17 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
       const loadMappings = async () => {
         try {
           const dbMappings: any[] = await (window as any).go.main.App.GetColumnMappings();
-          const loaded = dbMappings.map(m => ({
-            id: m.id,
-            name: m.name,
-            mapping: JSON.parse(m.mapping_json) as ImportMapping,
-          }));
+          const loaded = dbMappings
+            .map((m) => {
+              const parsed = JSON.parse(m.mapping_json);
+              if (!parsed?.csv?.amountMapping) return null;
+              return {
+                id: m.id,
+                name: m.name,
+                mapping: parsed as ImportMapping,
+              };
+            })
+            .filter((entry): entry is SavedMapping => entry !== null);
           setSavedMappings(loaded);
         } catch (e) {
           console.error('Failed to load saved mappings', e);

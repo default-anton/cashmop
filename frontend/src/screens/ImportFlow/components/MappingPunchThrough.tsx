@@ -126,7 +126,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
     const am = m.csv.amountMapping;
     const amountOk = (() => {
-      if (!am) return m.csv.amount.trim().length > 0;
       if (am.type === 'single') return am.column.trim().length > 0;
       if (am.type === 'debitCredit') return !!(am.debitColumn || am.creditColumn);
       return !!(am.amountColumn && am.typeColumn);
@@ -155,7 +154,6 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     const set = new Set<string>();
     const { csv } = mapping;
     if (csv.date) set.add(csv.date);
-    if (csv.amount) set.add(csv.amount);
     if (csv.account) set.add(csv.account);
     if (csv.owner) set.add(csv.owner);
     if (csv.currency) set.add(csv.currency);
@@ -208,7 +206,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
   useEffect(() => {
     if (currentStep.key !== 'amount') return;
 
-    const am = mapping.csv.amountMapping ?? { type: 'single', column: '' };
+    const am = mapping.csv.amountMapping;
     if (am.type === 'single') {
       setAmountAssignTarget('single');
       return;
@@ -308,7 +306,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
       if (step === 'currency') return csv.currency === header;
       if (step === 'amount') {
         const am = csv.amountMapping;
-        if (!am || am.type === 'single') return csv.amount === header || am?.column === header;
+        if (am.type === 'single') return am.column === header;
         if (am.type === 'debitCredit') return am.debitColumn === header || am.creditColumn === header;
         if (am.type === 'amountWithType') return am.amountColumn === header || am.typeColumn === header;
       }
@@ -318,7 +316,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     const isTarget = (): boolean => {
       if (currentStep.key === 'amount') {
         const am = csv.amountMapping;
-        if (!am || am.type === 'single') return am?.column === header || csv.amount === header;
+        if (am.type === 'single') return am.column === header;
         if (am.type === 'debitCredit') {
           return amountAssignTarget === 'debitColumn' ? am.debitColumn === header : am.creditColumn === header;
         }
@@ -374,7 +372,7 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     }
 
     if (currentStep.key === 'amount') {
-      const am: AmountMapping = mapping.csv.amountMapping ?? { type: 'single', column: '' };
+      const am: AmountMapping = mapping.csv.amountMapping;
 
       if (am.type === 'single') {
         assignHeaderToField('amount', header);
@@ -418,15 +416,13 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
 
   const toggleInvertSign = () => {
     setMapping((prev) => {
-      const fallbackColumn = prev.csv.amount || '';
-      const prevAm: AmountMapping = prev.csv.amountMapping ?? { type: 'single', column: fallbackColumn, invertSign: false };
+      const prevAm: AmountMapping = prev.csv.amountMapping;
       const nextAm: AmountMapping = { ...prevAm, invertSign: !prevAm.invertSign };
       return {
         ...prev,
         csv: {
           ...prev.csv,
           amountMapping: nextAm,
-          amount: nextAm.type === 'single' ? nextAm.column : prev.csv.amount,
         },
       };
     });
@@ -442,8 +438,8 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     return true;
   }, [currentStep.key, isAmountMappingValid, isMissing, canProceed]);
 
-  const amountMappingType = mapping.csv.amountMapping?.type ?? 'single';
-  const invertSignEnabled = mapping.csv.amountMapping?.invertSign ?? false;
+  const amountMappingType = mapping.csv.amountMapping.type;
+  const invertSignEnabled = mapping.csv.amountMapping.invertSign ?? false;
 
   return (
     <div className="flex flex-col gap-6 animate-snap-in">

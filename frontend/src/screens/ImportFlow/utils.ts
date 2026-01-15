@@ -62,9 +62,9 @@ export function sampleUniqueRows<T>(
 export function createAmountParser(mapping: ImportMapping, headers: string[]) {
   const colIdx = (col?: string) => (col ? headers.indexOf(col) : -1);
   const am = mapping.csv.amountMapping;
-  const invert = am?.invertSign ?? false;
+  const invert = am.invertSign ?? false;
 
-  if (am?.type === 'single') {
+  if (am.type === 'single') {
     const idx = colIdx(am.column);
     return (row: string[]) => {
       const val = idx >= 0 ? parseFloat(row[idx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
@@ -73,7 +73,7 @@ export function createAmountParser(mapping: ImportMapping, headers: string[]) {
     };
   }
 
-  if (am?.type === 'debitCredit') {
+  if (am.type === 'debitCredit') {
     const debitIdx = colIdx(am.debitColumn);
     const creditIdx = colIdx(am.creditColumn);
     return (row: string[]) => {
@@ -85,7 +85,7 @@ export function createAmountParser(mapping: ImportMapping, headers: string[]) {
     };
   }
 
-  if (am?.type === 'amountWithType') {
+  if (am.type === 'amountWithType') {
     const amountIdx = colIdx(am.amountColumn);
     const typeIdx = colIdx(am.typeColumn);
     const neg = (am.negativeValue ?? 'debit').trim().toLowerCase();
@@ -106,10 +106,5 @@ export function createAmountParser(mapping: ImportMapping, headers: string[]) {
     };
   }
 
-  const idx = colIdx(mapping.csv.amount);
-  return (row: string[]) => {
-    const val = idx >= 0 ? parseFloat(row[idx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
-    const cents = parseCents(val);
-    return invert ? -cents : cents;
-  };
+  return () => 0;
 }

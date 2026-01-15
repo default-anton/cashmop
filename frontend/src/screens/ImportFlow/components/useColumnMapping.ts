@@ -5,7 +5,6 @@ export const defaultMapping = (defaultCurrency: string): ImportMapping => ({
   csv: {
     date: '',
     description: [],
-    amount: '',
     amountMapping: { type: 'single', column: '', invertSign: false },
   },
   account: '',
@@ -25,30 +24,26 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
   const usedHeaders = useMemo(() => {
     const used = new Set<string>();
     if (mapping.csv.date) used.add(mapping.csv.date);
-    if (mapping.csv.amount) used.add(mapping.csv.amount);
     if (mapping.csv.owner) used.add(mapping.csv.owner);
     if (mapping.csv.account) used.add(mapping.csv.account);
     if (mapping.csv.currency) used.add(mapping.csv.currency);
     mapping.csv.description.forEach((h) => used.add(h));
     // Add columns from amountMapping
     const am = mapping.csv.amountMapping;
-    if (am) {
-      if (am.type === 'single' && am.column) used.add(am.column);
-      if (am.type === 'debitCredit') {
-        if (am.debitColumn) used.add(am.debitColumn);
-        if (am.creditColumn) used.add(am.creditColumn);
-      }
-      if (am.type === 'amountWithType') {
-        if (am.amountColumn) used.add(am.amountColumn);
-        if (am.typeColumn) used.add(am.typeColumn);
-      }
+    if (am.type === 'single' && am.column) used.add(am.column);
+    if (am.type === 'debitCredit') {
+      if (am.debitColumn) used.add(am.debitColumn);
+      if (am.creditColumn) used.add(am.creditColumn);
+    }
+    if (am.type === 'amountWithType') {
+      if (am.amountColumn) used.add(am.amountColumn);
+      if (am.typeColumn) used.add(am.typeColumn);
     }
     return used;
   }, [mapping]);
 
   const isAmountMappingValid = useMemo(() => {
     const am = mapping.csv.amountMapping;
-    if (!am) return mapping.csv.amount.trim().length > 0; // legacy
     switch (am.type) {
       case 'single':
         return am.column.trim().length > 0;
@@ -57,7 +52,7 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
       case 'amountWithType':
         return !!(am.amountColumn && am.typeColumn);
     }
-  }, [mapping.csv.amountMapping, mapping.csv.amount]);
+  }, [mapping.csv.amountMapping]);
 
   const isMissing = (key: 'date' | 'description' | 'amount' | 'account') => {
     if (key === 'account') return mapping.account.trim().length === 0 && (mapping.csv.account ?? '').trim().length === 0;
@@ -87,7 +82,6 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
       };
 
       if (next.csv.date === header) next.csv.date = '';
-      if (next.csv.amount === header) next.csv.amount = '';
       if (next.csv.owner === header) delete next.csv.owner;
       if (next.csv.account === header) delete next.csv.account;
       if (next.csv.currency === header) delete next.csv.currency;
@@ -100,7 +94,6 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
             if (am.column === header) {
               const invertSign = am.invertSign ?? false;
               next.csv.amountMapping = { type: 'single', column: '', invertSign };
-              next.csv.amount = '';
             }
             break;
           case 'debitCredit':
@@ -135,39 +128,35 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
       // Ensure one-to-one mapping across fields (Description can be multi)
       const clearHeader = (h: string) => {
         if (next.csv.date === h) next.csv.date = '';
-        if (next.csv.amount === h) next.csv.amount = '';
         if (next.csv.owner === h) delete next.csv.owner;
         if (next.csv.account === h) delete next.csv.account;
         if (next.csv.currency === h) delete next.csv.currency;
         next.csv.description = next.csv.description.filter((x: string) => x !== h);
         // Clear from amountMapping
         const am = next.csv.amountMapping;
-        if (am) {
-          switch (am.type) {
-            case 'single':
-              if (am.column === h) {
-                const invertSign = am.invertSign ?? false;
-                next.csv.amountMapping = { type: 'single', column: '', invertSign };
-                next.csv.amount = '';
-              }
-              break;
-            case 'debitCredit':
-              if (am.debitColumn === h) {
-                next.csv.amountMapping = { ...am, debitColumn: undefined };
-              }
-              if (am.creditColumn === h) {
-                next.csv.amountMapping = { ...am, creditColumn: undefined };
-              }
-              break;
-            case 'amountWithType':
-              if (am.amountColumn === h) {
-                next.csv.amountMapping = { ...am, amountColumn: '' };
-              }
-              if (am.typeColumn === h) {
-                next.csv.amountMapping = { ...am, typeColumn: '' };
-              }
-              break;
-          }
+        switch (am.type) {
+          case 'single':
+            if (am.column === h) {
+              const invertSign = am.invertSign ?? false;
+              next.csv.amountMapping = { type: 'single', column: '', invertSign };
+            }
+            break;
+          case 'debitCredit':
+            if (am.debitColumn === h) {
+              next.csv.amountMapping = { ...am, debitColumn: undefined };
+            }
+            if (am.creditColumn === h) {
+              next.csv.amountMapping = { ...am, creditColumn: undefined };
+            }
+            break;
+          case 'amountWithType':
+            if (am.amountColumn === h) {
+              next.csv.amountMapping = { ...am, amountColumn: '' };
+            }
+            if (am.typeColumn === h) {
+              next.csv.amountMapping = { ...am, typeColumn: '' };
+            }
+            break;
         }
       };
 
@@ -184,9 +173,7 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
       }
 
       if (field === 'amount') {
-        // Update amountMapping to single column
-        const invertSign = prev.csv.amountMapping?.invertSign ?? false;
-        next.csv.amount = header;
+        const invertSign = prev.csv.amountMapping.invertSign ?? false;
         next.csv.amountMapping = { type: 'single', column: header, invertSign };
         return next;
       }
@@ -231,24 +218,24 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
   const handleAmountMappingTypeChange = (newType: AmountMapping['type']) => {
     setMapping((prev) => {
       const prevAm = prev.csv.amountMapping;
-      const invertSign = prevAm?.invertSign ?? false;
+      const invertSign = prevAm.invertSign ?? false;
       let newAm: AmountMapping;
       // Preserve existing columns where applicable
       switch (newType) {
         case 'single':
-          const column = prevAm?.type === 'single' ? prevAm.column : prev.csv.amount;
+          const column = prevAm.type === 'single' ? prevAm.column : '';
           newAm = { type: 'single', column, invertSign };
           break;
         case 'debitCredit':
-          const debitColumn = prevAm?.type === 'debitCredit' ? prevAm.debitColumn : undefined;
-          const creditColumn = prevAm?.type === 'debitCredit' ? prevAm.creditColumn : undefined;
+          const debitColumn = prevAm.type === 'debitCredit' ? prevAm.debitColumn : undefined;
+          const creditColumn = prevAm.type === 'debitCredit' ? prevAm.creditColumn : undefined;
           newAm = { type: 'debitCredit', debitColumn, creditColumn, invertSign };
           break;
         case 'amountWithType':
-          const amountColumn = prevAm?.type === 'amountWithType' ? prevAm.amountColumn : '';
-          const typeColumn = prevAm?.type === 'amountWithType' ? prevAm.typeColumn : '';
-          const negativeValue = prevAm?.type === 'amountWithType' ? prevAm.negativeValue ?? 'debit' : 'debit';
-          const positiveValue = prevAm?.type === 'amountWithType' ? prevAm.positiveValue ?? 'credit' : 'credit';
+          const amountColumn = prevAm.type === 'amountWithType' ? prevAm.amountColumn : '';
+          const typeColumn = prevAm.type === 'amountWithType' ? prevAm.typeColumn : '';
+          const negativeValue = prevAm.type === 'amountWithType' ? prevAm.negativeValue ?? 'debit' : 'debit';
+          const positiveValue = prevAm.type === 'amountWithType' ? prevAm.positiveValue ?? 'credit' : 'credit';
           newAm = { type: 'amountWithType', amountColumn, typeColumn, negativeValue, positiveValue, invertSign };
           break;
       }
@@ -257,8 +244,6 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
         csv: {
           ...prev.csv,
           amountMapping: newAm,
-          // Keep legacy amount field in sync for single type
-          amount: newAm.type === 'single' ? newAm.column : prev.csv.amount,
         },
       };
     });
@@ -267,7 +252,7 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
   const assignAmountMappingColumn = (field: 'column' | 'debitColumn' | 'creditColumn' | 'amountColumn' | 'typeColumn', header: string) => {
     if (!header) return;
     setMapping((prev) => {
-      const prevAm: AmountMapping = prev.csv.amountMapping ?? { type: 'single', column: prev.csv.amount || '', invertSign: false };
+      const prevAm: AmountMapping = prev.csv.amountMapping;
       let newAm: AmountMapping;
       switch (prevAm.type) {
         case 'single':
@@ -287,7 +272,6 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
         csv: {
           ...prev.csv,
           amountMapping: newAm,
-          amount: newAm.type === 'single' ? newAm.column : prev.csv.amount,
         },
       };
     });

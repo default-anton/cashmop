@@ -13,8 +13,7 @@ export type ImportMapping = {
   csv: {
     date: string;
     description: string[];
-    amount: string; // legacy, keep for backward compatibility
-    amountMapping?: AmountMapping;
+    amountMapping: AmountMapping;
     owner?: string;
     account?: string;
     currency?: string;
