@@ -6,6 +6,7 @@
 - Use label "Owner" for `owner_name`
 - Visual stability/motion: optimistic updates; no global loading that unmounts lists; `framer-motion` `layout` + `AnimatePresence` mode="popLayout"; subtle 4–8px vertical offsets; `easeOut` or high-damping springs; no exit scale; in-place success feedback while backend syncs
 - Typography/casing: small labels `text-canvas-600` + `uppercase`; data names no `uppercase`
+- Copy tone: playful/quirky/fresh; millennial-friendly; concise; avoid corporate finance-speak
 - Finance: negative amounts no minus; abs value + red `text-finance-expense`
 - Shared utilities: check `src/utils/` before adding helpers (e.g., `currency.ts`)
 - Suggestions/dropdowns: `createPortal` to avoid clipping/height jumps
