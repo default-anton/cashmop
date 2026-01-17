@@ -540,6 +540,28 @@ Import validation:
 }
 ```
 
+## Verification / Testing
+- Prefer black-box integration tests: run the real `cashmop` binary against a real SQLite file DB (no mocks).
+- DB isolation:
+  - primary: `cashmop --db <tempdir>/cashmop.db ...` per test.
+  - fallback (reuse existing infra): `APP_ENV=test CASHMOP_WORKER_ID=<n>` + `./build/bin/test-helper reset`.
+- Global assertions (all non-help commands):
+  - `stderr` empty
+  - `stdout` is a single JSON object containing `ok: boolean`
+  - exit codes: `0` success, `2` validation, `1` runtime
+- Feature verification (minimal suite):
+  - help/version: human-readable stdout, exit `0`
+  - `--db` override: writes isolated between DB paths
+  - `mappings`: save/get/list/delete roundtrip (mapping blob stays GUI camelCase)
+  - `import`: required flags validation; `--dry-run` makes no DB writes; `--no-apply-rules` leaves tx uncategorized
+  - `tx list`: date range defaults/validation; `--uncategorized` + `--category-ids` union; `--query` fuzzy match; amount filters exclude txs without FX conversion
+  - `tx categorize`: categorize + `--uncategorize` reflected in subsequent `tx list`
+  - `rules`: preview/create/update/delete including `--recategorize` / `--uncategorize` behaviors
+  - `export`: file created with correct columns; overwrites existing `--out`
+  - `backup`: create/validate/restore roundtrip; restore creates safety backup; verify state via follow-up CLI calls
+  - `settings`: get/set main currency persisted
+  - `fx`: `fx rate/status` from seeded DB; `fx sync` should be deterministic in tests (avoid network; use a test-mode provider/cassette mechanism if needed)
+
 ## Implementation Notes (required for parity)
 - CLI mode must not emit logs to stdout/stderr.
 - DB init failures must be returned as structured JSON errors in CLI mode (not `log.Fatal`).
