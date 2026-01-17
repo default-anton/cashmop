@@ -20,6 +20,22 @@
 ## Name + One-Liner
 - `cashmop`: CashMop CLI for automated data operations.
 
+## Distribution / Install Strategy
+- Single **`cashmop`** binary: GUI + CLI modes.
+  - No args (`cashmop`) => start desktop app (Wails).
+  - Any args (`cashmop <subcommand> ...`) => run CLI mode; do **not** initialize Wails/webview.
+- CLI availability on `PATH` is packaging-dependent:
+  - Linux `.deb`: install `cashmop` to `/usr/bin/cashmop` (already done in `scripts/release.sh`).
+  - Linux `AppImage`: no system install; provide `cashmop install-cli` helper to copy/symlink into `~/.local/bin` (and `uninstall-cli`).
+  - macOS `.app` in `.zip`: **primary UX = explicit in-app action** (menu item: `CashMop → Install CLI…`).
+    - Installs a small shim/symlink so `cashmop` is available on `PATH`.
+    - Install target preference:
+      - `/usr/local/bin` (if writable; otherwise prompt for admin credentials to write there)
+      - fallback: `~/.local/bin` (no admin); show “add to PATH” instructions
+    - Provide `Uninstall CLI…` to remove the shim.
+    - Optional non-interactive equivalent: `cashmop install-cli [--path <dir>]`.
+  - Windows NSIS installer: add optional checkbox “Add CashMop to PATH (current user)” to append `$INSTDIR` to `PATH` and remove on uninstall.
+
 ## Usage
 - `cashmop [global flags] <subcommand> [args]`
 
