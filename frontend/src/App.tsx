@@ -9,6 +9,7 @@ import About from './screens/About/About';
 import { ToastProvider } from './contexts/ToastContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { EventsOn } from '../wailsjs/runtime/runtime';
+import logoLandscape from './assets/branding/logo-landscape.png';
 
 function App() {
   const [showAbout, setShowAbout] = useState(false);
@@ -121,6 +122,15 @@ function App() {
     <ToastProvider>
       <CurrencyProvider>
       <div className="min-h-screen bg-canvas-100">
+      <button
+        type="button"
+        onClick={() => setShowAbout(true)}
+        aria-label="Open About"
+        title="CashMop"
+        className="fixed top-4 left-6 z-50 flex items-center px-3 py-2 bg-canvas-50/80 backdrop-blur-md border border-canvas-200 rounded-full shadow-lg transition hover:shadow-xl"
+      >
+        <img src={logoLandscape} alt="CashMop" className="h-8 w-auto select-none" />
+      </button>
       <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 bg-canvas-50/80 backdrop-blur-md border border-canvas-200 rounded-full shadow-lg">
         {hasData && (
           <button

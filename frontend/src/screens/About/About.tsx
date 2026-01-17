@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Info, Code, Heart, ExternalLink, GitBranch, Shield, Users, Zap, X } from 'lucide-react';
+import { Code, Heart, ExternalLink, GitBranch, Users, X } from 'lucide-react';
 import { Card, Button, Modal } from '../../components';
 import { openExternal } from '../../utils/openExternal';
+import logoSquare from '../../assets/branding/logo-square.png';
 
 interface AboutProps {
   isOpen: boolean;
@@ -28,6 +29,17 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
     fetchVersion();
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const handleCheckForUpdates = () => {
     openExternal('https://github.com/default-anton/cashmop/releases');
   };
@@ -50,23 +62,23 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
         <X className="w-6 h-6" />
       </button>
 
-      <div className="max-h-[80vh] overflow-y-auto custom-scrollbar">
-        <div className="text-center pt-8 pb-6 px-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-brand to-brand/70 text-white rounded-3xl shadow-brand-glow mb-6">
-            <Zap className="w-10 h-10" />
+      <div className="max-h-[78vh] overflow-y-auto custom-scrollbar">
+        <div className="text-center pt-6 pb-4 px-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-canvas-50 border border-canvas-200 rounded-2xl shadow-card mb-4">
+            <img src={logoSquare} alt="CashMop" className="w-12 h-12 select-none" />
           </div>
-          <h1 className="text-4xl font-black text-canvas-900 mb-2 select-none">CashMop</h1>
-          <p className="text-lg text-canvas-600 font-medium select-none">Desktop-first cash flow tracking application</p>
+          <h1 className="text-3xl font-black text-canvas-900 mb-1 select-none">CashMop</h1>
+          <p className="text-base text-canvas-600 font-medium select-none">Desktop-first cash flow tracking app</p>
         </div>
 
-        <Card variant="glass" className="p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-brand/10 text-brand rounded-xl">
-                <GitBranch className="w-6 h-6" />
+        <Card variant="default" className="p-4 mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-brand/10 text-brand rounded-lg">
+                <GitBranch className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs uppercase text-canvas-500 font-bold tracking-wider mb-1 select-none">Version</p>
+                <p className="text-xs uppercase text-canvas-600 font-semibold tracking-wider mb-0.5 select-none">Version</p>
                 {loading ? (
                   <p className="text-canvas-800 font-semibold text-lg">Loading...</p>
                 ) : version ? (
@@ -76,48 +88,42 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
                 )}
               </div>
             </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCheckForUpdates}
-              className="px-4 py-2 flex items-center gap-2"
-            >
-              <ExternalLink className="w-4 h-4" />
-              Check Updates
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={handleCheckForUpdates}>
+                <ExternalLink className="w-4 h-4" />
+                Updates
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleViewLicense}>
+                <ExternalLink className="w-4 h-4" />
+                License
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleViewSource}>
+                <Code className="w-4 h-4" />
+                Source
+              </Button>
+            </div>
           </div>
-        </Card>
-
-        <Card variant="glass" className="p-6 mb-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Shield className="w-6 h-6 text-brand" />
-            <h2 className="text-xl font-bold text-canvas-800 select-none">License</h2>
-          </div>
-          <p className="text-canvas-600 mb-4">
-            This application is licensed under the <span className="font-semibold text-canvas-800">Apache License 2.0</span>, a permissive free software license.
+          <p className="text-sm text-canvas-600 mt-3">
+            Licensed under <span className="font-semibold text-canvas-800">Apache License 2.0</span>.
           </p>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleViewLicense}
-            className="px-4 py-2 flex items-center gap-2"
-          >
-            <ExternalLink className="w-4 h-4" />
-            View Full License
-          </Button>
         </Card>
 
-        <Card variant="glass" className="p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Users className="w-6 h-6 text-brand" />
-            <h2 className="text-xl font-bold text-canvas-800 select-none">Credits</h2>
+        <Card variant="default" className="p-4 mb-4">
+          <div className="flex items-center gap-3 mb-3">
+            <Users className="w-5 h-5 text-brand" />
+            <h2 className="text-lg font-bold text-canvas-800 select-none">Credits</h2>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-start justify-between pb-4 border-b border-canvas-200">
-              <div>
-                <p className="font-semibold text-canvas-900">Anton Kuzmenko</p>
-                <p className="text-sm text-canvas-600">Design, Development, & Product</p>
+            <div className="flex items-center justify-between pb-3 border-b border-canvas-200">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-brand/10 text-brand font-semibold flex items-center justify-center">
+                  AK
+                </div>
+                <div>
+                  <p className="font-semibold text-canvas-900">Anton Kuzmenko</p>
+                  <p className="text-sm text-canvas-600">Design, Development, & Product</p>
+                </div>
               </div>
               <button
                 onClick={() => openExternal('https://github.com/default-anton')}
@@ -129,61 +135,27 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <p className="text-sm font-bold uppercase text-canvas-500 mb-3 select-none">Built With</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2 text-sm text-canvas-700">
-                  <Code className="w-4 h-4 text-canvas-400" />
-                  <span>Go 1.25</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-canvas-700">
-                  <Code className="w-4 h-4 text-canvas-400" />
-                  <span>React 19</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-canvas-700">
-                  <Code className="w-4 h-4 text-canvas-400" />
-                  <span>Wails v2</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-canvas-700">
-                  <Code className="w-4 h-4 text-canvas-400" />
-                  <span>SQLite</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-canvas-700">
-                  <Code className="w-4 h-4 text-canvas-400" />
-                  <span>Tailwind CSS</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-canvas-700">
-                  <Code className="w-4 h-4 text-canvas-400" />
-                  <span>TypeScript</span>
-                </div>
+              <p className="text-xs font-semibold uppercase text-canvas-600 tracking-wider mb-2 select-none">Built With</p>
+              <div className="flex flex-wrap gap-2">
+                {['Go 1.25', 'React 19', 'Wails v2', 'SQLite', 'Tailwind CSS', 'TypeScript'].map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-canvas-200 bg-canvas-100 px-3 py-1 text-xs text-canvas-700"
+                  >
+                    {item}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
         </Card>
 
-        <Card variant="glass" className="p-6 mb-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Info className="w-6 h-6 text-brand" />
-            <h2 className="text-xl font-bold text-canvas-800 select-none">Open Source</h2>
-          </div>
-          <p className="text-canvas-600 mb-4">
-            CashMop is open source. Contribute, report issues, or fork the project on GitHub.
-          </p>
-          <Button
-            variant="primary"
-            onClick={handleViewSource}
-            className="px-4 py-2 flex items-center gap-2"
-          >
-            <Code className="w-4 h-4" />
-            View Source Code
-          </Button>
-        </Card>
-
-        <div className="text-center pb-8 pt-4 px-8">
+        <div className="text-center pb-6 pt-2 px-6">
           <p className="text-sm text-canvas-500 flex items-center justify-center gap-2">
             Made with <Heart className="w-4 h-4 text-finance-expense fill-finance-expense" /> by Anton Kuzmenko
           </p>
-          <p className="text-xs text-canvas-400 mt-1 select-none">© {year} Anton Kuzmenko. All rights reserved.</p>
-          <p className="text-xs text-canvas-300 mt-2 select-none">Press ESC or click outside to close</p>
+          <p className="text-xs text-canvas-500 mt-1 select-none">© {year} Anton Kuzmenko. All rights reserved.</p>
+          <p className="text-xs text-canvas-500 mt-2 select-none">Press ESC or click outside to close</p>
         </div>
       </div>
     </Modal>

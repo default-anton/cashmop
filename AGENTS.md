@@ -21,7 +21,7 @@ Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linu
 - Feature specs: `docs/specs/`
 - Frontend deps: `frontend/package.json` only; never root
 - After Go or frontend changes: `make check` (go test/vet/tidy/build/vulncheck, typescript, integration tests)
-- Add `V=1` to any `make` command for verbose (non-captured) output: `make integration V=1`.
+- Use plain `make` commands by default (no `V=1`) unless explicitly requested.
 - Integration tests rules: `frontend/tests/AGENTS.md`
 - Frontend rules: `frontend/AGENTS.md`
 - Migrations: `internal/database/migrations/*.sql`; see `internal/database/migrations/AGENTS.md`

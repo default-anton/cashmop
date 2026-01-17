@@ -4,7 +4,7 @@ Desktop-first cash flow tracking. Import messy bank exports, normalize once, pun
 
 **Status:** Pre-release. Backward compatibility not guaranteed.
 
-![CashMop logo](frontend/src/assets/images/logo-universal.png)
+![CashMop logo](frontend/src/assets/branding/logo-landscape.png)
 
 Screenshot and walkthrough coming soon.
 
@@ -54,7 +54,7 @@ Linux: use AppImage (recommended; works on Arch) or `.deb` (Debian/Ubuntu).
    ```bash
    make dev
    ```
-4. Run validation (add `V=1` for verbose output):
+4. Run validation:
    ```bash
    make check
    ```
