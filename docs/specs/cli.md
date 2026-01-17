@@ -79,7 +79,7 @@
 - Storage + backend calculations: **cents (INTEGER/int64)**.
 - CLI user-facing money values: **decimal major units as strings**.
   - Examples: `"12.34"`, `"-12.34"`.
-  - CLI accepts decimal strings for flags (e.g. `--amount_min "10.00"`).
+  - CLI accepts decimal strings for flags (e.g. `--amount-min "10.00"`).
   - Parsing: same as GUI (`frontend/src/utils/currency.ts::parseCents`) — strip non-numeric chars except `-`, `.` and `,`; treat `,` as decimal separator.
 
 ### Dates
@@ -97,7 +97,7 @@
 
 ## Safety
 - No prompts or confirmations.
-- Destructive actions require explicit flags (e.g. `--uncategorize`, `--no_apply_rules`).
+- Destructive actions require explicit flags (e.g. `--uncategorize`, `--no-apply-rules`).
 - Exports overwrite existing output files.
 
 ## Command Tree
@@ -119,7 +119,7 @@
 Import CSV/XLSX with an explicit mapping. Non-interactive.
 
 #### Usage
-- `cashmop import --file <path> --mapping <path|name|-> [--month YYYY-MM ...] [--dry_run] [--no_apply_rules]`
+- `cashmop import --file <path> --mapping <path|name|-> [--month YYYY-MM ...] [--dry-run] [--no-apply-rules]`
 
 #### Flags
 - `--file <path>` (required)
@@ -131,8 +131,8 @@ Import CSV/XLSX with an explicit mapping. Non-interactive.
   - If omitted:
     - if file contains exactly one month → import it
     - if file contains multiple months → error with found months + require `--month`
-- `--dry_run` parses + validates only, no writes.
-- `--no_apply_rules` skips automatic rule application after insert (default: apply rules).
+- `--dry-run` parses + validates only, no writes.
+- `--no-apply-rules` skips automatic rule application after insert (default: apply rules).
 
 #### File parsing (parity with GUI)
 - CSV:
@@ -245,7 +245,7 @@ Transaction operations.
 List transactions in a bounded date range.
 
 Usage:
-- `cashmop tx list [--start YYYY-MM-DD --end YYYY-MM-DD] [--uncategorized] [--category_ids 1,2] [--query "..."] [--amount_min "12.34"] [--amount_max "99.99"] [--sort date|amount] [--order asc|desc]`
+- `cashmop tx list [--start YYYY-MM-DD --end YYYY-MM-DD] [--uncategorized] [--category-ids 1,2] [--query "..."] [--amount-min "12.34"] [--amount-max "99.99"] [--sort date|amount] [--order asc|desc]`
 
 Date range rules:
 - If neither `--start` nor `--end` is provided: default to **last full calendar month**.
@@ -257,10 +257,10 @@ Notes:
 - Amount filters use decimal strings (major units).
   - Semantics: filter/sort uses main-currency converted amount (same as GUI). If conversion is unavailable for a tx/date/currency, that tx is excluded from amount filters; for `--sort amount` it sorts last.
 - Category filtering:
-  - default (no `--uncategorized`, no `--category_ids`): all transactions in range.
+  - default (no `--uncategorized`, no `--category-ids`): all transactions in range.
   - `--uncategorized`: only uncategorized.
-  - `--category_ids 1,2`: only those categories.
-  - both `--uncategorized` + `--category_ids`: union (those categories + uncategorized).
+  - `--category-ids 1,2`: only those categories.
+  - both `--uncategorized` + `--category-ids`: union (those categories + uncategorized).
 - `--sort` defaults to `date`, `--order` defaults to `desc`.
 
 Output:
@@ -316,14 +316,14 @@ Outputs:
 ### `rules`
 Usage:
 - `cashmop rules list`
-- `cashmop rules preview --match_value <v> --match_type <starts_with|ends_with|contains|exact> [--amount_min "..."] [--amount_max "..."]`
-- `cashmop rules create --match_value <v> --match_type <...> [--amount_min "..."] [--amount_max "..."] --category <name>`
+- `cashmop rules preview --match-value <v> --match-type <starts_with|ends_with|contains|exact> [--amount-min "..."] [--amount-max "..."]`
+- `cashmop rules create --match-value <v> --match-type <...> [--amount-min "..."] [--amount-max "..."] --category <name>`
 - `cashmop rules update --id <id> [--recategorize] ...`
 - `cashmop rules delete --id <id> [--uncategorize]`
 
 Notes:
 - Amount filters use decimal strings (major units); rules store cents internally.
-  - Semantics: amount_min/max apply to main-currency converted amount (same behavior as GUI rule matching).
+  - Semantics: amount-min/max apply to main-currency converted amount (same behavior as GUI rule matching).
 - Amount values in outputs (`amount_min`, `amount_max`, `min_amount`, `max_amount`, transaction `amount`) are decimal strings (major units) or `null`.
 
 Outputs:
@@ -377,7 +377,7 @@ Outputs:
 
 ### `export`
 Usage:
-- `cashmop export --start YYYY-MM-DD --end YYYY-MM-DD --format csv|xlsx --out <path> [--category_ids 1,2]`
+- `cashmop export --start YYYY-MM-DD --end YYYY-MM-DD --format csv|xlsx --out <path> [--category-ids 1,2]`
 
 Rules:
 - Date range required and must be ≤ 93 days.
@@ -446,7 +446,7 @@ Outputs:
 ### `settings`
 Usage:
 - `cashmop settings get`
-- `cashmop settings set --main_currency <ISO>`
+- `cashmop settings set --main-currency <ISO>`
 
 Outputs:
 - `get`
