@@ -21,6 +21,7 @@ Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linu
 - Feature specs: `docs/specs/`
 - Frontend deps: `frontend/package.json` only; never root
 - After Go or frontend changes: `make check` (go test/vet/tidy/build/vulncheck, typescript, integration tests)
+- Docs-only changes: skip `make check`
 - Use plain `make` commands by default (no `V=1`) unless explicitly requested.
 - Integration tests rules: `frontend/tests/AGENTS.md`
 - Frontend rules: `frontend/AGENTS.md`
@@ -30,6 +31,7 @@ Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linu
   - Ranking: word/string start > mid; tie => shorter (`internal/fuzzy/fuzzy_test.go`)
   - Lists: Wails bindings only; no client `.includes()` / JS fuzzy
 - Monetary amounts: cents only (INTEGER, int64) - never float64
+  - User-facing (UI/CLI) amounts should be decimal strings; convert at boundaries
   - Exception: `fx_rates.rate` stays REAL
   - Frontend: `utils/currency.ts` (`formatCents`, `parseCents`)
   - Rounding: Go `math.Round(x + 0.5)`, JS `Math.round(x * 100)`
