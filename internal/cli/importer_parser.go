@@ -41,7 +41,9 @@ func parseCSVFile(path string) (*parsedFile, error) {
 	var rawRows [][]string
 	for _, line := range lines {
 		trimmed := strings.TrimSpace(line)
-		if trimmed == "" { continue }
+		if trimmed == "" {
+			continue
+		}
 		rawRows = append(rawRows, parseCSVLine(trimmed))
 	}
 
@@ -123,9 +125,11 @@ var headerKeywords = []string{
 }
 
 func detectHeaderRow(rows [][]string) bool {
-	if len(rows) == 0 { return false }
+	if len(rows) == 0 {
+		return false
+	}
 	first := rows[0]
-	
+
 	keywordHits := 0
 	for _, cell := range first {
 		lower := strings.ToLower(strings.TrimSpace(cell))
@@ -136,16 +140,22 @@ func detectHeaderRow(rows [][]string) bool {
 			}
 		}
 	}
-	if keywordHits > 0 { return true }
+	if keywordHits > 0 {
+		return true
+	}
 
-	if len(rows) < 2 { return false }
+	if len(rows) < 2 {
+		return false
+	}
 	second := rows[1]
 
 	stats := func(row []string) (int, int, int) {
 		var num, date, txt int
 		for _, cell := range row {
 			cell = strings.TrimSpace(cell)
-			if cell == "" { continue }
+			if cell == "" {
+				continue
+			}
 			if !parseDateLoose(cell).IsZero() {
 				date++
 				continue
@@ -166,10 +176,18 @@ func detectHeaderRow(rows [][]string) bool {
 	score1 := n1 + d1
 	score2 := n2 + d2
 
-	if score1 >= 2 && score2 >= 1 { return false }
-	if score1 >= 2 && t1 == 0 { return false }
-	if score2 > score1 && t1 >= t2 { return true }
-	if score1 == 0 && score2 >= 1 { return true }
+	if score1 >= 2 && score2 >= 1 {
+		return false
+	}
+	if score1 >= 2 && t1 == 0 {
+		return false
+	}
+	if score2 > score1 && t1 >= t2 {
+		return true
+	}
+	if score1 == 0 && score2 >= 1 {
+		return true
+	}
 
 	return true
 }
@@ -177,9 +195,13 @@ func detectHeaderRow(rows [][]string) bool {
 func buildParsedRows(rawRows [][]string, hasHeader bool) ([]string, [][]string) {
 	maxCols := 0
 	for _, r := range rawRows {
-		if len(r) > maxCols { maxCols = len(r) }
+		if len(r) > maxCols {
+			maxCols = len(r)
+		}
 	}
-	if maxCols == 0 { return nil, nil }
+	if maxCols == 0 {
+		return nil, nil
+	}
 
 	if !hasHeader {
 		headers := make([]string, maxCols)
@@ -193,7 +215,9 @@ func buildParsedRows(rawRows [][]string, hasHeader bool) ([]string, [][]string) 
 	headers := make([]string, maxCols)
 	for i := 0; i < maxCols; i++ {
 		val := ""
-		if i < len(headerRow) { val = strings.TrimSpace(headerRow[i]) }
+		if i < len(headerRow) {
+			val = strings.TrimSpace(headerRow[i])
+		}
 		if val == "" {
 			val = fmt.Sprintf("Column %s", toColumnName(i))
 		}

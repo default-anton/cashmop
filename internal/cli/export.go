@@ -3,9 +3,7 @@ package cli
 import (
 	"cashmop/internal/database"
 	"encoding/csv"
-	"flag"
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -20,33 +18,25 @@ type exportResponse struct {
 }
 
 func handleExport(args []string) commandResult {
-	fs := flag.NewFlagSet("export", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("export")
 	var start string
 	var end string
 	var format string
 	var out string
 	var categoryIDs stringSliceFlag
 
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&start, "start", "", "")
 	fs.StringVar(&end, "end", "", "")
 	fs.StringVar(&format, "format", "", "")
 	fs.StringVar(&out, "out", "", "")
 	fs.Var(&categoryIDs, "category-ids", "")
 
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("export")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "export"); !ok {
+		return res
 	}
 
 	if start == "" || end == "" || format == "" || out == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--start, --end, --format, and --out are required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "--start, --end, --format, and --out are required."})}
 	}
 
 	start, end, cErr := validateDateRange(start, end)
@@ -55,7 +45,7 @@ func handleExport(args []string) commandResult {
 	}
 
 	if format != "csv" && format != "xlsx" {
-		return commandResult{Err: validationError(ErrorDetail{Field: "format", Message: "Format must be csv or xlsx."}) }
+		return commandResult{Err: validationError(ErrorDetail{Field: "format", Message: "Format must be csv or xlsx."})}
 	}
 
 	var catIDs []int64
@@ -63,7 +53,9 @@ func handleExport(args []string) commandResult {
 		parts := strings.Split(s, ",")
 		for _, p := range parts {
 			p = strings.TrimSpace(p)
-			if p == "" { continue }
+			if p == "" {
+				continue
+			}
 			var id int64
 			if _, err := fmt.Sscanf(p, "%d", &id); err != nil {
 				return commandResult{Err: validationError(ErrorDetail{Field: "category-ids", Message: fmt.Sprintf("Invalid category ID: %s", p)})}

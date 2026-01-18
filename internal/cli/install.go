@@ -1,9 +1,7 @@
 package cli
 
 import (
-	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -20,19 +18,11 @@ type uninstallResponse struct {
 }
 
 func handleInstallCli(args []string) commandResult {
-	fs := flag.NewFlagSet("install-cli", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("install-cli")
 	var target string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&target, "path", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("install-cli")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "install-cli"); !ok {
+		return res
 	}
 
 	if runtime.GOOS == "windows" {
@@ -48,19 +38,11 @@ func handleInstallCli(args []string) commandResult {
 }
 
 func handleUninstallCli(args []string) commandResult {
-	fs := flag.NewFlagSet("uninstall-cli", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("uninstall-cli")
 	var target string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&target, "path", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("uninstall-cli")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "uninstall-cli"); !ok {
+		return res
 	}
 
 	if runtime.GOOS == "windows" {

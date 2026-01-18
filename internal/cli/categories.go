@@ -2,9 +2,7 @@ package cli
 
 import (
 	"cashmop/internal/database"
-	"flag"
 	"fmt"
-	"io"
 )
 
 type categoryListResponse struct {
@@ -32,7 +30,7 @@ type categoryResponse struct {
 
 func handleCategories(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing categories subcommand (list, rename, create)."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Missing categories subcommand (list, rename, create)."})}
 	}
 
 	switch args[0] {
@@ -43,22 +41,14 @@ func handleCategories(args []string) commandResult {
 	case "create":
 		return handleCategoriesCreate(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown categories subcommand."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown categories subcommand."})}
 	}
 }
 
 func handleCategoriesList(args []string) commandResult {
-	fs := flag.NewFlagSet("categories list", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("categories")
-		return commandResult{Help: true}
+	fs := newSubcommandFlagSet("categories list")
+	if ok, res := fs.parse(args, "categories"); !ok {
+		return res
 	}
 
 	items, err := database.GetAllCategories()
@@ -70,25 +60,17 @@ func handleCategoriesList(args []string) commandResult {
 }
 
 func handleCategoriesRename(args []string) commandResult {
-	fs := flag.NewFlagSet("categories rename", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("categories rename")
 	var id int64
 	var name string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.Int64Var(&id, "id", 0, "")
 	fs.StringVar(&name, "name", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("categories")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "categories"); !ok {
+		return res
 	}
 
 	if id == 0 || name == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--id and --name are required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "--id and --name are required."})}
 	}
 
 	if err := database.RenameCategory(id, name); err != nil {
@@ -99,23 +81,15 @@ func handleCategoriesRename(args []string) commandResult {
 }
 
 func handleCategoriesCreate(args []string) commandResult {
-	fs := flag.NewFlagSet("categories create", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("categories create")
 	var name string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&name, "name", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("categories")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "categories"); !ok {
+		return res
 	}
 
 	if name == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--name is required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "--name is required."})}
 	}
 
 	id, err := database.GetOrCreateCategory(name)

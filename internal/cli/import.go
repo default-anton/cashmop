@@ -3,7 +3,6 @@ package cli
 import (
 	"cashmop/internal/database"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -29,33 +28,25 @@ type importDryRunResponse struct {
 }
 
 func handleImport(args []string) commandResult {
-	fs := flag.NewFlagSet("import", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("import")
 	var filePath string
 	var mappingSpec string
 	var selectedMonths stringSliceFlag
 	var dryRun bool
 	var noApplyRules bool
 
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&filePath, "file", "", "")
 	fs.StringVar(&mappingSpec, "mapping", "", "")
 	fs.Var(&selectedMonths, "month", "")
 	fs.BoolVar(&dryRun, "dry-run", false, "")
 	fs.BoolVar(&noApplyRules, "no-apply-rules", false, "")
 
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("import")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "import"); !ok {
+		return res
 	}
 
 	if filePath == "" || mappingSpec == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--file and --mapping are required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "--file and --mapping are required."})}
 	}
 
 	// 1. Resolve mapping
@@ -183,9 +174,13 @@ func computeMonths(headers []string, rows [][]string, mapping database.ImportMap
 
 	buckets := make(map[string]int)
 	for _, row := range rows {
-		if dateIdx >= len(row) { continue }
+		if dateIdx >= len(row) {
+			continue
+		}
 		d := parseDateLoose(row[dateIdx])
-		if d.IsZero() { continue }
+		if d.IsZero() {
+			continue
+		}
 		key := d.Format("2006-01")
 		buckets[key]++
 	}
@@ -215,7 +210,9 @@ func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, s
 
 	settings, _ := database.GetCurrencySettings()
 	defaultCurrency := strings.ToUpper(strings.TrimSpace(settings.MainCurrency))
-	if defaultCurrency == "" { defaultCurrency = "CAD" }
+	if defaultCurrency == "" {
+		defaultCurrency = "CAD"
+	}
 
 	accountMap, err := database.GetAccountMap()
 	if err != nil {
@@ -228,11 +225,17 @@ func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, s
 
 	var out []database.TransactionModel
 	for _, row := range parsed.rows {
-		if dateIdx == -1 || dateIdx >= len(row) { continue }
+		if dateIdx == -1 || dateIdx >= len(row) {
+			continue
+		}
 		d := parseDateLoose(row[dateIdx])
-		if d.IsZero() { continue }
+		if d.IsZero() {
+			continue
+		}
 
-		if !monthSet[d.Format("2006-01")] { continue }
+		if !monthSet[d.Format("2006-01")] {
+			continue
+		}
 
 		descParts := make([]string, 0, len(descIdxs))
 		for _, i := range descIdxs {
@@ -261,7 +264,9 @@ func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, s
 		}
 
 		owner := mapping.DefaultOwner
-		if owner == "" { owner = "Unassigned" }
+		if owner == "" {
+			owner = "Unassigned"
+		}
 		if ownerIdx != -1 && ownerIdx < len(row) && row[ownerIdx] != "" {
 			owner = row[ownerIdx]
 		}
@@ -309,9 +314,13 @@ func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, s
 }
 
 func findHeader(headers []string, name string) int {
-	if name == "" { return -1 }
+	if name == "" {
+		return -1
+	}
 	for i, h := range headers {
-		if h == name { return i }
+		if h == name {
+			return i
+		}
 	}
 	return -1
 }

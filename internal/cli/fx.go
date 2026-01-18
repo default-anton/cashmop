@@ -4,8 +4,6 @@ import (
 	"cashmop/internal/database"
 	"cashmop/internal/fx"
 	"context"
-	"flag"
-	"io"
 )
 
 type fxStatusResponse struct {
@@ -22,7 +20,7 @@ type fxRateResponse struct {
 
 func handleFx(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing fx subcommand (status, sync, rate)."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Missing fx subcommand (status, sync, rate)."})}
 	}
 
 	switch args[0] {
@@ -33,22 +31,14 @@ func handleFx(args []string) commandResult {
 	case "rate":
 		return handleFxRate(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown fx subcommand."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown fx subcommand."})}
 	}
 }
 
 func handleFxStatus(args []string) commandResult {
-	fs := flag.NewFlagSet("fx status", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("fx")
-		return commandResult{Help: true}
+	fs := newSubcommandFlagSet("fx status")
+	if ok, res := fs.parse(args, "fx"); !ok {
+		return res
 	}
 
 	settings, err := database.GetCurrencySettings()
@@ -65,17 +55,9 @@ func handleFxStatus(args []string) commandResult {
 }
 
 func handleFxSync(args []string) commandResult {
-	fs := flag.NewFlagSet("fx sync", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("fx")
-		return commandResult{Help: true}
+	fs := newSubcommandFlagSet("fx sync")
+	if ok, res := fs.parse(args, "fx"); !ok {
+		return res
 	}
 
 	settings, err := database.GetCurrencySettings()
@@ -92,27 +74,19 @@ func handleFxSync(args []string) commandResult {
 }
 
 func handleFxRate(args []string) commandResult {
-	fs := flag.NewFlagSet("fx rate", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("fx rate")
 	var base string
 	var quote string
 	var date string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&base, "base", "", "")
 	fs.StringVar(&quote, "quote", "", "")
 	fs.StringVar(&date, "date", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("fx")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "fx"); !ok {
+		return res
 	}
 
 	if base == "" || quote == "" || date == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--base, --quote, and --date are required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "--base, --quote, and --date are required."})}
 	}
 
 	rate, err := database.GetFxRate(base, quote, date)
@@ -120,7 +94,7 @@ func handleFxRate(args []string) commandResult {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
 	if rate == nil {
-		return commandResult{Err: runtimeError(ErrorDetail{Message: "No rate found for the given criteria."}) }
+		return commandResult{Err: runtimeError(ErrorDetail{Message: "No rate found for the given criteria."})}
 	}
 
 	return commandResult{Response: fxRateResponse{

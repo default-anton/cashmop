@@ -11,9 +11,13 @@ import (
 
 func createAmountParser(mapping database.ImportMapping, headers []string) func([]string) int64 {
 	colIdx := func(col string) int {
-		if col == "" { return -1 }
+		if col == "" {
+			return -1
+		}
 		for i, h := range headers {
-			if h == col { return i }
+			if h == col {
+				return i
+			}
 		}
 		return -1
 	}
@@ -24,9 +28,13 @@ func createAmountParser(mapping database.ImportMapping, headers []string) func([
 	if am.Type == "single" {
 		idx := colIdx(am.Column)
 		return func(row []string) int64 {
-			if idx == -1 || idx >= len(row) { return 0 }
+			if idx == -1 || idx >= len(row) {
+				return 0
+			}
 			cents, _ := parseCentsString(row[idx])
-			if invert { return -cents }
+			if invert {
+				return -cents
+			}
 			return cents
 		}
 	}
@@ -42,14 +50,16 @@ func createAmountParser(mapping database.ImportMapping, headers []string) func([
 			if creditIdx != -1 && creditIdx < len(row) {
 				credit, _ = parseCentsString(row[creditIdx])
 			}
-			// parseCentsString returns signed. 
+			// parseCentsString returns signed.
 			// spec says "amount = math.Abs(credit) - math.Abs(debit)"
 			// wait, if I use parseCentsString, it might already have the sign.
 			// Let's stick to the spec's abs logic to be safe if input has mixed signs.
 			absDebit := int64(math.Abs(float64(debit)))
 			absCredit := int64(math.Abs(float64(credit)))
 			cents := absCredit - absDebit
-			if invert { return -cents }
+			if invert {
+				return -cents
+			}
 			return cents
 		}
 	}
@@ -58,14 +68,20 @@ func createAmountParser(mapping database.ImportMapping, headers []string) func([
 		amountIdx := colIdx(am.AmountColumn)
 		typeIdx := colIdx(am.TypeColumn)
 		neg := strings.TrimSpace(strings.ToLower(am.NegativeValue))
-		if neg == "" { neg = "debit" }
+		if neg == "" {
+			neg = "debit"
+		}
 		pos := strings.TrimSpace(strings.ToLower(am.PositiveValue))
-		if pos == "" { pos = "credit" }
+		if pos == "" {
+			pos = "credit"
+		}
 
 		return func(row []string) int64 {
-			if amountIdx == -1 || amountIdx >= len(row) { return 0 }
+			if amountIdx == -1 || amountIdx >= len(row) {
+				return 0
+			}
 			valCents, _ := parseCentsString(row[amountIdx])
-			
+
 			typeVal := ""
 			if typeIdx != -1 && typeIdx < len(row) {
 				typeVal = strings.TrimSpace(strings.ToLower(row[typeIdx]))
@@ -81,7 +97,9 @@ func createAmountParser(mapping database.ImportMapping, headers []string) func([
 				}
 			}
 
-			if invert { return -cents }
+			if invert {
+				return -cents
+			}
 			return cents
 		}
 	}
@@ -91,7 +109,9 @@ func createAmountParser(mapping database.ImportMapping, headers []string) func([
 
 func parseDateLoose(value string) time.Time {
 	v := strings.TrimSpace(value)
-	if v == "" { return time.Time{} }
+	if v == "" {
+		return time.Time{}
+	}
 
 	// Date(1234567890000) or /Date(1234567890000)/
 	dateRegex := regexp.MustCompile(`Date\((\d+)\)`)
@@ -103,7 +123,9 @@ func parseDateLoose(value string) time.Time {
 	// ISO-ish: YYYY-MM-DD
 	if matched, _ := regexp.MatchString(`^\d{4}-\d{2}-\d{2}`, v); matched {
 		d, err := time.Parse("2006-01-02", v[:10])
-		if err == nil { return d }
+		if err == nil {
+			return d
+		}
 	}
 
 	// Common bank formats: MM/DD/YYYY or DD/MM/YYYY
@@ -113,7 +135,9 @@ func parseDateLoose(value string) time.Time {
 		a, _ := strconv.Atoi(slash[1])
 		b, _ := strconv.Atoi(slash[2])
 		year, _ := strconv.Atoi(slash[3])
-		if year < 100 { year += 2000 }
+		if year < 100 {
+			year += 2000
+		}
 
 		// Heuristic: If first is > 12, it must be day.
 		// If both <= 12, assume MM/DD.

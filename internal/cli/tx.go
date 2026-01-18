@@ -3,17 +3,15 @@ package cli
 import (
 	"cashmop/internal/database"
 	"cashmop/internal/fuzzy"
-	"flag"
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 )
 
 type txListResponse struct {
-	Ok           bool                       `json:"ok"`
-	Count        int                        `json:"count"`
-	Transactions []txListTransaction        `json:"transactions"`
+	Ok           bool                `json:"ok"`
+	Count        int                 `json:"count"`
+	Transactions []txListTransaction `json:"transactions"`
 }
 
 func (r txListResponse) TableHeaders() []string {
@@ -55,7 +53,7 @@ type txCategorizeResponse struct {
 
 func handleTransactions(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing tx subcommand (list, categorize)."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Missing tx subcommand (list, categorize)."})}
 	}
 
 	switch args[0] {
@@ -64,14 +62,12 @@ func handleTransactions(args []string) commandResult {
 	case "categorize":
 		return handleTxCategorize(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown tx subcommand."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown tx subcommand."})}
 	}
 }
 
 func handleTxList(args []string) commandResult {
-	fs := flag.NewFlagSet("tx list", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("tx list")
 	var start string
 	var end string
 	var uncategorized bool
@@ -82,8 +78,6 @@ func handleTxList(args []string) commandResult {
 	var sortField string
 	var order string
 
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&start, "start", "", "")
 	fs.StringVar(&end, "end", "", "")
 	fs.BoolVar(&uncategorized, "uncategorized", false, "")
@@ -94,12 +88,8 @@ func handleTxList(args []string) commandResult {
 	fs.StringVar(&sortField, "sort", "date", "")
 	fs.StringVar(&order, "order", "desc", "")
 
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("tx")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "tx"); !ok {
+		return res
 	}
 
 	start, end, cErr := validateDateRange(start, end)
@@ -130,7 +120,9 @@ func handleTxList(args []string) commandResult {
 		parts := strings.Split(s, ",")
 		for _, p := range parts {
 			p = strings.TrimSpace(p)
-			if p == "" { continue }
+			if p == "" {
+				continue
+			}
 			var id int64
 			if _, err := fmt.Sscanf(p, "%d", &id); err != nil {
 				return commandResult{Err: validationError(ErrorDetail{Field: "category-ids", Message: fmt.Sprintf("Invalid category ID: %s", p)})}
@@ -253,23 +245,15 @@ func handleTxList(args []string) commandResult {
 }
 
 func handleTxCategorize(args []string) commandResult {
-	fs := flag.NewFlagSet("tx categorize", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("tx categorize")
 	var id int64
 	var category string
 	var uncategorize bool
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.Int64Var(&id, "id", 0, "")
 	fs.StringVar(&category, "category", "", "")
 	fs.BoolVar(&uncategorize, "uncategorize", false, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("tx")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "tx"); !ok {
+		return res
 	}
 
 	if id == 0 {
@@ -279,7 +263,7 @@ func handleTxCategorize(args []string) commandResult {
 	var catID int64
 	if !uncategorize {
 		if category == "" {
-			return commandResult{Err: validationError(ErrorDetail{Message: "Either --category or --uncategorize must be provided."}) }
+			return commandResult{Err: validationError(ErrorDetail{Message: "Either --category or --uncategorize must be provided."})}
 		}
 		var err error
 		catID, err = database.GetOrCreateCategory(category)

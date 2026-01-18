@@ -2,9 +2,7 @@ package cli
 
 import (
 	"cashmop/internal/database"
-	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -16,9 +14,9 @@ type backupCreateResponse struct {
 }
 
 type backupInfoResponse struct {
-	Ok               bool   `json:"ok"`
-	LastBackupTime   string `json:"last_backup_time"`
-	HasBackup        bool   `json:"has_backup"`
+	Ok             bool   `json:"ok"`
+	LastBackupTime string `json:"last_backup_time"`
+	HasBackup      bool   `json:"has_backup"`
 }
 
 type backupValidateResponse struct {
@@ -37,7 +35,7 @@ type backupRestoreResponse struct {
 
 func handleBackup(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing backup subcommand (create, info, validate, restore)."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Missing backup subcommand (create, info, validate, restore)."})}
 	}
 
 	switch args[0] {
@@ -50,24 +48,16 @@ func handleBackup(args []string) commandResult {
 	case "restore":
 		return handleBackupRestore(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown backup subcommand."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown backup subcommand."})}
 	}
 }
 
 func handleBackupCreate(args []string) commandResult {
-	fs := flag.NewFlagSet("backup create", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("backup create")
 	var out string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&out, "out", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("backup")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "backup"); !ok {
+		return res
 	}
 
 	if out == "" {
@@ -95,17 +85,9 @@ func handleBackupCreate(args []string) commandResult {
 }
 
 func handleBackupInfo(args []string) commandResult {
-	fs := flag.NewFlagSet("backup info", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("backup")
-		return commandResult{Help: true}
+	fs := newSubcommandFlagSet("backup info")
+	if ok, res := fs.parse(args, "backup"); !ok {
+		return res
 	}
 
 	lastTime, err := database.GetLastBackupTime()
@@ -126,19 +108,11 @@ func handleBackupInfo(args []string) commandResult {
 }
 
 func handleBackupValidate(args []string) commandResult {
-	fs := flag.NewFlagSet("backup validate", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("backup validate")
 	var file string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&file, "file", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("backup")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "backup"); !ok {
+		return res
 	}
 
 	if file == "" {
@@ -165,19 +139,11 @@ func handleBackupValidate(args []string) commandResult {
 }
 
 func handleBackupRestore(args []string) commandResult {
-	fs := flag.NewFlagSet("backup restore", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("backup restore")
 	var file string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&file, "file", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("backup")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "backup"); !ok {
+		return res
 	}
 
 	if file == "" {

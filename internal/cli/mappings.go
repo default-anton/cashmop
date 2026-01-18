@@ -3,7 +3,6 @@ package cli
 import (
 	"cashmop/internal/database"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -33,7 +32,7 @@ type mappingSaveResponse struct {
 
 func handleMappings(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing mappings subcommand (list, get, save, delete)."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Missing mappings subcommand (list, get, save, delete)."})}
 	}
 
 	switch args[0] {
@@ -46,22 +45,14 @@ func handleMappings(args []string) commandResult {
 	case "delete":
 		return handleMappingsDelete(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown mappings subcommand."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown mappings subcommand."})}
 	}
 }
 
 func handleMappingsList(args []string) commandResult {
-	fs := flag.NewFlagSet("mappings list", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("mappings")
-		return commandResult{Help: true}
+	fs := newSubcommandFlagSet("mappings list")
+	if ok, res := fs.parse(args, "mappings"); !ok {
+		return res
 	}
 
 	items, err := database.GetColumnMappings()
@@ -73,21 +64,13 @@ func handleMappingsList(args []string) commandResult {
 }
 
 func handleMappingsGet(args []string) commandResult {
-	fs := flag.NewFlagSet("mappings get", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("mappings get")
 	var name string
 	var id int64
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&name, "name", "", "")
 	fs.Int64Var(&id, "id", 0, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("mappings")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "mappings"); !ok {
+		return res
 	}
 
 	var m *database.ColumnMappingModel
@@ -97,14 +80,14 @@ func handleMappingsGet(args []string) commandResult {
 	} else if name != "" {
 		m, err = database.GetColumnMappingByName(name)
 	} else {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Either --id or --name is required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Either --id or --name is required."})}
 	}
 
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
 	if m == nil {
-		return commandResult{Err: runtimeError(ErrorDetail{Message: "Mapping not found."}) }
+		return commandResult{Err: runtimeError(ErrorDetail{Message: "Mapping not found."})}
 	}
 
 	return commandResult{Response: mappingGetResponse{
@@ -118,25 +101,17 @@ func handleMappingsGet(args []string) commandResult {
 }
 
 func handleMappingsSave(args []string) commandResult {
-	fs := flag.NewFlagSet("mappings save", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("mappings save")
 	var name string
 	var mappingPath string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&name, "name", "", "")
 	fs.StringVar(&mappingPath, "mapping", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("mappings")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "mappings"); !ok {
+		return res
 	}
 
 	if name == "" || mappingPath == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--name and --mapping are required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "--name and --mapping are required."})}
 	}
 
 	var data []byte
@@ -164,25 +139,17 @@ func handleMappingsSave(args []string) commandResult {
 }
 
 func handleMappingsDelete(args []string) commandResult {
-	fs := flag.NewFlagSet("mappings delete", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("mappings delete")
 	var name string
 	var id int64
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&name, "name", "", "")
 	fs.Int64Var(&id, "id", 0, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("mappings")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "mappings"); !ok {
+		return res
 	}
 
 	if id == 0 && name == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Either --id or --name is required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Either --id or --name is required."})}
 	}
 
 	if id == 0 {
@@ -191,7 +158,7 @@ func handleMappingsDelete(args []string) commandResult {
 			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 		}
 		if m == nil {
-			return commandResult{Err: runtimeError(ErrorDetail{Message: "Mapping not found."}) }
+			return commandResult{Err: runtimeError(ErrorDetail{Message: "Mapping not found."})}
 		}
 		id = m.ID
 	}

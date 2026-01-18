@@ -2,13 +2,11 @@ package cli
 
 import (
 	"cashmop/internal/database"
-	"flag"
 	"fmt"
-	"io"
 )
 
 type ruleListResponse struct {
-	Ok    bool               `json:"ok"`
+	Ok    bool           `json:"ok"`
 	Items []ruleListRule `json:"items"`
 }
 
@@ -50,10 +48,10 @@ type ruleListRule struct {
 }
 
 type rulePreviewResponse struct {
-	Ok           bool                       `json:"ok"`
-	Count        int                        `json:"count"`
-	MinAmount    *string                    `json:"min_amount"`
-	MaxAmount    *string                    `json:"max_amount"`
+	Ok           bool                     `json:"ok"`
+	Count        int                      `json:"count"`
+	MinAmount    *string                  `json:"min_amount"`
+	MaxAmount    *string                  `json:"max_amount"`
 	Transactions []rulePreviewTransaction `json:"transactions"`
 }
 
@@ -86,7 +84,7 @@ type ruleDeleteResponse struct {
 
 func handleRules(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing rules subcommand (list, preview, create, update, delete)."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Missing rules subcommand (list, preview, create, update, delete)."})}
 	}
 
 	switch args[0] {
@@ -101,22 +99,14 @@ func handleRules(args []string) commandResult {
 	case "delete":
 		return handleRulesDelete(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown rules subcommand."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown rules subcommand."})}
 	}
 }
 
 func handleRulesList(args []string) commandResult {
-	fs := flag.NewFlagSet("rules list", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("rules")
-		return commandResult{Help: true}
+	fs := newSubcommandFlagSet("rules list")
+	if ok, res := fs.parse(args, "rules"); !ok {
+		return res
 	}
 
 	rules, err := database.GetRules()
@@ -151,29 +141,21 @@ func handleRulesList(args []string) commandResult {
 }
 
 func handleRulesPreview(args []string) commandResult {
-	fs := flag.NewFlagSet("rules preview", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("rules preview")
 	var matchValue string
 	var matchType string
 	var amountMin string
 	var amountMax string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&matchValue, "match-value", "", "")
 	fs.StringVar(&matchType, "match-type", "", "")
 	fs.StringVar(&amountMin, "amount-min", "", "")
 	fs.StringVar(&amountMax, "amount-max", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("rules")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "rules"); !ok {
+		return res
 	}
 
 	if matchValue == "" || matchType == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--match-value and --match-type are required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "--match-value and --match-type are required."})}
 	}
 
 	var minCents *int64
@@ -229,31 +211,23 @@ func handleRulesPreview(args []string) commandResult {
 }
 
 func handleRulesCreate(args []string) commandResult {
-	fs := flag.NewFlagSet("rules create", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("rules create")
 	var matchValue string
 	var matchType string
 	var amountMin string
 	var amountMax string
 	var category string
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.StringVar(&matchValue, "match-value", "", "")
 	fs.StringVar(&matchType, "match-type", "", "")
 	fs.StringVar(&amountMin, "amount-min", "", "")
 	fs.StringVar(&amountMax, "amount-max", "", "")
 	fs.StringVar(&category, "category", "", "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("rules")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "rules"); !ok {
+		return res
 	}
 
 	if matchValue == "" || matchType == "" || category == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--match-value, --match-type, and --category are required."}) }
+		return commandResult{Err: validationError(ErrorDetail{Message: "--match-value, --match-type, and --category are required."})}
 	}
 
 	var minCents *int64
@@ -298,9 +272,7 @@ func handleRulesCreate(args []string) commandResult {
 }
 
 func handleRulesUpdate(args []string) commandResult {
-	fs := flag.NewFlagSet("rules update", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("rules update")
 	var id int64
 	var matchValue optionalStringFlag
 	var matchType optionalStringFlag
@@ -308,8 +280,6 @@ func handleRulesUpdate(args []string) commandResult {
 	var amountMax optionalStringFlag
 	var category optionalStringFlag
 	var recategorize bool
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.Int64Var(&id, "id", 0, "")
 	fs.Var(&matchValue, "match-value", "")
 	fs.Var(&matchType, "match-type", "")
@@ -317,12 +287,8 @@ func handleRulesUpdate(args []string) commandResult {
 	fs.Var(&amountMax, "amount-max", "")
 	fs.Var(&category, "category", "")
 	fs.BoolVar(&recategorize, "recategorize", false, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("rules")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "rules"); !ok {
+		return res
 	}
 
 	if id == 0 {
@@ -350,8 +316,12 @@ func handleRulesUpdate(args []string) commandResult {
 		uncategorizeCount = len(ids)
 	}
 
-	if matchValue.set { rule.MatchValue = matchValue.value }
-	if matchType.set { rule.MatchType = matchType.value }
+	if matchValue.set {
+		rule.MatchValue = matchValue.value
+	}
+	if matchType.set {
+		rule.MatchType = matchType.value
+	}
 	if category.set {
 		catID, err := database.GetOrCreateCategory(category.value)
 		if err != nil {
@@ -404,21 +374,13 @@ func handleRulesUpdate(args []string) commandResult {
 }
 
 func handleRulesDelete(args []string) commandResult {
-	fs := flag.NewFlagSet("rules delete", flag.ContinueOnError)
-	fs.SetOutput(io.Discard)
-	var help bool
+	fs := newSubcommandFlagSet("rules delete")
 	var id int64
 	var uncategorize bool
-	fs.BoolVar(&help, "help", false, "")
-	fs.BoolVar(&help, "h", false, "")
 	fs.Int64Var(&id, "id", 0, "")
 	fs.BoolVar(&uncategorize, "uncategorize", false, "")
-	if err := fs.Parse(args); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
-	}
-	if help {
-		printHelp("rules")
-		return commandResult{Help: true}
+	if ok, res := fs.parse(args, "rules"); !ok {
+		return res
 	}
 
 	if id == 0 {

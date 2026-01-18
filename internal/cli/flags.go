@@ -33,6 +33,31 @@ func parseGlobalFlags(args []string) (globalFlags, []string, error) {
 	return globalFlags{Help: help, Version: version, DBPath: dbPath, Format: format}, fs.Args(), nil
 }
 
+type subcommandFlagSet struct {
+	*flag.FlagSet
+	help bool
+}
+
+func newSubcommandFlagSet(name string) *subcommandFlagSet {
+	fs := flag.NewFlagSet(name, flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	s := &subcommandFlagSet{FlagSet: fs}
+	fs.BoolVar(&s.help, "help", false, "")
+	fs.BoolVar(&s.help, "h", false, "")
+	return s
+}
+
+func (s *subcommandFlagSet) parse(args []string, helpCmd string) (bool, commandResult) {
+	if err := s.Parse(args); err != nil {
+		return false, commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
+	}
+	if s.help {
+		printHelp(helpCmd)
+		return false, commandResult{Help: true}
+	}
+	return true, commandResult{}
+}
+
 type stringSliceFlag struct {
 	values []string
 }

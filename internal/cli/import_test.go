@@ -17,7 +17,7 @@ func TestNormalizeTransactionsBatching(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpDir)
 	dbPath := filepath.Join(tmpDir, "test.db")
-	
+
 	err = database.InitDBWithPath(dbPath, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatal(err)
