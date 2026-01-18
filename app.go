@@ -295,7 +295,7 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	}
 	defaultCurrency := strings.ToUpper(strings.TrimSpace(settings.MainCurrency))
 	if defaultCurrency == "" {
-		defaultCurrency = "CAD"
+		defaultCurrency = database.DefaultCurrency()
 	}
 
 	for _, t := range transactions {
@@ -762,7 +762,7 @@ func (a *App) ExportTransactions(startDate, endDate string, categoryIDs []int64,
 	}
 	mainCurrency := strings.TrimSpace(settings.MainCurrency)
 	if mainCurrency == "" {
-		mainCurrency = "CAD"
+		mainCurrency = database.DefaultCurrency()
 	}
 
 	switch strings.ToLower(format) {

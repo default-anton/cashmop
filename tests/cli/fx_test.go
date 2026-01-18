@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"cashmop/internal/database"
 	"testing"
 )
 
@@ -10,8 +11,8 @@ func TestFxDetailed(t *testing.T) {
 	t.Run("Status", func(t *testing.T) {
 		res, _ := run(db, "fx", "status")
 		assertGlobal(t, res, 0)
-		if res.JSON["base_currency"] != "CAD" {
-			t.Errorf("expected default base currency CAD, got %v", res.JSON["base_currency"])
+		if res.JSON["base_currency"] != database.DefaultCurrency() {
+			t.Errorf("expected default base currency %s, got %v", database.DefaultCurrency(), res.JSON["base_currency"])
 		}
 	})
 

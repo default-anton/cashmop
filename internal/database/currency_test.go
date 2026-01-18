@@ -62,8 +62,8 @@ func TestCurrencySettingsDefaultsAndUpdate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetCurrencySettings failed: %v", err)
 	}
-	if settings.MainCurrency != "CAD" {
-		t.Fatalf("Expected default main currency CAD, got %q", settings.MainCurrency)
+	if settings.MainCurrency != DefaultCurrency() {
+		t.Fatalf("Expected default main currency %s, got %q", DefaultCurrency(), settings.MainCurrency)
 	}
 
 	updated, err := UpdateCurrencySettings(CurrencySettings{
@@ -75,5 +75,16 @@ func TestCurrencySettingsDefaultsAndUpdate(t *testing.T) {
 	}
 	if updated.MainCurrency != "USD" || updated.FxLastSync != "2024-01-10" {
 		t.Fatalf("Unexpected updated settings: %+v", updated)
+	}
+
+	reset, err := UpdateCurrencySettings(CurrencySettings{
+		MainCurrency: "",
+		FxLastSync:   "2024-02-01",
+	})
+	if err != nil {
+		t.Fatalf("UpdateCurrencySettings reset failed: %v", err)
+	}
+	if reset.MainCurrency != DefaultCurrency() || reset.FxLastSync != "2024-02-01" {
+		t.Fatalf("Unexpected reset settings: %+v", reset)
 	}
 }

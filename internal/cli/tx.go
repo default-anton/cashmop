@@ -145,7 +145,7 @@ func handleTxList(args []string) commandResult {
 	}
 	mainCurrency := settings.MainCurrency
 	if mainCurrency == "" {
-		mainCurrency = "CAD"
+		mainCurrency = database.DefaultCurrency()
 	}
 
 	// Filter by query (fuzzy)

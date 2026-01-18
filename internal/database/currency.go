@@ -29,6 +29,10 @@ const (
 	defaultMainCurrency = "CAD"
 )
 
+func DefaultCurrency() string {
+	return defaultMainCurrency
+}
+
 type CurrencySettings struct {
 	MainCurrency string `json:"main_currency"`
 	FxLastSync   string `json:"fx_last_sync"`
@@ -86,7 +90,7 @@ func SetAppSetting(key, value string) error {
 }
 
 func GetCurrencySettings() (CurrencySettings, error) {
-	mainCurrency, err := getOrCreateAppSetting(AppSettingMainCurrency, defaultMainCurrency)
+	mainCurrency, err := getOrCreateAppSetting(AppSettingMainCurrency, DefaultCurrency())
 	if err != nil {
 		return CurrencySettings{}, err
 	}
@@ -105,7 +109,7 @@ func GetCurrencySettings() (CurrencySettings, error) {
 func UpdateCurrencySettings(settings CurrencySettings) (CurrencySettings, error) {
 	mainCurrency := strings.TrimSpace(settings.MainCurrency)
 	if mainCurrency == "" {
-		mainCurrency = defaultMainCurrency
+		mainCurrency = DefaultCurrency()
 	}
 
 	if err := SetAppSetting(AppSettingMainCurrency, mainCurrency); err != nil {
@@ -338,7 +342,7 @@ func GetFxRateRanges(baseCurrency string, quoteCurrencies []string) (map[string]
 func GetFxRateStatus(baseCurrency string) (FxRateStatus, error) {
 	base := strings.ToUpper(strings.TrimSpace(baseCurrency))
 	if base == "" {
-		base = defaultMainCurrency
+		base = DefaultCurrency()
 	}
 
 	lastSync, err := GetAppSetting(AppSettingFxLastSync)

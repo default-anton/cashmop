@@ -79,7 +79,7 @@ func handleExport(args []string) commandResult {
 	}
 	mainCurrency := settings.MainCurrency
 	if mainCurrency == "" {
-		mainCurrency = "CAD"
+		mainCurrency = database.DefaultCurrency()
 	}
 
 	var count int

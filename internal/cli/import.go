@@ -211,7 +211,7 @@ func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, s
 	settings, _ := database.GetCurrencySettings()
 	defaultCurrency := strings.ToUpper(strings.TrimSpace(settings.MainCurrency))
 	if defaultCurrency == "" {
-		defaultCurrency = "CAD"
+		defaultCurrency = database.DefaultCurrency()
 	}
 
 	accountMap, err := database.GetAccountMap()
