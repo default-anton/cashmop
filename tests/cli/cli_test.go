@@ -7,27 +7,47 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
+	"sync/atomic"
 	"testing"
 )
 
-var binaryPath string
+var (
+	binaryPath string
+	binaryDir  string
+	buildOnce  sync.Once
+	buildErr   error
+	buildCount atomic.Int32
+)
+
+func ensureBinary() error {
+	buildOnce.Do(func() {
+		buildCount.Add(1)
+		tmpDir, err := os.MkdirTemp("", "cashmop-cli-test-build-*")
+		if err != nil {
+			buildErr = fmt.Errorf("failed to create temp dir: %w", err)
+			return
+		}
+		binaryDir = tmpDir
+		binaryPath = filepath.Join(tmpDir, "cashmop")
+		cmd := exec.Command("go", "build", "-o", binaryPath, "../../")
+		if output, err := cmd.CombinedOutput(); err != nil {
+			buildErr = fmt.Errorf("failed to build binary: %w\n%s", err, output)
+			return
+		}
+	})
+
+	return buildErr
+}
 
 func TestMain(m *testing.M) {
-	tmpDir, err := os.MkdirTemp("", "cashmop-cli-test-build-*")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create temp dir: %v\n", err)
-		os.Exit(1)
+	exitCode := m.Run()
+	if binaryDir != "" {
+		if err := os.RemoveAll(binaryDir); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to remove temp dir: %v\n", err)
+		}
 	}
-	defer os.RemoveAll(tmpDir)
-
-	binaryPath = filepath.Join(tmpDir, "cashmop")
-	cmd := exec.Command("go", "build", "-o", binaryPath, "../../")
-	if output, err := cmd.CombinedOutput(); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to build binary: %v\n%s\n", err, output)
-		os.Exit(1)
-	}
-
-	os.Exit(m.Run())
+	os.Exit(exitCode)
 }
 
 type result struct {
@@ -42,6 +62,10 @@ func run(dbPath string, args ...string) (result, error) {
 }
 
 func runWithStdin(dbPath string, stdin string, args ...string) (result, error) {
+	if err := ensureBinary(); err != nil {
+		return result{}, err
+	}
+
 	var fullArgs []string
 	if dbPath != "" {
 		fullArgs = append(fullArgs, "--db", dbPath)
@@ -109,6 +133,18 @@ func assertGlobal(t *testing.T, res result, expectedExitCode int) {
 		if _, ok := res.JSON["ok"]; !ok {
 			t.Errorf("expected 'ok' field in JSON, got %+v", res.JSON)
 		}
+	}
+}
+
+func TestBinaryBuildOnce(t *testing.T) {
+	if err := ensureBinary(); err != nil {
+		t.Fatal(err)
+	}
+	if err := ensureBinary(); err != nil {
+		t.Fatal(err)
+	}
+	if buildCount.Load() != 1 {
+		t.Fatalf("expected binary build once, got %d", buildCount.Load())
 	}
 }
 
@@ -181,24 +217,14 @@ func TestMappings(t *testing.T) {
 	db := setupDB(t)
 	mappingJSON := `{"csv":{"date":"Date","description":["Desc"],"amountMapping":{"type":"single","column":"Amount"}},"account":"BMO","currencyDefault":"CAD"}`
 
-	cmd := exec.Command(binaryPath, "--db", db, "mappings", "save", "--name", "MyMapping", "--mapping", "-")
-	cmd.Stdin = bytes.NewBufferString(mappingJSON)
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("failed to run save: %v, stderr: %s", err, stderr.String())
-	}
-	var saveRes map[string]interface{}
-	if err := json.Unmarshal(stdout.Bytes(), &saveRes); err != nil {
+	res, err := runWithStdin(db, mappingJSON, "mappings", "save", "--name", "MyMapping", "--mapping", "-")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if saveRes["ok"] != true {
-		t.Errorf("save failed: %+v", saveRes)
-	}
-	mappingID := saveRes["id"].(float64)
+	assertGlobal(t, res, 0)
+	mappingID := res.JSON["id"].(float64)
 
-	res, err := run(db, "mappings", "list")
+	res, err = run(db, "mappings", "list")
 	if err != nil {
 		t.Fatal(err)
 	}
