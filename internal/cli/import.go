@@ -98,7 +98,10 @@ func handleImport(args []string) commandResult {
 	}
 
 	// 4. Normalize transactions for selected months
-	txs := normalizeTransactions(parsed, mapping, finalMonths)
+	txs, err := normalizeTransactions(parsed, mapping, finalMonths)
+	if err != nil {
+		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
+	}
 
 	if dryRun {
 		return commandResult{Response: importDryRunResponse{
@@ -189,7 +192,7 @@ func computeMonths(headers []string, rows [][]string, mapping database.ImportMap
 	return buckets
 }
 
-func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, selectedMonths []string) []database.TransactionModel {
+func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, selectedMonths []string) ([]database.TransactionModel, error) {
 	monthSet := make(map[string]bool)
 	for _, m := range selectedMonths {
 		monthSet[m] = true
@@ -213,6 +216,15 @@ func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, s
 	settings, _ := database.GetCurrencySettings()
 	defaultCurrency := strings.ToUpper(strings.TrimSpace(settings.MainCurrency))
 	if defaultCurrency == "" { defaultCurrency = "CAD" }
+
+	accountMap, err := database.GetAccountMap()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch accounts: %w", err)
+	}
+	userMap, err := database.GetUserMap()
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch users: %w", err)
+	}
 
 	var out []database.TransactionModel
 	for _, row := range parsed.rows {
@@ -254,10 +266,35 @@ func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, s
 			owner = row[ownerIdx]
 		}
 
-		// In internal/database/transactions.go, BatchInsertTransactions expects AccountID and OwnerID.
-		// We need to resolve these names to IDs.
-		accID, _ := database.GetOrCreateAccount(account)
-		ownerID, _ := database.GetOrCreateUser(owner)
+		accID, ok := accountMap[account]
+		if !ok {
+			id, err := database.GetOrCreateAccount(account)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get/create account '%s': %w", account, err)
+			}
+			accID = id
+			accountMap[account] = accID
+		}
+
+		var ownerID *int64
+		if owner != "" {
+			uid, ok := userMap[owner]
+			if !ok {
+				puid, err := database.GetOrCreateUser(owner)
+				if err != nil {
+					return nil, fmt.Errorf("failed to get/create user '%s': %w", owner, err)
+				}
+				if puid != nil {
+					uid = *puid
+					userMap[owner] = uid
+					idCopy := uid
+					ownerID = &idCopy
+				}
+			} else {
+				idCopy := uid
+				ownerID = &idCopy
+			}
+		}
 
 		out = append(out, database.TransactionModel{
 			AccountID:   accID,
@@ -268,7 +305,7 @@ func normalizeTransactions(parsed *parsedFile, mapping database.ImportMapping, s
 			Currency:    currency,
 		})
 	}
-	return out
+	return out, nil
 }
 
 func findHeader(headers []string, name string) int {

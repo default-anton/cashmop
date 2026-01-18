@@ -65,6 +65,44 @@ func GetOrCreateUser(name string) (*int64, error) {
 	return &id, nil
 }
 
+func GetAccountMap() (map[string]int64, error) {
+	rows, err := DB.Query("SELECT id, name FROM accounts")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	m := make(map[string]int64)
+	for rows.Next() {
+		var id int64
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, err
+		}
+		m[name] = id
+	}
+	return m, nil
+}
+
+func GetUserMap() (map[string]int64, error) {
+	rows, err := DB.Query("SELECT id, name FROM users")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	m := make(map[string]int64)
+	for rows.Next() {
+		var id int64
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, err
+		}
+		m[name] = id
+	}
+	return m, nil
+}
+
 func GetAccounts() ([]string, error) {
 	rows, err := DB.Query("SELECT name FROM accounts ORDER BY name ASC")
 	if err != nil {
