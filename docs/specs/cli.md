@@ -20,6 +20,11 @@
 ## Name + One-Liner
 - `cashmop`: CashMop CLI for automated data operations.
 
+## Technical Architecture
+- **Entry Point**: `main.go` branches to the `internal/cli` package if arguments are provided.
+- **DB Initialization**: Uses `internal/database.InitDBWithPath` to ensure the DB is initialized without GUI-specific side effects.
+- **Parity**: CLI handlers reuse the same logic as Wails bindings to ensure consistent behavior.
+
 ## Distribution / Install Strategy
 - Single **`cashmop`** binary: GUI + CLI modes.
   - No args (`cashmop`) => start desktop app (Wails).
@@ -78,7 +83,9 @@
 ## Exit Codes
 - `0`: success
 - `1`: runtime failure
-- `2`: invalid usage/validation
+- `2`: invalid usage / validation failure
+  - Returns `ok: false` and a list of `errors`.
+  - Each error should include a `field` and `hint` where possible to assist automation.
 
 ## Environment + DB Path Resolution
 - Default DB path resolution matches the desktop app:
@@ -110,6 +117,7 @@
 - `--query` uses the same fuzzy matcher as the GUI (`internal/fuzzy`).
 - Matching is done against the same composite label as the Analysis screen:
   - `description | account | category_or_uncategorized | owner_or_no_owner | date | amount_decimal | currency ::id`
+- **Ranking Rules**: word/string start > mid; ties are broken by favoring shorter strings (see `internal/fuzzy/fuzzy_test.go`).
 
 ## Safety
 - No prompts or confirmations.
