@@ -6,8 +6,8 @@ import RuleManager from './screens/RuleManager/RuleManager';
 import Analysis from './screens/Analysis/Analysis';
 import Settings from './screens/Settings/Settings';
 import About from './screens/About/About';
-import { ToastProvider } from './contexts/ToastContext';
-import { CurrencyProvider } from './contexts/CurrencyContext';
+import { ToastProvider } from '@/contexts/ToastContext';
+import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import logoLandscape from './assets/branding/logo-landscape.png';
 

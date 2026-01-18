@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { database } from '../../../wailsjs/go/models';
-import { useToast } from '../../contexts/ToastContext';
-import { useCurrency } from '../../contexts/CurrencyContext';
-import { ScreenLayout } from '../../components';
-import { parseCents } from '../../utils/currency';
+import { useToast } from '@/contexts/ToastContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
+import { ScreenLayout } from '@/components';
+import { parseCents } from '@/utils/currency';
 import {
   InboxZero,
   ProgressHeader,

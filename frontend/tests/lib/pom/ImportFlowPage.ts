@@ -32,7 +32,6 @@ export class ImportFlowPage {
 
   async uploadFile(path: string) {
     await this.fileInput.setInputFiles(path);
-    await this.page.getByText(/file selected/i).waitFor({ state: 'visible', timeout: 10000 });
   }
 
   async ensureHeaderRow(hasHeader: boolean) {

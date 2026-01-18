@@ -8,7 +8,7 @@ import { Card, ScreenLayout } from '../../components';
 import { useToast } from '../../components';
 import { BarChart3, ArrowUpDown, Download, AlertTriangle } from 'lucide-react';
 import TransactionSearch from './components/TransactionSearch';
-import { useCurrency } from '../../contexts/CurrencyContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCents, formatCentsDecimal } from '../../utils/currency';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';

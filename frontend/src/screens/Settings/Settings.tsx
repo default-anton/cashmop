@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Database, Download, Upload, Folder, Clock, Check, AlertTriangle, HardDrive, RefreshCcw, Globe } from 'lucide-react';
 import { AutocompleteInput, Button, Card, ScreenLayout, useToast } from '../../components';
-import { useCurrency } from '../../contexts/CurrencyContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface BackupInfo {
   hasBackup: boolean;

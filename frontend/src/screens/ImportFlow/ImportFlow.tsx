@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 
-import { Button, ScreenLayout } from '../../components';
-import { useToast } from '../../contexts/ToastContext';
-import { useCurrency } from '../../contexts/CurrencyContext';
+import { Button, ScreenLayout } from '@/components';
+import { useToast } from '@/contexts/ToastContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 import FileDropZone from './components/FileDropZone';
 import { MappingPunchThrough } from './components/MappingPunchThrough';

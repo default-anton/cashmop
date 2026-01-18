@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { database } from '../../../../wailsjs/go/models';
 import { AutocompleteInput, Button, Input, Modal, useToast } from '../../../components';
 import { RuleEditor, AmountFilter, SelectionRule } from '../../CategorizationLoop/components/RuleEditor';
-import { useCurrency } from '../../../contexts/CurrencyContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { parseCents } from '../../../utils/currency';
 import { MatchType, RulePayload, RuleRow } from '../types';
 

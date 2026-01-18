@@ -6,7 +6,7 @@ import Table from '../../../components/Table';
 import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
 import CategoryGhostInput from './CategoryGhostInput';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCurrency } from '../../../contexts/CurrencyContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCents, formatCentsDecimal } from '../../../utils/currency';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';

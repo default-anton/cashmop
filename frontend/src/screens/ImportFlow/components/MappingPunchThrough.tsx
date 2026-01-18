@@ -15,7 +15,7 @@ import { Button, Card, Input, AutocompleteInput } from '../../../components';
 import { type ImportMapping, type AmountMapping } from './ColumnMapperTypes';
 import { useColumnMapping } from './useColumnMapping';
 import { sampleUniqueRows } from '../utils';
-import { useCurrency } from '../../../contexts/CurrencyContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface MappingPunchThroughProps {
   csvHeaders: string[];

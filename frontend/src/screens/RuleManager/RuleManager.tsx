@@ -4,7 +4,7 @@ import { Plus, Wand2, Pencil, Trash2, Check } from 'lucide-react';
 import { database } from '../../../wailsjs/go/models';
 import { Button, Card, CategoryFilterContent, Modal, ScreenLayout, Table, useToast } from '../../components';
 import { FilterConfig } from '../../components/TableHeaderFilter';
-import { useCurrency } from '../../contexts/CurrencyContext';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import RuleEditorModal from './components/RuleEditorModal';
 import RuleManagerHeader from './components/RuleManagerHeader';
 import { MatchType, RuleRow } from './types';
