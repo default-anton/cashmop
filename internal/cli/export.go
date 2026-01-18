@@ -62,10 +62,13 @@ func handleExport(args []string) commandResult {
 	for _, s := range categoryIDs.values {
 		parts := strings.Split(s, ",")
 		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p == "" { continue }
 			var id int64
-			if _, err := fmt.Sscanf(p, "%d", &id); err == nil {
-				catIDs = append(catIDs, id)
+			if _, err := fmt.Sscanf(p, "%d", &id); err != nil {
+				return commandResult{Err: validationError(ErrorDetail{Field: "category-ids", Message: fmt.Sprintf("Invalid category ID: %s", p)})}
 			}
+			catIDs = append(catIDs, id)
 		}
 	}
 

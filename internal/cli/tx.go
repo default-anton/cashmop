@@ -16,6 +16,26 @@ type txListResponse struct {
 	Transactions []txListTransaction        `json:"transactions"`
 }
 
+func (r txListResponse) TableHeaders() []string {
+	return []string{"ID", "Date", "Amount", "Curr", "Category", "Account", "Description"}
+}
+
+func (r txListResponse) ToTable() [][]string {
+	rows := make([][]string, len(r.Transactions))
+	for i, tx := range r.Transactions {
+		rows[i] = []string{
+			fmt.Sprint(tx.ID),
+			tx.Date,
+			tx.Amount,
+			tx.Currency,
+			tx.Category,
+			tx.Account,
+			tx.Description,
+		}
+	}
+	return rows
+}
+
 type txListTransaction struct {
 	ID          int64  `json:"id"`
 	Date        string `json:"date"`
@@ -109,10 +129,13 @@ func handleTxList(args []string) commandResult {
 		// handle comma separated if needed, though repeatable flag is also supported
 		parts := strings.Split(s, ",")
 		for _, p := range parts {
+			p = strings.TrimSpace(p)
+			if p == "" { continue }
 			var id int64
-			if _, err := fmt.Sscanf(p, "%d", &id); err == nil {
-				catIDs = append(catIDs, id)
+			if _, err := fmt.Sscanf(p, "%d", &id); err != nil {
+				return commandResult{Err: validationError(ErrorDetail{Field: "category-ids", Message: fmt.Sprintf("Invalid category ID: %s", p)})}
 			}
+			catIDs = append(catIDs, id)
 		}
 	}
 	if uncategorized {
@@ -149,34 +172,44 @@ func handleTxList(args []string) commandResult {
 		}
 	}
 
-	// Filter by amount (requires conversion)
+	// Pre-calculate converted amounts for filtering and sorting to avoid N+1 DB queries
+	type txExt struct {
+		database.TransactionModel
+		ConvertedAmount *int64
+	}
+	extended := make([]txExt, len(txs))
+	for i, tx := range txs {
+		converted, _ := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date)
+		extended[i] = txExt{TransactionModel: tx, ConvertedAmount: converted}
+	}
+
+	// Filter by amount
 	if minCents != nil || maxCents != nil {
-		filtered := make([]database.TransactionModel, 0, len(txs))
-		for _, tx := range txs {
-			converted, err := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date)
-			if err != nil || converted == nil {
+		filtered := make([]txExt, 0, len(extended))
+		for _, e := range extended {
+			if e.ConvertedAmount == nil {
 				continue
 			}
-			if minCents != nil && *converted < *minCents {
+			if minCents != nil && *e.ConvertedAmount < *minCents {
 				continue
 			}
-			if maxCents != nil && *converted > *maxCents {
+			if maxCents != nil && *e.ConvertedAmount > *maxCents {
 				continue
 			}
-			filtered = append(filtered, tx)
+			filtered = append(filtered, e)
 		}
-		txs = filtered
+		extended = filtered
 	}
 
 	// Sort
-	sort.Slice(txs, func(i, j int) bool {
+	sort.Slice(extended, func(i, j int) bool {
 		var less bool
 		switch sortField {
 		case "amount":
-			ci, _ := database.ConvertAmount(txs[i].Amount, mainCurrency, txs[i].Currency, txs[i].Date)
-			cj, _ := database.ConvertAmount(txs[j].Amount, mainCurrency, txs[j].Currency, txs[j].Date)
+			ci := extended[i].ConvertedAmount
+			cj := extended[j].ConvertedAmount
 			if ci == nil && cj == nil {
-				less = txs[i].ID < txs[j].ID
+				less = extended[i].ID < extended[j].ID
 			} else if ci == nil {
 				less = false
 			} else if cj == nil {
@@ -185,10 +218,10 @@ func handleTxList(args []string) commandResult {
 				less = *ci < *cj
 			}
 		default: // date
-			if txs[i].Date != txs[j].Date {
-				less = txs[i].Date < txs[j].Date
+			if extended[i].Date != extended[j].Date {
+				less = extended[i].Date < extended[j].Date
 			} else {
-				less = txs[i].ID < txs[j].ID
+				less = extended[i].ID < extended[j].ID
 			}
 		}
 		if order == "desc" {
@@ -197,8 +230,9 @@ func handleTxList(args []string) commandResult {
 		return less
 	})
 
-	out := make([]txListTransaction, 0, len(txs))
-	for _, tx := range txs {
+	out := make([]txListTransaction, 0, len(extended))
+	for _, e := range extended {
+		tx := e.TransactionModel
 		cat := tx.CategoryName
 		if tx.CategoryID == nil {
 			cat = "Uncategorized"

@@ -6,7 +6,19 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+var (
+	fxRateCache   = make(map[string]*FxRateLookup)
+	fxRateCacheMu sync.RWMutex
+)
+
+func ClearFxRateCache() {
+	fxRateCacheMu.Lock()
+	defer fxRateCacheMu.Unlock()
+	fxRateCache = make(map[string]*FxRateLookup)
+}
 
 const (
 	AppSettingMainCurrency = "main_currency"
@@ -162,6 +174,14 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 		return &FxRateLookup{RateDate: date, Rate: 1, Source: ""}, nil
 	}
 
+	cacheKey := fmt.Sprintf("%s:%s:%s", base, quote, date)
+	fxRateCacheMu.RLock()
+	cached, ok := fxRateCache[cacheKey]
+	fxRateCacheMu.RUnlock()
+	if ok {
+		return cached, nil
+	}
+
 	var rateDate string
 	var rate float64
 	var source string
@@ -172,6 +192,8 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 		ORDER BY rate_date DESC
 		LIMIT 1
 	`, base, quote, date).Scan(&rateDate, &rate, &source)
+
+	var result *FxRateLookup
 	if err == sql.ErrNoRows {
 		// No rate on/before transaction date. Check if date is in the future
 		// by comparing with the latest available rate date.
@@ -184,24 +206,31 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 			LIMIT 1
 		`, base, quote).Scan(&latestDate)
 		if errLatest == sql.ErrNoRows {
-			return nil, nil
-		}
-		if errLatest != nil {
+			result = nil
+		} else if errLatest != nil {
 			return nil, errLatest
+		} else if date > latestDate {
+			// If transaction date is after the latest rate date (i.e., in the future),
+			// use the latest available rate (for scheduled/recurring imports).
+			var err error
+			result, err = GetFxRate(base, quote, latestDate)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			result = nil
 		}
-		// If transaction date is after the latest rate date (i.e., in the future),
-		// use the latest available rate (for scheduled/recurring imports).
-		if date > latestDate {
-			return GetFxRate(base, quote, latestDate)
-		}
-		// Past transaction with no available rate: return nil
-		return nil, nil
-	}
-	if err != nil {
+	} else if err != nil {
 		return nil, err
+	} else {
+		result = &FxRateLookup{RateDate: rateDate, Rate: rate, Source: source}
 	}
 
-	return &FxRateLookup{RateDate: rateDate, Rate: rate, Source: source}, nil
+	fxRateCacheMu.Lock()
+	fxRateCache[cacheKey] = result
+	fxRateCacheMu.Unlock()
+
+	return result, nil
 }
 
 func ConvertAmount(amount int64, baseCurrency, quoteCurrency, date string) (*int64, error) {

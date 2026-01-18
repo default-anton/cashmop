@@ -90,11 +90,11 @@ func Run(args []string) int {
 		return 0
 	}
 	if result.Err != nil {
-		writeJSON(os.Stdout, errorResponse{Ok: false, Errors: result.Err.Errors})
+		writeResponse(os.Stdout, errorResponse{Ok: false, Errors: result.Err.Errors}, global.Format)
 		return result.Err.Code
 	}
 	if result.Response != nil {
-		if err := writeJSON(os.Stdout, result.Response); err != nil {
+		if err := writeResponse(os.Stdout, result.Response, global.Format); err != nil {
 			return 1
 		}
 	}

@@ -3,12 +3,25 @@ package cli
 import (
 	"cashmop/internal/database"
 	"flag"
+	"fmt"
 	"io"
 )
 
 type categoryListResponse struct {
 	Ok    bool                `json:"ok"`
 	Items []database.Category `json:"items"`
+}
+
+func (r categoryListResponse) TableHeaders() []string {
+	return []string{"ID", "Name"}
+}
+
+func (r categoryListResponse) ToTable() [][]string {
+	rows := make([][]string, len(r.Items))
+	for i, item := range r.Items {
+		rows[i] = []string{fmt.Sprint(item.ID), item.Name}
+	}
+	return rows
 }
 
 type categoryResponse struct {

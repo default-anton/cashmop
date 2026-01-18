@@ -3,12 +3,40 @@ package cli
 import (
 	"cashmop/internal/database"
 	"flag"
+	"fmt"
 	"io"
 )
 
 type ruleListResponse struct {
 	Ok    bool               `json:"ok"`
 	Items []ruleListRule `json:"items"`
+}
+
+func (r ruleListResponse) TableHeaders() []string {
+	return []string{"ID", "Type", "Value", "Min", "Max", "Category"}
+}
+
+func (r ruleListResponse) ToTable() [][]string {
+	rows := make([][]string, len(r.Items))
+	for i, item := range r.Items {
+		min := "-"
+		if item.AmountMin != nil {
+			min = *item.AmountMin
+		}
+		max := "-"
+		if item.AmountMax != nil {
+			max = *item.AmountMax
+		}
+		rows[i] = []string{
+			fmt.Sprint(item.ID),
+			item.MatchType,
+			item.MatchValue,
+			min,
+			max,
+			item.CategoryName,
+		}
+	}
+	return rows
 }
 
 type ruleListRule struct {

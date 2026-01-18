@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"text/tabwriter"
 )
 
 type ErrorDetail struct {
@@ -36,6 +37,43 @@ func runtimeError(details ...ErrorDetail) *cliError {
 type errorResponse struct {
 	Ok     bool          `json:"ok"`
 	Errors []ErrorDetail `json:"errors"`
+}
+
+type Tableable interface {
+	ToTable() [][]string
+	TableHeaders() []string
+}
+
+func writeTable(out io.Writer, t Tableable) error {
+	w := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
+	headers := t.TableHeaders()
+	for i, h := range headers {
+		fmt.Fprint(w, h)
+		if i < len(headers)-1 {
+			fmt.Fprint(w, "\t")
+		}
+	}
+	fmt.Fprintln(w)
+
+	for _, row := range t.ToTable() {
+		for i, cell := range row {
+			fmt.Fprint(w, cell)
+			if i < len(row)-1 {
+				fmt.Fprint(w, "\t")
+			}
+		}
+		fmt.Fprintln(w)
+	}
+	return w.Flush()
+}
+
+func writeResponse(out io.Writer, payload interface{}, format string) error {
+	if format == "table" {
+		if t, ok := payload.(Tableable); ok {
+			return writeTable(out, t)
+		}
+	}
+	return writeJSON(out, payload)
 }
 
 func writeJSON(out io.Writer, payload interface{}) error {

@@ -10,6 +10,7 @@ type globalFlags struct {
 	Help    bool
 	Version bool
 	DBPath  string
+	Format  string
 }
 
 func parseGlobalFlags(args []string) (globalFlags, []string, error) {
@@ -18,16 +19,18 @@ func parseGlobalFlags(args []string) (globalFlags, []string, error) {
 	var help bool
 	var version bool
 	var dbPath string
+	var format string
 	fs.BoolVar(&help, "help", false, "")
 	fs.BoolVar(&help, "h", false, "")
 	fs.BoolVar(&version, "version", false, "")
 	fs.StringVar(&dbPath, "db", "", "")
+	fs.StringVar(&format, "format", "json", "")
 
 	if err := fs.Parse(args); err != nil {
 		return globalFlags{}, nil, err
 	}
 
-	return globalFlags{Help: help, Version: version, DBPath: dbPath}, fs.Args(), nil
+	return globalFlags{Help: help, Version: version, DBPath: dbPath, Format: format}, fs.Args(), nil
 }
 
 type stringSliceFlag struct {
