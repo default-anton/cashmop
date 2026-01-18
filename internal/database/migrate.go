@@ -12,6 +12,12 @@ import (
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
+func dbLog(format string, v ...interface{}) {
+	if !SuppressLogs {
+		log.Printf(format, v...)
+	}
+}
+
 func createMigrationsTable() error {
 	_, err := DB.Exec(`
 		CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -108,7 +114,7 @@ func Rollback() error {
 		var version int64
 		_, err := fmt.Sscanf(entry.Name(), "%d_", &version)
 		if err != nil {
-			log.Printf("Skipping down migration file with invalid version: %s", entry.Name())
+			dbLog("Skipping down migration file with invalid version: %s", entry.Name())
 			continue
 		}
 
@@ -133,11 +139,11 @@ func Rollback() error {
 			return fmt.Errorf("Unable to undo the database update.")
 		}
 
-		log.Printf("Rolling back migration %d: %s", mf.version, mf.name)
+		dbLog("Rolling back migration %d: %s", mf.version, mf.name)
 		if err := runDownMigration(mf.version, string(content)); err != nil {
 			return fmt.Errorf("Unable to undo the database update.")
 		}
-		log.Printf("Migration %d rolled back successfully", mf.version)
+		dbLog("Migration %d rolled back successfully", mf.version)
 		return nil
 	}
 
@@ -172,7 +178,7 @@ func Migrate() error {
 		var version int64
 		_, err := fmt.Sscanf(entry.Name(), "%d_", &version)
 		if err != nil {
-			log.Printf("Skipping migration file with invalid version: %s", entry.Name())
+			dbLog("Skipping migration file with invalid version: %s", entry.Name())
 			continue
 		}
 
@@ -198,11 +204,11 @@ func Migrate() error {
 		if !isTest && !backupCreated {
 			path, err := CreatePreMigrationBackup(mf.version)
 			if err != nil {
-				log.Printf("Warning: Failed to create pre-migration backup: %v", err)
+				dbLog("Warning: Failed to create pre-migration backup: %v", err)
 			} else {
 				backupPath = path
 				backupCreated = true
-				log.Printf("Pre-migration backup created: %s", path)
+				dbLog("Pre-migration backup created: %s", path)
 			}
 		}
 
@@ -213,7 +219,7 @@ func Migrate() error {
 		}
 
 		if !isTest {
-			log.Printf("Running migration %d: %s", mf.version, mf.name)
+			dbLog("Running migration %d: %s", mf.version, mf.name)
 		}
 		if err := runMigration(mf.version, string(content)); err != nil {
 			if backupPath != "" {
@@ -222,7 +228,7 @@ func Migrate() error {
 			return fmt.Errorf("Database update failed. The app may not work correctly until this is resolved. Please restart the app.")
 		}
 		if !isTest {
-			log.Printf("Migration %d completed", mf.version)
+			dbLog("Migration %d completed", mf.version)
 		}
 	}
 

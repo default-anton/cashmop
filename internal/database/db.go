@@ -15,6 +15,8 @@ import (
 
 var DB *sql.DB
 
+var SuppressLogs bool
+
 const (
 	storageName          = "cashmop"
 	sqliteBusyTimeoutMs  = 5000
@@ -22,21 +24,33 @@ const (
 )
 
 func InitDB() {
-	dbPath, err := resolveDatabasePath()
-	if err != nil {
+	if err := InitDBWithPath(""); err != nil {
 		log.Fatal(err)
 	}
+}
 
+func InitDBWithPath(path string) error {
+	dbPath := path
+	if dbPath == "" {
+		resolved, err := resolveDatabasePath()
+		if err != nil {
+			return err
+		}
+		dbPath = resolved
+	}
+
+	var err error
 	DB, err = sql.Open("sqlite", sqliteDSN(dbPath))
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	DB.SetMaxOpenConns(4)
 
 	if err := Migrate(); err != nil {
-		log.Fatalf("Failed to migrate database: %q", err)
+		return fmt.Errorf("failed to migrate database: %w", err)
 	}
+	return nil
 }
 
 func sqliteDSN(path string) string {
@@ -136,6 +150,32 @@ type ColumnMappingModel struct {
 	MappingJSON string `json:"mapping_json"`
 }
 
+type AmountMapping struct {
+	Type          string `json:"type"` // single, debitCredit, amountWithType
+	Column        string `json:"column,omitempty"`
+	DebitColumn   string `json:"debitColumn,omitempty"`
+	CreditColumn  string `json:"creditColumn,omitempty"`
+	AmountColumn  string `json:"amountColumn,omitempty"`
+	TypeColumn    string `json:"typeColumn,omitempty"`
+	NegativeValue string `json:"negativeValue,omitempty"`
+	PositiveValue string `json:"positiveValue,omitempty"`
+	InvertSign    bool   `json:"invertSign,omitempty"`
+}
+
+type ImportMapping struct {
+	CSV struct {
+		Date          string        `json:"date"`
+		Description   []string      `json:"description"`
+		AmountMapping AmountMapping `json:"amountMapping"`
+		Owner         string        `json:"owner,omitempty"`
+		Account       string        `json:"account,omitempty"`
+		Currency      string        `json:"currency,omitempty"`
+	} `json:"csv"`
+	Account         string `json:"account"`
+	DefaultOwner    string `json:"defaultOwner,omitempty"`
+	CurrencyDefault string `json:"currencyDefault"`
+}
+
 func GetColumnMappings() ([]ColumnMappingModel, error) {
 	rows, err := DB.Query("SELECT id, name, mapping_json FROM column_mappings ORDER BY name ASC")
 	if err != nil {
@@ -143,7 +183,7 @@ func GetColumnMappings() ([]ColumnMappingModel, error) {
 	}
 	defer rows.Close()
 
-	var mappings []ColumnMappingModel
+	mappings := []ColumnMappingModel{}
 	for rows.Next() {
 		var m ColumnMappingModel
 		if err := rows.Scan(&m.ID, &m.Name, &m.MappingJSON); err != nil {
@@ -175,6 +215,30 @@ func SaveColumnMapping(name string, mappingJSON string) (int64, error) {
 		return 0, err
 	}
 	return id, nil
+}
+
+func GetColumnMappingByID(id int64) (*ColumnMappingModel, error) {
+	var m ColumnMappingModel
+	err := DB.QueryRow("SELECT id, name, mapping_json FROM column_mappings WHERE id = ?", id).Scan(&m.ID, &m.Name, &m.MappingJSON)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}
+
+func GetColumnMappingByName(name string) (*ColumnMappingModel, error) {
+	var m ColumnMappingModel
+	err := DB.QueryRow("SELECT id, name, mapping_json FROM column_mappings WHERE name = ?", name).Scan(&m.ID, &m.Name, &m.MappingJSON)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
 }
 
 func DeleteColumnMapping(id int64) error {

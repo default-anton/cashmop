@@ -1,0 +1,283 @@
+package cli
+
+import (
+	"cashmop/internal/database"
+	"cashmop/internal/fuzzy"
+	"flag"
+	"fmt"
+	"io"
+	"sort"
+	"strings"
+)
+
+type txListResponse struct {
+	Ok           bool                       `json:"ok"`
+	Count        int                        `json:"count"`
+	Transactions []txListTransaction        `json:"transactions"`
+}
+
+type txListTransaction struct {
+	ID          int64  `json:"id"`
+	Date        string `json:"date"`
+	Description string `json:"description"`
+	Amount      string `json:"amount"`
+	Currency    string `json:"currency"`
+	Category    string `json:"category"`
+	Account     string `json:"account"`
+	Owner       string `json:"owner"`
+}
+
+type txCategorizeResponse struct {
+	Ok            bool    `json:"ok"`
+	TransactionID int64   `json:"transaction_id"`
+	AffectedIDs   []int64 `json:"affected_ids"`
+}
+
+func handleTransactions(args []string) commandResult {
+	if len(args) == 0 {
+		return commandResult{Err: validationError(ErrorDetail{Message: "Missing tx subcommand (list, categorize)."}) }
+	}
+
+	switch args[0] {
+	case "list":
+		return handleTxList(args[1:])
+	case "categorize":
+		return handleTxCategorize(args[1:])
+	default:
+		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown tx subcommand."}) }
+	}
+}
+
+func handleTxList(args []string) commandResult {
+	fs := flag.NewFlagSet("tx list", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	var help bool
+	var start string
+	var end string
+	var uncategorized bool
+	var categoryIDs stringSliceFlag
+	var query string
+	var amountMin string
+	var amountMax string
+	var sortField string
+	var order string
+
+	fs.BoolVar(&help, "help", false, "")
+	fs.BoolVar(&help, "h", false, "")
+	fs.StringVar(&start, "start", "", "")
+	fs.StringVar(&end, "end", "", "")
+	fs.BoolVar(&uncategorized, "uncategorized", false, "")
+	fs.Var(&categoryIDs, "category-ids", "")
+	fs.StringVar(&query, "query", "", "")
+	fs.StringVar(&amountMin, "amount-min", "", "")
+	fs.StringVar(&amountMax, "amount-max", "", "")
+	fs.StringVar(&sortField, "sort", "date", "")
+	fs.StringVar(&order, "order", "desc", "")
+
+	if err := fs.Parse(args); err != nil {
+		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
+	}
+	if help {
+		printHelp("tx")
+		return commandResult{Help: true}
+	}
+
+	start, end, cErr := validateDateRange(start, end)
+	if cErr != nil {
+		return commandResult{Err: cErr}
+	}
+
+	var minCents *int64
+	if amountMin != "" {
+		v, err := parseCentsString(amountMin)
+		if err != nil {
+			return commandResult{Err: validationError(ErrorDetail{Field: "amount-min", Message: "Invalid amount."})}
+		}
+		minCents = &v
+	}
+	var maxCents *int64
+	if amountMax != "" {
+		v, err := parseCentsString(amountMax)
+		if err != nil {
+			return commandResult{Err: validationError(ErrorDetail{Field: "amount-max", Message: "Invalid amount."})}
+		}
+		maxCents = &v
+	}
+
+	var catIDs []int64
+	for _, s := range categoryIDs.values {
+		// handle comma separated if needed, though repeatable flag is also supported
+		parts := strings.Split(s, ",")
+		for _, p := range parts {
+			var id int64
+			if _, err := fmt.Sscanf(p, "%d", &id); err == nil {
+				catIDs = append(catIDs, id)
+			}
+		}
+	}
+	if uncategorized {
+		catIDs = append(catIDs, 0)
+	}
+
+	txs, err := database.GetAnalysisTransactions(start, end, catIDs)
+	if err != nil {
+		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
+	}
+
+	settings, err := database.GetCurrencySettings()
+	if err != nil {
+		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
+	}
+	mainCurrency := settings.MainCurrency
+	if mainCurrency == "" {
+		mainCurrency = "CAD"
+	}
+
+	// Filter by query (fuzzy)
+	if query != "" {
+		labels := make([]string, 0, len(txs))
+		txMap := make(map[string]database.TransactionModel)
+		for _, tx := range txs {
+			label := buildSearchLabel(tx, mainCurrency)
+			labels = append(labels, label)
+			txMap[label] = tx
+		}
+		matchedLabels := fuzzy.Match(query, labels)
+		txs = make([]database.TransactionModel, 0, len(matchedLabels))
+		for _, label := range matchedLabels {
+			txs = append(txs, txMap[label])
+		}
+	}
+
+	// Filter by amount (requires conversion)
+	if minCents != nil || maxCents != nil {
+		filtered := make([]database.TransactionModel, 0, len(txs))
+		for _, tx := range txs {
+			converted, err := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date)
+			if err != nil || converted == nil {
+				continue
+			}
+			if minCents != nil && *converted < *minCents {
+				continue
+			}
+			if maxCents != nil && *converted > *maxCents {
+				continue
+			}
+			filtered = append(filtered, tx)
+		}
+		txs = filtered
+	}
+
+	// Sort
+	sort.Slice(txs, func(i, j int) bool {
+		var less bool
+		switch sortField {
+		case "amount":
+			ci, _ := database.ConvertAmount(txs[i].Amount, mainCurrency, txs[i].Currency, txs[i].Date)
+			cj, _ := database.ConvertAmount(txs[j].Amount, mainCurrency, txs[j].Currency, txs[j].Date)
+			if ci == nil && cj == nil {
+				less = txs[i].ID < txs[j].ID
+			} else if ci == nil {
+				less = false
+			} else if cj == nil {
+				less = true
+			} else {
+				less = *ci < *cj
+			}
+		default: // date
+			if txs[i].Date != txs[j].Date {
+				less = txs[i].Date < txs[j].Date
+			} else {
+				less = txs[i].ID < txs[j].ID
+			}
+		}
+		if order == "desc" {
+			return !less
+		}
+		return less
+	})
+
+	out := make([]txListTransaction, 0, len(txs))
+	for _, tx := range txs {
+		cat := tx.CategoryName
+		if tx.CategoryID == nil {
+			cat = "Uncategorized"
+		}
+		out = append(out, txListTransaction{
+			ID:          tx.ID,
+			Date:        tx.Date,
+			Description: tx.Description,
+			Amount:      formatCentsDecimal(tx.Amount),
+			Currency:    tx.Currency,
+			Category:    cat,
+			Account:     tx.AccountName,
+			Owner:       tx.OwnerName,
+		})
+	}
+
+	return commandResult{Response: txListResponse{Ok: true, Count: len(out), Transactions: out}}
+}
+
+func handleTxCategorize(args []string) commandResult {
+	fs := flag.NewFlagSet("tx categorize", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	var help bool
+	var id int64
+	var category string
+	var uncategorize bool
+	fs.BoolVar(&help, "help", false, "")
+	fs.BoolVar(&help, "h", false, "")
+	fs.Int64Var(&id, "id", 0, "")
+	fs.StringVar(&category, "category", "", "")
+	fs.BoolVar(&uncategorize, "uncategorize", false, "")
+	if err := fs.Parse(args); err != nil {
+		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
+	}
+	if help {
+		printHelp("tx")
+		return commandResult{Help: true}
+	}
+
+	if id == 0 {
+		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Transaction ID is required."})}
+	}
+
+	var catID int64
+	if !uncategorize {
+		if category == "" {
+			return commandResult{Err: validationError(ErrorDetail{Message: "Either --category or --uncategorize must be provided."}) }
+		}
+		var err error
+		catID, err = database.GetOrCreateCategory(category)
+		if err != nil {
+			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
+		}
+	}
+
+	if err := database.UpdateTransactionCategory(id, catID); err != nil {
+		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
+	}
+
+	return commandResult{Response: txCategorizeResponse{Ok: true, TransactionID: id, AffectedIDs: []int64{id}}}
+}
+
+func buildSearchLabel(tx database.TransactionModel, mainCurrency string) string {
+	cat := tx.CategoryName
+	if tx.CategoryID == nil {
+		cat = "Uncategorized"
+	}
+	owner := tx.OwnerName
+	if owner == "" {
+		owner = "No Owner"
+	}
+	parts := []string{
+		tx.Description,
+		tx.AccountName,
+		cat,
+		owner,
+		tx.Date,
+		formatCentsDecimal(tx.Amount),
+		tx.Currency,
+	}
+	return strings.Join(parts, " | ") + " ::" + fmt.Sprint(tx.ID)
+}

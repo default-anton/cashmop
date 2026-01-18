@@ -356,7 +356,7 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	if err := database.BatchInsertTransactions(txModels); err != nil {
 		return err
 	}
-	if err := database.ApplyAllRules(); err != nil {
+	if _, err := database.ApplyAllRules(); err != nil {
 		return err
 	}
 	go a.syncFxRates()

@@ -1,0 +1,14 @@
+{
+  "csv": {
+    "date": "Date",
+    "description": ["Description"],
+    "amountMapping": {
+      "type": "single",
+      "column": "Amount"
+    },
+    "account": "Account",
+    "owner": "Owner"
+  },
+  "account": "BMO",
+  "currencyDefault": "CAD"
+}

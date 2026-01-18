@@ -1,0 +1,219 @@
+package cli
+
+import (
+	"cashmop/internal/database"
+	"encoding/csv"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/xuri/excelize/v2"
+)
+
+type exportResponse struct {
+	Ok    bool   `json:"ok"`
+	Count int    `json:"count"`
+	Path  string `json:"path"`
+}
+
+func handleExport(args []string) commandResult {
+	fs := flag.NewFlagSet("export", flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+	var help bool
+	var start string
+	var end string
+	var format string
+	var out string
+	var categoryIDs stringSliceFlag
+
+	fs.BoolVar(&help, "help", false, "")
+	fs.BoolVar(&help, "h", false, "")
+	fs.StringVar(&start, "start", "", "")
+	fs.StringVar(&end, "end", "", "")
+	fs.StringVar(&format, "format", "", "")
+	fs.StringVar(&out, "out", "", "")
+	fs.Var(&categoryIDs, "category-ids", "")
+
+	if err := fs.Parse(args); err != nil {
+		return commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
+	}
+	if help {
+		printHelp("export")
+		return commandResult{Help: true}
+	}
+
+	if start == "" || end == "" || format == "" || out == "" {
+		return commandResult{Err: validationError(ErrorDetail{Message: "--start, --end, --format, and --out are required."}) }
+	}
+
+	start, end, cErr := validateDateRange(start, end)
+	if cErr != nil {
+		return commandResult{Err: cErr}
+	}
+
+	if format != "csv" && format != "xlsx" {
+		return commandResult{Err: validationError(ErrorDetail{Field: "format", Message: "Format must be csv or xlsx."}) }
+	}
+
+	var catIDs []int64
+	for _, s := range categoryIDs.values {
+		parts := strings.Split(s, ",")
+		for _, p := range parts {
+			var id int64
+			if _, err := fmt.Sscanf(p, "%d", &id); err == nil {
+				catIDs = append(catIDs, id)
+			}
+		}
+	}
+
+	transactions, err := database.GetAnalysisTransactions(start, end, catIDs)
+	if err != nil {
+		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
+	}
+
+	if len(transactions) == 0 {
+		return commandResult{Err: runtimeError(ErrorDetail{Message: "No transactions found for this date range."})}
+	}
+
+	settings, err := database.GetCurrencySettings()
+	if err != nil {
+		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
+	}
+	mainCurrency := settings.MainCurrency
+	if mainCurrency == "" {
+		mainCurrency = "CAD"
+	}
+
+	var count int
+	switch strings.ToLower(format) {
+	case "csv":
+		count, err = exportToCSV(transactions, out, mainCurrency)
+	case "xlsx":
+		count, err = exportToXLSX(transactions, out, mainCurrency)
+	default:
+		return commandResult{Err: validationError(ErrorDetail{Field: "format", Message: "Unsupported format."})}
+	}
+
+	if err != nil {
+		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
+	}
+
+	return commandResult{Response: exportResponse{Ok: true, Count: count, Path: out}}
+}
+
+func sanitizeCSVField(field string) string {
+	if field == "" {
+		return field
+	}
+	firstChar := field[0]
+	if firstChar == '=' || firstChar == '+' || firstChar == '-' || firstChar == '@' ||
+		firstChar == '\t' || firstChar == '\r' {
+		return "\t" + field
+	}
+	return field
+}
+
+func exportToCSV(transactions []database.TransactionModel, destinationPath string, mainCurrency string) (int, error) {
+	file, err := os.Create(destinationPath)
+	if err != nil {
+		return 0, fmt.Errorf("Unable to create export file: %w", err)
+	}
+	defer file.Close()
+
+	if _, err := file.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
+		return 0, err
+	}
+
+	writer := csv.NewWriter(file)
+	writer.UseCRLF = true
+	defer writer.Flush()
+
+	header := []string{"Date", "Description", "Amount (Main)", "Amount (Original)", "Currency (Original)", "Category", "Account", "Owner"}
+	if err := writer.Write(header); err != nil {
+		return 0, err
+	}
+
+	for _, tx := range transactions {
+		category := tx.CategoryName
+		if tx.CategoryID == nil {
+			category = ""
+		}
+
+		mainAmount := ""
+		if converted, err := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date); err == nil && converted != nil {
+			mainAmount = formatCentsDecimal(*converted)
+		}
+
+		row := []string{
+			tx.Date,
+			sanitizeCSVField(tx.Description),
+			mainAmount,
+			formatCentsDecimal(tx.Amount),
+			sanitizeCSVField(tx.Currency),
+			sanitizeCSVField(category),
+			sanitizeCSVField(tx.AccountName),
+			sanitizeCSVField(tx.OwnerName),
+		}
+		if err := writer.Write(row); err != nil {
+			return 0, err
+		}
+	}
+
+	return len(transactions), nil
+}
+
+func exportToXLSX(transactions []database.TransactionModel, destinationPath string, mainCurrency string) (int, error) {
+	f := excelize.NewFile()
+	sheetName := "Transactions"
+	f.SetSheetName("Sheet1", sheetName)
+
+	headers := []string{"Date", "Description", "Amount (Main)", "Amount (Original)", "Currency (Original)", "Category", "Account", "Owner"}
+	cols := []string{"A", "B", "C", "D", "E", "F", "G", "H"}
+
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+	})
+
+	for i, header := range headers {
+		cell := cols[i] + "1"
+		f.SetCellValue(sheetName, cell, header)
+		f.SetCellStyle(sheetName, cell, cell, headerStyle)
+	}
+
+	for i, tx := range transactions {
+		row := i + 2
+		category := tx.CategoryName
+		if tx.CategoryID == nil {
+			category = ""
+		}
+
+		var mainAmount interface{} = ""
+		if converted, err := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date); err == nil && converted != nil {
+			mainAmount = formatCentsDecimal(*converted)
+		}
+
+		values := []interface{}{
+			tx.Date,
+			tx.Description,
+			mainAmount,
+			formatCentsDecimal(tx.Amount),
+			tx.Currency,
+			category,
+			tx.AccountName,
+			tx.OwnerName,
+		}
+
+		for j, val := range values {
+			cell := cols[j] + strconv.Itoa(row)
+			f.SetCellValue(sheetName, cell, val)
+		}
+	}
+
+	if err := f.SaveAs(destinationPath); err != nil {
+		return 0, err
+	}
+	return len(transactions), nil
+}

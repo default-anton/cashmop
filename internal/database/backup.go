@@ -94,51 +94,57 @@ func ValidateBackup(path string) (int64, error) {
 }
 
 func RestoreBackup(backupPath string) error {
+	_, err := RestoreBackupWithSafety(backupPath)
+	return err
+}
+
+func RestoreBackupWithSafety(backupPath string) (string, error) {
 	backupMu.Lock()
 	defer backupMu.Unlock()
 
 	txCount, err := ValidateBackup(backupPath)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if txCount == 0 {
-		return fmt.Errorf("The backup file contains no transactions.")
+		return "", fmt.Errorf("The backup file contains no transactions.")
 	}
 
 	currentDBPath, err := DatabasePath()
 	if err != nil {
-		return fmt.Errorf("Unable to access the database.")
+		return "", fmt.Errorf("Unable to access the database.")
 	}
 
 	backupDir, err := EnsureBackupDir()
 	if err != nil {
-		return fmt.Errorf("Unable to access the backup folder.")
+		return "", fmt.Errorf("Unable to access the backup folder.")
 	}
 
 	safetyBackupPath := filepath.Join(backupDir, fmt.Sprintf("cashmop_pre_restore_%s.db", time.Now().Format("20060102_150405")))
 	if err := createBackupUnsafe(safetyBackupPath); err != nil {
-		return fmt.Errorf("Unable to create a safety backup before restoring.")
+		return "", fmt.Errorf("Unable to create a safety backup before restoring.")
 	}
 
 	if err := Close(); err != nil {
-		return fmt.Errorf("Unable to prepare the database for restore.")
+		return "", fmt.Errorf("Unable to prepare the database for restore.")
 	}
 
 	tempPath := currentDBPath + ".tmp"
 	if err := copyFile(backupPath, tempPath); err != nil {
-		return fmt.Errorf("Unable to copy the backup file.")
+		return "", fmt.Errorf("Unable to copy the backup file.")
 	}
 
 	if err := os.Rename(tempPath, currentDBPath); err != nil {
-		return fmt.Errorf("Unable to restore the backup file.")
+		return "", fmt.Errorf("Unable to restore the backup file.")
 	}
 
-	DB, err = sql.Open("sqlite", sqliteDSN(currentDBPath))
-	if err != nil {
-		return fmt.Errorf("Unable to reopen the database after restore.")
+	var openErr error
+	DB, openErr = sql.Open("sqlite", sqliteDSN(currentDBPath))
+	if openErr != nil {
+		return "", fmt.Errorf("Unable to reopen the database after restore.")
 	}
 
-	return nil
+	return safetyBackupPath, nil
 }
 
 func GetLastBackupTime() (time.Time, error) {

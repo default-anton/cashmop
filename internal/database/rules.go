@@ -53,7 +53,7 @@ func loadCategories() ([]Category, error) {
 	}
 	defer rows.Close()
 
-	var categories []Category
+	categories := []Category{}
 	for rows.Next() {
 		var c Category
 		if err := rows.Scan(&c.ID, &c.Name); err != nil {
@@ -158,7 +158,7 @@ func GetRules() ([]CategorizationRule, error) {
 	}
 	defer rows.Close()
 
-	var rules []CategorizationRule
+	rules := []CategorizationRule{}
 	for rows.Next() {
 		var r CategorizationRule
 		if err := rows.Scan(&r.ID, &r.MatchType, &r.MatchValue, &r.CategoryID, &r.CategoryName, &r.AmountMin, &r.AmountMax, &r.CreatedAt); err != nil {
@@ -375,16 +375,18 @@ func GetAllCategories() ([]Category, error) {
 	return cloneCategories(categories), nil
 }
 
-func ApplyAllRules() error {
+func ApplyAllRules() (int, error) {
 	rules, err := GetRules()
 	if err != nil {
-		return err
+		return 0, err
 	}
+	totalAffected := 0
 	for _, r := range rules {
-		_, err = ApplyRule(r.ID)
+		affected, err := ApplyRule(r.ID)
 		if err != nil {
-			return err
+			return totalAffected, err
 		}
+		totalAffected += int(affected)
 	}
-	return nil
+	return totalAffected, nil
 }

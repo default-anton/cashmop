@@ -140,6 +140,55 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 	return tx.Commit()
 }
 
+func BatchInsertTransactionsWithCount(txs []TransactionModel) (int, int, error) {
+	if len(txs) == 0 {
+		return 0, 0, nil
+	}
+
+	tx, err := DB.Begin()
+	if err != nil {
+		return 0, 0, err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(`
+		INSERT OR IGNORE INTO transactions
+		(account_id, owner_id, date, description, amount, category_id, currency, raw_metadata)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer stmt.Close()
+
+	inserted := 0
+	for _, t := range txs {
+		res, err := stmt.Exec(
+			t.AccountID,
+			t.OwnerID,
+			t.Date,
+			t.Description,
+			t.Amount,
+			t.CategoryID,
+			t.Currency,
+			t.RawMetadata,
+		)
+		if err != nil {
+			return 0, 0, err
+		}
+		rows, err := res.RowsAffected()
+		if err == nil && rows > 0 {
+			inserted++
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return 0, 0, err
+	}
+
+	return inserted, len(txs) - inserted, nil
+}
+
 func GetUncategorizedTransactions() ([]TransactionModel, error) {
 	rows, err := DB.Query(`
 		SELECT
@@ -624,7 +673,7 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 	}
 	defer rows.Close()
 
-	var txs []TransactionModel
+	txs := []TransactionModel{}
 	for rows.Next() {
 		var t TransactionModel
 		if err := rows.Scan(

@@ -201,7 +201,8 @@ Note: DB import may skip duplicates (same behavior as GUI); `skipped_count` repo
   "imported_count": 123,
   "skipped_count": 0,
   "months": ["2025-01"],
-  "applied_rules": true
+  "applied_rules": true,
+  "applied_count": 12
 }
 ```
 
