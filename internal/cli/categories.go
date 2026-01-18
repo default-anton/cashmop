@@ -30,7 +30,11 @@ type categoryResponse struct {
 
 func handleCategories(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing categories subcommand (list, rename, create)."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Missing categories subcommand (list, rename, create).",
+			Hint:    "Use \"cashmop categories list\", \"cashmop categories rename\", or \"cashmop categories create\".",
+		})}
 	}
 
 	switch args[0] {
@@ -41,7 +45,11 @@ func handleCategories(args []string) commandResult {
 	case "create":
 		return handleCategoriesCreate(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown categories subcommand."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Unknown categories subcommand.",
+			Hint:    "Use \"cashmop categories list\", \"cashmop categories rename\", or \"cashmop categories create\".",
+		})}
 	}
 }
 
@@ -70,7 +78,14 @@ func handleCategoriesRename(args []string) commandResult {
 	}
 
 	if id == 0 || name == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--id and --name are required."})}
+		var details []ErrorDetail
+		if id == 0 {
+			details = append(details, requiredFlagError("id", "Provide --id <category id>."))
+		}
+		if name == "" {
+			details = append(details, requiredFlagError("name", "Provide --name <new name>."))
+		}
+		return commandResult{Err: validationError(details...)}
 	}
 
 	if err := database.RenameCategory(id, name); err != nil {
@@ -89,7 +104,7 @@ func handleCategoriesCreate(args []string) commandResult {
 	}
 
 	if name == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--name is required."})}
+		return commandResult{Err: validationError(requiredFlagError("name", "Provide --name <name>."))}
 	}
 
 	id, err := database.GetOrCreateCategory(name)

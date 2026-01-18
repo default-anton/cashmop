@@ -18,8 +18,7 @@ type commandResult struct {
 func Run(args []string) int {
 	global, rest, err := parseGlobalFlags(args)
 	if err != nil {
-		writeJSON(os.Stdout, errorResponse{Ok: false, Errors: []ErrorDetail{{Message: err.Error()}}})
-		return 2
+		return writeCLIError(os.Stdout, err, "json")
 	}
 
 	if global.Version {
@@ -32,8 +31,11 @@ func Run(args []string) int {
 			printHelp("")
 			return 0
 		}
-		writeJSON(os.Stdout, errorResponse{Ok: false, Errors: []ErrorDetail{{Message: "Missing subcommand."}}})
-		return 2
+		return writeCLIError(os.Stdout, validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Missing subcommand.",
+			Hint:    "Run \"cashmop help\" to list available commands.",
+		}), global.Format)
 	}
 
 	if rest[0] == "help" {
@@ -53,8 +55,11 @@ func Run(args []string) int {
 	if requiresDB(rest[0]) {
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 		if err := database.InitDBWithPath(global.DBPath, logger); err != nil {
-			writeJSON(os.Stdout, errorResponse{Ok: false, Errors: []ErrorDetail{{Message: fmt.Sprintf("Unable to open database: %s", err.Error())}}})
-			return 1
+			return writeCLIError(os.Stdout, runtimeError(ErrorDetail{
+				Field:   "db",
+				Message: fmt.Sprintf("Unable to open database: %s", err.Error()),
+				Hint:    "Provide a valid --db path or omit it to use the default database.",
+			}), global.Format)
 		}
 		defer database.Close()
 	}
@@ -84,16 +89,18 @@ func Run(args []string) int {
 	case "uninstall-cli":
 		result = handleUninstallCli(rest[1:])
 	default:
-		writeJSON(os.Stdout, errorResponse{Ok: false, Errors: []ErrorDetail{{Message: fmt.Sprintf("Unknown command: %s", rest[0])}}})
-		return 2
+		result = commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: fmt.Sprintf("Unknown command: %s.", rest[0]),
+			Hint:    "Run \"cashmop help\" to list available commands.",
+		})}
 	}
 
 	if result.Help {
 		return 0
 	}
 	if result.Err != nil {
-		writeResponse(os.Stdout, errorResponse{Ok: false, Errors: result.Err.Errors}, global.Format)
-		return result.Err.Code
+		return writeCLIError(os.Stdout, result.Err, global.Format)
 	}
 	if result.Response != nil {
 		if err := writeResponse(os.Stdout, result.Response, global.Format); err != nil {
@@ -101,6 +108,16 @@ func Run(args []string) int {
 		}
 	}
 	return 0
+}
+
+func writeCLIError(out io.Writer, err *cliError, format string) int {
+	if err == nil {
+		return 0
+	}
+	if wErr := writeResponse(out, errorResponse{Ok: false, Errors: err.Errors}, format); wErr != nil {
+		return 1
+	}
+	return err.Code
 }
 
 func requiresDB(command string) bool {

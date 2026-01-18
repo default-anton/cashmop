@@ -34,6 +34,17 @@ func runtimeError(details ...ErrorDetail) *cliError {
 	return &cliError{Code: 1, Errors: details}
 }
 
+func requiredFlagError(flag string, hint string) ErrorDetail {
+	if hint == "" {
+		hint = fmt.Sprintf("Provide --%s.", flag)
+	}
+	return ErrorDetail{
+		Field:   flag,
+		Message: fmt.Sprintf("--%s is required.", flag),
+		Hint:    hint,
+	}
+}
+
 type errorResponse struct {
 	Ok     bool          `json:"ok"`
 	Errors []ErrorDetail `json:"errors"`

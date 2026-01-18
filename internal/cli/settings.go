@@ -11,7 +11,11 @@ type settingsResponse struct {
 
 func handleSettings(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing settings subcommand (get, set)."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Missing settings subcommand (get, set).",
+			Hint:    "Use \"cashmop settings get\" or \"cashmop settings set\".",
+		})}
 	}
 
 	switch args[0] {
@@ -20,7 +24,11 @@ func handleSettings(args []string) commandResult {
 	case "set":
 		return handleSettingsSet(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown settings subcommand."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Unknown settings subcommand.",
+			Hint:    "Use \"cashmop settings get\" or \"cashmop settings set\".",
+		})}
 	}
 }
 

@@ -32,7 +32,11 @@ type mappingSaveResponse struct {
 
 func handleMappings(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing mappings subcommand (list, get, save, delete)."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Missing mappings subcommand (list, get, save, delete).",
+			Hint:    "Use \"cashmop mappings list\", \"cashmop mappings get\", \"cashmop mappings save\", or \"cashmop mappings delete\".",
+		})}
 	}
 
 	switch args[0] {
@@ -45,7 +49,11 @@ func handleMappings(args []string) commandResult {
 	case "delete":
 		return handleMappingsDelete(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown mappings subcommand."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Unknown mappings subcommand.",
+			Hint:    "Use \"cashmop mappings list\", \"cashmop mappings get\", \"cashmop mappings save\", or \"cashmop mappings delete\".",
+		})}
 	}
 }
 
@@ -80,7 +88,19 @@ func handleMappingsGet(args []string) commandResult {
 	} else if name != "" {
 		m, err = database.GetColumnMappingByName(name)
 	} else {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Either --id or --name is required."})}
+		details := []ErrorDetail{
+			{
+				Field:   "id",
+				Message: "Either --id or --name is required.",
+				Hint:    "Provide --id <id> or --name <name>.",
+			},
+			{
+				Field:   "name",
+				Message: "Either --id or --name is required.",
+				Hint:    "Provide --id <id> or --name <name>.",
+			},
+		}
+		return commandResult{Err: validationError(details...)}
 	}
 
 	if err != nil {
@@ -111,7 +131,14 @@ func handleMappingsSave(args []string) commandResult {
 	}
 
 	if name == "" || mappingPath == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--name and --mapping are required."})}
+		var details []ErrorDetail
+		if name == "" {
+			details = append(details, requiredFlagError("name", "Provide --name <name>."))
+		}
+		if mappingPath == "" {
+			details = append(details, requiredFlagError("mapping", "Provide --mapping <path|->."))
+		}
+		return commandResult{Err: validationError(details...)}
 	}
 
 	var data []byte
@@ -127,7 +154,7 @@ func handleMappingsSave(args []string) commandResult {
 
 	var js json.RawMessage
 	if err := json.Unmarshal(data, &js); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Field: "mapping", Message: "Invalid JSON mapping."})}
+		return commandResult{Err: validationError(ErrorDetail{Field: "mapping", Message: "Invalid JSON mapping.", Hint: "Ensure the mapping is valid JSON."})}
 	}
 
 	id, err := database.SaveColumnMapping(name, string(data))
@@ -149,7 +176,19 @@ func handleMappingsDelete(args []string) commandResult {
 	}
 
 	if id == 0 && name == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Either --id or --name is required."})}
+		details := []ErrorDetail{
+			{
+				Field:   "id",
+				Message: "Either --id or --name is required.",
+				Hint:    "Provide --id <id> or --name <name>.",
+			},
+			{
+				Field:   "name",
+				Message: "Either --id or --name is required.",
+				Hint:    "Provide --id <id> or --name <name>.",
+			},
+		}
+		return commandResult{Err: validationError(details...)}
 	}
 
 	if id == 0 {

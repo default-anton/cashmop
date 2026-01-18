@@ -20,7 +20,11 @@ type fxRateResponse struct {
 
 func handleFx(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing fx subcommand (status, sync, rate)."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Missing fx subcommand (status, sync, rate).",
+			Hint:    "Use \"cashmop fx status\", \"cashmop fx sync\", or \"cashmop fx rate\".",
+		})}
 	}
 
 	switch args[0] {
@@ -31,7 +35,11 @@ func handleFx(args []string) commandResult {
 	case "rate":
 		return handleFxRate(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown fx subcommand."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Unknown fx subcommand.",
+			Hint:    "Use \"cashmop fx status\", \"cashmop fx sync\", or \"cashmop fx rate\".",
+		})}
 	}
 }
 
@@ -85,8 +93,18 @@ func handleFxRate(args []string) commandResult {
 		return res
 	}
 
-	if base == "" || quote == "" || date == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--base, --quote, and --date are required."})}
+	var details []ErrorDetail
+	if base == "" {
+		details = append(details, requiredFlagError("base", "Provide --base <ISO currency code>."))
+	}
+	if quote == "" {
+		details = append(details, requiredFlagError("quote", "Provide --quote <ISO currency code>."))
+	}
+	if date == "" {
+		details = append(details, requiredFlagError("date", "Provide --date YYYY-MM-DD."))
+	}
+	if len(details) > 0 {
+		return commandResult{Err: validationError(details...)}
 	}
 
 	rate, err := database.GetFxRate(base, quote, date)

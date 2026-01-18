@@ -46,7 +46,14 @@ func handleImport(args []string) commandResult {
 	}
 
 	if filePath == "" || mappingSpec == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--file and --mapping are required."})}
+		var details []ErrorDetail
+		if filePath == "" {
+			details = append(details, requiredFlagError("file", "Provide --file <path>."))
+		}
+		if mappingSpec == "" {
+			details = append(details, requiredFlagError("mapping", "Provide --mapping <path|name|->."))
+		}
+		return commandResult{Err: validationError(details...)}
 	}
 
 	// 1. Resolve mapping
@@ -56,7 +63,7 @@ func handleImport(args []string) commandResult {
 	}
 	var mapping database.ImportMapping
 	if err := json.Unmarshal(mappingData, &mapping); err != nil {
-		return commandResult{Err: validationError(ErrorDetail{Field: "mapping", Message: "Invalid mapping JSON schema."})}
+		return commandResult{Err: validationError(ErrorDetail{Field: "mapping", Message: "Invalid mapping JSON schema.", Hint: "Ensure the mapping JSON matches the import schema."})}
 	}
 
 	// 2. Parse file

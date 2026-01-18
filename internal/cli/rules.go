@@ -84,7 +84,11 @@ type ruleDeleteResponse struct {
 
 func handleRules(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing rules subcommand (list, preview, create, update, delete)."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Missing rules subcommand (list, preview, create, update, delete).",
+			Hint:    "Use \"cashmop rules list\", \"cashmop rules preview\", \"cashmop rules create\", \"cashmop rules update\", or \"cashmop rules delete\".",
+		})}
 	}
 
 	switch args[0] {
@@ -99,7 +103,11 @@ func handleRules(args []string) commandResult {
 	case "delete":
 		return handleRulesDelete(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown rules subcommand."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Unknown rules subcommand.",
+			Hint:    "Use \"cashmop rules list\", \"cashmop rules preview\", \"cashmop rules create\", \"cashmop rules update\", or \"cashmop rules delete\".",
+		})}
 	}
 }
 
@@ -155,14 +163,21 @@ func handleRulesPreview(args []string) commandResult {
 	}
 
 	if matchValue == "" || matchType == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--match-value and --match-type are required."})}
+		var details []ErrorDetail
+		if matchValue == "" {
+			details = append(details, requiredFlagError("match-value", "Provide --match-value <value>."))
+		}
+		if matchType == "" {
+			details = append(details, requiredFlagError("match-type", "Provide --match-type <starts_with|ends_with|contains|exact>."))
+		}
+		return commandResult{Err: validationError(details...)}
 	}
 
 	var minCents *int64
 	if amountMin != "" {
 		v, err := parseCentsString(amountMin)
 		if err != nil {
-			return commandResult{Err: validationError(ErrorDetail{Field: "amount-min", Message: "Invalid amount."})}
+			return commandResult{Err: validationError(ErrorDetail{Field: "amount-min", Message: "Invalid amount.", Hint: "Use a decimal string like 12.34."})}
 		}
 		minCents = &v
 	}
@@ -170,7 +185,7 @@ func handleRulesPreview(args []string) commandResult {
 	if amountMax != "" {
 		v, err := parseCentsString(amountMax)
 		if err != nil {
-			return commandResult{Err: validationError(ErrorDetail{Field: "amount-max", Message: "Invalid amount."})}
+			return commandResult{Err: validationError(ErrorDetail{Field: "amount-max", Message: "Invalid amount.", Hint: "Use a decimal string like 12.34."})}
 		}
 		maxCents = &v
 	}
@@ -227,14 +242,24 @@ func handleRulesCreate(args []string) commandResult {
 	}
 
 	if matchValue == "" || matchType == "" || category == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--match-value, --match-type, and --category are required."})}
+		var details []ErrorDetail
+		if matchValue == "" {
+			details = append(details, requiredFlagError("match-value", "Provide --match-value <value>."))
+		}
+		if matchType == "" {
+			details = append(details, requiredFlagError("match-type", "Provide --match-type <starts_with|ends_with|contains|exact>."))
+		}
+		if category == "" {
+			details = append(details, requiredFlagError("category", "Provide --category <name>."))
+		}
+		return commandResult{Err: validationError(details...)}
 	}
 
 	var minCents *int64
 	if amountMin != "" {
 		v, err := parseCentsString(amountMin)
 		if err != nil {
-			return commandResult{Err: validationError(ErrorDetail{Field: "amount-min", Message: "Invalid amount."})}
+			return commandResult{Err: validationError(ErrorDetail{Field: "amount-min", Message: "Invalid amount.", Hint: "Use a decimal string like 12.34."})}
 		}
 		minCents = &v
 	}
@@ -242,7 +267,7 @@ func handleRulesCreate(args []string) commandResult {
 	if amountMax != "" {
 		v, err := parseCentsString(amountMax)
 		if err != nil {
-			return commandResult{Err: validationError(ErrorDetail{Field: "amount-max", Message: "Invalid amount."})}
+			return commandResult{Err: validationError(ErrorDetail{Field: "amount-max", Message: "Invalid amount.", Hint: "Use a decimal string like 12.34."})}
 		}
 		maxCents = &v
 	}
@@ -292,7 +317,7 @@ func handleRulesUpdate(args []string) commandResult {
 	}
 
 	if id == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Rule ID is required."})}
+		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Rule ID is required.", Hint: "Provide --id <rule id>."})}
 	}
 
 	rule, err := database.GetRuleByID(id)
@@ -335,7 +360,7 @@ func handleRulesUpdate(args []string) commandResult {
 		} else {
 			v, err := parseCentsString(amountMin.value)
 			if err != nil {
-				return commandResult{Err: validationError(ErrorDetail{Field: "amount-min", Message: "Invalid amount."})}
+				return commandResult{Err: validationError(ErrorDetail{Field: "amount-min", Message: "Invalid amount.", Hint: "Use a decimal string like 12.34."})}
 			}
 			rule.AmountMin = &v
 		}
@@ -346,7 +371,7 @@ func handleRulesUpdate(args []string) commandResult {
 		} else {
 			v, err := parseCentsString(amountMax.value)
 			if err != nil {
-				return commandResult{Err: validationError(ErrorDetail{Field: "amount-max", Message: "Invalid amount."})}
+				return commandResult{Err: validationError(ErrorDetail{Field: "amount-max", Message: "Invalid amount.", Hint: "Use a decimal string like 12.34."})}
 			}
 			rule.AmountMax = &v
 		}
@@ -384,7 +409,7 @@ func handleRulesDelete(args []string) commandResult {
 	}
 
 	if id == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Rule ID is required."})}
+		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Rule ID is required.", Hint: "Provide --id <rule id>."})}
 	}
 
 	rule, err := database.GetRuleByID(id)

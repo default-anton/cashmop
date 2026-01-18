@@ -36,7 +36,20 @@ func handleExport(args []string) commandResult {
 	}
 
 	if start == "" || end == "" || format == "" || out == "" {
-		return commandResult{Err: validationError(ErrorDetail{Message: "--start, --end, --format, and --out are required."})}
+		var details []ErrorDetail
+		if start == "" {
+			details = append(details, requiredFlagError("start", "Provide --start YYYY-MM-DD."))
+		}
+		if end == "" {
+			details = append(details, requiredFlagError("end", "Provide --end YYYY-MM-DD."))
+		}
+		if format == "" {
+			details = append(details, requiredFlagError("format", "Provide --format csv or xlsx."))
+		}
+		if out == "" {
+			details = append(details, requiredFlagError("out", "Provide --out <path>."))
+		}
+		return commandResult{Err: validationError(details...)}
 	}
 
 	start, end, cErr := validateDateRange(start, end)
@@ -45,7 +58,7 @@ func handleExport(args []string) commandResult {
 	}
 
 	if format != "csv" && format != "xlsx" {
-		return commandResult{Err: validationError(ErrorDetail{Field: "format", Message: "Format must be csv or xlsx."})}
+		return commandResult{Err: validationError(ErrorDetail{Field: "format", Message: "Format must be csv or xlsx.", Hint: "Use --format csv or --format xlsx."})}
 	}
 
 	var catIDs []int64
@@ -58,7 +71,7 @@ func handleExport(args []string) commandResult {
 			}
 			var id int64
 			if _, err := fmt.Sscanf(p, "%d", &id); err != nil {
-				return commandResult{Err: validationError(ErrorDetail{Field: "category-ids", Message: fmt.Sprintf("Invalid category ID: %s", p)})}
+				return commandResult{Err: validationError(ErrorDetail{Field: "category-ids", Message: fmt.Sprintf("Invalid category ID: %s", p), Hint: "Provide comma-separated numeric IDs."})}
 			}
 			catIDs = append(catIDs, id)
 		}
@@ -89,7 +102,7 @@ func handleExport(args []string) commandResult {
 	case "xlsx":
 		count, err = exportToXLSX(transactions, out, mainCurrency)
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Field: "format", Message: "Unsupported format."})}
+		return commandResult{Err: validationError(ErrorDetail{Field: "format", Message: "Unsupported format.", Hint: "Use --format csv or --format xlsx."})}
 	}
 
 	if err != nil {

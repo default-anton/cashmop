@@ -48,17 +48,17 @@ func validateDateRange(start, end string) (string, string, *cliError) {
 
 	startDate, err := parseDate(start)
 	if err != nil {
-		return "", "", validationError(ErrorDetail{Field: "start", Message: "Invalid start date."})
+		return "", "", validationError(ErrorDetail{Field: "start", Message: "Invalid start date.", Hint: "Use YYYY-MM-DD."})
 	}
 	endDate, err := parseDate(end)
 	if err != nil {
-		return "", "", validationError(ErrorDetail{Field: "end", Message: "Invalid end date."})
+		return "", "", validationError(ErrorDetail{Field: "end", Message: "Invalid end date.", Hint: "Use YYYY-MM-DD."})
 	}
 	if endDate.Before(startDate) {
-		return "", "", validationError(ErrorDetail{Field: "end", Message: "--end must be on or after --start."})
+		return "", "", validationError(ErrorDetail{Field: "end", Message: "--end must be on or after --start.", Hint: "Ensure --end is on or after --start."})
 	}
 	if endDate.Sub(startDate).Hours() > 93*24 {
-		return "", "", validationError(ErrorDetail{Field: "end", Message: "Date range must be 93 days or less."})
+		return "", "", validationError(ErrorDetail{Field: "end", Message: "Date range must be 93 days or less.", Hint: "Limit the range to 93 days or less."})
 	}
 
 	return startDate.Format(dateLayout), endDate.Format(dateLayout), nil

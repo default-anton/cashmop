@@ -35,7 +35,11 @@ type backupRestoreResponse struct {
 
 func handleBackup(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing backup subcommand (create, info, validate, restore)."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Missing backup subcommand (create, info, validate, restore).",
+			Hint:    "Use \"cashmop backup create\", \"cashmop backup info\", \"cashmop backup validate\", or \"cashmop backup restore\".",
+		})}
 	}
 
 	switch args[0] {
@@ -48,7 +52,11 @@ func handleBackup(args []string) commandResult {
 	case "restore":
 		return handleBackupRestore(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown backup subcommand."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Unknown backup subcommand.",
+			Hint:    "Use \"cashmop backup create\", \"cashmop backup info\", \"cashmop backup validate\", or \"cashmop backup restore\".",
+		})}
 	}
 }
 
@@ -116,7 +124,7 @@ func handleBackupValidate(args []string) commandResult {
 	}
 
 	if file == "" {
-		return commandResult{Err: validationError(ErrorDetail{Field: "file", Message: "--file is required."})}
+		return commandResult{Err: validationError(ErrorDetail{Field: "file", Message: "--file is required.", Hint: "Provide --file <path>."})}
 	}
 
 	count, err := database.ValidateBackup(file)
@@ -147,7 +155,7 @@ func handleBackupRestore(args []string) commandResult {
 	}
 
 	if file == "" {
-		return commandResult{Err: validationError(ErrorDetail{Field: "file", Message: "--file is required."})}
+		return commandResult{Err: validationError(ErrorDetail{Field: "file", Message: "--file is required.", Hint: "Provide --file <path>."})}
 	}
 
 	safetyPath, err := database.RestoreBackupWithSafety(file)

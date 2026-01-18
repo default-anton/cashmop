@@ -53,7 +53,11 @@ type txCategorizeResponse struct {
 
 func handleTransactions(args []string) commandResult {
 	if len(args) == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Message: "Missing tx subcommand (list, categorize)."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Missing tx subcommand (list, categorize).",
+			Hint:    "Use \"cashmop tx list\" or \"cashmop tx categorize\".",
+		})}
 	}
 
 	switch args[0] {
@@ -62,7 +66,11 @@ func handleTransactions(args []string) commandResult {
 	case "categorize":
 		return handleTxCategorize(args[1:])
 	default:
-		return commandResult{Err: validationError(ErrorDetail{Message: "Unknown tx subcommand."})}
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "subcommand",
+			Message: "Unknown tx subcommand.",
+			Hint:    "Use \"cashmop tx list\" or \"cashmop tx categorize\".",
+		})}
 	}
 }
 
@@ -101,7 +109,7 @@ func handleTxList(args []string) commandResult {
 	if amountMin != "" {
 		v, err := parseCentsString(amountMin)
 		if err != nil {
-			return commandResult{Err: validationError(ErrorDetail{Field: "amount-min", Message: "Invalid amount."})}
+			return commandResult{Err: validationError(ErrorDetail{Field: "amount-min", Message: "Invalid amount.", Hint: "Use a decimal string like 12.34."})}
 		}
 		minCents = &v
 	}
@@ -109,7 +117,7 @@ func handleTxList(args []string) commandResult {
 	if amountMax != "" {
 		v, err := parseCentsString(amountMax)
 		if err != nil {
-			return commandResult{Err: validationError(ErrorDetail{Field: "amount-max", Message: "Invalid amount."})}
+			return commandResult{Err: validationError(ErrorDetail{Field: "amount-max", Message: "Invalid amount.", Hint: "Use a decimal string like 12.34."})}
 		}
 		maxCents = &v
 	}
@@ -125,7 +133,7 @@ func handleTxList(args []string) commandResult {
 			}
 			var id int64
 			if _, err := fmt.Sscanf(p, "%d", &id); err != nil {
-				return commandResult{Err: validationError(ErrorDetail{Field: "category-ids", Message: fmt.Sprintf("Invalid category ID: %s", p)})}
+				return commandResult{Err: validationError(ErrorDetail{Field: "category-ids", Message: fmt.Sprintf("Invalid category ID: %s", p), Hint: "Provide comma-separated numeric IDs."})}
 			}
 			catIDs = append(catIDs, id)
 		}
@@ -257,13 +265,17 @@ func handleTxCategorize(args []string) commandResult {
 	}
 
 	if id == 0 {
-		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Transaction ID is required."})}
+		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Transaction ID is required.", Hint: "Provide --id <transaction id>."})}
 	}
 
 	var catID int64
 	if !uncategorize {
 		if category == "" {
-			return commandResult{Err: validationError(ErrorDetail{Message: "Either --category or --uncategorize must be provided."})}
+			return commandResult{Err: validationError(ErrorDetail{
+				Field:   "category",
+				Message: "Either --category or --uncategorize must be provided.",
+				Hint:    "Provide --category <name> or use --uncategorize.",
+			})}
 		}
 		var err error
 		catID, err = database.GetOrCreateCategory(category)

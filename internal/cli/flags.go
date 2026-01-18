@@ -2,6 +2,7 @@ package cli
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"strings"
 )
@@ -13,7 +14,7 @@ type globalFlags struct {
 	Format  string
 }
 
-func parseGlobalFlags(args []string) (globalFlags, []string, error) {
+func parseGlobalFlags(args []string) (globalFlags, []string, *cliError) {
 	fs := flag.NewFlagSet("cashmop", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	var help bool
@@ -27,10 +28,42 @@ func parseGlobalFlags(args []string) (globalFlags, []string, error) {
 	fs.StringVar(&format, "format", "json", "")
 
 	if err := fs.Parse(args); err != nil {
-		return globalFlags{}, nil, err
+		return globalFlags{}, nil, validationError(flagErrorDetail(err))
 	}
 
 	return globalFlags{Help: help, Version: version, DBPath: dbPath, Format: format}, fs.Args(), nil
+}
+
+func flagErrorDetail(err error) ErrorDetail {
+	msg := err.Error()
+	field := ""
+	hint := "Run with --help to see available flags."
+
+	const unknownPrefix = "flag provided but not defined: "
+	const missingPrefix = "flag needs an argument: "
+	const forFlag = " for flag "
+
+	switch {
+	case strings.HasPrefix(msg, unknownPrefix):
+		field = strings.TrimLeft(strings.TrimSpace(strings.TrimPrefix(msg, unknownPrefix)), "-")
+		if field != "" {
+			hint = fmt.Sprintf("Remove --%s or run --help to see available flags.", field)
+		}
+	case strings.HasPrefix(msg, missingPrefix):
+		field = strings.TrimLeft(strings.TrimSpace(strings.TrimPrefix(msg, missingPrefix)), "-")
+		if field != "" {
+			hint = fmt.Sprintf("Provide a value for --%s.", field)
+		}
+	case strings.Contains(msg, forFlag):
+		after := strings.SplitN(msg, forFlag, 2)[1]
+		name := strings.SplitN(after, ":", 2)[0]
+		field = strings.TrimLeft(strings.TrimSpace(name), "-")
+		if field != "" {
+			hint = fmt.Sprintf("Provide a valid value for --%s.", field)
+		}
+	}
+
+	return ErrorDetail{Field: field, Message: msg, Hint: hint}
 }
 
 type subcommandFlagSet struct {
@@ -49,7 +82,7 @@ func newSubcommandFlagSet(name string) *subcommandFlagSet {
 
 func (s *subcommandFlagSet) parse(args []string, helpCmd string) (bool, commandResult) {
 	if err := s.Parse(args); err != nil {
-		return false, commandResult{Err: validationError(ErrorDetail{Message: err.Error()})}
+		return false, commandResult{Err: validationError(flagErrorDetail(err))}
 	}
 	if s.help {
 		printHelp(helpCmd)
