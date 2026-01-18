@@ -2,6 +2,8 @@ package database
 
 import (
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,8 +14,7 @@ import (
 func setupTestDB(t *testing.T) {
 	t.Helper()
 	os.Setenv("APP_ENV", "test")
-	InitDB()
-
+	InitDB(slog.New(slog.NewTextHandler(io.Discard, nil)))
 }
 
 func teardownTestDB(t *testing.T) {

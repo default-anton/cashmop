@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/url"
 	"os"
 	osexec "os/exec"
@@ -56,7 +57,7 @@ func isTestEnv() bool {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	database.InitDB()
+	database.InitDB(slog.Default())
 
 	if isTestEnv() {
 		return

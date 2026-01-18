@@ -4,6 +4,7 @@ import (
 	"cashmop/internal/database"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,7 +42,7 @@ func resetDB() error {
 	os.Setenv("CASHMOP_WORKER_ID", workerID) // RE-SET for db.go
 
 	return withBusyRetry(func() error {
-		database.InitDB()
+		database.InitDB(slog.Default())
 		defer database.Close()
 
 		// Dynamically find all tables to drop

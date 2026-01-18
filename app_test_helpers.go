@@ -4,6 +4,8 @@ import (
 	"cashmop/internal/database"
 	"database/sql"
 	"encoding/base64"
+	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -39,6 +41,7 @@ func setupTestDB(t *testing.T) *sql.DB {
 	db.SetMaxOpenConns(4)
 
 	database.DB = db
+	database.SetLogger(slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	if err := database.Migrate(); err != nil {
 		t.Fatalf("Failed to run migrations: %v", err)
@@ -70,7 +73,7 @@ func setupTestDBWithFile(t *testing.T) *sql.DB {
 		}
 	}
 
-	database.InitDB()
+	database.InitDB(slog.New(slog.NewTextHandler(io.Discard, nil)))
 	db := database.DB
 
 	t.Cleanup(func() {

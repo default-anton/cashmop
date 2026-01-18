@@ -3,7 +3,6 @@ package database
 import (
 	"embed"
 	"fmt"
-	"log"
 	"os"
 	"sort"
 	"strings"
@@ -13,9 +12,7 @@ import (
 var migrationsFS embed.FS
 
 func dbLog(format string, v ...interface{}) {
-	if !SuppressLogs {
-		log.Printf(format, v...)
-	}
+	logger.Info(fmt.Sprintf(format, v...))
 }
 
 func createMigrationsTable() error {

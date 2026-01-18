@@ -4,6 +4,8 @@ import (
 	"cashmop/internal/database"
 	"cashmop/internal/version"
 	"fmt"
+	"io"
+	"log/slog"
 	"os"
 )
 
@@ -49,8 +51,8 @@ func Run(args []string) int {
 	}
 
 	if requiresDB(rest[0]) {
-		database.SuppressLogs = true
-		if err := database.InitDBWithPath(global.DBPath); err != nil {
+		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+		if err := database.InitDBWithPath(global.DBPath, logger); err != nil {
 			writeJSON(os.Stdout, errorResponse{Ok: false, Errors: []ErrorDetail{{Message: fmt.Sprintf("Unable to open database: %s", err.Error())}}})
 			return 1
 		}

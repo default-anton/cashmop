@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +15,13 @@ import (
 
 var DB *sql.DB
 
-var SuppressLogs bool
+var logger *slog.Logger = slog.Default()
+
+func SetLogger(l *slog.Logger) {
+	if l != nil {
+		logger = l
+	}
+}
 
 const (
 	storageName          = "cashmop"
@@ -23,13 +29,15 @@ const (
 	sqliteJournalModeWal = "WAL"
 )
 
-func InitDB() {
-	if err := InitDBWithPath(""); err != nil {
-		log.Fatal(err)
+func InitDB(l *slog.Logger) {
+	if err := InitDBWithPath("", l); err != nil {
+		logger.Error("Failed to initialize database", "error", err)
+		os.Exit(1)
 	}
 }
 
-func InitDBWithPath(path string) error {
+func InitDBWithPath(path string, l *slog.Logger) error {
+	SetLogger(l)
 	dbPath := path
 	if dbPath == "" {
 		resolved, err := resolveDatabasePath()
