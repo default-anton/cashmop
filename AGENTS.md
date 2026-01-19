@@ -35,3 +35,27 @@ Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linu
   - Exception: `fx_rates.rate` stays REAL
   - Frontend: `utils/currency.ts` (`formatCents`, `parseCents`)
   - Rounding: Go `math.Round(x + 0.5)`, JS `Math.round(x * 100)`
+
+## Repo map (frequent paths)
+
+- `frontend/src/`: React UI (components, hooks, screens, utils)
+- `frontend/tests/`: frontend integration tests
+- `frontend/wailsjs/`: generated Wails bindings
+- `internal/`: Go backend packages
+  - `internal/database/`: DB layer; migrations in `internal/database/migrations/`
+  - `internal/models/`: domain models
+  - `internal/cli/`: CLI commands
+  - `internal/config/`: config load/parse
+  - `internal/fx/`: FX rates
+  - `internal/paths/`: OS paths + app dirs
+  - `internal/version/`: version metadata
+  - `internal/brave/`: Brave Search client
+- `cmd/`: helper binaries
+- `tests/`: Go integration/CLI tests (`tests/cli/`)
+- `docs/specs/`: feature specs
+- `docs/todos/`: tracked TODOs
+- `scripts/`: dev/build scripts
+- `assets/`: branding assets
+- `build/`: Wails build outputs
+- `wails.json`: Wails config
+- `app.go`, `main.go`: Wails app entrypoints
