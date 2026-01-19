@@ -43,6 +43,7 @@
 
 ## Usage
 - `cashmop [global flags] <subcommand> [args]`
+- Note: global flags must appear before `<subcommand>` (Go `flag` parsing stops at the first non-flag).
 
 ## Help + Version
 - Human-readable plain text.
@@ -57,13 +58,18 @@
 - `--version`: print version.
 - `--db <path>`: path to SQLite DB file to operate on.
   - If omitted: use the same “active DB” resolution as the desktop app (OS config dir + env overrides; see below). Does not depend on current working directory; intended to work when shipped alongside the desktop app.
+- `--format json|table`: output format for command responses (default: `json`).
+  - `table` applies only to list-like commands that implement `Tableable` (currently: `categories list`, `tx list`, `rules list`). For other commands it falls back to JSON.
 
 ## Output Contract
 ### Where output goes
 - **All non-help command output goes to stdout.**
 - **stderr must remain empty** (no logs, no stack traces, no debug prints).
+- `--format table` switches some list commands to a human-readable table (still on stdout).
 
-### JSON shape (non-help commands)
+### JSON shape (default for non-help commands)
+Applies when output is JSON (default, or when `--format table` is not supported by the command).
+
 - Always a **single JSON object** (no bare arrays).
 - Always includes `ok: boolean`.
 

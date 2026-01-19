@@ -38,30 +38,52 @@ func printHelp(command string) {
 }
 
 func rootHelp() string {
-	return strings.TrimSpace(`CashMop CLI
-
-Usage:
-  cashmop [global flags] <subcommand> [args]
-
-Global flags:
-  -h, --help        Show help
-  --version         Show version
-  --db <path>       Path to SQLite DB
-
-Commands:
-  import
-  mappings
-  tx
-  categories
-  rules
-  export
-  backup
-  settings
-  fx
-  install-cli
-  uninstall-cli
-
-Use "cashmop help <subcommand>" for command-specific help.`)
+	var b strings.Builder
+	b.WriteString("CashMop CLI\n\n")
+	b.WriteString("Usage:\n")
+	b.WriteString("  cashmop [global flags] <subcommand> [args]\n")
+	b.WriteString("\n")
+	b.WriteString("Notes:\n")
+	b.WriteString("  - Global flags must appear before <subcommand> (Go flag parsing stops at the first non-flag).\n")
+	b.WriteString("  - All non-help output goes to stdout (stderr is empty). Default output is JSON.\n")
+	b.WriteString("  - Global --format is json|table. table works for: categories list, tx list, rules list.\n")
+	b.WriteString("  - export has its own --format csv|xlsx (after the export subcommand).\n")
+	b.WriteString("\n")
+	b.WriteString("Global flags:\n")
+	b.WriteString("  -h, --help           Show help\n")
+	b.WriteString("  --version            Show version\n")
+	b.WriteString("  --db <path>          Path to SQLite DB (omit for default app DB)\n")
+	b.WriteString("  --format json|table  Output format (default: json)\n")
+	b.WriteString("\n")
+	b.WriteString("Help forms:\n")
+	b.WriteString("  cashmop help\n")
+	b.WriteString("  cashmop help <subcommand>\n")
+	b.WriteString("  cashmop <subcommand> --help\n")
+	b.WriteString("\n")
+	b.WriteString("Commands (expanded):\n\n")
+	b.WriteString("[import]\n")
+	b.WriteString(importHelp())
+	b.WriteString("\n\n[mappings]\n")
+	b.WriteString(mappingsHelp())
+	b.WriteString("\n\n[tx]\n")
+	b.WriteString(txHelp())
+	b.WriteString("\n\n[categories]\n")
+	b.WriteString(categoriesHelp())
+	b.WriteString("\n\n[rules]\n")
+	b.WriteString(rulesHelp())
+	b.WriteString("\n\n[export]\n")
+	b.WriteString(exportHelp())
+	b.WriteString("\n\n[backup]\n")
+	b.WriteString(backupHelp())
+	b.WriteString("\n\n[settings]\n")
+	b.WriteString(settingsHelp())
+	b.WriteString("\n\n[fx]\n")
+	b.WriteString(fxHelp())
+	b.WriteString("\n\n[install-cli]\n")
+	b.WriteString(installCliHelp())
+	b.WriteString("\n\n[uninstall-cli]\n")
+	b.WriteString(uninstallCliHelp())
+	return strings.TrimSpace(b.String())
 }
 
 func importHelp() string {
