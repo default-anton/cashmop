@@ -6,8 +6,8 @@ usage() {
 Usage: scripts/release.sh --target <linux|macos> --arch <amd64|arm64> --version <version> [--output <dir>]
 
 Examples:
-  scripts/release.sh --target macos --arch arm64 --version v0.2.0
-  scripts/release.sh --target linux --arch amd64 --version v0.2.0
+  scripts/release.sh --target macos --arch arm64 --version v0.1.0
+  scripts/release.sh --target linux --arch amd64 --version v0.1.0
 EOF
 }
 
@@ -51,6 +51,9 @@ if [ -z "$TARGET" ] || [ -z "$ARCH" ] || [ -z "$VERSION" ]; then
   exit 1
 fi
 
+VERSION_TAG="$VERSION"
+VERSION_SEMVER="${VERSION_TAG#v}"
+
 mkdir -p "$OUTPUT_DIR"
 
 case "$TARGET" in
@@ -70,7 +73,7 @@ case "$TARGET" in
 
     codesign --force --deep --sign - "$APP_PATH"
 
-    ZIP_NAME="$OUTPUT_DIR/cashmop-macos-$ARCH-$VERSION.zip"
+    ZIP_NAME="$OUTPUT_DIR/cashmop-macos-$ARCH-$VERSION_SEMVER.zip"
     ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
     ;;
   linux)
@@ -110,7 +113,7 @@ EOF
       exit 1
     fi
 
-    APPIMAGE_NAME="$OUTPUT_DIR/cashmop-linux-$ARCH-$VERSION.AppImage"
+    APPIMAGE_NAME="$OUTPUT_DIR/cashmop-linux-$ARCH-$VERSION_SEMVER.AppImage"
     appimagetool "$APPDIR" "$APPIMAGE_NAME"
 
     DEB_DIR="$WORK_DIR/deb"
@@ -129,7 +132,7 @@ EOF
 
     cat > "$DEB_DIR/DEBIAN/control" <<EOF
 Package: cashmop
-Version: $VERSION
+Version: $VERSION_SEMVER
 Section: utils
 Priority: optional
 Architecture: $ARCH
@@ -137,7 +140,7 @@ Maintainer: Anton Kuzmenko <1917237+default-anton@users.noreply.github.com>
 Description: CashMop desktop app
 EOF
 
-    DEB_NAME="$OUTPUT_DIR/cashmop-linux-$ARCH-$VERSION.deb"
+    DEB_NAME="$OUTPUT_DIR/cashmop-linux-$ARCH-$VERSION_SEMVER.deb"
     dpkg-deb --build "$DEB_DIR" "$DEB_NAME"
     ;;
   *)

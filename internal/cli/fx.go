@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"cashmop/internal/database"
-	"cashmop/internal/fx"
+	"github.com/default-anton/cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/fx"
 	"context"
 )
 

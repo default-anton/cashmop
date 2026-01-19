@@ -2,7 +2,7 @@
 
 Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linux, macOS); speed + delight focus.
 
-**Release Status:** Pre-release (no v1.0 yet). Backward compatibility NOT a concern.
+**Release Status:** Pre-release (current: v0.1.0; no v1.0 yet). Backward compatibility NOT a concern.
 
 ---
 
@@ -19,6 +19,7 @@ Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linu
 
 - Subdir AGENTS.md exist; read relevant
 - Feature specs: `docs/specs/`
+- Release process: `docs/release.md`
 - Frontend deps: `frontend/package.json` only; never root
 - After Go or frontend changes: `make check` (go test/vet/tidy/build/vulncheck, typescript, integration tests)
 - Docs-only changes: skip `make check`

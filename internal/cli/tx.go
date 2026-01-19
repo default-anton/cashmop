@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"cashmop/internal/database"
-	"cashmop/internal/fuzzy"
+	"github.com/default-anton/cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/fuzzy"
 	"fmt"
 	"sort"
 	"strings"

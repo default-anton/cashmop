@@ -1,8 +1,8 @@
 package main
 
 import (
-	"cashmop/internal/cli"
-	"cashmop/internal/config"
+	"github.com/default-anton/cashmop/internal/cli"
+	"github.com/default-anton/cashmop/internal/config"
 	"context"
 	"embed"
 	"log"

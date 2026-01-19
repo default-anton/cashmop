@@ -1,7 +1,7 @@
 package main
 
 import (
-	"cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/database"
 	"fmt"
 	"log"
 	"log/slog"

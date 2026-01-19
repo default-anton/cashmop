@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"cashmop/internal/paths"
+	"github.com/default-anton/cashmop/internal/paths"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )

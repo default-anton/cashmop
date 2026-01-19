@@ -1,4 +1,4 @@
-module cashmop
+module github.com/default-anton/cashmop
 
 go 1.25
 

@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/database"
 	"fmt"
 	"os"
 	"path/filepath"

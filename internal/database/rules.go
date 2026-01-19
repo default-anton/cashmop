@@ -1,7 +1,7 @@
 package database
 
 import (
-	"cashmop/internal/fuzzy"
+	"github.com/default-anton/cashmop/internal/fuzzy"
 	"strings"
 	"sync"
 )

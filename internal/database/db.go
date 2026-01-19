@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"cashmop/internal/paths"
+	"github.com/default-anton/cashmop/internal/paths"
 
 	_ "modernc.org/sqlite"
 )

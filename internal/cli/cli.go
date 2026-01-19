@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"cashmop/internal/database"
-	"cashmop/internal/version"
+	"github.com/default-anton/cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/version"
 	"fmt"
 	"io"
 	"log/slog"

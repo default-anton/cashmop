@@ -10,12 +10,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/default-anton/cashmop/internal/version"
 )
 
 const (
 	bocBaseURL        = "https://www.bankofcanada.ca/valet/observations/"
 	bocRequestTimeout = 15 * time.Second
-	bocUserAgent      = "CashMop/1.0"
+	bocUserAgent      = "CashMop/" + version.Version
 )
 
 type BoCProvider struct {
