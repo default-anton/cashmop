@@ -1,7 +1,7 @@
 # All targets: show output only on failure (silent success)
 # Unless V=1 is passed.
 
-.PHONY: check dev test vet tidy vulncheck typescript build integration integration-file integration-test
+.PHONY: check dev test vet tidy goimports vulncheck typescript build integration integration-file integration-test
 
 # Macro to run a command with optional verbosity
 # Usage: $(call run,Label,Command)
@@ -20,7 +20,7 @@ define run
 	fi
 endef
 
-check: test vet tidy vulncheck typescript integration
+check: test vet tidy goimports vulncheck typescript integration
 
 dev:
 	@wails dev
@@ -33,6 +33,9 @@ vet:
 
 tidy:
 	$(call run,go mod tidy,go mod tidy)
+
+goimports:
+	$(call run,goimports check,files=$$(goimports -l $$(go list -f '{{.Dir}}' ./...)); if [ -n "$$files" ]; then echo "$$files"; exit 1; fi)
 
 vulncheck:
 	$(call run,govulncheck ./...,govulncheck ./...)
