@@ -21,7 +21,8 @@ Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linu
 - Feature specs: `docs/specs/`
 - Release process: `docs/release.md`
 - Frontend deps: `frontend/package.json` only; never root
-- After Go or frontend changes: `make check` (go test/vet/tidy/build/vulncheck, typescript, integration tests)
+- After Go changes: `make fmt` (goimports -w)
+- After Go or frontend changes: `make check` (tidy, goimports check, vet, go test, typescript, vulncheck, integration)
 - Docs-only changes: skip `make check`
 - Use plain `make` commands by default (no `V=1`) unless explicitly requested.
 - Integration tests rules: `frontend/tests/AGENTS.md`
