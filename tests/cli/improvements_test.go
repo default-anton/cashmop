@@ -36,7 +36,7 @@ func TestTableOutput(t *testing.T) {
 		mappingJSON := `{"csv":{"date":"Date","description":["Description"],"amountMapping":{"type":"single","column":"Amount"},"account":"Account","owner":"Owner"},"account":"BMO","currencyDefault":"CAD"}`
 		mappingPath := filepath.Join(t.TempDir(), "mapping.json")
 		os.WriteFile(mappingPath, []byte(mappingJSON), 0644)
-		
+
 		csvData := `Date,Description,Amount,Account,Owner
 2025-01-10,Grocery Store,-10.00,BMO,Alex
 `
@@ -48,7 +48,7 @@ func TestTableOutput(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		
+
 		expectedHeaders := []string{"ID", "Date", "Amount", "Curr", "Category", "Account", "Description"}
 		for _, h := range expectedHeaders {
 			if !strings.Contains(res.Stdout, h) {
@@ -72,7 +72,7 @@ func TestRobustFlagValidation(t *testing.T) {
 		if res.ExitCode != 2 {
 			t.Errorf("expected exit code 2 for invalid category ID, got %d", res.ExitCode)
 		}
-		
+
 		found := false
 		if errors, ok := res.JSON["errors"].([]interface{}); ok {
 			for _, e := range errors {
@@ -110,12 +110,12 @@ func TestRobustFlagValidation(t *testing.T) {
 
 func TestSortOptimization(t *testing.T) {
 	db := setupDB(t)
-	
+
 	// Seed data with different amounts
 	mappingJSON := `{"csv":{"date":"Date","description":["Description"],"amountMapping":{"type":"single","column":"Amount"},"account":"Account","owner":"Owner"},"account":"BMO","currencyDefault":"CAD"}`
 	mappingPath := filepath.Join(t.TempDir(), "mapping.json")
 	os.WriteFile(mappingPath, []byte(mappingJSON), 0644)
-	
+
 	csvData := `Date,Description,Amount,Account,Owner
 2025-01-10,Cheap,-1.00,BMO,Alex
 2025-01-12,Expensive,-100.00,BMO,Alex

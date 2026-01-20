@@ -7,18 +7,18 @@ import (
 )
 
 type TransactionModel struct {
-	ID           int64   `json:"id"`
-	AccountID    int64   `json:"account_id"`
-	AccountName  string  `json:"account_name"`
-	OwnerID      *int64  `json:"owner_id"`
-	OwnerName    string  `json:"owner_name"`
-	Date         string  `json:"date"`
-	Description  string  `json:"description"`
-	Amount       int64   `json:"amount"`
-	CategoryID   *int64  `json:"category_id"`
-	CategoryName string  `json:"category_name"`
-	Currency     string  `json:"currency"`
-	RawMetadata  string  `json:"raw_metadata"`
+	ID           int64  `json:"id"`
+	AccountID    int64  `json:"account_id"`
+	AccountName  string `json:"account_name"`
+	OwnerID      *int64 `json:"owner_id"`
+	OwnerName    string `json:"owner_name"`
+	Date         string `json:"date"`
+	Description  string `json:"description"`
+	Amount       int64  `json:"amount"`
+	CategoryID   *int64 `json:"category_id"`
+	CategoryName string `json:"category_name"`
+	Currency     string `json:"currency"`
+	RawMetadata  string `json:"raw_metadata"`
 }
 
 func GetOrCreateAccount(name string) (int64, error) {
@@ -365,9 +365,9 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *in
 }
 
 type RuleMatchPreview struct {
-	Count        int               `json:"count"`
-	MinAmount    *int64            `json:"min_amount"`
-	MaxAmount    *int64            `json:"max_amount"`
+	Count        int                `json:"count"`
+	MinAmount    *int64             `json:"min_amount"`
+	MaxAmount    *int64             `json:"max_amount"`
 	Transactions []TransactionModel `json:"transactions"`
 }
 

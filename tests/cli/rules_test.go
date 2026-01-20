@@ -14,7 +14,7 @@ func TestRulesDetailed(t *testing.T) {
 	mappingJSON := `{"csv":{"date":"Date","description":["Description"],"amountMapping":{"type":"single","column":"Amount"},"account":"Account","owner":"Owner"},"account":"BMO","currencyDefault":"CAD"}`
 	mappingPath := filepath.Join(t.TempDir(), "mapping.json")
 	os.WriteFile(mappingPath, []byte(mappingJSON), 0644)
-	
+
 	csvData := `Date,Description,Amount,Account,Owner
 2025-01-10,Uber,-12.34,BMO,Alex
 2025-01-12,Uber,-45.67,BMO,Alex
@@ -51,7 +51,7 @@ func TestRulesDetailed(t *testing.T) {
 		if res.JSON["count"].(float64) != 1 {
 			t.Errorf("expected 1 match for Lyft, got %v", res.JSON["count"])
 		}
-		
+
 		// Preview with amount filter
 		res, _ = run(db, "rules", "preview", "--match-value", "Uber", "--match-type", "contains", "--amount-min", "-20.00")
 		assertGlobal(t, res, 0)
@@ -67,7 +67,7 @@ func TestRulesDetailed(t *testing.T) {
 		// Change category to "Taxi" and recategorize
 		res, _ := run(db, "rules", "update", "--id", fmt.Sprintf("%v", ruleID), "--category", "Taxi", "--recategorize")
 		assertGlobal(t, res, 0)
-		
+
 		// Verify new category
 		listRes, _ := run(db, "tx", "list", "--start", "2025-01-01", "--end", "2025-01-31", "--query", "Uber")
 		for _, item := range listRes.JSON["transactions"].([]interface{}) {
@@ -84,7 +84,7 @@ func TestRulesDetailed(t *testing.T) {
 
 		res, _ := run(db, "rules", "delete", "--id", fmt.Sprintf("%v", ruleID), "--uncategorize")
 		assertGlobal(t, res, 0)
-		
+
 		// Verify uncategorized
 		listRes, _ := run(db, "tx", "list", "--start", "2025-01-01", "--end", "2025-01-31", "--query", "Uber")
 		for _, item := range listRes.JSON["transactions"].([]interface{}) {

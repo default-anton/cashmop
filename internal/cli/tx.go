@@ -1,11 +1,12 @@
 package cli
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
-	"github.com/default-anton/cashmop/internal/fuzzy"
 	"fmt"
 	"sort"
 	"strings"
+
+	"github.com/default-anton/cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/fuzzy"
 )
 
 type txListResponse struct {

@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"context"
 	"database/sql"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/default-anton/cashmop/internal/database"
 )
 
 // ============================================================================

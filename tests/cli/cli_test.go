@@ -448,15 +448,15 @@ func TestTxListDetailed(t *testing.T) {
 
 func TestInstallCli(t *testing.T) {
 	tmpDir := t.TempDir()
-	
+
 	res, err := run("", "install-cli", "--path", tmpDir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	if res.JSON["ok"] == true {
 		assertGlobal(t, res, 0)
-		
+
 		res, err = run("", "uninstall-cli", "--path", tmpDir)
 		if err != nil {
 			t.Fatal(err)

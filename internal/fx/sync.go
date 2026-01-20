@@ -1,12 +1,13 @@
 package fx
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/default-anton/cashmop/internal/database"
 )
 
 type SyncResult struct {

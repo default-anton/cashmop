@@ -1,9 +1,10 @@
 package cli
 
 import (
+	"context"
+
 	"github.com/default-anton/cashmop/internal/database"
 	"github.com/default-anton/cashmop/internal/fx"
-	"context"
 )
 
 type fxStatusResponse struct {

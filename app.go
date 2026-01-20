@@ -1,11 +1,6 @@
 package main
 
 import (
-	"github.com/default-anton/cashmop/internal/brave"
-	"github.com/default-anton/cashmop/internal/database"
-	"github.com/default-anton/cashmop/internal/fuzzy"
-	"github.com/default-anton/cashmop/internal/fx"
-	"github.com/default-anton/cashmop/internal/version"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
@@ -23,6 +18,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/default-anton/cashmop/internal/brave"
+	"github.com/default-anton/cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/fuzzy"
+	"github.com/default-anton/cashmop/internal/fx"
+	"github.com/default-anton/cashmop/internal/version"
 
 	"github.com/wailsapp/wails/v2/pkg/menu"
 	"github.com/wailsapp/wails/v2/pkg/menu/keys"

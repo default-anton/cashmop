@@ -1,12 +1,13 @@
 package cli
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"encoding/csv"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/default-anton/cashmop/internal/database"
 
 	"github.com/xuri/excelize/v2"
 )

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"fmt"
 	"log"
 	"log/slog"
@@ -9,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/default-anton/cashmop/internal/database"
 
 	"gopkg.in/yaml.v3"
 )

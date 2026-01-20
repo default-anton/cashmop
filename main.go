@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/default-anton/cashmop/internal/cli"
-	"github.com/default-anton/cashmop/internal/config"
 	"context"
 	"embed"
 	"log"
 	"os"
+
+	"github.com/default-anton/cashmop/internal/cli"
+	"github.com/default-anton/cashmop/internal/config"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -32,7 +33,7 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:       app.startup,
+		OnStartup:        app.startup,
 		OnDomReady: func(ctx context.Context) {
 			state, err := config.LoadWindowState()
 			if err != nil {

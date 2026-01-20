@@ -1,8 +1,9 @@
 package cli
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"fmt"
+
+	"github.com/default-anton/cashmop/internal/database"
 )
 
 type categoryListResponse struct {

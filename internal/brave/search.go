@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	baseURL      = "https://search.brave.com/search"
-	userAgent    = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
-	maxResults   = 20
+	baseURL        = "https://search.brave.com/search"
+	userAgent      = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36"
+	maxResults     = 20
 	requestTimeout = 15 * time.Second
 )
 

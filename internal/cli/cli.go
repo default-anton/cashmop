@@ -1,12 +1,13 @@
 package cli
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
-	"github.com/default-anton/cashmop/internal/version"
 	"fmt"
 	"io"
 	"log/slog"
 	"os"
+
+	"github.com/default-anton/cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/version"
 )
 
 type commandResult struct {

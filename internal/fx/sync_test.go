@@ -1,8 +1,9 @@
 package fx
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"testing"
+
+	"github.com/default-anton/cashmop/internal/database"
 )
 
 func TestSubtractDays(t *testing.T) {

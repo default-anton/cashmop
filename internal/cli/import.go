@@ -1,13 +1,14 @@
 package cli
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/default-anton/cashmop/internal/database"
 )
 
 type importResponse struct {

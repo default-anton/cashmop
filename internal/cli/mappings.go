@@ -1,11 +1,12 @@
 package cli
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/default-anton/cashmop/internal/database"
 )
 
 type mappingListResponse struct {

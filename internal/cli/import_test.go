@@ -1,12 +1,13 @@
 package cli
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/default-anton/cashmop/internal/database"
 )
 
 func TestNormalizeTransactionsBatching(t *testing.T) {

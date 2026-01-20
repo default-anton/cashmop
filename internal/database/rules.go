@@ -1,9 +1,10 @@
 package database
 
 import (
-	"github.com/default-anton/cashmop/internal/fuzzy"
 	"strings"
 	"sync"
+
+	"github.com/default-anton/cashmop/internal/fuzzy"
 )
 
 type Category struct {
@@ -12,14 +13,14 @@ type Category struct {
 }
 
 type CategorizationRule struct {
-	ID           int64   `json:"id"`
-	MatchType    string  `json:"match_type"`
-	MatchValue   string  `json:"match_value"`
-	CategoryID   int64   `json:"category_id"`
-	CategoryName string  `json:"category_name"`
-	AmountMin    *int64  `json:"amount_min"`
-	AmountMax    *int64  `json:"amount_max"`
-	CreatedAt    string  `json:"created_at"`
+	ID           int64  `json:"id"`
+	MatchType    string `json:"match_type"`
+	MatchValue   string `json:"match_value"`
+	CategoryID   int64  `json:"category_id"`
+	CategoryName string `json:"category_name"`
+	AmountMin    *int64 `json:"amount_min"`
+	AmountMax    *int64 `json:"amount_max"`
+	CreatedAt    string `json:"created_at"`
 }
 
 var (

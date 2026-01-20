@@ -1,12 +1,13 @@
 package cli
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/default-anton/cashmop/internal/database"
 )
 
 func createAmountParser(mapping database.ImportMapping, headers []string) func([]string) int64 {

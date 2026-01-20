@@ -14,7 +14,7 @@ func TestExportDetailed(t *testing.T) {
 	mappingJSON := `{"csv":{"date":"Date","description":["Description"],"amountMapping":{"type":"single","column":"Amount"},"account":"Account","owner":"Owner"},"account":"BMO","currencyDefault":"CAD"}`
 	mappingPath := filepath.Join(t.TempDir(), "mapping.json")
 	os.WriteFile(mappingPath, []byte(mappingJSON), 0644)
-	
+
 	csvData := `Date,Description,Amount,Account,Owner
 2025-01-10,Food,-10.00,BMO,Alex
 2025-01-12,Gas,-50.00,BMO,Alex

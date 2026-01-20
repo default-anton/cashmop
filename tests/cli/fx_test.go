@@ -1,8 +1,9 @@
 package cli_test
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"testing"
+
+	"github.com/default-anton/cashmop/internal/database"
 )
 
 func TestFxDetailed(t *testing.T) {

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/default-anton/cashmop/internal/database"
 	"database/sql"
 	"encoding/base64"
 	"io"
@@ -10,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/default-anton/cashmop/internal/database"
 
 	_ "modernc.org/sqlite"
 )

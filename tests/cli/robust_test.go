@@ -100,7 +100,7 @@ func TestRounding(t *testing.T) {
 	// math.Floor(1.0051 * 100 + 0.5) = Floor(100.51 + 0.5) = Floor(101.01) = 101 (1.01)
 	// math.Floor(-1.0051 * 100 + 0.5) = Floor(-100.51 + 0.5) = Floor(-100.01) = -101 (-1.01)
 	// wait, Floor(-100.01) is -101.
-	
+
 	csvPath := filepath.Join(t.TempDir(), "round_data.csv")
 	os.WriteFile(csvPath, []byte(csvData), 0644)
 
@@ -108,7 +108,7 @@ func TestRounding(t *testing.T) {
 
 	res, _ := run(db, "tx", "list", "--start", "2025-01-01", "--end", "2025-01-01", "--sort", "amount", "--order", "asc")
 	txs := res.JSON["transactions"].([]interface{})
-	
+
 	if txs[0].(map[string]interface{})["amount"] != "-1.01" {
 		t.Errorf("expected -1.01 for -1.0051, got %v", txs[0].(map[string]interface{})["amount"])
 	}

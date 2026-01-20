@@ -15,7 +15,7 @@ func TestTxListFilters(t *testing.T) {
 	if err := os.WriteFile(mappingPath, []byte(mappingJSON), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	csvData := `Date,Description,Amount,Account,Owner
 2025-01-10,Groceries,-50.00,BMO,Alex
 2025-01-12,Internet,-80.00,BMO,Alex
@@ -27,7 +27,7 @@ func TestTxListFilters(t *testing.T) {
 	if err := os.WriteFile(csvPath, []byte(csvData), 0644); err != nil {
 		t.Fatal(err)
 	}
-	
+
 	res, err := run(db, "import", "--file", csvPath, "--mapping", mappingPath, "--month", "2025-01", "--month", "2025-02")
 	if err != nil {
 		t.Fatal(err)
@@ -60,19 +60,19 @@ func TestTxListFilters(t *testing.T) {
 		// Categorize one
 		txsRes, _ := run(db, "tx", "list", "--start", "2025-01-01", "--end", "2025-01-31")
 		txID := txsRes.JSON["transactions"].([]interface{})[0].(map[string]interface{})["id"]
-		
+
 		run(db, "tx", "categorize", "--id", fmt.Sprintf("%v", txID), "--category", "Food")
-		
+
 		// List categories to get ID
 		catRes, _ := run(db, "categories", "list")
 		foodID := catRes.JSON["items"].([]interface{})[0].(map[string]interface{})["id"]
-		
+
 		res, _ := run(db, "tx", "list", "--start", "2025-01-01", "--end", "2025-02-28", "--category-ids", fmt.Sprintf("%v", foodID))
 		assertGlobal(t, res, 0)
 		if res.JSON["count"].(float64) != 1 {
 			t.Errorf("expected 1 in Food, got %v", res.JSON["count"])
 		}
-		
+
 		// Both Food and Uncategorized
 		res, _ = run(db, "tx", "list", "--start", "2025-01-01", "--end", "2025-02-28", "--category-ids", fmt.Sprintf("%v", foodID), "--uncategorized")
 		assertGlobal(t, res, 0)
@@ -84,7 +84,7 @@ func TestTxListFilters(t *testing.T) {
 	t.Run("Query filter", func(t *testing.T) {
 		// Categorize "Groceries" to something else to avoid "Uncategorized" match
 		run(db, "categories", "create", "--name", "Groceries")
-		
+
 		// Find all Groceries and categorize them
 		txsRes, _ := run(db, "tx", "list", "--start", "2025-01-01", "--end", "2025-02-28", "--query", "Groceries")
 		for _, item := range txsRes.JSON["transactions"].([]interface{}) {
@@ -96,7 +96,7 @@ func TestTxListFilters(t *testing.T) {
 		assertGlobal(t, res, 0)
 		// Now "Internet" and "Salary" might still match "Rent" because of "Uncategorized"
 		// Let's categorize EVERYTHING.
-		
+
 		txsAll, _ := run(db, "tx", "list", "--start", "2025-01-01", "--end", "2025-02-28")
 		for _, item := range txsAll.JSON["transactions"].([]interface{}) {
 			tx := item.(map[string]interface{})
@@ -134,7 +134,7 @@ func TestTxListFilters(t *testing.T) {
 		if txs[0].(map[string]interface{})["description"] != "Rent" { // -1500.00
 			t.Errorf("expected Rent as first item when sorting amount asc, got %v", txs[0].(map[string]interface{})["description"])
 		}
-		
+
 		res, _ = run(db, "tx", "list", "--start", "2025-01-01", "--end", "2025-02-28", "--sort", "amount", "--order", "desc")
 		assertGlobal(t, res, 0)
 		txs = res.JSON["transactions"].([]interface{})
