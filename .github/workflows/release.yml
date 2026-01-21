@@ -47,9 +47,6 @@ jobs:
           - arch: amd64
             runner: ubuntu-24.04
             appimagetool: appimagetool-x86_64.AppImage
-          - arch: arm64
-            runner: ubuntu-22.04-arm64
-            appimagetool: appimagetool-aarch64.AppImage
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
