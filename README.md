@@ -44,11 +44,11 @@ xattr -dr com.apple.quarantine CashMop.app
 Linux: use AppImage (recommended; works on Arch) or `.deb` (Debian/Ubuntu).
 
 ### Development
-1. Install Go 1.25+, Node.js, and the Wails CLI.
+1. Install Go 1.25+, Node.js, pnpm, and the Wails CLI.
 2. Install frontend dependencies:
    ```bash
    cd frontend
-   npm ci
+   pnpm install
    ```
 3. Run the dev app:
    ```bash

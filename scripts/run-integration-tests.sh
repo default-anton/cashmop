@@ -86,7 +86,7 @@ trap cleanup EXIT INT TERM
 start_vite() {
     echo "Starting Vite dev server..."
     cd frontend
-    npm run dev -- --port 5173 --strictPort > ../vite.log 2>&1 &
+    pnpm dev -- --port 5173 --strictPort > ../vite.log 2>&1 &
     VITE_PID=$!
     cd ..
 }
@@ -165,4 +165,4 @@ done
 
 echo "All instances ready. Running Playwright tests..."
 cd frontend
-npm run test:integration -- --workers=$WORKER_COUNT "$@"
+pnpm test:integration --workers=$WORKER_COUNT "$@"

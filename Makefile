@@ -44,7 +44,7 @@ vulncheck:
 	$(call run,govulncheck ./...,govulncheck ./...)
 
 typescript:
-	$(call run,typescript check,cd frontend && npx tsc --noEmit)
+	$(call run,typescript check,cd frontend && pnpm exec tsc --noEmit)
 
 build:
 	$(call run,wails build,wails build)

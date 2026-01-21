@@ -13,7 +13,7 @@ Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linu
 - UI: Tailwind CSS
 - DB: SQLite local
 - ORM: stdlib `database/sql` + `modernc.org/sqlite`
-- Build: Wails CLI; npm scripts
+- Build: Wails CLI; pnpm scripts
 
 ## Project Rules You MUST Follow
 

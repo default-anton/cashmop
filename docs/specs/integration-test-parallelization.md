@@ -182,7 +182,7 @@ fi
 
 echo "All instances ready. Running Playwright tests..."
 cd frontend
-npm run test:integration -- --workers=$WORKER_COUNT "$@"
+pnpm test:integration --workers=$WORKER_COUNT "$@"
 ```
 
 ### 4. Playwright Config - Parallel

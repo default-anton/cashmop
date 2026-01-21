@@ -20,7 +20,7 @@ copy_patterns = [
 # Post-creation hooks (run in order after worktree is created)
 # [[post_hooks]]
 # name = "Install dependencies"
-# run = "npm install"
+# run = "cd frontend && pnpm install"
 #
 # [[post_hooks]]
 # name = "Setup database"
