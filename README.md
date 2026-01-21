@@ -41,7 +41,7 @@ macOS (Apple Silicon): unzip and drag to Applications. Not notarized; Gatekeeper
 xattr -dr com.apple.quarantine CashMop.app
 ```
 
-Linux: use AppImage (recommended; works on Arch) or `.deb` (Debian/Ubuntu).
+Linux (amd64): use AppImage (recommended; works on Arch) or `.deb` (Debian/Ubuntu).
 
 ### Development
 1. Install Go 1.25+, Node.js, pnpm, and the Wails CLI.

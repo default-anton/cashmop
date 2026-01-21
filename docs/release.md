@@ -23,5 +23,3 @@
    - `cashmop-macos-arm64-X.Y.Z.zip`
    - `cashmop-linux-amd64-X.Y.Z.AppImage`
    - `cashmop-linux-amd64-X.Y.Z.deb`
-   - `cashmop-linux-arm64-X.Y.Z.AppImage`
-   - `cashmop-linux-arm64-X.Y.Z.deb`
