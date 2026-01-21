@@ -71,7 +71,11 @@ case "$TARGET" in
       exit 1
     fi
 
-    codesign --force --deep --sign - "$APP_PATH"
+    if [ "${SKIP_CODESIGN:-}" != "1" ]; then
+      if ! codesign --force --deep --sign - "$APP_PATH"; then
+        echo "codesign failed; continuing without signing"
+      fi
+    fi
 
     ZIP_NAME="$OUTPUT_DIR/cashmop-macos-$ARCH-$VERSION_SEMVER.zip"
     ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
