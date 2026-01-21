@@ -65,10 +65,13 @@ case "$TARGET" in
 
     wails build --platform darwin/$ARCH
 
-    APP_PATH=$(ls build/bin/*.app | head -n 1)
-    if [ -z "$APP_PATH" ]; then
-      echo "No .app bundle found in build/bin"
-      exit 1
+    APP_PATH="build/bin/cashmop.app"
+    if [ ! -d "$APP_PATH" ]; then
+      APP_PATH=$(ls build/bin/*.app 2>/dev/null | head -n 1 || true)
+      if [ -z "$APP_PATH" ]; then
+        echo "No .app bundle found in build/bin"
+        exit 1
+      fi
     fi
 
     if [ "${SKIP_CODESIGN:-}" != "1" ]; then
