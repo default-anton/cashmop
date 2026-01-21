@@ -2,9 +2,9 @@
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "cashmop",
   "outputfilename": "cashmop",
-  "frontend:install": "cd frontend && pnpm install",
-  "frontend:build": "cd frontend && pnpm build",
-  "frontend:dev:watcher": "cd frontend && pnpm dev",
+  "frontend:install": "pnpm install --dir frontend",
+  "frontend:build": "pnpm build --dir frontend",
+  "frontend:dev:watcher": "pnpm dev --dir frontend",
   "frontend:dev:serverUrl": "auto",
   "author": {
     "name": "Anton Kuzmenko",

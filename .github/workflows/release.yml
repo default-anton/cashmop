@@ -2,7 +2,7 @@ name: release
 
 env:
   WAILS_VERSION: v2.11.0
-  APPIMAGETOOL_VERSION: 13
+  APPIMAGETOOL_VERSION: continuous
 
 on:
   push:
