@@ -724,3 +724,29 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 	}
 	return txs, nil
 }
+
+func DeleteTransactions(ids []int64) (int, error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+
+	placeholders := make([]string, len(ids))
+	args := make([]interface{}, len(ids))
+	for i, id := range ids {
+		placeholders[i] = "?"
+		args[i] = id
+	}
+
+	query := "DELETE FROM transactions WHERE id IN (" + strings.Join(placeholders, ",") + ")"
+	result, err := DB.Exec(query, args...)
+	if err != nil {
+		return 0, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	return int(rowsAffected), nil
+}

@@ -26,6 +26,10 @@ export function DeleteColumnMapping(arg1) {
   return window['go']['main']['App']['DeleteColumnMapping'](arg1);
 }
 
+export function DeleteTransactions(arg1) {
+  return window['go']['main']['App']['DeleteTransactions'](arg1);
+}
+
 export function ExportTransactions(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['ExportTransactions'](arg1, arg2, arg3, arg4, arg5);
 }

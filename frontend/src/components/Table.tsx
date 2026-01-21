@@ -17,6 +17,7 @@ interface Column<T> {
     onToggle?: () => void;
     positionKey?: string | number;
   };
+  isCheckbox?: boolean;
 }
 
 interface TableProps<T> {
@@ -29,6 +30,8 @@ interface TableProps<T> {
   sortOrder?: 'asc' | 'desc';
   onSort?: (key: string) => void;
   rowKey?: (row: T) => string | number;
+  selectedIds?: Set<string | number>;
+  onSelectionChange?: (id: string | number, selected: boolean) => void;
 }
 
 const Table = <T,>({
@@ -40,7 +43,9 @@ const Table = <T,>({
   sortField,
   sortOrder,
   onSort,
-  rowKey
+  rowKey,
+  selectedIds,
+  onSelectionChange,
 }: TableProps<T>) => {
   const getRowKey = (row: T, index: number) => {
     if (rowKey) return rowKey(row);
@@ -54,6 +59,35 @@ const Table = <T,>({
         <thead className="bg-canvas-100/80 backdrop-blur-sm sticky top-0 z-10 border-b border-canvas-200">
           <tr>
             {columns.map((column) => {
+              const isCheckbox = column.isCheckbox;
+              if (isCheckbox) {
+                const allSelected = data.length > 0 && data.every(row => selectedIds?.has(getRowKey(row, 0)));
+                const someSelected = data.some(row => selectedIds?.has(getRowKey(row, 0)));
+                return (
+                  <th
+                    key="checkbox"
+                    className="px-6 py-3 text-left w-10"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={input => {
+                        if (input) {
+                          input.indeterminate = someSelected && !allSelected;
+                        }
+                      }}
+                      onChange={(e) => {
+                        const selected = e.target.checked;
+                        data.forEach(row => {
+                          const key = getRowKey(row, 0);
+                          onSelectionChange?.(key, selected);
+                        });
+                      }}
+                      className="w-4 h-4 rounded border-canvas-300 text-brand focus:ring-brand focus:ring-offset-0 cursor-pointer"
+                    />
+                  </th>
+                );
+              }
               const isSorted = sortField === column.key;
               const canSort = column.sortable && onSort;
               const hasFilter = column.filter;
@@ -124,9 +158,29 @@ const Table = <T,>({
             {data.map((row, rowIndex) => (
               <tr
                 key={getRowKey(row, rowIndex)}
-                className="hover:bg-brand/[0.02] even:bg-canvas-100/30 transition-colors group"
+                className={`hover:bg-brand/[0.02] even:bg-canvas-100/30 transition-colors group ${
+                  selectedIds?.has(getRowKey(row, rowIndex)) ? 'bg-brand/[0.03]' : ''
+                }`}
               >
                 {columns.map((column) => {
+                  if (column.isCheckbox) {
+                    const rowKeyVal = getRowKey(row, rowIndex);
+                    return (
+                      <td
+                        key="checkbox"
+                        className="px-6 py-4"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedIds?.has(rowKeyVal) || false}
+                          onChange={(e) => {
+                            onSelectionChange?.(rowKeyVal, e.target.checked);
+                          }}
+                          className="w-4 h-4 rounded border-canvas-300 text-brand focus:ring-brand focus:ring-offset-0 cursor-pointer"
+                        />
+                      </td>
+                    );
+                  }
                   const value = (row as any)[column.key];
                   const renderedValue = column.render ? column.render(value, row) : String(value);
                   return (

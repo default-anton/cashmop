@@ -7,6 +7,7 @@ export class AnalysisPage {
   readonly prevMonthButton: Locator;
   readonly nextMonthButton: Locator;
   readonly currentMonthLabel: Locator;
+  readonly deleteButton: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -15,6 +16,7 @@ export class AnalysisPage {
     this.prevMonthButton = page.getByLabel('Previous Month', { exact: true });
     this.nextMonthButton = page.getByLabel('Next Month', { exact: true });
     this.currentMonthLabel = page.getByLabel('Current Month', { exact: true });
+    this.deleteButton = this.page.getByRole('button', { name: /Delete \(\d+\)/ });
   }
 
   async expectVisible() {
@@ -40,5 +42,57 @@ export class AnalysisPage {
 
   async expectMonth(monthLabel: string) {
     await expect(this.currentMonthLabel).toHaveText(monthLabel);
+  }
+
+  getTransactionCheckbox(transactionDescription: string) {
+    return this.page.locator('tr').filter({ hasText: transactionDescription }).locator('input[type="checkbox"]');
+  }
+
+  async selectTransaction(transactionDescription: string) {
+    await this.getTransactionCheckbox(transactionDescription).check();
+  }
+
+  async deselectTransaction(transactionDescription: string) {
+    await this.getTransactionCheckbox(transactionDescription).uncheck();
+  }
+
+  async expectTransactionSelected(transactionDescription: string) {
+    await expect(this.getTransactionCheckbox(transactionDescription)).toBeChecked();
+  }
+
+  async expectTransactionNotSelected(transactionDescription: string) {
+    await expect(this.getTransactionCheckbox(transactionDescription)).not.toBeChecked();
+  }
+
+  async clickDeleteButton() {
+    await this.deleteButton.click();
+  }
+
+  async expectDeleteButtonVisible() {
+    await expect(this.deleteButton).toBeVisible();
+  }
+
+  async expectDeleteButtonHidden() {
+    await expect(this.deleteButton).not.toBeVisible();
+  }
+
+  async expectDeleteButtonWithCount(count: number) {
+    await expect(this.page.getByRole('button', { name: `Delete (${count})`, exact: true })).toBeVisible();
+  }
+
+  async confirmDelete() {
+    await this.page.getByRole('button', { name: 'Delete', exact: true }).click();
+  }
+
+  async cancelDelete() {
+    await this.page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  }
+
+  async expectTransactionVisible(transactionDescription: string) {
+    await expect(this.page.locator('tr').filter({ hasText: transactionDescription })).toBeVisible();
+  }
+
+  async expectTransactionNotVisible(transactionDescription: string) {
+    await expect(this.page.locator('tr').filter({ hasText: transactionDescription })).not.toBeVisible();
   }
 }

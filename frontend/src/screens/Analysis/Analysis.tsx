@@ -4,9 +4,9 @@ import {
   GroupedTransactionList
 } from './components';
 import { database } from '../../../wailsjs/go/models';
-import { Card, ScreenLayout } from '../../components';
+import { Button, Card, Modal, ScreenLayout } from '../../components';
 import { useToast } from '../../components';
-import { BarChart3, ArrowUpDown, Download, AlertTriangle } from 'lucide-react';
+import { BarChart3, ArrowUpDown, Download, AlertTriangle, Trash2 } from 'lucide-react';
 import TransactionSearch from './components/TransactionSearch';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCents, formatCentsDecimal } from '../../utils/currency';
@@ -38,6 +38,9 @@ const Analysis: React.FC = () => {
   const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>('asc');
   const [transactionSortField, setTransactionSortField] = useState<TransactionSortField>('date');
   const [transactionSortOrder, setTransactionSortOrder] = useState<SortOrder>('desc');
+  const [selectedTxIds, setSelectedTxIds] = useState<Set<number>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const fetchData = useCallback(async () => {
     try {
       const monthList = await (window as any).go.main.App.GetMonthList();
@@ -183,6 +186,47 @@ const Analysis: React.FC = () => {
       );
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleSelectionChange = useCallback((id: string | number, selected: boolean) => {
+    setSelectedTxIds(prev => {
+      const next = new Set(prev);
+      if (selected) {
+        next.add(Number(id));
+      } else {
+        next.delete(Number(id));
+      }
+      return next;
+    });
+  }, []);
+
+  const handleDeleteSelected = () => {
+    if (selectedTxIds.size === 0) return;
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    setDeleteConfirmOpen(false);
+    setDeleting(true);
+    const count = selectedTxIds.size;
+    try {
+      const ids = Array.from(selectedTxIds);
+      await (window as any).go.main.App.DeleteTransactions(ids);
+      setSelectedTxIds(new Set());
+      toast.showToast(
+        `Deleted ${count} transaction${count !== 1 ? 's' : ''}`,
+        'success'
+      );
+      await fetchTransactions();
+    } catch (e) {
+      console.error('Delete failed', e);
+      toast.showToast(
+        e instanceof Error ? e.message : 'Failed to delete transactions. Please try again.',
+        'error'
+      );
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -460,9 +504,37 @@ const Analysis: React.FC = () => {
             monthOptions={monthOptions}
             selectedMonth={selectedMonth}
             onMonthChange={setSelectedMonth}
+            selectedTxIds={selectedTxIds}
+            onSelectionChange={handleSelectionChange}
+            onDeleteSelected={handleDeleteSelected}
           />
         )}
       </div>
+
+      <Modal
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        title="Delete Transactions"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-canvas-600 select-none">
+            Delete {selectedTxIds.size} transaction{selectedTxIds.size !== 1 ? 's' : ''}? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setDeleteConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="bg-finance-expense hover:bg-finance-expense/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </ScreenLayout>
   );
 };

@@ -15,6 +15,8 @@ export function DeleteCategorizationRule(arg1:number,arg2:boolean):Promise<main.
 
 export function DeleteColumnMapping(arg1:number):Promise<void>;
 
+export function DeleteTransactions(arg1:Array<number>):Promise<number>;
+
 export function ExportTransactions(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:string):Promise<number>;
 
 export function ExportTransactionsWithDialog(arg1:string,arg2:string,arg3:Array<number>,arg4:string):Promise<number>;

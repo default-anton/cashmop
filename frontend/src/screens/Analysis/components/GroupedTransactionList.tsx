@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { database } from '../../../../wailsjs/go/models';
-import { Check, User, Tag, Landmark, List } from 'lucide-react';
+import { Check, User, Tag, Landmark, List, Trash2 } from 'lucide-react';
 import { Card, CategoryFilterContent, FilterConfig, Input } from '../../../components';
 import Table from '../../../components/Table';
 import { GroupSortField, SortOrder, TransactionSortField } from '../Analysis';
@@ -29,6 +29,9 @@ interface GroupedTransactionListProps {
   monthOptions: { value: string; label: string }[];
   selectedMonth: string;
   onMonthChange: (month: string) => void;
+  selectedTxIds?: Set<number>;
+  onSelectionChange?: (id: string | number, selected: boolean) => void;
+  onDeleteSelected?: () => void;
 }
 
 const EditableCategoryCell: React.FC<{
@@ -98,6 +101,9 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   monthOptions,
   selectedMonth,
   onMonthChange,
+  selectedTxIds = new Set(),
+  onSelectionChange,
+  onDeleteSelected,
 }) => {
   const [categoryFilterSearch, setCategoryFilterSearch] = useState('');
   const categoryFilterInputRef = useRef<HTMLInputElement>(null);
@@ -229,6 +235,10 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
 
   const buildColumns = useCallback((tableId: string) => {
     const cols: any[] = [
+      {
+        key: 'checkbox',
+        isCheckbox: true,
+      },
       {
         key: 'date',
         header: 'Date',
@@ -461,9 +471,22 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   };
 
   const netTotal = transactions.reduce((sum, tx) => sum + (tx.main_amount ?? 0), 0);
+  const selectedCount = selectedTxIds.size;
 
   return (
     <div className="w-full space-y-6">
+      {selectedCount > 0 && (
+        <div className="flex items-center justify-end pb-2 border-b border-canvas-200">
+          <button
+            onClick={onDeleteSelected}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-bold bg-finance-expense/10 text-finance-expense hover:bg-finance-expense/20 border border-finance-expense/30 transition-all"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete ({selectedCount})
+          </button>
+        </div>
+      )}
+
       {showSummary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card variant="elevated" className="p-6">
@@ -532,6 +555,8 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                   sortField={transactionSortField}
                   sortOrder={transactionSortOrder}
                   onSort={(field) => onSortTransaction(field as TransactionSortField)}
+                  selectedIds={selectedTxIds}
+                  onSelectionChange={onSelectionChange}
                 />
               </Card>
             </motion.div>
@@ -583,6 +608,8 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                 sortField={transactionSortField}
                 sortOrder={transactionSortOrder}
                 onSort={(field) => onSortTransaction(field as TransactionSortField)}
+                selectedIds={selectedTxIds}
+                onSelectionChange={onSelectionChange}
               />
             </Card>
 

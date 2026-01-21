@@ -396,6 +396,10 @@ func (a *App) CategorizeTransaction(id int64, categoryName string) (*CategorizeR
 	return &CategorizeResult{TransactionID: id, AffectedIds: []int64{id}}, database.UpdateTransactionCategory(id, catID)
 }
 
+func (a *App) DeleteTransactions(ids []int64) (int, error) {
+	return database.DeleteTransactions(ids)
+}
+
 func (a *App) RenameCategory(id int64, newName string) error {
 	return database.RenameCategory(id, newName)
 }
