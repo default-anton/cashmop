@@ -23,8 +23,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
       - name: Add Go bin to PATH
         run: echo "$HOME/go/bin" >> "$GITHUB_PATH"
       - name: Install Wails
@@ -62,8 +60,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: 'pnpm'
-          cache-dependency-path: frontend/pnpm-lock.yaml
       - name: Add Go bin to PATH
         run: echo "$HOME/go/bin" >> "$GITHUB_PATH"
       - name: Install Linux build deps
