@@ -16,7 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.1] - 2026-01-21
 
+### Added
+- Bulk transaction deletion via Analysis screen
+- Checkbox selection for transactions
+- Delete confirmation modal with loading state
+- 'Delete (N)' floating action button for selected transactions
+
 ### Fixed
+- Race condition in delete flow: disable button while deleting
 
 ## [0.1.0] - 2026-01-21
 
