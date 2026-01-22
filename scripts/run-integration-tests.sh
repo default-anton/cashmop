@@ -146,7 +146,7 @@ trap cleanup EXIT INT TERM
 start_vite() {
     echo "Starting Vite dev server on port $VITE_PORT..."
     cd frontend
-    pnpm dev -- --port "$VITE_PORT" --strictPort > ../vite.log 2>&1 &
+    pnpm dev --port "$VITE_PORT" --strictPort > ../vite.log 2>&1 &
     VITE_PID=$!
     cd ..
 }
