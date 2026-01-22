@@ -72,14 +72,15 @@ PY
 }
 
 choose_vite_port() {
-    for port in $(seq 5173 5190); do
+    # GitHub runners often have something bound on 5173; avoid it.
+    for port in $(seq 5174 5190); do
         if ! port_in_use "$port"; then
             VITE_PORT=$port
             return 0
         fi
     done
 
-    echo "Error: no free port found for Vite (tried 5173-5190)"
+    echo "Error: no free port found for Vite (tried 5174-5190)"
     exit 1
 }
 
