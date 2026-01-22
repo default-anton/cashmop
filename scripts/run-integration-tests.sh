@@ -119,7 +119,7 @@ wait_for_vite() {
     sleep 1
 
     # Read the actual port from Vite log
-    VITE_PORT=$(grep "Local:" vite.log | tail -1 | grep -oP 'localhost:\K[0-9]+')
+    VITE_PORT=$(grep "Local:" vite.log | tail -1 | grep -oE 'localhost:[0-9]+' | cut -d: -f2)
     if [ -z "$VITE_PORT" ]; then
         VITE_PORT=5173
     fi
