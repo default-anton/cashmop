@@ -27,9 +27,20 @@ if pgrep -f "wails dev" > /dev/null || pgrep -f "cashmop" > /dev/null; then
     sleep 2
 fi
 
+port_in_use() {
+    local port=$1
+
+    if command -v ss > /dev/null 2>&1; then
+        [ -n "$(ss -ltnH "sport = :$port")" ]
+        return
+    fi
+
+    lsof -i :$port > /dev/null 2>&1
+}
+
 choose_vite_port() {
     for port in $(seq 5173 5190); do
-        if ! lsof -i :$port > /dev/null 2>&1; then
+        if ! port_in_use "$port"; then
             VITE_PORT=$port
             return 0
         fi
