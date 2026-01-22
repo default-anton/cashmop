@@ -115,10 +115,9 @@ wait_for_vite() {
         fi
     done
 
-    # Detect which port Vite is actually using
-    if curl -s http://localhost:5174 > /dev/null 2>&1; then
-        VITE_PORT=5174
-    else
+    # Read the actual port from Vite log
+    VITE_PORT=$(grep "Local:" vite.log | grep -oP 'localhost:\K[0-9]+' | head -1)
+    if [ -z "$VITE_PORT" ]; then
         VITE_PORT=5173
     fi
     echo "Vite is running on port $VITE_PORT"
