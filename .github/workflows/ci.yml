@@ -45,7 +45,7 @@ jobs:
         with:
           version: 8.15.9
       - name: Install frontend deps
-        run: cd frontend && pnpm install
+        run: cd frontend && pnpm install --frozen-lockfile
       - name: Install Playwright browsers
         run: cd frontend && pnpm exec playwright install --with-deps
       - name: Build frontend
