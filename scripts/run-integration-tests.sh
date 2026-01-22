@@ -180,9 +180,14 @@ start_worker() {
     local pid_file="$ROOT_DIR/.wails_dev_$index.pid"
     local log_file="$ROOT_DIR/wails_$index.log"
 
+    local frontend_args=()
+    if [ -n "${VITE_PORT:-}" ]; then
+        frontend_args=(-frontenddevserverurl "http://localhost:$VITE_PORT")
+    fi
+
     echo "  Worker $index on port $port..."
     APP_ENV=test CASHMOP_WORKER_ID=$index \
-        wails dev -devserver localhost:$port -frontenddevserverurl http://localhost:$VITE_PORT -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
+        wails dev -devserver localhost:$port "${frontend_args[@]}" -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
     echo $! > "$pid_file"
     PID_FILES+=("$pid_file")
 }
@@ -223,9 +228,11 @@ wait_for_workers() {
     fi
 }
 
-choose_vite_port
-start_vite
-wait_for_vite
+if [ "$WORKER_COUNT" -gt 1 ]; then
+    choose_vite_port
+    start_vite
+    wait_for_vite
+fi
 echo "Starting $WORKER_COUNT Wails instances..."
 for i in $(seq 0 $((WORKER_COUNT-1))); do
     start_worker "$i"
