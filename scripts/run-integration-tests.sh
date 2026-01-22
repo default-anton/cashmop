@@ -27,6 +27,13 @@ if pgrep -f "wails dev" > /dev/null || pgrep -f "cashmop" > /dev/null; then
     sleep 2
 fi
 
+# Kill any process using port 5173 (Vite default port)
+if lsof -i :5173 > /dev/null 2>&1; then
+    echo "Killing process using port 5173..."
+    lsof -ti :5173 | xargs kill -9 2>/dev/null || true
+    sleep 1
+fi
+
 TEST_RUN_ID="${CASHMOP_TEST_RUN_ID:-$(date +%s)-$$}"
 export CASHMOP_TEST_RUN_ID="$TEST_RUN_ID"
 export WORKER_COUNT
