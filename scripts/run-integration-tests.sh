@@ -42,7 +42,10 @@ port = int(sys.argv[1])
 def can_bind(family, host):
     s = socket.socket(family, socket.SOCK_STREAM)
     try:
-        s.bind((host, port))
+        if family == socket.AF_INET6:
+            s.bind((host, port, 0, 0))
+        else:
+            s.bind((host, port))
     except OSError:
         return False
     finally:
