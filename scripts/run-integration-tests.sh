@@ -30,13 +30,38 @@ fi
 port_in_use() {
     local port=$1
 
-    if command -v nc > /dev/null 2>&1; then
-        nc -z localhost "$port" > /dev/null 2>&1
-        return
-    fi
+    if command -v python3 > /dev/null 2>&1; then
+        python3 - "$port" <<'PY'
+import socket
+import sys
 
-    if command -v ss > /dev/null 2>&1; then
-        [ -n "$(ss -ltnH "sport = :$port")" ]
+port = int(sys.argv[1])
+
+# Return codes: 0 => in use, 1 => free
+
+def can_bind(family, host):
+    s = socket.socket(family, socket.SOCK_STREAM)
+    try:
+        s.bind((host, port))
+    except OSError:
+        return False
+    finally:
+        s.close()
+    return True
+
+# If we can't bind IPv4 loopback, it's in use.
+if not can_bind(socket.AF_INET, "127.0.0.1"):
+    sys.exit(0)
+
+# If IPv6 exists and we can't bind IPv6 loopback, it's in use.
+try:
+    if not can_bind(socket.AF_INET6, "::1"):
+        sys.exit(0)
+except OSError:
+    pass
+
+sys.exit(1)
+PY
         return
     fi
 
