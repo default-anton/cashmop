@@ -50,7 +50,7 @@ build:
 	$(call run,wails build,wails build)
 
 integration:
-	$(call run,integration tests,timeout 1m ./scripts/run-integration-tests.sh $(INTEGRATION_ARGS))
+	$(call run,integration tests,timeout 5m ./scripts/run-integration-tests.sh $(INTEGRATION_ARGS))
 
 # Run single test file: make integration-file FILE=tests/basic.spec.ts
 integration-file:

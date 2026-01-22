@@ -27,6 +27,63 @@ if pgrep -f "wails dev" > /dev/null || pgrep -f "cashmop" > /dev/null; then
     sleep 2
 fi
 
+port_in_use() {
+    local port=$1
+
+    if command -v python3 > /dev/null 2>&1; then
+        python3 - "$port" <<'PY'
+import socket
+import sys
+
+port = int(sys.argv[1])
+
+# Return codes: 0 => in use, 1 => free
+
+def can_bind(family, host):
+    s = socket.socket(family, socket.SOCK_STREAM)
+    try:
+        if family == socket.AF_INET6:
+            s.bind((host, port, 0, 0))
+        else:
+            s.bind((host, port))
+    except OSError:
+        return False
+    finally:
+        s.close()
+    return True
+
+# If we can't bind IPv4 loopback, it's in use.
+if not can_bind(socket.AF_INET, "127.0.0.1"):
+    sys.exit(0)
+
+# If IPv6 exists and we can't bind IPv6 loopback, it's in use.
+try:
+    if not can_bind(socket.AF_INET6, "::1"):
+        sys.exit(0)
+except OSError:
+    pass
+
+sys.exit(1)
+PY
+        return
+    fi
+
+    lsof -i :$port > /dev/null 2>&1
+}
+
+choose_vite_port() {
+    # GitHub runners often have something bound on 5173; avoid it.
+    for port in $(seq 5174 5190); do
+        if ! port_in_use "$port"; then
+            VITE_PORT=$port
+            return 0
+        fi
+    done
+
+    echo "Error: no free port found for Vite (tried 5174-5190)"
+    exit 1
+}
+
 TEST_RUN_ID="${CASHMOP_TEST_RUN_ID:-$(date +%s)-$$}"
 export CASHMOP_TEST_RUN_ID="$TEST_RUN_ID"
 export WORKER_COUNT
@@ -38,7 +95,10 @@ go build -o ./build/bin/test-helper ./cmd/test-helper/main.go
 
 # Generate bindings once to avoid race conditions
 echo "Generating bindings..."
-wails build -s -nopackage -o bindings-gen > /dev/null 2>&1
+if ! wails build -s -nopackage -o bindings-gen 2>&1; then
+    echo "ERROR: Failed to generate bindings"
+    exit 1
+fi
 rm -f build/bin/bindings-gen
 
 # Cleanup on exit
@@ -84,9 +144,9 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 start_vite() {
-    echo "Starting Vite dev server..."
+    echo "Starting Vite dev server on port $VITE_PORT..."
     cd frontend
-    pnpm dev -- --port 5173 --strictPort > ../vite.log 2>&1 &
+    pnpm dev --port "$VITE_PORT" --strictPort > ../vite.log 2>&1 &
     VITE_PID=$!
     cd ..
 }
@@ -95,15 +155,23 @@ wait_for_vite() {
     echo "Waiting for Vite..."
     MAX_RETRIES=60
     RETRY_COUNT=0
-    while ! curl -s http://localhost:5173 > /dev/null; do
+    while ! curl -sf "http://localhost:$VITE_PORT" > /dev/null; do
+        if ! kill -0 "$VITE_PID" > /dev/null 2>&1; then
+            echo "  ERROR: Vite process exited"
+            cat vite.log
+            exit 1
+        fi
+
         sleep 0.5
         RETRY_COUNT=$((RETRY_COUNT+1))
         if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-            echo "  ERROR: Timeout waiting for Vite"
+            echo "  ERROR: Timeout waiting for Vite on port $VITE_PORT"
             cat vite.log
             exit 1
         fi
     done
+
+    echo "Vite is running on port $VITE_PORT"
 }
 
 start_worker() {
@@ -112,9 +180,19 @@ start_worker() {
     local pid_file="$ROOT_DIR/.wails_dev_$index.pid"
     local log_file="$ROOT_DIR/wails_$index.log"
 
+    local frontend_args=()
+    if [ -n "${VITE_PORT:-}" ]; then
+        frontend_args=(-frontenddevserverurl "http://localhost:$VITE_PORT")
+    fi
+
+    local wails_prefix=()
+    if command -v xvfb-run > /dev/null 2>&1; then
+        wails_prefix=(xvfb-run -a)
+    fi
+
     echo "  Worker $index on port $port..."
     APP_ENV=test CASHMOP_WORKER_ID=$index \
-        wails dev -devserver localhost:$port -frontenddevserverurl http://localhost:5173 -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
+        "${wails_prefix[@]}" wails dev -devserver localhost:$port "${frontend_args[@]}" -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
     echo $! > "$pid_file"
     PID_FILES+=("$pid_file")
 }
@@ -129,15 +207,15 @@ wait_for_workers() {
         local log_file="$ROOT_DIR/wails_$i.log"
 
         echo "    Waiting for worker $i to start..."
-        MAX_RETRIES=80
+        MAX_RETRIES=200
         RETRY_COUNT=0
         while ! curl -s -o /dev/null -w "%{http_code}" http://localhost:$port | grep -q "200"; do
             sleep 0.5
             RETRY_COUNT=$((RETRY_COUNT+1))
             if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
                 echo "  ERROR: Timeout waiting for worker $i (port $port)"
-                echo "  Log output (last 20 lines):"
-                tail -20 "$log_file"
+                echo "  Log output (last 200 lines):"
+                tail -200 "$log_file"
                 failed_startup=1
                 break
             fi
@@ -155,8 +233,11 @@ wait_for_workers() {
     fi
 }
 
-start_vite
-wait_for_vite
+if [ "$WORKER_COUNT" -gt 1 ]; then
+    choose_vite_port
+    start_vite
+    wait_for_vite
+fi
 echo "Starting $WORKER_COUNT Wails instances..."
 for i in $(seq 0 $((WORKER_COUNT-1))); do
     start_worker "$i"

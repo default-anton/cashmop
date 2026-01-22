@@ -31,19 +31,26 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libayatana-appindicator3-dev \
             libfuse2 \
-            pkg-config
+            pkg-config \
+            xvfb
+          # Create symlink for webkit2gtk-4.0.pc for Wails compatibility
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
       - name: Install Wails
         run: go install github.com/wailsapp/wails/v2/cmd/wails@${{ env.WAILS_VERSION }}
       - name: Install govulncheck
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      - name: Install goimports
+        run: go install golang.org/x/tools/cmd/goimports@latest
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          version: 8.15.9
       - name: Install frontend deps
         run: cd frontend && pnpm install --frozen-lockfile
       - name: Install Playwright browsers
         run: cd frontend && pnpm exec playwright install --with-deps
+      - name: Build frontend
+        run: cd frontend && pnpm build
       - name: Run checks
         env:
           WORKER_COUNT: "1"

@@ -15,6 +15,8 @@ import (
 
 var DB *sql.DB
 
+var currentDBPath string
+
 var logger *slog.Logger = slog.Default()
 
 func SetLogger(l *slog.Logger) {
@@ -46,6 +48,7 @@ func InitDBWithPath(path string, l *slog.Logger) error {
 		}
 		dbPath = resolved
 	}
+	currentDBPath = dbPath
 
 	var err error
 	DB, err = sql.Open("sqlite", sqliteDSN(dbPath))
@@ -127,6 +130,9 @@ func Close() error {
 }
 
 func DatabasePath() (string, error) {
+	if currentDBPath != "" {
+		return currentDBPath, nil
+	}
 	return resolveDatabasePath()
 }
 
