@@ -3,7 +3,7 @@
 Desktop-first cash flow tracker; tech-savvy users; cross-platform (Windows, Linux, macOS); speed + delight focus.
 Current release platforms: macOS arm64, Linux amd64.
 
-**Release Status:** Pre-release (current: v0.1.0; no v1.0 yet). Backward compatibility NOT a concern.
+**Release Status:** Pre-release (no v1.0 yet). Backward compatibility NOT a concern.
 
 ---
 
