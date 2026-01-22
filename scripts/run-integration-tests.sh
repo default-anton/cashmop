@@ -30,6 +30,11 @@ fi
 port_in_use() {
     local port=$1
 
+    if command -v nc > /dev/null 2>&1; then
+        nc -z localhost "$port" > /dev/null 2>&1
+        return
+    fi
+
     if command -v ss > /dev/null 2>&1; then
         [ -n "$(ss -ltnH "sport = :$port")" ]
         return
@@ -122,6 +127,12 @@ wait_for_vite() {
     MAX_RETRIES=60
     RETRY_COUNT=0
     while ! curl -sf "http://localhost:$VITE_PORT" > /dev/null; do
+        if ! kill -0 "$VITE_PID" > /dev/null 2>&1; then
+            echo "  ERROR: Vite process exited"
+            cat vite.log
+            exit 1
+        fi
+
         sleep 0.5
         RETRY_COUNT=$((RETRY_COUNT+1))
         if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
