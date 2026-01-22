@@ -38,7 +38,10 @@ go build -o ./build/bin/test-helper ./cmd/test-helper/main.go
 
 # Generate bindings once to avoid race conditions
 echo "Generating bindings..."
-wails build -s -nopackage -o bindings-gen > /dev/null 2>&1
+if ! wails build -s -nopackage -o bindings-gen 2>&1; then
+    echo "ERROR: Failed to generate bindings"
+    exit 1
+fi
 rm -f build/bin/bindings-gen
 
 # Cleanup on exit
