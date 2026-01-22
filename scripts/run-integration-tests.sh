@@ -105,7 +105,7 @@ wait_for_vite() {
     echo "Waiting for Vite..."
     MAX_RETRIES=60
     RETRY_COUNT=0
-    while ! curl -s http://localhost:5173 > /dev/null; do
+    while ! curl -s http://localhost:5173 > /dev/null && ! curl -s http://localhost:5174 > /dev/null; do
         sleep 0.5
         RETRY_COUNT=$((RETRY_COUNT+1))
         if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
@@ -114,6 +114,14 @@ wait_for_vite() {
             exit 1
         fi
     done
+
+    # Detect which port Vite is actually using
+    if curl -s http://localhost:5174 > /dev/null 2>&1; then
+        VITE_PORT=5174
+    else
+        VITE_PORT=5173
+    fi
+    echo "Vite is running on port $VITE_PORT"
 }
 
 start_worker() {
@@ -124,7 +132,7 @@ start_worker() {
 
     echo "  Worker $index on port $port..."
     APP_ENV=test CASHMOP_WORKER_ID=$index \
-        wails dev -devserver localhost:$port -frontenddevserverurl http://localhost:5173 -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
+        wails dev -devserver localhost:$port -frontenddevserverurl http://localhost:$VITE_PORT -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
     echo $! > "$pid_file"
     PID_FILES+=("$pid_file")
 }
