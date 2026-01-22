@@ -207,15 +207,15 @@ wait_for_workers() {
         local log_file="$ROOT_DIR/wails_$i.log"
 
         echo "    Waiting for worker $i to start..."
-        MAX_RETRIES=80
+        MAX_RETRIES=200
         RETRY_COUNT=0
         while ! curl -s -o /dev/null -w "%{http_code}" http://localhost:$port | grep -q "200"; do
             sleep 0.5
             RETRY_COUNT=$((RETRY_COUNT+1))
             if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
                 echo "  ERROR: Timeout waiting for worker $i (port $port)"
-                echo "  Log output (last 20 lines):"
-                tail -20 "$log_file"
+                echo "  Log output (last 200 lines):"
+                tail -200 "$log_file"
                 failed_startup=1
                 break
             fi
