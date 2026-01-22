@@ -27,12 +27,17 @@ if pgrep -f "wails dev" > /dev/null || pgrep -f "cashmop" > /dev/null; then
     sleep 2
 fi
 
-# Kill any process using port 5173 (Vite default port)
-if lsof -i :5173 > /dev/null 2>&1; then
-    echo "Killing process using port 5173..."
-    lsof -ti :5173 | xargs kill -9 2>/dev/null || true
-    sleep 1
-fi
+choose_vite_port() {
+    for port in $(seq 5173 5190); do
+        if ! lsof -i :$port > /dev/null 2>&1; then
+            VITE_PORT=$port
+            return 0
+        fi
+    done
+
+    echo "Error: no free port found for Vite (tried 5173-5190)"
+    exit 1
+}
 
 TEST_RUN_ID="${CASHMOP_TEST_RUN_ID:-$(date +%s)-$$}"
 export CASHMOP_TEST_RUN_ID="$TEST_RUN_ID"
@@ -94,9 +99,9 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 start_vite() {
-    echo "Starting Vite dev server..."
+    echo "Starting Vite dev server on port $VITE_PORT..."
     cd frontend
-    pnpm dev -- --port 5173 --strictPort > ../vite.log 2>&1 &
+    pnpm dev -- --port "$VITE_PORT" --strictPort > ../vite.log 2>&1 &
     VITE_PID=$!
     cd ..
 }
@@ -105,24 +110,16 @@ wait_for_vite() {
     echo "Waiting for Vite..."
     MAX_RETRIES=60
     RETRY_COUNT=0
-    while ! curl -s http://localhost:5173 > /dev/null && ! curl -s http://localhost:5174 > /dev/null; do
+    while ! curl -sf "http://localhost:$VITE_PORT" > /dev/null; do
         sleep 0.5
         RETRY_COUNT=$((RETRY_COUNT+1))
         if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-            echo "  ERROR: Timeout waiting for Vite"
+            echo "  ERROR: Timeout waiting for Vite on port $VITE_PORT"
             cat vite.log
             exit 1
         fi
     done
 
-    # Wait a bit for Vite to write its log
-    sleep 1
-
-    # Read the actual port from Vite log
-    VITE_PORT=$(grep "Local:" vite.log | tail -1 | grep -oE 'localhost:[0-9]+' | cut -d: -f2)
-    if [ -z "$VITE_PORT" ]; then
-        VITE_PORT=5173
-    fi
     echo "Vite is running on port $VITE_PORT"
 }
 
@@ -175,6 +172,7 @@ wait_for_workers() {
     fi
 }
 
+choose_vite_port
 start_vite
 wait_for_vite
 echo "Starting $WORKER_COUNT Wails instances..."
