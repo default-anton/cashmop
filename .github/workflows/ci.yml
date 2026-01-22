@@ -31,7 +31,8 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libayatana-appindicator3-dev \
             libfuse2 \
-            pkg-config
+            pkg-config \
+            xvfb
           # Create symlink for webkit2gtk-4.0.pc for Wails compatibility
           sudo ln -sf /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.1.pc /usr/lib/x86_64-linux-gnu/pkgconfig/webkit2gtk-4.0.pc
       - name: Install Wails

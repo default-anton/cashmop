@@ -185,9 +185,14 @@ start_worker() {
         frontend_args=(-frontenddevserverurl "http://localhost:$VITE_PORT")
     fi
 
+    local wails_prefix=()
+    if command -v xvfb-run > /dev/null 2>&1; then
+        wails_prefix=(xvfb-run -a)
+    fi
+
     echo "  Worker $index on port $port..."
     APP_ENV=test CASHMOP_WORKER_ID=$index \
-        wails dev -devserver localhost:$port "${frontend_args[@]}" -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
+        "${wails_prefix[@]}" wails dev -devserver localhost:$port "${frontend_args[@]}" -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
     echo $! > "$pid_file"
     PID_FILES+=("$pid_file")
 }
