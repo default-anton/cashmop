@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.2.0] - 2026-01-22
+
+### Changed
+- Remove totals summary cards from Analysis screen
+
+### Fixed
+- Use current database path for backup instead of default
+- CI: Improve reliability with pnpm 8.15.9, Vite port detection, webkit2gtk symlink, xvfb, and longer test timeouts
+
 ## [0.1.1] - 2026-01-21
 
 ### Added
