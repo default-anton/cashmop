@@ -35,7 +35,3 @@
    - `cashmop-macos-arm64-X.Y.Z.zip`
    - `cashmop-linux-amd64-X.Y.Z.AppImage`
    - `cashmop-linux-amd64-X.Y.Z.deb`
-
-## Common Pitfalls
-
-- **Forgot to commit & push before tagging**: If you tag without committing/pushing changes to `CHANGELOG.md`, version files, and docs, the tag will point to stale commits. Always complete step 6 (commit + push) before step 7 (tag).
