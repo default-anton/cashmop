@@ -4,7 +4,7 @@ import {
   GroupedTransactionList
 } from './components';
 import { database } from '../../../wailsjs/go/models';
-import { Button, Card, Modal, ScreenLayout } from '../../components';
+import { Button, Modal, ScreenLayout } from '../../components';
 import { useToast } from '../../components';
 import { BarChart3, ArrowUpDown, Download, AlertTriangle, Trash2 } from 'lucide-react';
 import TransactionSearch from './components/TransactionSearch';
@@ -282,16 +282,6 @@ const Analysis: React.FC = () => {
     return transactions.some((tx) => (tx.currency || mainCurrency).toUpperCase() !== main);
   }, [mainCurrency, transactions]);
 
-  const totals = useMemo(() => {
-    const amounts = displayedTransactionsWithFx
-      .map((tx) => tx.main_amount)
-      .filter((val): val is number => typeof val === 'number');
-    const income = amounts.filter((val) => val > 0).reduce((sum, val) => sum + val, 0);
-    const expenses = amounts.filter((val) => val < 0).reduce((sum, val) => sum + val, 0);
-    const net = amounts.reduce((sum, val) => sum + val, 0);
-    return { income, expenses, net };
-  }, [displayedTransactionsWithFx]);
-
   const uniqueGroups = useMemo(() => {
     if (transactions.length === 0) {
       return { category: false, owner: false, account: false };
@@ -388,38 +378,6 @@ const Analysis: React.FC = () => {
               <p className="text-sm font-semibold select-none">{displayWarning.title}</p>
               <p className="text-sm select-none">{displayWarning.detail}</p>
             </div>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[1, 2, 3].map(i => (
-              <Card key={i} variant="elevated" className="p-6 animate-pulse">
-                <div className="h-3 w-20 bg-canvas-200 rounded mb-3"></div>
-                <div className="h-8 w-32 bg-canvas-100 rounded"></div>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card variant="elevated" className="p-6">
-              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Income</div>
-              <div className="text-2xl font-mono font-bold text-finance-income">
-                {formatCents(totals.income, mainCurrency)}
-              </div>
-            </Card>
-            <Card variant="elevated" className="p-6">
-              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-1 select-none">Total Expenses</div>
-              <div className="text-2xl font-mono font-bold text-finance-expense">
-                {formatCents(totals.expenses, mainCurrency)}
-              </div>
-            </Card>
-            <Card variant="elevated" className="p-6 !border-brand/20 shadow-brand-glow">
-              <div className="text-[10px] font-bold text-brand uppercase tracking-widest mb-1 select-none">Net Flow</div>
-              <div className={`text-2xl font-mono font-bold ${totals.net >= 0 ? 'text-finance-income' : 'text-finance-expense'}`}>
-                {formatCents(totals.net, mainCurrency)}
-              </div>
-            </Card>
           </div>
         )}
 
