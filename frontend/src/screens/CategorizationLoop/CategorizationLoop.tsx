@@ -27,6 +27,7 @@ interface Transaction {
   account_name: string;
   owner_id: number | null;
   owner_name: string;
+  amount_in_main_currency?: number | null;
 }
 
 type UndoActionType = 'single' | 'rule' | 'skip' | null;
@@ -77,9 +78,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [showUndoToast, setShowUndoToast] = useState(false);
 
   const { showToast } = useToast();
-  const { warning, mainCurrency, convertAmount } = useCurrency();
-  const [fxAmounts, setFxAmounts] = useState<Map<number, number | null>>(new Map());
-  const [matchingFxAmounts, setMatchingFxAmounts] = useState<Map<number, number | null>>(new Map());
+  const { warning, mainCurrency } = useCurrency();
   const [hasMissingRates, setHasMissingRates] = useState(false);
 
   const [webSearchResults, setWebSearchResults] = useState<Array<{
@@ -156,30 +155,13 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    const compute = async () => {
-      if (transactions.length === 0) {
-        setFxAmounts(new Map());
-        setHasMissingRates(false);
-        return;
-      }
-      const next = new Map<number, number | null>();
-      let missing = false;
-      await Promise.all(transactions.map(async (tx) => {
-        const converted = await convertAmount(tx.amount, tx.currency || mainCurrency, tx.date);
-        if (converted === null) missing = true;
-        next.set(tx.id, converted);
-      }));
-      if (!cancelled) {
-        setFxAmounts(next);
-        setHasMissingRates(missing);
-      }
-    };
-    compute();
-    return () => {
-      cancelled = true;
-    };
-  }, [convertAmount, mainCurrency, transactions]);
+    if (transactions.length === 0) {
+      setHasMissingRates(false);
+      return;
+    }
+    const missing = transactions.some(tx => tx.amount_in_main_currency === null);
+    setHasMissingRates(missing);
+  }, [transactions]);
 
   useEffect(() => {
     if (currentTxId !== null && !loading) {
@@ -210,7 +192,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
   const currentTx = transactions.find((t) => t.id === currentTxId);
   const currentIndex = transactions.findIndex((t) => t.id === currentTxId);
-  const currentMainAmount = currentTx ? fxAmounts.get(currentTx.id) ?? currentTx.amount : 0;
+  const currentMainAmount = currentTx ? (currentTx.amount_in_main_currency ?? currentTx.amount) : 0;
 
   useEffect(() => {
     if (!selectionRule) {
@@ -236,7 +218,6 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         let amountMin: number | null = null;
         let amountMax: number | null = null;
 
-        const currentMainAmount = currentTx ? (fxAmounts.get(currentTx.id) ?? currentTx.amount) : 0;
         const isExpense = currentMainAmount < 0;
 
         if (amountFilter.operator !== 'none') {
@@ -275,29 +256,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     };
 
     fetchMatching();
-  }, [debouncedRule, amountFilter, currentTx?.id, fxAmounts]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const compute = async () => {
-      if (matchingTransactions.length === 0) {
-        setMatchingFxAmounts(new Map());
-        return;
-      }
-      const next = new Map<number, number | null>();
-      await Promise.all(matchingTransactions.map(async (tx) => {
-        const converted = await convertAmount(tx.amount, tx.currency || mainCurrency, tx.date);
-        next.set(tx.id, converted);
-      }));
-      if (!cancelled) {
-        setMatchingFxAmounts(next);
-      }
-    };
-    compute();
-    return () => {
-      cancelled = true;
-    };
-  }, [convertAmount, mainCurrency, matchingTransactions]);
+  }, [debouncedRule, amountFilter, currentMainAmount]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -525,7 +484,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           }
 
           const currentTx = transactions.find(t => t.id === oldId);
-          const isExpense = (currentTx ? (fxAmounts.get(currentTx.id) ?? currentTx.amount) : 0) < 0;
+          const isExpense = (currentTx ? (currentTx.amount_in_main_currency ?? currentTx.amount) : 0) < 0;
 
           if (isExpense) {
             if (amountFilter.operator === 'gt') {
@@ -701,7 +660,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
         <TransactionCard
           transaction={currentTx}
-          mainAmount={fxAmounts.get(currentTx.id) ?? null}
+          mainAmount={currentTx?.amount_in_main_currency ?? null}
           mainCurrency={mainCurrency}
           onMouseUp={handleSelectionMouseUp}
           onSelectionChange={handleManualSelection}
@@ -730,7 +689,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           currentAmount={currentMainAmount}
           matchingTransactions={matchingTransactions.map((tx) => ({
             ...tx,
-            main_amount: matchingFxAmounts.get(tx.id) ?? null,
+            main_amount: tx.amount_in_main_currency,
           }))}
           matchingCount={matchingCount}
           amountDefaults={matchingAmountRange}

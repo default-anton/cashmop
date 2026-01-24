@@ -30,8 +30,7 @@ const Analysis: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
-  const { warning, mainCurrency, updateSettings, convertAmount, settings } = useCurrency();
-  const [fxAmounts, setFxAmounts] = useState<Map<number, number | null>>(new Map());
+  const { warning, mainCurrency, updateSettings, settings } = useCurrency();
   const [hasMissingRates, setHasMissingRates] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState('');
   const [groupSortField, setGroupSortField] = useState<GroupSortField>('name');
@@ -87,30 +86,13 @@ const Analysis: React.FC = () => {
   }, [fetchTransactions]);
 
   useEffect(() => {
-    let cancelled = false;
-    const compute = async () => {
-      if (transactions.length === 0) {
-        setFxAmounts(new Map());
-        setHasMissingRates(false);
-        return;
-      }
-      const next = new Map<number, number | null>();
-      let missing = false;
-      await Promise.all(transactions.map(async (tx) => {
-        const converted = await convertAmount(tx.amount, tx.currency || mainCurrency, tx.date);
-        if (converted === null) missing = true;
-        next.set(tx.id, converted);
-      }));
-      if (!cancelled) {
-        setFxAmounts(next);
-        setHasMissingRates(missing);
-      }
-    };
-    compute();
-    return () => {
-      cancelled = true;
-    };
-  }, [convertAmount, mainCurrency, transactions]);
+    if (transactions.length === 0) {
+      setHasMissingRates(false);
+      return;
+    }
+    const missing = transactions.some(tx => tx.amount_in_main_currency === null);
+    setHasMissingRates(missing);
+  }, [transactions]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -262,9 +244,9 @@ const Analysis: React.FC = () => {
   const displayedTransactionsWithFx = useMemo(() => (
     displayedTransactions.map((tx) => ({
       ...tx,
-      main_amount: fxAmounts.get(tx.id) ?? null,
+      main_amount: tx.amount_in_main_currency ?? null,
     }))
-  ), [displayedTransactions, fxAmounts]);
+  ), [displayedTransactions]);
 
   const formatMonthLabel = useCallback((monthStr: string) => {
     if (!monthStr) return '';

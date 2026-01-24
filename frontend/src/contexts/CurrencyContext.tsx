@@ -1,6 +1,6 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
-import { GetCurrencySettings, GetFxRate, GetFxRateStatus, UpdateCurrencySettings } from '../../wailsjs/go/main/App';
+import { GetCurrencySettings, GetFxRateStatus, UpdateCurrencySettings } from '../../wailsjs/go/main/App';
 import { database } from '../../wailsjs/go/models';
 import { useToast } from './ToastContext';
 
@@ -27,7 +27,6 @@ type CurrencyContextValue = {
   warning: FxWarning | null;
   refresh: () => Promise<void>;
   updateSettings: (next: CurrencySettings) => Promise<CurrencySettings>;
-  convertAmount: (amount: number, quoteCurrency: string, date: string) => Promise<number | null>;
 };
 
 const CurrencyContext = createContext<CurrencyContextValue | undefined>(undefined);
@@ -58,14 +57,11 @@ const parseDate = (date: string) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const normalizeCurrency = (code: string) => code.trim().toUpperCase();
-
 export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const toast = useToast();
   const [settings, setSettings] = useState<CurrencySettings | null>(null);
   const [fxStatus, setFxStatus] = useState<FxRateStatus | null>(null);
   const currencyOptions = useMemo(() => buildCurrencyOptions(), []);
-  const rateCache = useRef<Map<string, database.FxRateLookup | null>>(new Map());
 
   const refresh = useCallback(async () => {
     try {
@@ -81,8 +77,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (e) {
       console.error('Failed to load FX status', e);
       setFxStatus(null);
-    } finally {
-      rateCache.current.clear();
     }
   }, []);
 
@@ -107,8 +101,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     } catch (e) {
       console.error('Failed to refresh FX status', e);
       setFxStatus(null);
-    } finally {
-      rateCache.current.clear();
     }
     return updated;
   }, []);
@@ -176,30 +168,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return null;
   }, [fxStatus, isBaseSupported, shouldWarn, latestRateDate, mainCurrency, settings, staleDays]);
 
-  const convertAmount = useCallback(async (amount: number, quoteCurrency: string, date: string) => {
-    const base = normalizeCurrency(mainCurrency || 'CAD');
-    const quote = normalizeCurrency(quoteCurrency || base);
-    if (!date) return null;
-    const key = `${base}|${quote}|${date}`;
-    if (rateCache.current.has(key)) {
-      const cached = rateCache.current.get(key);
-      return cached ? amount * cached.rate : null;
-    }
-    try {
-      const rate = await GetFxRate(base, quote, date);
-      rateCache.current.set(key, rate ?? null);
-      return rate ? amount * rate.rate : null;
-    } catch (e) {
-      console.error('Failed to fetch FX rate', e);
-      rateCache.current.set(key, null);
-      return null;
-    }
-  }, [mainCurrency, fxStatus]);
-
-  useEffect(() => {
-    rateCache.current.clear();
-  }, [mainCurrency]);
-
   const value = useMemo<CurrencyContextValue>(() => ({
     settings,
     fxStatus,
@@ -212,7 +180,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     warning,
     refresh,
     updateSettings,
-    convertAmount,
   }), [
     settings,
     fxStatus,
@@ -225,7 +192,6 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     warning,
     refresh,
     updateSettings,
-    convertAmount,
   ]);
 
   return (

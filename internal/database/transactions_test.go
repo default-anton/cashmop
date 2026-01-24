@@ -21,9 +21,9 @@ func TestDeleteTransactions(t *testing.T) {
 
 	// Insert test transactions
 	txs := []TransactionModel{
-		{AccountID: accID, Date: "2024-01-01", Description: "Test 1", Amount: 100, CategoryID: &catID},
-		{AccountID: accID, Date: "2024-01-02", Description: "Test 2", Amount: 200, CategoryID: &catID},
-		{AccountID: accID, Date: "2024-01-03", Description: "Test 3", Amount: 300, CategoryID: &catID},
+		{AccountID: accID, Date: "2024-01-01", Description: "Test 1", Amount: 100, CategoryID: &catID, Currency: defaultMainCurrency},
+		{AccountID: accID, Date: "2024-01-02", Description: "Test 2", Amount: 200, CategoryID: &catID, Currency: defaultMainCurrency},
+		{AccountID: accID, Date: "2024-01-03", Description: "Test 3", Amount: 300, CategoryID: &catID, Currency: defaultMainCurrency},
 	}
 
 	err = BatchInsertTransactions(txs)

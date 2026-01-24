@@ -24,7 +24,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
   onSaved,
 }) => {
   const toast = useToast();
-  const { mainCurrency, convertAmount } = useCurrency();
+  const { mainCurrency } = useCurrency();
   const [matchType, setMatchType] = useState<MatchType>('contains');
   const [matchValue, setMatchValue] = useState('');
   const [categoryInput, setCategoryInput] = useState('');
@@ -34,7 +34,6 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
 
   const [categorySuggestions, setCategorySuggestions] = useState<database.Category[]>([]);
   const [matchingTransactions, setMatchingTransactions] = useState<database.TransactionModel[]>([]);
-  const [matchingFxAmounts, setMatchingFxAmounts] = useState<Map<number, number | null>>(new Map());
   const [matchingLoading, setMatchingLoading] = useState(false);
   const [matchingCount, setMatchingCount] = useState(0);
   const [matchingAmountRange, setMatchingAmountRange] = useState<{ min?: number | null; max?: number | null }>({});
@@ -105,32 +104,10 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
     };
   }, [categoryInput]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const compute = async () => {
-      if (matchingTransactions.length === 0) {
-        setMatchingFxAmounts(new Map());
-        return;
-      }
-      const next = new Map<number, number | null>();
-      await Promise.all(matchingTransactions.map(async (tx) => {
-        const converted = await convertAmount(tx.amount, tx.currency || mainCurrency, tx.date);
-        next.set(tx.id, converted);
-      }));
-      if (!cancelled) {
-        setMatchingFxAmounts(next);
-      }
-    };
-    compute();
-    return () => {
-      cancelled = true;
-    };
-  }, [convertAmount, mainCurrency, matchingTransactions]);
-
   const currentAmountBasis = useMemo(() => {
     if (matchingTransactions.length > 0) {
       const first = matchingTransactions[0];
-      const mainAmount = matchingFxAmounts.get(first.id);
+      const mainAmount = first.amount_in_main_currency;
       if (mainAmount !== null && mainAmount !== undefined) return mainAmount;
       return first.amount;
     }
@@ -147,7 +124,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
       return matchingAmountRange.min || 0;
     }
     return 0;
-  }, [activeRule, matchingAmountRange.max, matchingAmountRange.min, matchingFxAmounts, matchingTransactions]);
+  }, [activeRule, matchingAmountRange.max, matchingAmountRange.min, matchingTransactions]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -355,7 +332,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
 
   const matchingPreview = matchingTransactions.map((tx) => ({
     ...tx,
-    main_amount: matchingFxAmounts.get(tx.id) ?? null,
+    main_amount: tx.amount_in_main_currency,
   }));
 
   return (

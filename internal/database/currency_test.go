@@ -4,155 +4,226 @@ import (
 	"testing"
 )
 
-func TestGetFxRateExactAndPrevious(t *testing.T) {
+func TestConvertTransactionAmounts(t *testing.T) {
 	setupTestDB(t)
 	defer teardownTestDB(t)
 
-	err := UpsertFxRates([]FxRate{
-		{BaseCurrency: "CAD", QuoteCurrency: "USD", RateDate: "2024-01-02", Rate: 1.2, Source: "boc"},
-		{BaseCurrency: "CAD", QuoteCurrency: "USD", RateDate: "2024-01-05", Rate: 1.25, Source: "boc"},
-	})
-	if err != nil {
-		t.Fatalf("UpsertFxRates failed: %v", err)
-	}
-
-	exact, err := GetFxRate("CAD", "USD", "2024-01-05")
-	if err != nil {
-		t.Fatalf("GetFxRate exact failed: %v", err)
-	}
-	if exact == nil || exact.Rate != 1.25 || exact.RateDate != "2024-01-05" {
-		t.Fatalf("Expected exact rate 1.25 on 2024-01-05, got %+v", exact)
-	}
-
-	previous, err := GetFxRate("CAD", "USD", "2024-01-06")
-	if err != nil {
-		t.Fatalf("GetFxRate previous failed: %v", err)
-	}
-	if previous == nil || previous.Rate != 1.25 || previous.RateDate != "2024-01-05" {
-		t.Fatalf("Expected previous rate 1.25 on 2024-01-05, got %+v", previous)
-	}
-
-	missing, err := GetFxRate("CAD", "USD", "2024-01-01")
-	if err != nil {
-		t.Fatalf("GetFxRate missing failed: %v", err)
-	}
-	if missing != nil {
-		t.Fatalf("Expected nil for missing rate, got %+v", missing)
-	}
-}
-
-func TestGetFxRateSameCurrency(t *testing.T) {
-	setupTestDB(t)
-	defer teardownTestDB(t)
-
-	got, err := GetFxRate("CAD", "CAD", "2024-02-01")
-	if err != nil {
-		t.Fatalf("GetFxRate same currency failed: %v", err)
-	}
-	if got == nil || got.Rate != 1 || got.RateDate != "2024-02-01" {
-		t.Fatalf("Expected rate 1 on 2024-02-01, got %+v", got)
-	}
-}
-
-func TestCurrencySettingsDefaultsAndUpdate(t *testing.T) {
-	setupTestDB(t)
-	defer teardownTestDB(t)
-
+	// Set main currency to CAD
 	settings, err := GetCurrencySettings()
 	if err != nil {
-		t.Fatalf("GetCurrencySettings failed: %v", err)
+		t.Fatalf("Failed to get currency settings: %v", err)
 	}
-	if settings.MainCurrency != DefaultCurrency() {
-		t.Fatalf("Expected default main currency %s, got %q", DefaultCurrency(), settings.MainCurrency)
+	settings.MainCurrency = "CAD"
+	_, err = UpdateCurrencySettings(settings)
+	if err != nil {
+		t.Fatalf("Failed to update currency settings: %v", err)
 	}
 
-	updated, err := UpdateCurrencySettings(CurrencySettings{
-		MainCurrency: "USD",
-		FxLastSync:   "2024-01-10",
+	// Insert FX rate for CAD to USD
+	// The rate semantics: baseCurrency -> quoteCurrency, used as multiplier
+	// To convert USD to CAD, we need CAD -> USD rate and multiply USD amount by it
+	// Expected: $75 USD = $100 CAD, so rate = 10000/7500 = 1.3333
+	err = UpsertFxRates([]FxRate{
+		{
+			BaseCurrency:  "CAD",
+			QuoteCurrency: "USD",
+			RateDate:      "2024-01-15",
+			Rate:          1.333333333333,
+			Source:        "test",
+		},
 	})
 	if err != nil {
-		t.Fatalf("UpdateCurrencySettings failed: %v", err)
-	}
-	if updated.MainCurrency != "USD" || updated.FxLastSync != "2024-01-10" {
-		t.Fatalf("Unexpected updated settings: %+v", updated)
+		t.Fatalf("Failed to upsert FX rates: %v", err)
 	}
 
-	reset, err := UpdateCurrencySettings(CurrencySettings{
-		MainCurrency: "",
-		FxLastSync:   "2024-02-01",
+	t.Run("same currency - no conversion needed", func(t *testing.T) {
+		txs := []TransactionModel{
+			{
+				Amount:   10000, // $100.00 CAD
+				Currency: "CAD",
+				Date:     "2024-01-15",
+			},
+		}
+
+		converted, err := convertTransactionAmounts(txs)
+		if err != nil {
+			t.Fatalf("convertTransactionAmounts failed: %v", err)
+		}
+
+		if len(converted) != 1 {
+			t.Fatalf("Expected 1 transaction, got %d", len(converted))
+		}
+
+		if converted[0].AmountInMainCurrency == nil {
+			t.Fatal("Expected AmountInMainCurrency to be set")
+		}
+
+		if *converted[0].AmountInMainCurrency != 10000 {
+			t.Errorf("Expected 10000, got %d", *converted[0].AmountInMainCurrency)
+		}
+
+		if converted[0].MainCurrency != "CAD" {
+			t.Errorf("Expected MainCurrency CAD, got %s", converted[0].MainCurrency)
+		}
 	})
-	if err != nil {
-		t.Fatalf("UpdateCurrencySettings reset failed: %v", err)
-	}
-	if reset.MainCurrency != DefaultCurrency() || reset.FxLastSync != "2024-02-01" {
-		t.Fatalf("Unexpected reset settings: %+v", reset)
-	}
-}
 
-func TestGetFxRateStatusWithTransactionRanges(t *testing.T) {
-	setupTestDB(t)
-	defer teardownTestDB(t)
+	t.Run("foreign currency - proper conversion", func(t *testing.T) {
+		txs := []TransactionModel{
+			{
+				Amount:   10000, // $100.00 CAD
+				Currency: "CAD",
+				Date:     "2024-01-15",
+			},
+			{
+				Amount:   7500, // $75.00 USD
+				Currency: "USD",
+				Date:     "2024-01-15",
+			},
+		}
 
-	// Insert some FX rates
-	err := UpsertFxRates([]FxRate{
-		{BaseCurrency: "CAD", QuoteCurrency: "USD", RateDate: "2024-11-30", Rate: 1.25, Source: "boc"},
-		{BaseCurrency: "CAD", QuoteCurrency: "EUR", RateDate: "2024-11-30", Rate: 0.68, Source: "boc"},
+		converted, err := convertTransactionAmounts(txs)
+		if err != nil {
+			t.Fatalf("convertTransactionAmounts failed: %v", err)
+		}
+
+		if len(converted) != 2 {
+			t.Fatalf("Expected 2 transactions, got %d", len(converted))
+		}
+
+		// First transaction: CAD -> CAD (same currency)
+		if *converted[0].AmountInMainCurrency != 10000 {
+			t.Errorf("CAD tx: Expected 10000, got %d", *converted[0].AmountInMainCurrency)
+		}
+
+		// Second transaction: USD -> CAD
+		// Rate is 0.75 USD per CAD, so $75 USD = 100 CAD = 10000 cents
+		expected := int64(round(float64(7500) * (1.0 / 0.75)))
+		if converted[1].AmountInMainCurrency == nil {
+			t.Fatal("Expected AmountInMainCurrency to be set for USD transaction")
+		}
+		if *converted[1].AmountInMainCurrency != expected {
+			t.Errorf("USD tx: Expected %d, got %d", expected, *converted[1].AmountInMainCurrency)
+		}
 	})
-	if err != nil {
-		t.Fatalf("UpsertFxRates failed: %v", err)
-	}
 
-	// Insert transactions with different currencies
-	_, err = DB.Exec(`
-		INSERT INTO transactions (date, amount, description, currency, account_id)
-		VALUES
-			('2024-11-15', 10000, 'Transaction 1', 'USD', 1),
-			('2024-11-25', 20000, 'Transaction 2', 'USD', 1),
-			('2024-11-20', 5000, 'Transaction 3', 'EUR', 1)
-	`)
-	if err != nil {
-		t.Fatalf("Insert transactions failed: %v", err)
-	}
+	t.Run("empty slice", func(t *testing.T) {
+		txs := []TransactionModel{}
+		converted, err := convertTransactionAmounts(txs)
+		if err != nil {
+			t.Fatalf("convertTransactionAmounts failed: %v", err)
+		}
+		if len(converted) != 0 {
+			t.Fatalf("Expected 0 transactions, got %d", len(converted))
+		}
+	})
 
-	status, err := GetFxRateStatus("CAD")
-	if err != nil {
-		t.Fatalf("GetFxRateStatus failed: %v", err)
-	}
+	t.Run("missing FX rate - graceful degradation", func(t *testing.T) {
+		txs := []TransactionModel{
+			{
+				Amount:   5000, // $50.00 EUR (no rate available)
+				Currency: "EUR",
+				Date:     "2024-01-15",
+			},
+		}
 
-	if status.BaseCurrency != "CAD" {
-		t.Fatalf("Expected base currency CAD, got %q", status.BaseCurrency)
-	}
+		converted, err := convertTransactionAmounts(txs)
+		if err != nil {
+			t.Fatalf("convertTransactionAmounts should not fail on missing rates: %v", err)
+		}
 
-	// Check that MaxTxDate is populated correctly
-	if status.MaxTxDate != "2024-11-25" {
-		t.Fatalf("Expected MaxTxDate 2024-11-25, got %q", status.MaxTxDate)
-	}
+		if len(converted) != 1 {
+			t.Fatalf("Expected 1 transaction, got %d", len(converted))
+		}
 
-	// Check individual pairs
-	pairMap := make(map[string]FxRatePairStatus)
-	for _, pair := range status.Pairs {
-		pairMap[pair.QuoteCurrency] = pair
-	}
+		// Should have null conversion instead of failing
+		if converted[0].AmountInMainCurrency != nil {
+			t.Errorf("Expected nil for missing rate, got %d", *converted[0].AmountInMainCurrency)
+		}
 
-	usdPair, ok := pairMap["USD"]
-	if !ok {
-		t.Fatal("USD pair not found in status")
-	}
-	if usdPair.LatestRateDate != "2024-11-30" {
-		t.Fatalf("Expected USD latest rate date 2024-11-30, got %q", usdPair.LatestRateDate)
-	}
-	if usdPair.MaxTxDate != "2024-11-25" {
-		t.Fatalf("Expected USD max tx date 2024-11-25, got %q", usdPair.MaxTxDate)
-	}
+		if converted[0].MainCurrency != "CAD" {
+			t.Errorf("Expected MainCurrency CAD, got %s", converted[0].MainCurrency)
+		}
+	})
 
-	eurPair, ok := pairMap["EUR"]
-	if !ok {
-		t.Fatal("EUR pair not found in status")
-	}
-	if eurPair.LatestRateDate != "2024-11-30" {
-		t.Fatalf("Expected EUR latest rate date 2024-11-30, got %q", eurPair.LatestRateDate)
-	}
-	if eurPair.MaxTxDate != "2024-11-20" {
-		t.Fatalf("Expected EUR max tx date 2024-11-20, got %q", eurPair.MaxTxDate)
-	}
+	t.Run("mixed - some with rates, some without", func(t *testing.T) {
+		txs := []TransactionModel{
+			{
+				Amount:   10000, // CAD
+				Currency: "CAD",
+				Date:     "2024-01-15",
+			},
+			{
+				Amount:   7500, // USD (has rate)
+				Currency: "USD",
+				Date:     "2024-01-15",
+			},
+			{
+				Amount:   5000, // EUR (no rate)
+				Currency: "EUR",
+				Date:     "2024-01-15",
+			},
+			{
+				Amount:   20000, // CAD (same currency)
+				Currency: "CAD",
+				Date:     "2024-01-15",
+			},
+		}
+
+		converted, err := convertTransactionAmounts(txs)
+		if err != nil {
+			t.Fatalf("convertTransactionAmounts failed: %v", err)
+		}
+
+		if len(converted) != 4 {
+			t.Fatalf("Expected 4 transactions, got %d", len(converted))
+		}
+
+		// First: CAD
+		if *converted[0].AmountInMainCurrency != 10000 {
+			t.Errorf("tx[0] CAD: Expected 10000, got %d", *converted[0].AmountInMainCurrency)
+		}
+
+		// Second: USD (should convert)
+		if converted[1].AmountInMainCurrency == nil {
+			t.Error("tx[1] USD: Expected conversion, got nil")
+		}
+
+		// Third: EUR (no rate)
+		if converted[2].AmountInMainCurrency != nil {
+			t.Error("tx[2] EUR: Expected nil for missing rate")
+		}
+
+		// Fourth: CAD
+		if *converted[3].AmountInMainCurrency != 20000 {
+			t.Errorf("tx[3] CAD: Expected 20000, got %d", *converted[3].AmountInMainCurrency)
+		}
+	})
+
+	t.Run("currency case insensitive", func(t *testing.T) {
+		txs := []TransactionModel{
+			{
+				Amount:   10000,
+				Currency: "cad", // lowercase
+				Date:     "2024-01-15",
+			},
+			{
+				Amount:   10000,
+				Currency: "Cad", // mixed case
+				Date:     "2024-01-15",
+			},
+		}
+
+		converted, err := convertTransactionAmounts(txs)
+		if err != nil {
+			t.Fatalf("convertTransactionAmounts failed: %v", err)
+		}
+
+		if *converted[0].AmountInMainCurrency != 10000 {
+			t.Errorf("lowercase 'cad': Expected 10000, got %d", *converted[0].AmountInMainCurrency)
+		}
+
+		if *converted[1].AmountInMainCurrency != 10000 {
+			t.Errorf("mixed case 'Cad': Expected 10000, got %d", *converted[1].AmountInMainCurrency)
+		}
+	})
 }

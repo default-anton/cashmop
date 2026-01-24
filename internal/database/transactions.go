@@ -7,18 +7,53 @@ import (
 )
 
 type TransactionModel struct {
-	ID           int64  `json:"id"`
-	AccountID    int64  `json:"account_id"`
-	AccountName  string `json:"account_name"`
-	OwnerID      *int64 `json:"owner_id"`
-	OwnerName    string `json:"owner_name"`
-	Date         string `json:"date"`
-	Description  string `json:"description"`
-	Amount       int64  `json:"amount"`
-	CategoryID   *int64 `json:"category_id"`
-	CategoryName string `json:"category_name"`
-	Currency     string `json:"currency"`
-	RawMetadata  string `json:"raw_metadata"`
+	ID                   int64  `json:"id"`
+	AccountID            int64  `json:"account_id"`
+	AccountName          string `json:"account_name"`
+	OwnerID              *int64 `json:"owner_id"`
+	OwnerName            string `json:"owner_name"`
+	Date                 string `json:"date"`
+	Description          string `json:"description"`
+	Amount               int64  `json:"amount"`
+	CategoryID           *int64 `json:"category_id"`
+	CategoryName         string `json:"category_name"`
+	Currency             string `json:"currency"`
+	RawMetadata          string `json:"raw_metadata"`
+	AmountInMainCurrency *int64 `json:"amount_in_main_currency"`
+	MainCurrency         string `json:"main_currency"`
+}
+
+func convertTransactionAmounts(txs []TransactionModel) ([]TransactionModel, error) {
+	if len(txs) == 0 {
+		return txs, nil
+	}
+
+	settings, err := GetCurrencySettings()
+	if err != nil {
+		return nil, err
+	}
+	baseCurrency := strings.TrimSpace(settings.MainCurrency)
+	if baseCurrency == "" {
+		baseCurrency = defaultMainCurrency
+	}
+
+	for i := range txs {
+		var converted *int64
+		if strings.ToUpper(strings.TrimSpace(txs[i].Currency)) == baseCurrency {
+			// Same currency - no conversion needed
+			converted = &txs[i].Amount
+		} else {
+			converted, err = ConvertAmount(txs[i].Amount, baseCurrency, txs[i].Currency, txs[i].Date)
+			if err != nil {
+				// Graceful degradation: log but continue with null
+				converted = nil
+			}
+		}
+		txs[i].AmountInMainCurrency = converted
+		txs[i].MainCurrency = baseCurrency
+	}
+
+	return txs, nil
 }
 
 func GetOrCreateAccount(name string) (int64, error) {
@@ -254,7 +289,7 @@ func GetUncategorizedTransactions() ([]TransactionModel, error) {
 		}
 		txs = append(txs, t)
 	}
-	return txs, nil
+	return convertTransactionAmounts(txs)
 }
 
 func UpdateTransactionCategory(id int64, categoryID int64) error {
@@ -361,7 +396,7 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *in
 			break
 		}
 	}
-	return txs, nil
+	return convertTransactionAmounts(txs)
 }
 
 type RuleMatchPreview struct {
@@ -452,7 +487,7 @@ func SearchTransactionsByRule(descriptionMatch string, matchType string, amountM
 		}
 		txs = append(txs, t)
 	}
-	return txs, nil
+	return convertTransactionAmounts(txs)
 }
 
 func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64, includeCategorized bool, limit int) (RuleMatchPreview, error) {
@@ -559,7 +594,12 @@ func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *in
 		}
 	}
 
-	return RuleMatchPreview{Count: count, MinAmount: minAmount, MaxAmount: maxAmount, Transactions: preview}, nil
+	convertedPreview, err := convertTransactionAmounts(preview)
+	if err != nil {
+		return RuleMatchPreview{}, err
+	}
+
+	return RuleMatchPreview{Count: count, MinAmount: minAmount, MaxAmount: maxAmount, Transactions: convertedPreview}, nil
 }
 
 type AmountRange struct {
@@ -722,7 +762,7 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 		}
 		txs = append(txs, t)
 	}
-	return txs, nil
+	return convertTransactionAmounts(txs)
 }
 
 func DeleteTransactions(ids []int64) (int, error) {

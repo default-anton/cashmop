@@ -202,6 +202,8 @@ export namespace database {
 	    category_name: string;
 	    currency: string;
 	    raw_metadata: string;
+	    amount_in_main_currency?: number;
+	    main_currency: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new TransactionModel(source);
@@ -221,6 +223,8 @@ export namespace database {
 	        this.category_name = source["category_name"];
 	        this.currency = source["currency"];
 	        this.raw_metadata = source["raw_metadata"];
+	        this.amount_in_main_currency = source["amount_in_main_currency"];
+	        this.main_currency = source["main_currency"];
 	    }
 	}
 	export class RuleMatchPreview {
