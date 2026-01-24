@@ -29,6 +29,7 @@ Current release platforms: macOS arm64, Linux amd64.
 - Integration tests rules: `frontend/tests/AGENTS.md`
 - Frontend rules: `frontend/AGENTS.md`
 - Migrations: `internal/database/migrations/*.sql`; see `internal/database/migrations/AGENTS.md`
+- Dev database: `cashmop_dev.db` (project root)
 - Uncategorized state: DB `NULL`; Go helpers accept `0` => `NULL` FKs
 - Fuzzy search: `internal/fuzzy` (fzf)
   - Ranking: word/string start > mid; tie => shorter (`internal/fuzzy/fuzzy_test.go`)
