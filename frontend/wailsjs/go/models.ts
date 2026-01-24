@@ -140,6 +140,7 @@ export namespace database {
 	export class FxRatePairStatus {
 	    quote_currency: string;
 	    latest_rate_date: string;
+	    max_tx_date?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new FxRatePairStatus(source);
@@ -149,12 +150,14 @@ export namespace database {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.quote_currency = source["quote_currency"];
 	        this.latest_rate_date = source["latest_rate_date"];
+	        this.max_tx_date = source["max_tx_date"];
 	    }
 	}
 	export class FxRateStatus {
 	    base_currency: string;
 	    last_sync: string;
 	    pairs: FxRatePairStatus[];
+	    max_tx_date?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new FxRateStatus(source);
@@ -165,6 +168,7 @@ export namespace database {
 	        this.base_currency = source["base_currency"];
 	        this.last_sync = source["last_sync"];
 	        this.pairs = this.convertValues(source["pairs"], FxRatePairStatus);
+	        this.max_tx_date = source["max_tx_date"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

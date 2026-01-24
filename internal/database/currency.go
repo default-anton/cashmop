@@ -60,12 +60,14 @@ type FxDateRange struct {
 type FxRatePairStatus struct {
 	QuoteCurrency  string `json:"quote_currency"`
 	LatestRateDate string `json:"latest_rate_date"`
+	MaxTxDate      string `json:"max_tx_date,omitempty"`
 }
 
 type FxRateStatus struct {
 	BaseCurrency string             `json:"base_currency"`
 	LastSync     string             `json:"last_sync"`
 	Pairs        []FxRatePairStatus `json:"pairs"`
+	MaxTxDate    string             `json:"max_tx_date,omitempty"`
 }
 
 func GetAppSetting(key string) (string, error) {
@@ -350,6 +352,11 @@ func GetFxRateStatus(baseCurrency string) (FxRateStatus, error) {
 		return FxRateStatus{}, err
 	}
 
+	txRanges, err := GetTransactionCurrencyRanges(base)
+	if err != nil {
+		return FxRateStatus{}, err
+	}
+
 	rows, err := DB.Query(`
 		SELECT quote_currency, MAX(rate_date)
 		FROM fx_rates
@@ -363,15 +370,21 @@ func GetFxRateStatus(baseCurrency string) (FxRateStatus, error) {
 	defer rows.Close()
 
 	var pairs []FxRatePairStatus
+	var overallMaxTxDate string
 	for rows.Next() {
 		var quote string
 		var latest string
 		if err := rows.Scan(&quote, &latest); err != nil {
 			return FxRateStatus{}, err
 		}
+		txRange := txRanges[quote]
+		if txRange.EndDate > overallMaxTxDate {
+			overallMaxTxDate = txRange.EndDate
+		}
 		pairs = append(pairs, FxRatePairStatus{
 			QuoteCurrency:  strings.ToUpper(strings.TrimSpace(quote)),
 			LatestRateDate: latest,
+			MaxTxDate:      txRange.EndDate,
 		})
 	}
 	if err := rows.Err(); err != nil {
@@ -382,6 +395,7 @@ func GetFxRateStatus(baseCurrency string) (FxRateStatus, error) {
 		BaseCurrency: base,
 		LastSync:     lastSync,
 		Pairs:        pairs,
+		MaxTxDate:    overallMaxTxDate,
 	}, nil
 }
 

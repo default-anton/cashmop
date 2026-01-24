@@ -125,15 +125,30 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       .slice(-1)[0] || '';
   }, [fxStatus]);
 
-  const { isStale, staleDays } = useMemo(() => {
+  const maxTxDate = useMemo(() => {
+    return fxStatus?.max_tx_date || '';
+  }, [fxStatus]);
+
+  const { isStale, staleDays, shouldWarn } = useMemo(() => {
     const parsed = parseDate(latestRateDate);
+    const maxTxParsed = parseDate(maxTxDate);
+
     if (!parsed) {
-      return { isStale: false, staleDays: 0 };
+      return { isStale: false, staleDays: 0, shouldWarn: false };
     }
     const diffMs = Date.now() - parsed.getTime();
     const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    return { isStale: days > 7, staleDays: days };
-  }, [latestRateDate]);
+
+    // Context-aware warning: only warn if we have foreign currency transactions
+    // and they are recent (within 30 days)
+    let shouldWarn = false;
+    if (maxTxParsed) {
+      const txAgeDays = Math.floor((Date.now() - maxTxParsed.getTime()) / (1000 * 60 * 60 * 24));
+      shouldWarn = days > 7 && txAgeDays <= 30;
+    }
+
+    return { isStale: shouldWarn, staleDays: days, shouldWarn };
+  }, [latestRateDate, maxTxDate]);
 
   const warning = useMemo<FxWarning | null>(() => {
     if (!settings) return null;
@@ -151,7 +166,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         detail: 'No cached rates were found for your transactions. Sync again or choose a supported currency.',
       };
     }
-    if (isStale && latestRateDate) {
+    if (shouldWarn && latestRateDate) {
       return {
         tone: 'warning',
         title: 'Exchange rates are stale',
@@ -159,7 +174,7 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
     }
     return null;
-  }, [fxStatus, isBaseSupported, isStale, latestRateDate, mainCurrency, settings, staleDays]);
+  }, [fxStatus, isBaseSupported, shouldWarn, latestRateDate, mainCurrency, settings, staleDays]);
 
   const convertAmount = useCallback(async (amount: number, quoteCurrency: string, date: string) => {
     const base = normalizeCurrency(mainCurrency || 'CAD');
