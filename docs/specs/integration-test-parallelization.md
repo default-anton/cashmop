@@ -122,10 +122,10 @@ cleanup() {
 
     # Remove per-worker DB files
     for i in $(seq 0 $((WORKER_COUNT-1))); do
-        DB_FILE="$ROOT_DIR/cashmop_test_w$i.db"
+        DB_FILE="$ROOT_DIR/tmp/cashmop_test_w$i.db"
         if [ -f "$DB_FILE" ]; then
             echo "Removing test database: $DB_FILE"
-            rm -f "$DB_FILE"
+            rm -f "$DB_FILE"*
         fi
     done
 
@@ -147,8 +147,8 @@ echo "Starting $WORKER_COUNT Wails instances..."
 FAILED_STARTUP=0
 for i in $(seq 0 $((WORKER_COUNT-1))); do
     PORT=$((34115 + i))
-    PID_FILE="$ROOT_DIR/.wails_dev_$i.pid"
-    LOG_FILE="$ROOT_DIR/wails_$i.log"
+    PID_FILE="$ROOT_DIR/tmp/.wails_dev_$i.pid"
+    LOG_FILE="$ROOT_DIR/tmp/wails_$i.log"
 
     echo "  Worker $i on port $PORT..."
     APP_ENV=test CASHMOP_WORKER_ID=$i \
@@ -324,7 +324,7 @@ export const test = base.extend<MyFixtures>({
 lsof -i :34115-34120
 
 # Watch all worker logs in real-time
-tail -f wails_*.log
+tail -f tmp/wails_*.log
 
 # Run with 2 workers for debugging
 WORKER_COUNT=2 ./scripts/run-integration-tests.sh

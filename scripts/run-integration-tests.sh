@@ -123,10 +123,10 @@ cleanup() {
 
     # Remove per-worker DB files
     for i in $(seq 0 $((WORKER_COUNT-1))); do
-        DB_FILE="$ROOT_DIR/cashmop_test_w$i.db"
+        DB_FILE="$ROOT_DIR/tmp/cashmop_test_w$i.db"
         if [ -f "$DB_FILE" ]; then
             echo "Removing test database: $DB_FILE"
-            rm -f "$DB_FILE"
+            rm -f "$DB_FILE"*
         fi
     done
 
@@ -146,7 +146,7 @@ trap cleanup EXIT INT TERM
 start_vite() {
     echo "Starting Vite dev server on port $VITE_PORT..."
     cd frontend
-    pnpm dev --port "$VITE_PORT" --strictPort > ../vite.log 2>&1 &
+    pnpm dev --port "$VITE_PORT" --strictPort > ../tmp/vite.log 2>&1 &
     VITE_PID=$!
     cd ..
 }
@@ -158,7 +158,7 @@ wait_for_vite() {
     while ! curl -sf "http://localhost:$VITE_PORT" > /dev/null; do
         if ! kill -0 "$VITE_PID" > /dev/null 2>&1; then
             echo "  ERROR: Vite process exited"
-            cat vite.log
+            cat tmp/vite.log
             exit 1
         fi
 
@@ -166,7 +166,7 @@ wait_for_vite() {
         RETRY_COUNT=$((RETRY_COUNT+1))
         if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
             echo "  ERROR: Timeout waiting for Vite on port $VITE_PORT"
-            cat vite.log
+            cat tmp/vite.log
             exit 1
         fi
     done
@@ -177,8 +177,8 @@ wait_for_vite() {
 start_worker() {
     local index=$1
     local port=$((34115 + index))
-    local pid_file="$ROOT_DIR/.wails_dev_$index.pid"
-    local log_file="$ROOT_DIR/wails_$index.log"
+    local pid_file="$ROOT_DIR/tmp/.wails_dev_$index.pid"
+    local log_file="$ROOT_DIR/tmp/wails_$index.log"
 
     local frontend_args=()
     if [ -n "${VITE_PORT:-}" ]; then
@@ -204,7 +204,7 @@ wait_for_workers() {
 
     for i in $(seq "$start_index" "$end_index"); do
         local port=$((34115 + i))
-        local log_file="$ROOT_DIR/wails_$i.log"
+        local log_file="$ROOT_DIR/tmp/wails_$i.log"
 
         echo "    Waiting for worker $i to start..."
         MAX_RETRIES=200

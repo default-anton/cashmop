@@ -50,6 +50,10 @@ func InitDBWithPath(path string, l *slog.Logger) error {
 	}
 	currentDBPath = dbPath
 
+	if err := os.MkdirAll(filepath.Dir(dbPath), 0755); err != nil {
+		return fmt.Errorf("create database directory: %w", err)
+	}
+
 	var err error
 	DB, err = sql.Open("sqlite", sqliteDSN(dbPath))
 	if err != nil {
@@ -100,7 +104,7 @@ func devTestPath(suffix string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(root, storageName+"_"+suffix+".db"), nil
+	return filepath.Join(root, "tmp", storageName+"_"+suffix+".db"), nil
 }
 
 func projectRoot() (string, error) {
