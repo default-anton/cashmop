@@ -12,12 +12,12 @@
 3. Update versions:
    - `internal/version/version.go`
    - `wails.json` (`info.productVersion`)
-   - `frontend/package.json` + `frontend/package-lock.json`
+   - `frontend/package.json` + `frontend/pnpm-lock.yaml`
 4. Update `README.md` status + macOS install note (not notarized).
 5. Run checks:
    - `make check`
 6. Commit + push changes (CRITICAL: do NOT skip):
-   - `git add CHANGELOG.md internal/version/version.go wails.json frontend/package.json frontend/package-lock.json README.md`
+   - `git add CHANGELOG.md internal/version/version.go wails.json frontend/package.json frontend/pnpm-lock.yaml README.md`
    - `git commit -m "Release vX.Y.Z"`
    - `git push origin main`
 7. Tag + push:

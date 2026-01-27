@@ -14,6 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.2.1] - 2026-01-27
+
+### Added
+- Owner filtering to financial analysis
+
+### Changed
+- Move transaction currency conversion to backend for improved performance and consistency
+- Move temporary files and development databases to `/tmp`
+- Suppress stale FX rate warnings when there are no recent foreign currency transactions
+
 ## [0.2.0] - 2026-01-22
 
 ### Changed
