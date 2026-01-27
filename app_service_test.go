@@ -208,6 +208,47 @@ func TestImportTransactions(t *testing.T) {
 	})
 }
 
+func TestImportTransactions_ForeignCurrency(t *testing.T) {
+	setupTestDB(t)
+
+	app := NewApp()
+
+	// Pre-populate the FX rate cache by getting a rate
+	_, _ = database.GetFxRate("CAD", "USD", "2024-01-10")
+
+	// Import a transaction with a different currency
+	transactions := []TransactionInput{
+		{
+			Date:        "2024-01-15",
+			Description: "Foreign Transaction",
+			Amount:      10000,
+			Category:    "Travel",
+			Account:     "Credit Card",
+			Owner:       "John",
+			Currency:    "USD",
+		},
+	}
+
+	err := app.ImportTransactions(transactions)
+	if err != nil {
+		t.Fatalf("ImportTransactions failed: %v", err)
+	}
+
+	// Verify the transaction was imported with correct currency
+	txs, err := database.GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
+	if err != nil {
+		t.Fatalf("GetAnalysisTransactions failed: %v", err)
+	}
+
+	if len(txs) != 1 {
+		t.Errorf("Expected 1 transaction, got %d", len(txs))
+	}
+
+	if txs[0].Currency != "USD" {
+		t.Errorf("Expected currency 'USD', got '%s'", txs[0].Currency)
+	}
+}
+
 func TestGetUncategorizedTransactions(t *testing.T) {
 	setupTestDB(t)
 

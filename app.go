@@ -361,6 +361,16 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	if _, err := database.ApplyAllRules(); err != nil {
 		return err
 	}
+
+	// Clear FX rate cache since new transactions may have different currency ranges
+	database.ClearFxRateCache()
+
+	// Notify frontend that transactions were imported (FX sync will happen next)
+	if !isTestEnv() {
+		runtime.EventsEmit(a.ctx, "transactions-imported")
+	}
+
+	// Start FX sync in background - will emit "fx-rates-updated" when complete
 	go a.syncFxRates()
 	return nil
 }
@@ -1163,7 +1173,6 @@ func (a *App) syncFxRates() {
 		log.Printf("FX sync failed: %v", err)
 		return
 	}
-	if result.Updated > 0 {
-		runtime.EventsEmit(a.ctx, "fx-rates-updated", result)
-	}
+	// Emit event whenever sync completes so frontend can refresh FX status
+	runtime.EventsEmit(a.ctx, "fx-rates-updated", result)
 }

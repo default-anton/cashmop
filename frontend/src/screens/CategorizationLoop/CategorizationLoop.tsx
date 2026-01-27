@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { EventsOn } from '../../../wailsjs/runtime/runtime';
 import { AlertTriangle } from 'lucide-react';
 import { database } from '../../../wailsjs/go/models';
 import { useToast } from '@/contexts/ToastContext';
@@ -162,6 +163,14 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     const missing = transactions.some(tx => tx.amount_in_main_currency === null);
     setHasMissingRates(missing);
   }, [transactions]);
+
+  // Reload transactions when FX rates are updated (to get converted amounts)
+  useEffect(() => {
+    const off = EventsOn('fx-rates-updated', () => {
+      fetchTransactions();
+    });
+    return () => off?.();
+  }, [fetchTransactions]);
 
   useEffect(() => {
     if (currentTxId !== null && !loading) {

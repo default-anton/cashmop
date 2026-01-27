@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { EventsOn } from '../../../wailsjs/runtime/runtime';
 import { useFuzzySearch } from '../../hooks/useFuzzySearch';
 import {
   GroupedTransactionList
@@ -99,6 +100,14 @@ const Analysis: React.FC = () => {
     const missing = transactions.some(tx => tx.amount_in_main_currency === null);
     setHasMissingRates(missing);
   }, [transactions]);
+
+  // Reload transactions when FX rates are updated (to get converted amounts)
+  useEffect(() => {
+    const off = EventsOn('fx-rates-updated', () => {
+      fetchTransactions(true); // silent refresh
+    });
+    return () => off?.();
+  }, [fetchTransactions]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

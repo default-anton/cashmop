@@ -212,6 +212,7 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 			LIMIT 1
 		`, base, quote).Scan(&latestDate)
 		if errLatest == sql.ErrNoRows {
+			logger.Warn("no fx rates available for currency pair", "base", base, "quote", quote)
 			result = nil
 		} else if errLatest != nil {
 			return nil, errLatest
@@ -224,6 +225,7 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 				return nil, err
 			}
 		} else {
+			logger.Warn("no fx rate for date, using nil", "base", base, "quote", quote, "date", date, "latest_available", latestDate)
 			result = nil
 		}
 	} else if err != nil {
@@ -232,9 +234,12 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 		result = &FxRateLookup{RateDate: rateDate, Rate: rate, Source: source}
 	}
 
-	fxRateCacheMu.Lock()
-	fxRateCache[cacheKey] = result
-	fxRateCacheMu.Unlock()
+	// Only cache successful lookups, not nil results (to avoid caching "rate not found")
+	if result != nil {
+		fxRateCacheMu.Lock()
+		fxRateCache[cacheKey] = result
+		fxRateCacheMu.Unlock()
+	}
 
 	return result, nil
 }

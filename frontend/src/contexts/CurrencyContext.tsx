@@ -85,11 +85,19 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [refresh]);
 
   useEffect(() => {
-    const off = EventsOn('fx-rates-updated', () => {
+    const offFx = EventsOn('fx-rates-updated', () => {
       toast.showToast('Exchange rates updated', 'success');
       refresh();
     });
-    return () => off?.();
+    const offTx = EventsOn('transactions-imported', () => {
+      // Refresh FX status after transactions are imported
+      // (FX sync happens in background, but we need updated status immediately)
+      refresh();
+    });
+    return () => {
+      offFx?.();
+      offTx?.();
+    };
   }, [refresh, toast]);
 
   const updateSettings = useCallback(async (next: CurrencySettings) => {

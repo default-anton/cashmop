@@ -46,6 +46,7 @@ func convertTransactionAmounts(txs []TransactionModel) ([]TransactionModel, erro
 			converted, err = ConvertAmount(txs[i].Amount, baseCurrency, txs[i].Currency, txs[i].Date)
 			if err != nil {
 				// Graceful degradation: log but continue with null
+				logger.Error("fx conversion failed", "error", err, "tx_id", txs[i].ID, "currency", txs[i].Currency, "date", txs[i].Date)
 				converted = nil
 			}
 		}
