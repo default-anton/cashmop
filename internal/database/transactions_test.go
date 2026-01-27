@@ -32,7 +32,7 @@ func TestDeleteTransactions(t *testing.T) {
 	}
 
 	// Get inserted transaction IDs
-	fetched, err := GetAnalysisTransactions("2024-01-01", "2024-01-31", nil)
+	fetched, err := GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
 	if err != nil {
 		t.Fatalf("Failed to fetch transactions: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestDeleteTransactions(t *testing.T) {
 	}
 
 	// Verify deletion
-	fetched, err = GetAnalysisTransactions("2024-01-01", "2024-01-31", nil)
+	fetched, err = GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
 	if err != nil {
 		t.Fatalf("Failed to fetch transactions after delete: %v", err)
 	}
@@ -73,7 +73,7 @@ func TestDeleteTransactions(t *testing.T) {
 	}
 
 	// Verify all deleted
-	fetched, err = GetAnalysisTransactions("2024-01-01", "2024-01-31", nil)
+	fetched, err = GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
 	if err != nil {
 		t.Fatalf("Failed to fetch transactions after multi delete: %v", err)
 	}

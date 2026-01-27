@@ -78,7 +78,7 @@ func handleExport(args []string) commandResult {
 		}
 	}
 
-	transactions, err := database.GetAnalysisTransactions(start, end, catIDs)
+	transactions, err := database.GetAnalysisTransactions(start, end, catIDs, nil)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}

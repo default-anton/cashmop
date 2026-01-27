@@ -143,7 +143,7 @@ func handleTxList(args []string) commandResult {
 		catIDs = append(catIDs, 0)
 	}
 
-	txs, err := database.GetAnalysisTransactions(start, end, catIDs)
+	txs, err := database.GetAnalysisTransactions(start, end, catIDs, nil)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}

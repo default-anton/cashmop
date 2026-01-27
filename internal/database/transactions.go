@@ -156,6 +156,29 @@ func GetAccounts() ([]string, error) {
 	return accounts, nil
 }
 
+type User struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+func GetAllUsers() ([]User, error) {
+	rows, err := DB.Query("SELECT id, name FROM users ORDER BY name ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var u User
+		if err := rows.Scan(&u.ID, &u.Name); err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	return users, nil
+}
+
 func GetUsers() ([]string, error) {
 	rows, err := DB.Query("SELECT name FROM users ORDER BY name ASC")
 	if err != nil {
@@ -698,7 +721,7 @@ func GetMonthList() ([]string, error) {
 	return months, nil
 }
 
-func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int64) ([]TransactionModel, error) {
+func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int64, ownerIDs []int64) ([]TransactionModel, error) {
 	query := `
 		SELECT
 			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
@@ -740,6 +763,38 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 				args = append(args, id)
 			}
 			query += fmt.Sprintf(" AND t.category_id IN (%s)", strings.Join(placeholders, ","))
+		}
+	}
+
+	if len(ownerIDs) > 0 {
+		hasNoOwner := false
+		var realOwnerIDs []int64
+		for _, id := range ownerIDs {
+			if id == 0 {
+				hasNoOwner = true
+			} else {
+				realOwnerIDs = append(realOwnerIDs, id)
+			}
+		}
+
+		if hasNoOwner {
+			query += " AND (t.owner_id IS NULL"
+			if len(realOwnerIDs) > 0 {
+				placeholders := make([]string, len(realOwnerIDs))
+				for i, id := range realOwnerIDs {
+					placeholders[i] = "?"
+					args = append(args, id)
+				}
+				query += fmt.Sprintf(" OR t.owner_id IN (%s)", strings.Join(placeholders, ","))
+			}
+			query += ")"
+		} else if len(realOwnerIDs) > 0 {
+			placeholders := make([]string, len(realOwnerIDs))
+			for i, id := range realOwnerIDs {
+				placeholders[i] = "?"
+				args = append(args, id)
+			}
+			query += fmt.Sprintf(" AND t.owner_id IN (%s)", strings.Join(placeholders, ","))
 		}
 	}
 

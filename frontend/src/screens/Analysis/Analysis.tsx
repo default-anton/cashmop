@@ -23,6 +23,8 @@ const Analysis: React.FC = () => {
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [categories, setCategories] = useState<database.Category[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const [owners, setOwners] = useState<database.User[]>([]);
+  const [selectedOwnerIds, setSelectedOwnerIds] = useState<number[]>([]);
   const [groupBy, setGroupBy] = useState<GroupBy>('All');
   const [transactions, setTransactions] = useState<database.TransactionModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,9 @@ const Analysis: React.FC = () => {
 
       const categoryList = await (window as any).go.main.App.GetCategories();
       setCategories(categoryList || []);
+
+      const ownerList = await (window as any).go.main.App.GetAllUsers();
+      setOwners(ownerList || []);
     } catch (e) {
       console.error('Failed to fetch initial analysis data', e);
     }
@@ -68,7 +73,8 @@ const Analysis: React.FC = () => {
       const txs = await (window as any).go.main.App.GetAnalysisTransactions(
         startDate,
         endDate,
-        selectedCategoryIds
+        selectedCategoryIds,
+        selectedOwnerIds
       );
       setTransactions(txs || []);
     } catch (e) {
@@ -76,7 +82,7 @@ const Analysis: React.FC = () => {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [selectedMonth, selectedCategoryIds]);
+  }, [selectedMonth, selectedCategoryIds, selectedOwnerIds]);
 
   useEffect(() => {
     fetchData();
@@ -153,6 +159,7 @@ const Analysis: React.FC = () => {
         startDate,
         endDate,
         selectedCategoryIds,
+        selectedOwnerIds,
         targetFormat
       );
 
@@ -431,6 +438,7 @@ const Analysis: React.FC = () => {
           <GroupedTransactionList
             transactions={displayedTransactionsWithFx}
             categories={categories}
+            owners={owners}
             groupBy={groupBy}
             showSummary={false}
             groupSortField={groupSortField}
@@ -441,6 +449,8 @@ const Analysis: React.FC = () => {
             onCategorize={handleCategorize}
             selectedCategoryIds={selectedCategoryIds}
             onCategoryFilterChange={setSelectedCategoryIds}
+            selectedOwnerIds={selectedOwnerIds}
+            onOwnerFilterChange={setSelectedOwnerIds}
             monthOptions={monthOptions}
             selectedMonth={selectedMonth}
             onMonthChange={setSelectedMonth}

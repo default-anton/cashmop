@@ -558,6 +558,10 @@ func (a *App) GetOwners() ([]string, error) {
 	return database.GetUsers()
 }
 
+func (a *App) GetAllUsers() ([]database.User, error) {
+	return database.GetAllUsers()
+}
+
 func (a *App) CreateAccount(name string) (int64, error) {
 	return database.GetOrCreateAccount(name)
 }
@@ -581,8 +585,8 @@ func (a *App) GetMonthList() ([]string, error) {
 	return database.GetMonthList()
 }
 
-func (a *App) GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int64) ([]database.TransactionModel, error) {
-	return database.GetAnalysisTransactions(startDate, endDate, categoryIDs)
+func (a *App) GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int64, ownerIDs []int64) ([]database.TransactionModel, error) {
+	return database.GetAnalysisTransactions(startDate, endDate, categoryIDs, ownerIDs)
 }
 
 type ExcelData struct {
@@ -704,7 +708,7 @@ func (a *App) SearchWeb(query string) ([]WebSearchResult, error) {
 	return webResults, nil
 }
 
-func (a *App) ExportTransactionsWithDialog(startDate, endDate string, categoryIDs []int64, format string) (int, error) {
+func (a *App) ExportTransactionsWithDialog(startDate, endDate string, categoryIDs []int64, ownerIDs []int64, format string) (int, error) {
 	defaultFilename := generateDefaultFilename(startDate, endDate, format)
 
 	var destinationPath string
@@ -735,7 +739,7 @@ func (a *App) ExportTransactionsWithDialog(startDate, endDate string, categoryID
 		return 0, fmt.Errorf("no destination selected")
 	}
 
-	return a.ExportTransactions(startDate, endDate, categoryIDs, format, destinationPath)
+	return a.ExportTransactions(startDate, endDate, categoryIDs, ownerIDs, format, destinationPath)
 }
 
 func generateDefaultFilename(startDate, endDate, format string) string {
@@ -751,8 +755,8 @@ func generateDefaultFilename(startDate, endDate, format string) string {
 	return fmt.Sprintf("cashmop_%s.%s", datePart, format)
 }
 
-func (a *App) ExportTransactions(startDate, endDate string, categoryIDs []int64, format, destinationPath string) (int, error) {
-	transactions, err := database.GetAnalysisTransactions(startDate, endDate, categoryIDs)
+func (a *App) ExportTransactions(startDate, endDate string, categoryIDs []int64, ownerIDs []int64, format, destinationPath string) (int, error) {
+	transactions, err := database.GetAnalysisTransactions(startDate, endDate, categoryIDs, ownerIDs)
 	if err != nil {
 		return 0, fmt.Errorf("Unable to load transactions. Please try again.")
 	}

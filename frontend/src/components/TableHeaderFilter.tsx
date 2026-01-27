@@ -338,6 +338,143 @@ export const CategoryFilterContent: React.FC<{
   );
 };
 
+// Owner filter content
+export const OwnerFilterContent: React.FC<{
+  owners: { id: number; name: string }[];
+  selectedIds: number[];
+  onSelect: (id: number) => void;
+  onSelectOnly: (id: number, e?: React.MouseEvent) => void;
+  onSelectAll: () => void;
+  onClear: () => void;
+  searchTerm: string;
+  onSearchChange: (term: string) => void;
+  inputRef?: React.RefObject<HTMLInputElement | null>;
+}> = ({
+  owners,
+  selectedIds,
+  onSelect,
+  onSelectOnly,
+  onSelectAll,
+  onClear,
+  searchTerm,
+  onSearchChange,
+  inputRef,
+}) => {
+  const [filteredOwners, setFilteredOwners] = useState(owners);
+
+  useEffect(() => {
+    const noOwnerOption: { id: number; name: string } = { id: 0, name: 'No Owner' };
+
+    if (!searchTerm.trim()) {
+      setFilteredOwners([noOwnerOption, ...owners]);
+      return;
+    }
+
+    const names = owners.map(o => o.name);
+    (window as any).go.main.App.FuzzySearch(searchTerm, names).then((rankedNames: string[]) => {
+      const ranked = rankedNames
+        .map(name => owners.find(o => o.name === name))
+        .filter((o): o is { id: number; name: string } => !!o);
+      setFilteredOwners([noOwnerOption, ...ranked]);
+    });
+  }, [owners, searchTerm]);
+
+  const selectedCount = selectedIds.length;
+  const totalCount = owners.length + 1; // +1 for No Owner
+  const isAllSelected = selectedCount === totalCount;
+
+  return (
+    <div className="flex flex-col max-h-[360px]">
+      <div className="p-3 border-b border-canvas-100 space-y-3">
+        <div className="flex justify-between items-center px-1">
+          <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
+            Filter by Owner
+          </span>
+          <div className="flex gap-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                isAllSelected ? onClear() : onSelectAll();
+              }}
+              className="text-[10px] font-bold text-brand uppercase hover:underline select-none"
+            >
+              {isAllSelected ? 'Deselect All' : 'Select All'}
+            </button>
+            {selectedCount > 0 && !isAllSelected && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClear();
+                }}
+                className="text-[10px] font-bold text-canvas-600 uppercase hover:text-canvas-800 hover:underline select-none"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-canvas-500 select-none" />
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Search owners..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full bg-canvas-100 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-brand/20 placeholder:text-canvas-500 outline-none"
+          />
+        </div>
+      </div>
+
+      <div className="overflow-y-auto flex-1 py-1 px-2">
+        {filteredOwners.map((owner) => {
+          const isSelected = selectedIds.includes(owner.id);
+          return (
+            <div key={owner.id} className="group relative flex items-center">
+              <button
+                onClick={() => onSelect(owner.id)}
+                className="flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-canvas-100 transition-colors select-none"
+              >
+                <span className={`text-sm ${isSelected ? 'font-bold text-canvas-800' : 'text-canvas-600'}`}>
+                  {owner.name}
+                </span>
+                <div className={`
+                  w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all
+                  ${isSelected ? 'bg-brand border-brand text-white' : 'border-canvas-200 bg-white'}
+                `}>
+                  {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
+                </div>
+              </button>
+
+              <button
+                onClick={(e) => onSelectOnly(owner.id, e)}
+                className="absolute right-14 opacity-0 group-hover:opacity-100 px-2 py-1 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 hover:bg-canvas-300 transition-all z-10 select-none"
+              >
+                ONLY
+              </button>
+            </div>
+          );
+        })}
+
+        {filteredOwners.length === 0 && (
+          <div className="px-4 py-8 text-center text-canvas-500 text-sm italic select-none">
+            {searchTerm ? 'No matches found' : 'No owners found'}
+          </div>
+        )}
+      </div>
+
+      <div className="px-3 py-2 border-t border-canvas-100 flex items-center justify-between">
+        <span className="text-[10px] text-canvas-500 font-medium select-none">
+          {selectedCount === 0
+            ? 'No filters applied'
+            : `${selectedCount} of ${totalCount} selected`}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 // Text filter content (for description, etc.)
 export const TextFilterContent: React.FC<{
   value: string;

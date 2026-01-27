@@ -17,15 +17,17 @@ export function DeleteColumnMapping(arg1:number):Promise<void>;
 
 export function DeleteTransactions(arg1:Array<number>):Promise<number>;
 
-export function ExportTransactions(arg1:string,arg2:string,arg3:Array<number>,arg4:string,arg5:string):Promise<number>;
+export function ExportTransactions(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<number>,arg5:string,arg6:string):Promise<number>;
 
-export function ExportTransactionsWithDialog(arg1:string,arg2:string,arg3:Array<number>,arg4:string):Promise<number>;
+export function ExportTransactionsWithDialog(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<number>,arg5:string):Promise<number>;
 
 export function FuzzySearch(arg1:string,arg2:Array<string>):Promise<Array<string>>;
 
 export function GetAccounts():Promise<Array<string>>;
 
-export function GetAnalysisTransactions(arg1:string,arg2:string,arg3:Array<number>):Promise<Array<database.TransactionModel>>;
+export function GetAllUsers():Promise<Array<database.User>>;
+
+export function GetAnalysisTransactions(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<number>):Promise<Array<database.TransactionModel>>;
 
 export function GetCategories():Promise<Array<database.Category>>;
 

@@ -30,12 +30,12 @@ export function DeleteTransactions(arg1) {
   return window['go']['main']['App']['DeleteTransactions'](arg1);
 }
 
-export function ExportTransactions(arg1, arg2, arg3, arg4, arg5) {
-  return window['go']['main']['App']['ExportTransactions'](arg1, arg2, arg3, arg4, arg5);
+export function ExportTransactions(arg1, arg2, arg3, arg4, arg5, arg6) {
+  return window['go']['main']['App']['ExportTransactions'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
-export function ExportTransactionsWithDialog(arg1, arg2, arg3, arg4) {
-  return window['go']['main']['App']['ExportTransactionsWithDialog'](arg1, arg2, arg3, arg4);
+export function ExportTransactionsWithDialog(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['ExportTransactionsWithDialog'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function FuzzySearch(arg1, arg2) {
@@ -46,8 +46,12 @@ export function GetAccounts() {
   return window['go']['main']['App']['GetAccounts']();
 }
 
-export function GetAnalysisTransactions(arg1, arg2, arg3) {
-  return window['go']['main']['App']['GetAnalysisTransactions'](arg1, arg2, arg3);
+export function GetAllUsers() {
+  return window['go']['main']['App']['GetAllUsers']();
+}
+
+export function GetAnalysisTransactions(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['GetAnalysisTransactions'](arg1, arg2, arg3, arg4);
 }
 
 export function GetCategories() {

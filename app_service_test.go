@@ -949,7 +949,7 @@ func TestGetAnalysisTransactions(t *testing.T) {
 	createTestTransaction(t, accountID, nil, "2024-03-05", "Mar 1", 25.00, nil)
 
 	t.Run("date range only", func(t *testing.T) {
-		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", nil)
+		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
 		if err != nil {
 			t.Fatalf("GetAnalysisTransactions failed: %v", err)
 		}
@@ -963,7 +963,7 @@ func TestGetAnalysisTransactions(t *testing.T) {
 		catID := createTestCategory(t, "Groceries")
 		tx := createTestTransaction(t, accountID, nil, "2024-01-15", "Categorized", 50.00, &catID)
 
-		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", []int64{catID})
+		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", []int64{catID}, nil)
 		if err != nil {
 			t.Fatalf("GetAnalysisTransactions failed: %v", err)
 		}
@@ -978,13 +978,52 @@ func TestGetAnalysisTransactions(t *testing.T) {
 	})
 
 	t.Run("filter by uncategorized (category ID 0)", func(t *testing.T) {
-		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", []int64{0})
+		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", []int64{0}, nil)
 		if err != nil {
 			t.Fatalf("GetAnalysisTransactions failed: %v", err)
 		}
 
 		if len(results) != 2 {
 			t.Errorf("Expected 2 uncategorized transactions in January, got %d", len(results))
+		}
+	})
+
+	t.Run("filter by owner", func(t *testing.T) {
+		// Create owner
+		ownerID, err := app.CreateOwner("John")
+		if err != nil {
+			t.Fatalf("Failed to create owner: %v", err)
+		}
+
+		// Create transaction with owner
+		_ = createTestTransaction(t, accountID, &ownerID, "2024-01-15", "John's purchase", 75.00, nil)
+
+		// Get transactions filtered by owner
+		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, []int64{ownerID})
+		if err != nil {
+			t.Fatalf("GetAnalysisTransactions failed: %v", err)
+		}
+
+		if len(results) != 1 {
+			t.Errorf("Expected 1 transaction with owner filter, got %d", len(results))
+		}
+
+		if len(results) > 0 && results[0].Description != "John's purchase" {
+			t.Errorf("Expected 'John's purchase', got %s", results[0].Description)
+		}
+	})
+
+	t.Run("filter by no owner (owner ID 0)", func(t *testing.T) {
+		// Get transactions without owner (owner_id IS NULL)
+		results, err := app.GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, []int64{0})
+		if err != nil {
+			t.Fatalf("GetAnalysisTransactions failed: %v", err)
+		}
+
+		// Should get the uncategorized transactions without owners
+		// Note: We created 1 transaction with owner in the previous test, so count is reduced
+		if len(results) < 1 {
+			t.Errorf("Expected at least 1 transaction without owner, got %d", len(results))
 		}
 	})
 }
@@ -1232,7 +1271,7 @@ func TestExportTransactions(t *testing.T) {
 
 	t.Run("export to CSV", func(t *testing.T) {
 		csvPath := tempDir + "/test_export.csv"
-		count, err := app.ExportTransactions("2024-01-01", "2024-01-31", nil, "csv", csvPath)
+		count, err := app.ExportTransactions("2024-01-01", "2024-01-31", nil, nil, "csv", csvPath)
 		if err != nil {
 			t.Fatalf("ExportTransactions to CSV failed: %v", err)
 		}
@@ -1262,7 +1301,7 @@ func TestExportTransactions(t *testing.T) {
 
 	t.Run("export to XLSX", func(t *testing.T) {
 		xlsxPath := tempDir + "/test_export.xlsx"
-		count, err := app.ExportTransactions("2024-01-01", "2024-01-31", nil, "xlsx", xlsxPath)
+		count, err := app.ExportTransactions("2024-01-01", "2024-01-31", nil, nil, "xlsx", xlsxPath)
 		if err != nil {
 			t.Fatalf("ExportTransactions to XLSX failed: %v", err)
 		}
@@ -1278,7 +1317,7 @@ func TestExportTransactions(t *testing.T) {
 
 	t.Run("no transactions error", func(t *testing.T) {
 		path := tempDir + "/no_transactions.csv"
-		_, err := app.ExportTransactions("2025-01-01", "2025-01-31", nil, "csv", path)
+		_, err := app.ExportTransactions("2025-01-01", "2025-01-31", nil, nil, "csv", path)
 		if err == nil {
 			t.Error("Expected error when no transactions in date range")
 		}
@@ -1286,7 +1325,7 @@ func TestExportTransactions(t *testing.T) {
 
 	t.Run("invalid format error", func(t *testing.T) {
 		path := tempDir + "/invalid.txt"
-		_, err := app.ExportTransactions("2024-01-01", "2024-01-31", nil, "txt", path)
+		_, err := app.ExportTransactions("2024-01-01", "2024-01-31", nil, nil, "txt", path)
 		if err == nil {
 			t.Error("Expected error for invalid format")
 		}

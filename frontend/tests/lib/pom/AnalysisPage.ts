@@ -95,4 +95,46 @@ export class AnalysisPage {
   async expectTransactionNotVisible(transactionDescription: string) {
     await expect(this.page.locator('tr').filter({ hasText: transactionDescription })).not.toBeVisible();
   }
+
+  // Owner filter methods
+  getOwnerFilterButton() {
+    return this.page.locator('th').filter({ hasText: 'Owner' }).locator('button');
+  }
+
+  async openOwnerFilter() {
+    await this.getOwnerFilterButton().click();
+  }
+
+  async expectOwnerFilterVisible() {
+    await expect(this.page.getByText('Filter by Owner', { exact: true })).toBeVisible();
+  }
+
+  async selectOwnerInFilter(ownerName: string) {
+    await this.page.locator('button').filter({ hasText: ownerName, exact: true }).click();
+  }
+
+  async clickSelectAllOwners() {
+    await this.page.getByRole('button', { name: 'Select All', exact: true }).click();
+  }
+
+  async clickDeselectAllOwners() {
+    await this.page.getByRole('button', { name: 'Deselect All', exact: true }).click();
+  }
+
+  async clickOnlyOwner(ownerName: string) {
+    const ownerRow = this.page.locator('button').filter({ hasText: ownerName, exact: true }).locator('..');
+    await ownerRow.locator('button', { hasText: 'ONLY' }).click();
+  }
+
+  async searchOwners(searchTerm: string) {
+    await this.page.locator('input[placeholder="Search owners..."]').fill(searchTerm);
+  }
+
+  async clearOwnerFilter() {
+    await this.page.getByRole('button', { name: 'Reset', exact: true }).click();
+  }
+
+  async closeOwnerFilter() {
+    await this.page.keyboard.press('Escape');
+  }
 }
