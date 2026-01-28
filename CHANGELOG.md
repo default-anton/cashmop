@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.2.4] - 2026-01-28
+
+### Fixed
+- Import: treat ISO dates as local in import flow
+
 ## [0.2.3] - 2026-01-28
 
 ### Changed

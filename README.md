@@ -2,7 +2,7 @@
 
 Desktop-first cash flow tracking. Import messy bank exports, normalize once, punch through categorization fast, and export clean data. Local-only, open source, no cloud.
 
-**Status:** v0.2.3 released. Backward compatibility not guaranteed until v1.0.
+**Status:** v0.2.4 released. Backward compatibility not guaranteed until v1.0.
 
 ![CashMop logo](frontend/src/assets/branding/logo-landscape.png)
 
