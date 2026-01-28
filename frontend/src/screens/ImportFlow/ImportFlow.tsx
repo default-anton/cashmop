@@ -369,7 +369,7 @@ interface ImportFlowProps {
 
 export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   const toast = useToast();
-  const { warning } = useCurrency();
+  const { warning, refresh } = useCurrency();
   const [step, setStep] = useState(1); // 1: Choose file(s), 2: Map, 3: Month Select, 4: Done
 
   const [parseBusy, setParseBusy] = useState(false);
@@ -645,6 +645,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
     try {
       await (window as any).go.main.App.ImportTransactions(txs);
+      await refresh();
 
       setStep(4);
       if (onImportComplete) {

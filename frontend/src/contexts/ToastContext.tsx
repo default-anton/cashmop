@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
+import { EventsOn } from '../../wailsjs/runtime/runtime';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -40,6 +41,16 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
     setToasts(prev => [...prev, { id, message, type, duration }]);
     return id;
   }, []);
+
+  useEffect(() => {
+    const off = EventsOn('fx-rates-sync-failed', (message: string) => {
+      const text = message?.trim()
+        ? message
+        : "Couldn't fetch exchange rates just now. Try syncing again in Settings.";
+      showToast(text, 'warning');
+    });
+    return () => off?.();
+  }, [showToast]);
 
   return (
     <ToastContext.Provider value={{ showToast, removeToast }}>

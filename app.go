@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/csv"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -213,6 +214,11 @@ func (a *App) SyncFxRates() error {
 	return nil
 }
 
+func (a *App) SyncFxRatesNow() error {
+	_, err := a.syncFxRatesInternal(true)
+	return err
+}
+
 func (a *App) ShowAbout() {
 	runtime.EventsEmit(a.ctx, "show-about")
 }
@@ -365,13 +371,19 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	// Clear FX rate cache since new transactions may have different currency ranges
 	database.ClearFxRateCache()
 
-	// Notify frontend that transactions were imported (FX sync will happen next)
 	if !isTestEnv() {
-		runtime.EventsEmit(a.ctx, "transactions-imported")
+		if _, err := a.syncFxRatesInternal(false); err != nil {
+			if errors.Is(err, fx.ErrProviderUnsupported) {
+				log.Printf("FX sync skipped after import: %v", err)
+			} else {
+				log.Printf("FX sync failed after import: %v", err)
+				if a.ctx != nil {
+					runtime.EventsEmit(a.ctx, "fx-rates-sync-failed", "Couldn't fetch exchange rates just now. Try syncing again in Settings.")
+				}
+			}
+		}
 	}
 
-	// Start FX sync in background - will emit "fx-rates-updated" when complete
-	go a.syncFxRates()
 	return nil
 }
 
@@ -1155,24 +1167,34 @@ func (a *App) shutdown(ctx context.Context) {
 	database.Close()
 }
 
-func (a *App) syncFxRates() {
+func (a *App) syncFxRatesInternal(emit bool) (fx.SyncResult, error) {
 	if a.ctx == nil {
-		return
+		return fx.SyncResult{}, fmt.Errorf("app context not initialized")
 	}
 	settings, err := database.GetCurrencySettings()
 	if err != nil {
-		log.Printf("FX sync settings error: %v", err)
-		return
+		return fx.SyncResult{}, err
 	}
 	if err := fx.EnsureProviderSupported(settings.MainCurrency); err != nil {
-		log.Printf("FX sync unsupported: %v", err)
-		return
+		return fx.SyncResult{}, err
 	}
 	result, err := fx.SyncRates(a.ctx, settings.MainCurrency)
 	if err != nil {
-		log.Printf("FX sync failed: %v", err)
-		return
+		return fx.SyncResult{}, err
 	}
-	// Emit event whenever sync completes so frontend can refresh FX status
-	runtime.EventsEmit(a.ctx, "fx-rates-updated", result)
+	if emit {
+		// Emit event whenever sync completes so frontend can refresh FX status
+		runtime.EventsEmit(a.ctx, "fx-rates-updated", result)
+	}
+	return result, nil
+}
+
+func (a *App) syncFxRates() {
+	if _, err := a.syncFxRatesInternal(true); err != nil {
+		if errors.Is(err, fx.ErrProviderUnsupported) {
+			log.Printf("FX sync unsupported: %v", err)
+			return
+		}
+		log.Printf("FX sync failed: %v", err)
+	}
 }

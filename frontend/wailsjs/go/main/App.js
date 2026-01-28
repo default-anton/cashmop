@@ -182,6 +182,10 @@ export function SyncFxRates() {
   return window['go']['main']['App']['SyncFxRates']();
 }
 
+export function SyncFxRatesNow() {
+  return window['go']['main']['App']['SyncFxRatesNow']();
+}
+
 export function TriggerAutoBackup() {
   return window['go']['main']['App']['TriggerAutoBackup']();
 }

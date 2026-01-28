@@ -25,11 +25,13 @@ const Settings: React.FC = () => {
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [showRestartNotice, setShowRestartNotice] = useState(false);
   const [currencySaving, setCurrencySaving] = useState(false);
+  const [fxSyncing, setFxSyncing] = useState(false);
 
   const {
     settings,
     currencyOptions,
     updateSettings,
+    refresh,
     latestRateDate,
     isStale,
     staleDays,
@@ -93,6 +95,20 @@ const Settings: React.FC = () => {
       setMainCurrency(settings.main_currency);
     } finally {
       setCurrencySaving(false);
+    }
+  };
+
+  const handleSyncFxRates = async () => {
+    if (!isBaseSupported) return;
+    setFxSyncing(true);
+    try {
+      await (window as any).go.main.App.SyncFxRatesNow();
+      await refresh();
+    } catch (e: any) {
+      console.error('Failed to sync exchange rates', e);
+      toast.showToast(`Couldn't fetch exchange rates: ${e?.message || 'Unknown error'}`, 'error');
+    } finally {
+      setFxSyncing(false);
     }
   };
 
@@ -224,6 +240,23 @@ const Settings: React.FC = () => {
                 </p>
               </div>
             </div>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between gap-4 rounded-lg border border-canvas-200 bg-canvas-50 p-3">
+            <div>
+              <p className="text-xs uppercase text-canvas-500 font-bold select-none">Missing rates</p>
+              <p className="text-sm text-canvas-600">Pull only what your transactions need.</p>
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleSyncFxRates}
+              disabled={fxSyncing || !isBaseSupported}
+              className="px-3 py-1.5 flex items-center gap-2"
+            >
+              <RefreshCcw className="w-4 h-4" />
+              {fxSyncing ? 'Syncing…' : 'Sync missing rates'}
+            </Button>
           </div>
         </Card>
 

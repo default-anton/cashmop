@@ -2,9 +2,12 @@ package fx
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 )
+
+var ErrProviderUnsupported = errors.New("fx provider unsupported")
 
 type FetchResult struct {
 	Rates       map[string]map[string]float64
@@ -23,6 +26,6 @@ func ProviderForBase(baseCurrency string) (Provider, error) {
 	case "CAD":
 		return NewBoCProvider(), nil
 	default:
-		return nil, fmt.Errorf("no fx provider for base currency %s", base)
+		return nil, fmt.Errorf("%w: %s", ErrProviderUnsupported, base)
 	}
 }

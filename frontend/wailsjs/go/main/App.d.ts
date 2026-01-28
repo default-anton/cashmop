@@ -93,6 +93,8 @@ export function ShowAbout():Promise<void>;
 
 export function SyncFxRates():Promise<void>;
 
+export function SyncFxRatesNow():Promise<void>;
+
 export function TriggerAutoBackup():Promise<string>;
 
 export function UndoCategorizationRule(arg1:number,arg2:Array<number>):Promise<void>;

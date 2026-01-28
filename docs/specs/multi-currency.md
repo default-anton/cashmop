@@ -11,6 +11,7 @@ UI Location: `frontend/src/screens/Settings/`, `frontend/src/screens/Analysis/`,
 - Currency card
   - Main Currency (default CAD)
   - Exchange rate freshness (latest rate date; stale warning when >7 days)
+  - Sync missing rates button (pulls only missing ranges for existing transactions)
 - Settings stored in DB (not config files).
 
 ## Conversion Rules
@@ -29,9 +30,11 @@ UI Location: `frontend/src/screens/Settings/`, `frontend/src/screens/Analysis/`,
 - If a transaction currency has no provider data: missing-rate warning.
 
 ## Sync + Cache
-- On startup and after import, async FX sync for currencies + date ranges seen in transactions.
+- On startup, background FX sync runs for currencies + date ranges seen in transactions.
+- During import, FX sync runs **synchronously** before returning to the frontend.
 - Fetch missing ranges only, with a 7-day buffer before the minimum transaction date (for weekend/holiday coverage).
 - `fx_last_sync` stored on successful sync; UI listens for rates-updated event + refresh.
+- If sync fails after import, import still succeeds and a warning toast is shown.
 
 ## Import Flow
 - Currency mapping step optional; default currency applied if column missing.
