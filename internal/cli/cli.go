@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/default-anton/cashmop/internal/cashmop"
 	"github.com/default-anton/cashmop/internal/database"
 	"github.com/default-anton/cashmop/internal/version"
 )
@@ -53,38 +54,43 @@ func Run(args []string) int {
 		return 0
 	}
 
+	var store *database.Store
+	var svc *cashmop.Service
 	if requiresDB(rest[0]) {
 		logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-		if err := database.InitDBWithPath(global.DBPath, logger); err != nil {
+		opened, err := database.Open(global.DBPath, logger)
+		if err != nil {
 			return writeCLIError(os.Stdout, runtimeError(ErrorDetail{
 				Field:   "db",
 				Message: fmt.Sprintf("Unable to open database: %s", err.Error()),
 				Hint:    "Provide a valid --db path or omit it to use the default database.",
 			}), global.Format)
 		}
-		defer database.Close()
+		store = opened
+		svc = cashmop.New(store)
+		defer store.Close()
 	}
 
 	var result commandResult
 	switch rest[0] {
 	case "import":
-		result = handleImport(rest[1:])
+		result = handleImport(svc, rest[1:])
 	case "mappings":
-		result = handleMappings(rest[1:])
+		result = handleMappings(svc, rest[1:])
 	case "tx":
-		result = handleTransactions(rest[1:])
+		result = handleTransactions(svc, rest[1:])
 	case "categories":
-		result = handleCategories(rest[1:])
+		result = handleCategories(svc, rest[1:])
 	case "rules":
-		result = handleRules(rest[1:])
+		result = handleRules(svc, rest[1:])
 	case "export":
-		result = handleExport(rest[1:])
+		result = handleExport(svc, rest[1:])
 	case "backup":
-		result = handleBackup(rest[1:])
+		result = handleBackup(svc, rest[1:])
 	case "settings":
-		result = handleSettings(rest[1:])
+		result = handleSettings(svc, rest[1:])
 	case "fx":
-		result = handleFx(rest[1:])
+		result = handleFx(svc, rest[1:])
 	case "install-cli":
 		result = handleInstallCli(rest[1:])
 	case "uninstall-cli":

@@ -23,12 +23,12 @@ type TransactionModel struct {
 	MainCurrency         string `json:"main_currency"`
 }
 
-func convertTransactionAmounts(txs []TransactionModel) ([]TransactionModel, error) {
+func (s *Store) convertTransactionAmounts(txs []TransactionModel) ([]TransactionModel, error) {
 	if len(txs) == 0 {
 		return txs, nil
 	}
 
-	settings, err := GetCurrencySettings()
+	settings, err := s.GetCurrencySettings()
 	if err != nil {
 		return nil, err
 	}
@@ -40,13 +40,12 @@ func convertTransactionAmounts(txs []TransactionModel) ([]TransactionModel, erro
 	for i := range txs {
 		var converted *int64
 		if strings.ToUpper(strings.TrimSpace(txs[i].Currency)) == baseCurrency {
-			// Same currency - no conversion needed
 			converted = &txs[i].Amount
 		} else {
-			converted, err = ConvertAmount(txs[i].Amount, baseCurrency, txs[i].Currency, txs[i].Date)
+			converted, err = s.ConvertAmount(txs[i].Amount, baseCurrency, txs[i].Currency, txs[i].Date)
 			if err != nil {
 				// Graceful degradation: log but continue with null
-				logger.Error("fx conversion failed", "error", err, "tx_id", txs[i].ID, "currency", txs[i].Currency, "date", txs[i].Date)
+				s.logger.Error("fx conversion failed", "error", err, "tx_id", txs[i].ID, "currency", txs[i].Currency, "date", txs[i].Date)
 				converted = nil
 			}
 		}
@@ -57,15 +56,15 @@ func convertTransactionAmounts(txs []TransactionModel) ([]TransactionModel, erro
 	return txs, nil
 }
 
-func GetOrCreateAccount(name string) (int64, error) {
+func (s *Store) GetOrCreateAccount(name string) (int64, error) {
 	if name == "" {
 		return 0, fmt.Errorf("account name cannot be empty")
 	}
 
 	var id int64
-	err := DB.QueryRow("SELECT id FROM accounts WHERE name = ?", name).Scan(&id)
+	err := s.db.QueryRow("SELECT id FROM accounts WHERE name = ?", name).Scan(&id)
 	if err == sql.ErrNoRows {
-		res, err := DB.Exec("INSERT INTO accounts (name) VALUES (?)", name)
+		res, err := s.db.Exec("INSERT INTO accounts (name) VALUES (?)", name)
 		if err != nil {
 			return 0, err
 		}
@@ -77,15 +76,15 @@ func GetOrCreateAccount(name string) (int64, error) {
 	return id, nil
 }
 
-func GetOrCreateUser(name string) (*int64, error) {
+func (s *Store) GetOrCreateUser(name string) (*int64, error) {
 	if name == "" {
 		return nil, nil
 	}
 
 	var id int64
-	err := DB.QueryRow("SELECT id FROM users WHERE name = ?", name).Scan(&id)
+	err := s.db.QueryRow("SELECT id FROM users WHERE name = ?", name).Scan(&id)
 	if err == sql.ErrNoRows {
-		res, err := DB.Exec("INSERT INTO users (name) VALUES (?)", name)
+		res, err := s.db.Exec("INSERT INTO users (name) VALUES (?)", name)
 		if err != nil {
 			return nil, err
 		}
@@ -101,8 +100,8 @@ func GetOrCreateUser(name string) (*int64, error) {
 	return &id, nil
 }
 
-func GetAccountMap() (map[string]int64, error) {
-	rows, err := DB.Query("SELECT id, name FROM accounts")
+func (s *Store) GetAccountMap() (map[string]int64, error) {
+	rows, err := s.db.Query("SELECT id, name FROM accounts")
 	if err != nil {
 		return nil, err
 	}
@@ -120,8 +119,8 @@ func GetAccountMap() (map[string]int64, error) {
 	return m, nil
 }
 
-func GetUserMap() (map[string]int64, error) {
-	rows, err := DB.Query("SELECT id, name FROM users")
+func (s *Store) GetUserMap() (map[string]int64, error) {
+	rows, err := s.db.Query("SELECT id, name FROM users")
 	if err != nil {
 		return nil, err
 	}
@@ -139,8 +138,8 @@ func GetUserMap() (map[string]int64, error) {
 	return m, nil
 }
 
-func GetAccounts() ([]string, error) {
-	rows, err := DB.Query("SELECT name FROM accounts ORDER BY name ASC")
+func (s *Store) GetAccounts() ([]string, error) {
+	rows, err := s.db.Query("SELECT name FROM accounts ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -162,8 +161,8 @@ type User struct {
 	Name string `json:"name"`
 }
 
-func GetAllUsers() ([]User, error) {
-	rows, err := DB.Query("SELECT id, name FROM users ORDER BY name ASC")
+func (s *Store) GetAllUsers() ([]User, error) {
+	rows, err := s.db.Query("SELECT id, name FROM users ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -180,8 +179,8 @@ func GetAllUsers() ([]User, error) {
 	return users, nil
 }
 
-func GetUsers() ([]string, error) {
-	rows, err := DB.Query("SELECT name FROM users ORDER BY name ASC")
+func (s *Store) GetUsers() ([]string, error) {
+	rows, err := s.db.Query("SELECT name FROM users ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -198,12 +197,12 @@ func GetUsers() ([]string, error) {
 	return users, nil
 }
 
-func BatchInsertTransactions(txs []TransactionModel) error {
+func (s *Store) BatchInsertTransactions(txs []TransactionModel) error {
 	if len(txs) == 0 {
 		return nil
 	}
 
-	tx, err := DB.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -237,12 +236,12 @@ func BatchInsertTransactions(txs []TransactionModel) error {
 	return tx.Commit()
 }
 
-func BatchInsertTransactionsWithCount(txs []TransactionModel) (int, int, error) {
+func (s *Store) BatchInsertTransactionsWithCount(txs []TransactionModel) (int, int, error) {
 	if len(txs) == 0 {
 		return 0, 0, nil
 	}
 
-	tx, err := DB.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return 0, 0, err
 	}
@@ -286,8 +285,8 @@ func BatchInsertTransactionsWithCount(txs []TransactionModel) (int, int, error) 
 	return inserted, len(txs) - inserted, nil
 }
 
-func GetUncategorizedTransactions() ([]TransactionModel, error) {
-	rows, err := DB.Query(`
+func (s *Store) GetUncategorizedTransactions() ([]TransactionModel, error) {
+	rows, err := s.db.Query(`
 		SELECT
 			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
 			t.date, t.description, t.amount, t.category_id, t.currency
@@ -313,19 +312,19 @@ func GetUncategorizedTransactions() ([]TransactionModel, error) {
 		}
 		txs = append(txs, t)
 	}
-	return convertTransactionAmounts(txs)
+	return s.convertTransactionAmounts(txs)
 }
 
-func UpdateTransactionCategory(id int64, categoryID int64) error {
+func (s *Store) UpdateTransactionCategory(id int64, categoryID int64) error {
 	var cid interface{} = categoryID
 	if categoryID == 0 {
 		cid = nil
 	}
-	_, err := DB.Exec("UPDATE transactions SET category_id = ? WHERE id = ?", cid, id)
+	_, err := s.db.Exec("UPDATE transactions SET category_id = ? WHERE id = ?", cid, id)
 	return err
 }
 
-func ClearTransactionCategories(ids []int64) error {
+func (s *Store) ClearTransactionCategories(ids []int64) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -336,11 +335,11 @@ func ClearTransactionCategories(ids []int64) error {
 		args[i] = id
 	}
 	query := "UPDATE transactions SET category_id = NULL WHERE id IN (" + strings.Join(placeholders, ",") + ")"
-	_, err := DB.Exec(query, args...)
+	_, err := s.db.Exec(query, args...)
 	return err
 }
 
-func SearchTransactions(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64) ([]TransactionModel, error) {
+func (s *Store) SearchTransactions(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64) ([]TransactionModel, error) {
 	query := `
 		SELECT
 			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
@@ -375,7 +374,7 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *in
 	var baseCurrency string
 	needsAmountFilter := amountMin != nil || amountMax != nil
 	if needsAmountFilter {
-		settings, err := GetCurrencySettings()
+		settings, err := s.GetCurrencySettings()
 		if err != nil {
 			return nil, err
 		}
@@ -385,7 +384,7 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *in
 		}
 	}
 
-	rows, err := DB.Query(query, args...)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +400,7 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *in
 			return nil, err
 		}
 		if needsAmountFilter {
-			converted, err := ConvertAmount(t.Amount, baseCurrency, t.Currency, t.Date)
+			converted, err := s.ConvertAmount(t.Amount, baseCurrency, t.Currency, t.Date)
 			if err != nil {
 				return nil, err
 			}
@@ -420,7 +419,7 @@ func SearchTransactions(descriptionMatch string, matchType string, amountMin *in
 			break
 		}
 	}
-	return convertTransactionAmounts(txs)
+	return s.convertTransactionAmounts(txs)
 }
 
 type RuleMatchPreview struct {
@@ -430,7 +429,7 @@ type RuleMatchPreview struct {
 	Transactions []TransactionModel `json:"transactions"`
 }
 
-func SearchTransactionsByRule(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64, includeCategorized bool) ([]TransactionModel, error) {
+func (s *Store) SearchTransactionsByRule(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64, includeCategorized bool) ([]TransactionModel, error) {
 	query := `
 		SELECT
 			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
@@ -469,7 +468,7 @@ func SearchTransactionsByRule(descriptionMatch string, matchType string, amountM
 	var baseCurrency string
 	needsAmountFilter := amountMin != nil || amountMax != nil
 	if needsAmountFilter {
-		settings, err := GetCurrencySettings()
+		settings, err := s.GetCurrencySettings()
 		if err != nil {
 			return nil, err
 		}
@@ -479,7 +478,7 @@ func SearchTransactionsByRule(descriptionMatch string, matchType string, amountM
 		}
 	}
 
-	rows, err := DB.Query(query, args...)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -495,7 +494,7 @@ func SearchTransactionsByRule(descriptionMatch string, matchType string, amountM
 			return nil, err
 		}
 		if needsAmountFilter {
-			converted, err := ConvertAmount(t.Amount, baseCurrency, t.Currency, t.Date)
+			converted, err := s.ConvertAmount(t.Amount, baseCurrency, t.Currency, t.Date)
 			if err != nil {
 				return nil, err
 			}
@@ -511,10 +510,10 @@ func SearchTransactionsByRule(descriptionMatch string, matchType string, amountM
 		}
 		txs = append(txs, t)
 	}
-	return convertTransactionAmounts(txs)
+	return s.convertTransactionAmounts(txs)
 }
 
-func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64, includeCategorized bool, limit int) (RuleMatchPreview, error) {
+func (s *Store) PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *int64, amountMax *int64, includeCategorized bool, limit int) (RuleMatchPreview, error) {
 	if limit <= 0 {
 		limit = 10
 	}
@@ -554,7 +553,7 @@ func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *in
 
 	query += " ORDER BY t.date DESC"
 
-	settings, err := GetCurrencySettings()
+	settings, err := s.GetCurrencySettings()
 	if err != nil {
 		return RuleMatchPreview{}, err
 	}
@@ -563,7 +562,7 @@ func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *in
 		baseCurrency = defaultMainCurrency
 	}
 
-	rows, err := DB.Query(query, args...)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return RuleMatchPreview{}, err
 	}
@@ -584,7 +583,7 @@ func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *in
 			return RuleMatchPreview{}, err
 		}
 
-		converted, err := ConvertAmount(t.Amount, baseCurrency, t.Currency, t.Date)
+		converted, err := s.ConvertAmount(t.Amount, baseCurrency, t.Currency, t.Date)
 		if err != nil {
 			return RuleMatchPreview{}, err
 		}
@@ -618,7 +617,7 @@ func PreviewRuleMatches(descriptionMatch string, matchType string, amountMin *in
 		}
 	}
 
-	convertedPreview, err := convertTransactionAmounts(preview)
+	convertedPreview, err := s.convertTransactionAmounts(preview)
 	if err != nil {
 		return RuleMatchPreview{}, err
 	}
@@ -631,7 +630,7 @@ type AmountRange struct {
 	Max *int64 `json:"max"`
 }
 
-func GetRuleAmountRange(descriptionMatch string, matchType string) (AmountRange, error) {
+func (s *Store) GetRuleAmountRange(descriptionMatch string, matchType string) (AmountRange, error) {
 	query := `
 		SELECT t.amount, t.currency, t.date
 		FROM transactions t
@@ -650,13 +649,13 @@ func GetRuleAmountRange(descriptionMatch string, matchType string) (AmountRange,
 		case "exact":
 			query += " AND t.description = ?"
 			args = append(args, descriptionMatch)
-		default: // contains
+		default:
 			query += " AND t.description LIKE ?"
 			args = append(args, "%"+descriptionMatch+"%")
 		}
 	}
 
-	settings, err := GetCurrencySettings()
+	settings, err := s.GetCurrencySettings()
 	if err != nil {
 		return AmountRange{}, err
 	}
@@ -665,7 +664,7 @@ func GetRuleAmountRange(descriptionMatch string, matchType string) (AmountRange,
 		baseCurrency = defaultMainCurrency
 	}
 
-	rows, err := DB.Query(query, args...)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return AmountRange{}, err
 	}
@@ -682,7 +681,7 @@ func GetRuleAmountRange(descriptionMatch string, matchType string) (AmountRange,
 			return AmountRange{}, err
 		}
 
-		converted, err := ConvertAmount(amount, baseCurrency, currency, date)
+		converted, err := s.ConvertAmount(amount, baseCurrency, currency, date)
 		if err != nil {
 			return AmountRange{}, err
 		}
@@ -700,8 +699,8 @@ func GetRuleAmountRange(descriptionMatch string, matchType string) (AmountRange,
 	return AmountRange{Min: minAmount, Max: maxAmount}, nil
 }
 
-func GetMonthList() ([]string, error) {
-	rows, err := DB.Query(`
+func (s *Store) GetMonthList() ([]string, error) {
+	rows, err := s.db.Query(`
 		SELECT DISTINCT strftime('%Y-%m', date) as month
 		FROM transactions
 		ORDER BY month DESC
@@ -722,7 +721,7 @@ func GetMonthList() ([]string, error) {
 	return months, nil
 }
 
-func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int64, ownerIDs []int64) ([]TransactionModel, error) {
+func (s *Store) GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int64, ownerIDs []int64) ([]TransactionModel, error) {
 	query := `
 		SELECT
 			t.id, t.account_id, a.name, t.owner_id, COALESCE(u.name, ''),
@@ -738,6 +737,7 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 	if len(categoryIDs) > 0 {
 		hasUncategorized := false
 		var realIDs []int64
+
 		for _, id := range categoryIDs {
 			if id == 0 {
 				hasUncategorized = true
@@ -801,7 +801,7 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 
 	query += " ORDER BY t.date DESC"
 
-	rows, err := DB.Query(query, args...)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -818,10 +818,10 @@ func GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int
 		}
 		txs = append(txs, t)
 	}
-	return convertTransactionAmounts(txs)
+	return s.convertTransactionAmounts(txs)
 }
 
-func DeleteTransactions(ids []int64) (int, error) {
+func (s *Store) DeleteTransactions(ids []int64) (int, error) {
 	if len(ids) == 0 {
 		return 0, nil
 	}
@@ -834,7 +834,7 @@ func DeleteTransactions(ids []int64) (int, error) {
 	}
 
 	query := "DELETE FROM transactions WHERE id IN (" + strings.Join(placeholders, ",") + ")"
-	result, err := DB.Exec(query, args...)
+	result, err := s.db.Exec(query, args...)
 	if err != nil {
 		return 0, err
 	}

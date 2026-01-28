@@ -29,6 +29,8 @@ Current release platforms: macOS arm64, Linux amd64.
 - Integration tests rules: `frontend/tests/AGENTS.md`
 - Frontend rules: `frontend/AGENTS.md`
 - Migrations: `internal/database/migrations/*.sql`; see `internal/database/migrations/AGENTS.md`
+- DB access: use `*database.Store` (no package-level globals). Pass the store explicitly.
+- Core workflows: put business logic in `internal/cashmop` and keep Wails bindings/CLI handlers thin.
 - Dev database: `tmp/cashmop_dev.db` (project root)
 - Uncategorized state: DB `NULL`; Go helpers accept `0` => `NULL` FKs
 - Fuzzy search: `internal/fuzzy` (fzf)
@@ -46,8 +48,9 @@ Current release platforms: macOS arm64, Linux amd64.
 - `frontend/tests/`: frontend integration tests
 - `frontend/wailsjs/`: generated Wails bindings
 - `internal/`: Go backend packages
-  - `internal/database/`: DB layer; migrations in `internal/database/migrations/`
-  - `internal/models/`: domain models
+  - `internal/cashmop/`: application services (core workflows shared by GUI + CLI)
+  - `internal/database/`: SQLite store (`*database.Store`) + migrations (`internal/database/migrations/`)
+  - `internal/mapping/`: import mapping JSON schema types
   - `internal/cli/`: CLI commands
   - `internal/config/`: config load/parse
   - `internal/fx/`: FX rates

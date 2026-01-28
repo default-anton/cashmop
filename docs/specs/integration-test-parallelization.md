@@ -22,10 +22,10 @@ Baseline: 28.8s (`time make integration`)
 
 ### 1. Database Path - Per-Worker
 
-**File:** `internal/database/db.go`
+**File:** `internal/database/store.go`
 
 ```go
-func resolveDatabasePath() (string, error) {
+func ResolveDatabasePath() (string, error) {
     env := strings.ToLower(os.Getenv("APP_ENV"))
     workerID := os.Getenv("CASHMOP_WORKER_ID")
 
@@ -56,10 +56,14 @@ func resetDB() error {
         workerID = "0"  // Default to worker 0
     }
     os.Setenv("APP_ENV", "test")
-    os.Setenv("CASHMOP_WORKER_ID", workerID)  // RE-SET for db.go
+    os.Setenv("CASHMOP_WORKER_ID", workerID)  // re-set for store.go path resolution
 
-    database.InitDB()
-    // ... rest of reset logic unchanged
+    store, err := database.Open("", slog.Default())
+    if err != nil {
+        return err
+    }
+    defer store.Close()
+    // ... rest of reset logic uses store.DB() and store methods
 }
 ```
 
@@ -337,6 +341,6 @@ pkill -f "wails dev"
 
 - Integration test script: `scripts/run-integration-tests.sh`
 - Playwright config: `frontend/playwright.config.ts`
-- Database init: `internal/database/db.go`
+- Database init: `internal/database/store.go`
 - Test fixtures: `frontend/tests/lib/fixtures.ts`
 - Test helper: `cmd/test-helper/main.go`

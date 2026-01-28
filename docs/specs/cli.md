@@ -22,8 +22,8 @@
 
 ## Technical Architecture
 - **Entry Point**: `main.go` branches to the `internal/cli` package if arguments are provided.
-- **DB Initialization**: Uses `internal/database.InitDBWithPath` to ensure the DB is initialized without GUI-specific side effects.
-- **Parity**: CLI handlers reuse the same logic as Wails bindings to ensure consistent behavior.
+- **DB Initialization**: Uses `internal/database.Open` with the optional `--db` path to open/migrate the DB without any GUI/Wails side effects.
+- **Parity**: CLI handlers call the same core workflows as the GUI via `internal/cashmop` (application services) to keep behavior consistent.
 
 ## Distribution / Install Strategy
 - Single **`cashmop`** binary: GUI + CLI modes.

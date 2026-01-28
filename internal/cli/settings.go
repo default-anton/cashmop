@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/default-anton/cashmop/internal/cashmop"
 	"github.com/default-anton/cashmop/internal/database"
 )
 
@@ -9,7 +10,7 @@ type settingsResponse struct {
 	Settings database.CurrencySettings `json:"settings"`
 }
 
-func handleSettings(args []string) commandResult {
+func handleSettings(svc *cashmop.Service, args []string) commandResult {
 	if len(args) == 0 {
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -20,9 +21,9 @@ func handleSettings(args []string) commandResult {
 
 	switch args[0] {
 	case "get":
-		return handleSettingsGet(args[1:])
+		return handleSettingsGet(svc, args[1:])
 	case "set":
-		return handleSettingsSet(args[1:])
+		return handleSettingsSet(svc, args[1:])
 	default:
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -32,13 +33,13 @@ func handleSettings(args []string) commandResult {
 	}
 }
 
-func handleSettingsGet(args []string) commandResult {
+func handleSettingsGet(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("settings get")
 	if ok, res := fs.parse(args, "settings"); !ok {
 		return res
 	}
 
-	settings, err := database.GetCurrencySettings()
+	settings, err := svc.GetCurrencySettings()
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -46,7 +47,7 @@ func handleSettingsGet(args []string) commandResult {
 	return commandResult{Response: settingsResponse{Ok: true, Settings: settings}}
 }
 
-func handleSettingsSet(args []string) commandResult {
+func handleSettingsSet(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("settings set")
 	var mainCurrency string
 	fs.StringVar(&mainCurrency, "main-currency", "", "")
@@ -54,7 +55,7 @@ func handleSettingsSet(args []string) commandResult {
 		return res
 	}
 
-	settings, err := database.GetCurrencySettings()
+	settings, err := svc.GetCurrencySettings()
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -63,7 +64,7 @@ func handleSettingsSet(args []string) commandResult {
 		settings.MainCurrency = mainCurrency
 	}
 
-	updated, err := database.UpdateCurrencySettings(settings)
+	updated, err := svc.UpdateCurrencySettings(settings)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}

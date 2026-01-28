@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/default-anton/cashmop/internal/cashmop"
 	"github.com/default-anton/cashmop/internal/database"
 )
 
@@ -31,7 +32,7 @@ type mappingSaveResponse struct {
 	Name string `json:"name"`
 }
 
-func handleMappings(args []string) commandResult {
+func handleMappings(svc *cashmop.Service, args []string) commandResult {
 	if len(args) == 0 {
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -42,13 +43,13 @@ func handleMappings(args []string) commandResult {
 
 	switch args[0] {
 	case "list":
-		return handleMappingsList(args[1:])
+		return handleMappingsList(svc, args[1:])
 	case "get":
-		return handleMappingsGet(args[1:])
+		return handleMappingsGet(svc, args[1:])
 	case "save":
-		return handleMappingsSave(args[1:])
+		return handleMappingsSave(svc, args[1:])
 	case "delete":
-		return handleMappingsDelete(args[1:])
+		return handleMappingsDelete(svc, args[1:])
 	default:
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -58,13 +59,13 @@ func handleMappings(args []string) commandResult {
 	}
 }
 
-func handleMappingsList(args []string) commandResult {
+func handleMappingsList(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("mappings list")
 	if ok, res := fs.parse(args, "mappings"); !ok {
 		return res
 	}
 
-	items, err := database.GetColumnMappings()
+	items, err := svc.GetColumnMappings()
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -72,7 +73,7 @@ func handleMappingsList(args []string) commandResult {
 	return commandResult{Response: mappingListResponse{Ok: true, Items: items}}
 }
 
-func handleMappingsGet(args []string) commandResult {
+func handleMappingsGet(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("mappings get")
 	var name string
 	var id int64
@@ -85,21 +86,13 @@ func handleMappingsGet(args []string) commandResult {
 	var m *database.ColumnMappingModel
 	var err error
 	if id != 0 {
-		m, err = database.GetColumnMappingByID(id)
+		m, err = svc.GetColumnMappingByID(id)
 	} else if name != "" {
-		m, err = database.GetColumnMappingByName(name)
+		m, err = svc.GetColumnMappingByName(name)
 	} else {
 		details := []ErrorDetail{
-			{
-				Field:   "id",
-				Message: "Either --id or --name is required.",
-				Hint:    "Provide --id <id> or --name <name>.",
-			},
-			{
-				Field:   "name",
-				Message: "Either --id or --name is required.",
-				Hint:    "Provide --id <id> or --name <name>.",
-			},
+			{Field: "id", Message: "Either --id or --name is required.", Hint: "Provide --id <id> or --name <name>."},
+			{Field: "name", Message: "Either --id or --name is required.", Hint: "Provide --id <id> or --name <name>."},
 		}
 		return commandResult{Err: validationError(details...)}
 	}
@@ -121,7 +114,7 @@ func handleMappingsGet(args []string) commandResult {
 	}}
 }
 
-func handleMappingsSave(args []string) commandResult {
+func handleMappingsSave(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("mappings save")
 	var name string
 	var mappingPath string
@@ -158,7 +151,7 @@ func handleMappingsSave(args []string) commandResult {
 		return commandResult{Err: validationError(ErrorDetail{Field: "mapping", Message: "Invalid JSON mapping.", Hint: "Ensure the mapping is valid JSON."})}
 	}
 
-	id, err := database.SaveColumnMapping(name, string(data))
+	id, err := svc.SaveColumnMapping(name, string(data))
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -166,7 +159,7 @@ func handleMappingsSave(args []string) commandResult {
 	return commandResult{Response: mappingSaveResponse{Ok: true, ID: id, Name: name}}
 }
 
-func handleMappingsDelete(args []string) commandResult {
+func handleMappingsDelete(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("mappings delete")
 	var name string
 	var id int64
@@ -178,22 +171,14 @@ func handleMappingsDelete(args []string) commandResult {
 
 	if id == 0 && name == "" {
 		details := []ErrorDetail{
-			{
-				Field:   "id",
-				Message: "Either --id or --name is required.",
-				Hint:    "Provide --id <id> or --name <name>.",
-			},
-			{
-				Field:   "name",
-				Message: "Either --id or --name is required.",
-				Hint:    "Provide --id <id> or --name <name>.",
-			},
+			{Field: "id", Message: "Either --id or --name is required.", Hint: "Provide --id <id> or --name <name>."},
+			{Field: "name", Message: "Either --id or --name is required.", Hint: "Provide --id <id> or --name <name>."},
 		}
 		return commandResult{Err: validationError(details...)}
 	}
 
 	if id == 0 {
-		m, err := database.GetColumnMappingByName(name)
+		m, err := svc.GetColumnMappingByName(name)
 		if err != nil {
 			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 		}
@@ -203,7 +188,7 @@ func handleMappingsDelete(args []string) commandResult {
 		id = m.ID
 	}
 
-	if err := database.DeleteColumnMapping(id); err != nil {
+	if err := svc.DeleteColumnMapping(id); err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
 

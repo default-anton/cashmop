@@ -7,11 +7,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/default-anton/cashmop/internal/cashmop"
 	"github.com/default-anton/cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/mapping"
 )
 
 func TestNormalizeTransactionsBatching(t *testing.T) {
-	// Setup test DB
 	tmpDir, err := os.MkdirTemp("", "cashmop-test-*")
 	if err != nil {
 		t.Fatal(err)
@@ -19,18 +20,19 @@ func TestNormalizeTransactionsBatching(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 	dbPath := filepath.Join(tmpDir, "test.db")
 
-	err = database.InitDBWithPath(dbPath, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	store, err := database.Open(dbPath, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer database.Close()
+	defer store.Close()
 
-	// Create initial account and user
-	accID, err := database.GetOrCreateAccount("TestAccount")
+	svc := cashmop.New(store)
+
+	accID, err := store.GetOrCreateAccount("TestAccount")
 	if err != nil {
 		t.Fatal(err)
 	}
-	pUserID, err := database.GetOrCreateUser("TestUser")
+	pUserID, err := store.GetOrCreateUser("TestUser")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,14 +41,14 @@ func TestNormalizeTransactionsBatching(t *testing.T) {
 	}
 	userID := *pUserID
 
-	mapping := database.ImportMapping{}
-	mapping.CSV.Date = "Date"
-	mapping.CSV.Description = []string{"Desc"}
-	mapping.CSV.AmountMapping.Type = "single"
-	mapping.CSV.AmountMapping.Column = "Amount"
-	mapping.Account = "TestAccount"
-	mapping.DefaultOwner = "TestUser"
-	mapping.CurrencyDefault = "CAD"
+	m := mapping.ImportMapping{}
+	m.CSV.Date = "Date"
+	m.CSV.Description = []string{"Desc"}
+	m.CSV.AmountMapping.Type = "single"
+	m.CSV.AmountMapping.Column = "Amount"
+	m.Account = "TestAccount"
+	m.DefaultOwner = "TestUser"
+	m.CurrencyDefault = "CAD"
 
 	parsed := &parsedFile{
 		headers: []string{"Date", "Desc", "Amount"},
@@ -56,7 +58,7 @@ func TestNormalizeTransactionsBatching(t *testing.T) {
 		},
 	}
 
-	txs, err := normalizeTransactions(parsed, mapping, []string{"2025-01"})
+	txs, err := normalizeTransactions(svc, parsed, m, []string{"2025-01"})
 	if err != nil {
 		t.Fatalf("normalizeTransactions failed: %v", err)
 	}
@@ -76,7 +78,6 @@ func TestNormalizeTransactionsBatching(t *testing.T) {
 		}
 	}
 
-	// Test with new account/user in rows
 	parsed2 := &parsedFile{
 		headers: []string{"Date", "Desc", "Amount", "Account", "Owner"},
 		rows: [][]string{
@@ -84,11 +85,11 @@ func TestNormalizeTransactionsBatching(t *testing.T) {
 			{"2025-01-04", "Tx 4", "400.00", "NewAccount", "NewUser"},
 		},
 	}
-	mapping2 := mapping
-	mapping2.CSV.Account = "Account"
-	mapping2.CSV.Owner = "Owner"
+	m2 := m
+	m2.CSV.Account = "Account"
+	m2.CSV.Owner = "Owner"
 
-	txs2, err := normalizeTransactions(parsed2, mapping2, []string{"2025-01"})
+	txs2, err := normalizeTransactions(svc, parsed2, m2, []string{"2025-01"})
 	if err != nil {
 		t.Fatalf("normalizeTransactions failed: %v", err)
 	}

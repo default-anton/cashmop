@@ -21,14 +21,14 @@ type dateRange struct {
 	end   string
 }
 
-func SyncRates(ctx context.Context, baseCurrency string) (SyncResult, error) {
+func SyncRates(ctx context.Context, store *database.Store, baseCurrency string) (SyncResult, error) {
 	base := strings.ToUpper(strings.TrimSpace(baseCurrency))
 	provider, err := ProviderForBase(base)
 	if err != nil {
 		return SyncResult{}, err
 	}
 
-	txRanges, err := database.GetTransactionCurrencyRanges(base)
+	txRanges, err := store.GetTransactionCurrencyRanges(base)
 	if err != nil {
 		return SyncResult{}, err
 	}
@@ -52,7 +52,7 @@ func SyncRates(ctx context.Context, baseCurrency string) (SyncResult, error) {
 		}
 	}
 
-	existingRanges, err := database.GetFxRateRanges(base, quotes)
+	existingRanges, err := store.GetFxRateRanges(base, quotes)
 	if err != nil {
 		return SyncResult{}, err
 	}
@@ -86,13 +86,13 @@ func SyncRates(ctx context.Context, baseCurrency string) (SyncResult, error) {
 	}
 
 	if len(allRates) > 0 {
-		if err := database.UpsertFxRates(allRates); err != nil {
+		if err := store.UpsertFxRates(allRates); err != nil {
 			return SyncResult{}, err
 		}
 	}
 
 	lastSync := time.Now().Format("2006-01-02")
-	if err := database.SetAppSetting(database.AppSettingFxLastSync, lastSync); err != nil {
+	if err := store.SetAppSetting(database.AppSettingFxLastSync, lastSync); err != nil {
 		return SyncResult{}, err
 	}
 

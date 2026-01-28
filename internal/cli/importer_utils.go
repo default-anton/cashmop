@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/default-anton/cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/mapping"
 )
 
-func createAmountParser(mapping database.ImportMapping, headers []string) func([]string) int64 {
+func createAmountParser(mapping mapping.ImportMapping, headers []string) func([]string) int64 {
 	colIdx := func(col string) int {
 		if col == "" {
 			return -1

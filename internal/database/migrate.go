@@ -11,12 +11,12 @@ import (
 //go:embed migrations/*.sql
 var migrationsFS embed.FS
 
-func dbLog(format string, v ...interface{}) {
-	logger.Info(fmt.Sprintf(format, v...))
+func (s *Store) dbLog(format string, v ...interface{}) {
+	s.logger.Info(fmt.Sprintf(format, v...))
 }
 
-func createMigrationsTable() error {
-	_, err := DB.Exec(`
+func (s *Store) createMigrationsTable() error {
+	_, err := s.db.Exec(`
 		CREATE TABLE IF NOT EXISTS schema_migrations (
 			version INTEGER PRIMARY KEY,
 			applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -25,8 +25,8 @@ func createMigrationsTable() error {
 	return err
 }
 
-func getAppliedVersions() (map[int64]bool, error) {
-	rows, err := DB.Query("SELECT version FROM schema_migrations")
+func (s *Store) getAppliedVersions() (map[int64]bool, error) {
+	rows, err := s.db.Query("SELECT version FROM schema_migrations")
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +43,8 @@ func getAppliedVersions() (map[int64]bool, error) {
 	return applied, nil
 }
 
-func runMigration(version int64, sql string) error {
-	tx, err := DB.Begin()
+func (s *Store) runMigration(version int64, sql string) error {
+	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -61,8 +61,8 @@ func runMigration(version int64, sql string) error {
 	return tx.Commit()
 }
 
-func runDownMigration(version int64, sql string) error {
-	tx, err := DB.Begin()
+func (s *Store) runDownMigration(version int64, sql string) error {
+	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -79,12 +79,12 @@ func runDownMigration(version int64, sql string) error {
 	return tx.Commit()
 }
 
-func Rollback() error {
-	if err := createMigrationsTable(); err != nil {
+func (s *Store) Rollback() error {
+	if err := s.createMigrationsTable(); err != nil {
 		return fmt.Errorf("Unable to access the database.")
 	}
 
-	applied, err := getAppliedVersions()
+	applied, err := s.getAppliedVersions()
 	if err != nil {
 		return fmt.Errorf("Unable to access the database.")
 	}
@@ -111,7 +111,7 @@ func Rollback() error {
 		var version int64
 		_, err := fmt.Sscanf(entry.Name(), "%d_", &version)
 		if err != nil {
-			dbLog("Skipping down migration file with invalid version: %s", entry.Name())
+			s.dbLog("Skipping down migration file with invalid version: %s", entry.Name())
 			continue
 		}
 
@@ -136,23 +136,23 @@ func Rollback() error {
 			return fmt.Errorf("Unable to undo the database update.")
 		}
 
-		dbLog("Rolling back migration %d: %s", mf.version, mf.name)
-		if err := runDownMigration(mf.version, string(content)); err != nil {
+		s.dbLog("Rolling back migration %d: %s", mf.version, mf.name)
+		if err := s.runDownMigration(mf.version, string(content)); err != nil {
 			return fmt.Errorf("Unable to undo the database update.")
 		}
-		dbLog("Migration %d rolled back successfully", mf.version)
+		s.dbLog("Migration %d rolled back successfully", mf.version)
 		return nil
 	}
 
 	return fmt.Errorf("No updates can be undone.")
 }
 
-func Migrate() error {
-	if err := createMigrationsTable(); err != nil {
+func (s *Store) Migrate() error {
+	if err := s.createMigrationsTable(); err != nil {
 		return fmt.Errorf("Unable to access the database.")
 	}
 
-	applied, err := getAppliedVersions()
+	applied, err := s.getAppliedVersions()
 	if err != nil {
 		return fmt.Errorf("Unable to access the database.")
 	}
@@ -175,7 +175,7 @@ func Migrate() error {
 		var version int64
 		_, err := fmt.Sscanf(entry.Name(), "%d_", &version)
 		if err != nil {
-			dbLog("Skipping migration file with invalid version: %s", entry.Name())
+			s.dbLog("Skipping migration file with invalid version: %s", entry.Name())
 			continue
 		}
 
@@ -199,13 +199,13 @@ func Migrate() error {
 		}
 
 		if !isTest && !backupCreated {
-			path, err := CreatePreMigrationBackup(mf.version)
+			path, err := s.CreatePreMigrationBackup(mf.version)
 			if err != nil {
-				dbLog("Warning: Failed to create pre-migration backup: %v", err)
+				s.dbLog("Warning: Failed to create pre-migration backup: %v", err)
 			} else {
 				backupPath = path
 				backupCreated = true
-				dbLog("Pre-migration backup created: %s", path)
+				s.dbLog("Pre-migration backup created: %s", path)
 			}
 		}
 
@@ -216,16 +216,16 @@ func Migrate() error {
 		}
 
 		if !isTest {
-			dbLog("Running migration %d: %s", mf.version, mf.name)
+			s.dbLog("Running migration %d: %s", mf.version, mf.name)
 		}
-		if err := runMigration(mf.version, string(content)); err != nil {
+		if err := s.runMigration(mf.version, string(content)); err != nil {
 			if backupPath != "" {
 				return fmt.Errorf("Database update failed. A backup was created at: %s\n\nTo fix this issue:\n1. Close the app\n2. Restore the backup using Settings > Restore\n3. Restart the app", backupPath)
 			}
 			return fmt.Errorf("Database update failed. The app may not work correctly until this is resolved. Please restart the app.")
 		}
 		if !isTest {
-			dbLog("Migration %d completed", mf.version)
+			s.dbLog("Migration %d completed", mf.version)
 		}
 	}
 

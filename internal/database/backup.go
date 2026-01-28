@@ -9,12 +9,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"sync"
 	"syscall"
 	"time"
 )
-
-var backupMu sync.Mutex
 
 type BackupMetadata struct {
 	Path             string    `json:"path"`
@@ -23,15 +20,15 @@ type BackupMetadata struct {
 	CreatedAt        time.Time `json:"created_at"`
 }
 
-func CreateBackup(destination string) error {
-	backupMu.Lock()
-	defer backupMu.Unlock()
+func (s *Store) CreateBackup(destination string) error {
+	s.backupMu.Lock()
+	defer s.backupMu.Unlock()
 
-	return createBackupUnsafe(destination)
+	return s.createBackupUnsafe(destination)
 }
 
-func CreateAutoBackup() (string, error) {
-	backupDir, err := EnsureBackupDir()
+func (s *Store) CreateAutoBackup() (string, error) {
+	backupDir, err := s.EnsureBackupDir()
 	if err != nil {
 		return "", err
 	}
@@ -40,16 +37,16 @@ func CreateAutoBackup() (string, error) {
 	filename := fmt.Sprintf("cashmop_backup_%s.db", timestamp)
 	backupPath := filepath.Join(backupDir, filename)
 
-	if err := CreateBackup(backupPath); err != nil {
+	if err := s.CreateBackup(backupPath); err != nil {
 		return "", err
 	}
 
-	go func() { _ = CleanupOldBackups() }()
+	go func() { _ = s.CleanupOldBackups() }()
 
 	return backupPath, nil
 }
 
-func ValidateBackup(path string) (int64, error) {
+func (s *Store) ValidateBackup(path string) (int64, error) {
 	info, err := os.Stat(path)
 	if err != nil {
 		return 0, fmt.Errorf("Cannot access the backup file: %s", err.Error())
@@ -73,7 +70,7 @@ func ValidateBackup(path string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	currentVersion, err := CurrentSchemaVersion()
+	currentVersion, err := s.CurrentSchemaVersion()
 	if err != nil {
 		return 0, err
 	}
@@ -93,16 +90,16 @@ func ValidateBackup(path string) (int64, error) {
 	return count, nil
 }
 
-func RestoreBackup(backupPath string) error {
-	_, err := RestoreBackupWithSafety(backupPath)
+func (s *Store) RestoreBackup(backupPath string) error {
+	_, err := s.RestoreBackupWithSafety(backupPath)
 	return err
 }
 
-func RestoreBackupWithSafety(backupPath string) (string, error) {
-	backupMu.Lock()
-	defer backupMu.Unlock()
+func (s *Store) RestoreBackupWithSafety(backupPath string) (string, error) {
+	s.backupMu.Lock()
+	defer s.backupMu.Unlock()
 
-	txCount, err := ValidateBackup(backupPath)
+	txCount, err := s.ValidateBackup(backupPath)
 	if err != nil {
 		return "", err
 	}
@@ -110,45 +107,44 @@ func RestoreBackupWithSafety(backupPath string) (string, error) {
 		return "", fmt.Errorf("The backup file contains no transactions.")
 	}
 
-	currentDBPath, err := DatabasePath()
-	if err != nil {
-		return "", fmt.Errorf("Unable to access the database.")
-	}
-
-	backupDir, err := EnsureBackupDir()
+	backupDir, err := s.EnsureBackupDir()
 	if err != nil {
 		return "", fmt.Errorf("Unable to access the backup folder.")
 	}
 
 	safetyBackupPath := filepath.Join(backupDir, fmt.Sprintf("cashmop_pre_restore_%s.db", time.Now().Format("20060102_150405")))
-	if err := createBackupUnsafe(safetyBackupPath); err != nil {
+	if err := s.createBackupUnsafe(safetyBackupPath); err != nil {
 		return "", fmt.Errorf("Unable to create a safety backup before restoring.")
 	}
 
-	if err := Close(); err != nil {
+	if err := s.Close(); err != nil {
 		return "", fmt.Errorf("Unable to prepare the database for restore.")
 	}
 
-	tempPath := currentDBPath + ".tmp"
+	tempPath := s.filePath + ".tmp"
 	if err := copyFile(backupPath, tempPath); err != nil {
 		return "", fmt.Errorf("Unable to copy the backup file.")
 	}
 
-	if err := os.Rename(tempPath, currentDBPath); err != nil {
+	if err := os.Rename(tempPath, s.filePath); err != nil {
 		return "", fmt.Errorf("Unable to restore the backup file.")
 	}
 
-	var openErr error
-	DB, openErr = sql.Open("sqlite", sqliteDSN(currentDBPath))
-	if openErr != nil {
+	db, err := sql.Open("sqlite", sqliteDSN(s.dsnBase))
+	if err != nil {
 		return "", fmt.Errorf("Unable to reopen the database after restore.")
 	}
+	db.SetMaxOpenConns(4)
+	s.db = db
+	// Any cached data is now invalid.
+	s.ClearFxRateCache()
+	s.invalidateCategoryCache()
 
 	return safetyBackupPath, nil
 }
 
-func GetLastBackupTime() (time.Time, error) {
-	backupDir, err := EnsureBackupDir()
+func (s *Store) GetLastBackupTime() (time.Time, error) {
+	backupDir, err := s.EnsureBackupDir()
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -181,8 +177,8 @@ func GetLastBackupTime() (time.Time, error) {
 	return latestMod, nil
 }
 
-func ShouldAutoBackup() (bool, error) {
-	lastBackup, err := GetLastBackupTime()
+func (s *Store) ShouldAutoBackup() (bool, error) {
+	lastBackup, err := s.GetLastBackupTime()
 	if err != nil {
 		return false, err
 	}
@@ -194,8 +190,8 @@ func ShouldAutoBackup() (bool, error) {
 	return time.Since(lastBackup) >= 24*time.Hour, nil
 }
 
-func CleanupOldBackups() error {
-	backupDir, err := EnsureBackupDir()
+func (s *Store) CleanupOldBackups() error {
+	backupDir, err := s.EnsureBackupDir()
 	if err != nil {
 		return err
 	}
@@ -265,8 +261,8 @@ func CleanupOldBackups() error {
 	return nil
 }
 
-func CreatePreMigrationBackup(version int64) (string, error) {
-	backupDir, err := EnsureBackupDir()
+func (s *Store) CreatePreMigrationBackup(version int64) (string, error) {
+	backupDir, err := s.EnsureBackupDir()
 	if err != nil {
 		return "", err
 	}
@@ -275,24 +271,19 @@ func CreatePreMigrationBackup(version int64) (string, error) {
 	filename := fmt.Sprintf("cashmop_pre_migration_v%03d_%s.db", version, timestamp)
 	backupPath := filepath.Join(backupDir, filename)
 
-	if err := CreateBackup(backupPath); err != nil {
+	if err := s.CreateBackup(backupPath); err != nil {
 		return "", fmt.Errorf("Unable to create a backup before update.")
 	}
 
 	return backupPath, nil
 }
 
-func createBackupUnsafe(destination string) error {
+func (s *Store) createBackupUnsafe(destination string) error {
 	if err := os.MkdirAll(filepath.Dir(destination), 0o755); err != nil {
 		return fmt.Errorf("Unable to create backup folder: %s", err.Error())
 	}
 
-	dbPath, err := DatabasePath()
-	if err != nil {
-		return err
-	}
-
-	dbInfo, err := os.Stat(dbPath)
+	dbInfo, err := os.Stat(s.filePath)
 	if err != nil {
 		return fmt.Errorf("Unable to access the database.")
 	}
@@ -305,7 +296,7 @@ func createBackupUnsafe(destination string) error {
 		return fmt.Errorf("Not enough disk space to create a backup.")
 	}
 
-	if err := vacuumWithRetry(destination); err != nil {
+	if err := s.vacuumWithRetry(destination); err != nil {
 		return fmt.Errorf("Unable to create the backup file.")
 	}
 
@@ -313,7 +304,7 @@ func createBackupUnsafe(destination string) error {
 		return fmt.Errorf("Backup was not created successfully.")
 	}
 
-	if _, err := ValidateBackup(destination); err != nil {
+	if _, err := s.ValidateBackup(destination); err != nil {
 		_ = os.Remove(destination)
 		return fmt.Errorf("Backup verification failed.")
 	}
@@ -321,13 +312,13 @@ func createBackupUnsafe(destination string) error {
 	return nil
 }
 
-func vacuumWithRetry(destination string) error {
+func (s *Store) vacuumWithRetry(destination string) error {
 	escaped := strings.ReplaceAll(destination, "'", "''")
 	start := time.Now()
 	backoff := 200 * time.Millisecond
 
 	for {
-		_, err := DB.Exec(fmt.Sprintf("VACUUM INTO '%s'", escaped))
+		_, err := s.db.Exec(fmt.Sprintf("VACUUM INTO '%s'", escaped))
 		if err == nil {
 			return nil
 		}
@@ -381,11 +372,11 @@ func schemaVersion(db *sql.DB) (int64, error) {
 	return version.Int64, nil
 }
 
-func CurrentSchemaVersion() (int64, error) {
-	if DB == nil {
+func (s *Store) CurrentSchemaVersion() (int64, error) {
+	if s.db == nil {
 		return 0, fmt.Errorf("Database not ready. Please restart the application.")
 	}
-	return schemaVersion(DB)
+	return schemaVersion(s.db)
 }
 
 func copyFile(src, dst string) error {
@@ -418,7 +409,7 @@ func hasSufficientSpace(destPath string, required int64) (bool, error) {
 
 	var stat syscall.Statfs_t
 	if err := syscall.Statfs(dir, &stat); err != nil {
-		return true, nil // best effort; assume enough space if unknown
+		return true, nil
 	}
 	available := int64(stat.Bavail) * int64(stat.Bsize)
 	return available > required, nil

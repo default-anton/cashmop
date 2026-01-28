@@ -1,29 +1,22 @@
 package database
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestConvertTransactionAmounts(t *testing.T) {
-	setupTestDB(t)
-	defer teardownTestDB(t)
+	store := newTestStore(t)
+	defer store.Close()
 
-	// Set main currency to CAD
-	settings, err := GetCurrencySettings()
+	settings, err := store.GetCurrencySettings()
 	if err != nil {
 		t.Fatalf("Failed to get currency settings: %v", err)
 	}
 	settings.MainCurrency = "CAD"
-	_, err = UpdateCurrencySettings(settings)
+	_, err = store.UpdateCurrencySettings(settings)
 	if err != nil {
 		t.Fatalf("Failed to update currency settings: %v", err)
 	}
 
-	// Insert FX rate for CAD to USD
-	// The rate semantics: baseCurrency -> quoteCurrency, used as multiplier
-	// To convert USD to CAD, we need CAD -> USD rate and multiply USD amount by it
-	// Expected: $75 USD = $100 CAD, so rate = 10000/7500 = 1.3333
-	err = UpsertFxRates([]FxRate{
+	err = store.UpsertFxRates([]FxRate{
 		{
 			BaseCurrency:  "CAD",
 			QuoteCurrency: "USD",
@@ -37,31 +30,21 @@ func TestConvertTransactionAmounts(t *testing.T) {
 	}
 
 	t.Run("same currency - no conversion needed", func(t *testing.T) {
-		txs := []TransactionModel{
-			{
-				Amount:   10000, // $100.00 CAD
-				Currency: "CAD",
-				Date:     "2024-01-15",
-			},
-		}
+		txs := []TransactionModel{{Amount: 10000, Currency: "CAD", Date: "2024-01-15"}}
 
-		converted, err := convertTransactionAmounts(txs)
+		converted, err := store.convertTransactionAmounts(txs)
 		if err != nil {
 			t.Fatalf("convertTransactionAmounts failed: %v", err)
 		}
-
 		if len(converted) != 1 {
 			t.Fatalf("Expected 1 transaction, got %d", len(converted))
 		}
-
 		if converted[0].AmountInMainCurrency == nil {
 			t.Fatal("Expected AmountInMainCurrency to be set")
 		}
-
 		if *converted[0].AmountInMainCurrency != 10000 {
 			t.Errorf("Expected 10000, got %d", *converted[0].AmountInMainCurrency)
 		}
-
 		if converted[0].MainCurrency != "CAD" {
 			t.Errorf("Expected MainCurrency CAD, got %s", converted[0].MainCurrency)
 		}
@@ -69,34 +52,21 @@ func TestConvertTransactionAmounts(t *testing.T) {
 
 	t.Run("foreign currency - proper conversion", func(t *testing.T) {
 		txs := []TransactionModel{
-			{
-				Amount:   10000, // $100.00 CAD
-				Currency: "CAD",
-				Date:     "2024-01-15",
-			},
-			{
-				Amount:   7500, // $75.00 USD
-				Currency: "USD",
-				Date:     "2024-01-15",
-			},
+			{Amount: 10000, Currency: "CAD", Date: "2024-01-15"},
+			{Amount: 7500, Currency: "USD", Date: "2024-01-15"},
 		}
 
-		converted, err := convertTransactionAmounts(txs)
+		converted, err := store.convertTransactionAmounts(txs)
 		if err != nil {
 			t.Fatalf("convertTransactionAmounts failed: %v", err)
 		}
-
 		if len(converted) != 2 {
 			t.Fatalf("Expected 2 transactions, got %d", len(converted))
 		}
-
-		// First transaction: CAD -> CAD (same currency)
 		if *converted[0].AmountInMainCurrency != 10000 {
 			t.Errorf("CAD tx: Expected 10000, got %d", *converted[0].AmountInMainCurrency)
 		}
 
-		// Second transaction: USD -> CAD
-		// Rate is 0.75 USD per CAD, so $75 USD = 100 CAD = 10000 cents
 		expected := int64(round(float64(7500) * (1.0 / 0.75)))
 		if converted[1].AmountInMainCurrency == nil {
 			t.Fatal("Expected AmountInMainCurrency to be set for USD transaction")
@@ -107,8 +77,7 @@ func TestConvertTransactionAmounts(t *testing.T) {
 	})
 
 	t.Run("empty slice", func(t *testing.T) {
-		txs := []TransactionModel{}
-		converted, err := convertTransactionAmounts(txs)
+		converted, err := store.convertTransactionAmounts([]TransactionModel{})
 		if err != nil {
 			t.Fatalf("convertTransactionAmounts failed: %v", err)
 		}
@@ -118,28 +87,18 @@ func TestConvertTransactionAmounts(t *testing.T) {
 	})
 
 	t.Run("missing FX rate - graceful degradation", func(t *testing.T) {
-		txs := []TransactionModel{
-			{
-				Amount:   5000, // $50.00 EUR (no rate available)
-				Currency: "EUR",
-				Date:     "2024-01-15",
-			},
-		}
+		txs := []TransactionModel{{Amount: 5000, Currency: "EUR", Date: "2024-01-15"}}
 
-		converted, err := convertTransactionAmounts(txs)
+		converted, err := store.convertTransactionAmounts(txs)
 		if err != nil {
 			t.Fatalf("convertTransactionAmounts should not fail on missing rates: %v", err)
 		}
-
 		if len(converted) != 1 {
 			t.Fatalf("Expected 1 transaction, got %d", len(converted))
 		}
-
-		// Should have null conversion instead of failing
 		if converted[0].AmountInMainCurrency != nil {
 			t.Errorf("Expected nil for missing rate, got %d", *converted[0].AmountInMainCurrency)
 		}
-
 		if converted[0].MainCurrency != "CAD" {
 			t.Errorf("Expected MainCurrency CAD, got %s", converted[0].MainCurrency)
 		}
@@ -147,53 +106,28 @@ func TestConvertTransactionAmounts(t *testing.T) {
 
 	t.Run("mixed - some with rates, some without", func(t *testing.T) {
 		txs := []TransactionModel{
-			{
-				Amount:   10000, // CAD
-				Currency: "CAD",
-				Date:     "2024-01-15",
-			},
-			{
-				Amount:   7500, // USD (has rate)
-				Currency: "USD",
-				Date:     "2024-01-15",
-			},
-			{
-				Amount:   5000, // EUR (no rate)
-				Currency: "EUR",
-				Date:     "2024-01-15",
-			},
-			{
-				Amount:   20000, // CAD (same currency)
-				Currency: "CAD",
-				Date:     "2024-01-15",
-			},
+			{Amount: 10000, Currency: "CAD", Date: "2024-01-15"},
+			{Amount: 7500, Currency: "USD", Date: "2024-01-15"},
+			{Amount: 5000, Currency: "EUR", Date: "2024-01-15"},
+			{Amount: 20000, Currency: "CAD", Date: "2024-01-15"},
 		}
 
-		converted, err := convertTransactionAmounts(txs)
+		converted, err := store.convertTransactionAmounts(txs)
 		if err != nil {
 			t.Fatalf("convertTransactionAmounts failed: %v", err)
 		}
-
 		if len(converted) != 4 {
 			t.Fatalf("Expected 4 transactions, got %d", len(converted))
 		}
-
-		// First: CAD
 		if *converted[0].AmountInMainCurrency != 10000 {
 			t.Errorf("tx[0] CAD: Expected 10000, got %d", *converted[0].AmountInMainCurrency)
 		}
-
-		// Second: USD (should convert)
 		if converted[1].AmountInMainCurrency == nil {
 			t.Error("tx[1] USD: Expected conversion, got nil")
 		}
-
-		// Third: EUR (no rate)
 		if converted[2].AmountInMainCurrency != nil {
 			t.Error("tx[2] EUR: Expected nil for missing rate")
 		}
-
-		// Fourth: CAD
 		if *converted[3].AmountInMainCurrency != 20000 {
 			t.Errorf("tx[3] CAD: Expected 20000, got %d", *converted[3].AmountInMainCurrency)
 		}
@@ -201,19 +135,11 @@ func TestConvertTransactionAmounts(t *testing.T) {
 
 	t.Run("currency case insensitive", func(t *testing.T) {
 		txs := []TransactionModel{
-			{
-				Amount:   10000,
-				Currency: "cad", // lowercase
-				Date:     "2024-01-15",
-			},
-			{
-				Amount:   10000,
-				Currency: "Cad", // mixed case
-				Date:     "2024-01-15",
-			},
+			{Amount: 10000, Currency: "cad", Date: "2024-01-15"},
+			{Amount: 10000, Currency: "Cad", Date: "2024-01-15"},
 		}
 
-		converted, err := convertTransactionAmounts(txs)
+		converted, err := store.convertTransactionAmounts(txs)
 		if err != nil {
 			t.Fatalf("convertTransactionAmounts failed: %v", err)
 		}
@@ -221,7 +147,6 @@ func TestConvertTransactionAmounts(t *testing.T) {
 		if *converted[0].AmountInMainCurrency != 10000 {
 			t.Errorf("lowercase 'cad': Expected 10000, got %d", *converted[0].AmountInMainCurrency)
 		}
-
 		if *converted[1].AmountInMainCurrency != 10000 {
 			t.Errorf("mixed case 'Cad': Expected 10000, got %d", *converted[1].AmountInMainCurrency)
 		}

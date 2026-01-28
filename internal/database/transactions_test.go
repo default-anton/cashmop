@@ -1,38 +1,32 @@
 package database
 
-import (
-	"testing"
-)
+import "testing"
 
 func TestDeleteTransactions(t *testing.T) {
-	setupTestDB(t)
-	defer teardownTestDB(t)
+	store := newTestStore(t)
+	defer store.Close()
 
-	// Create test account and category
-	accID, err := GetOrCreateAccount("TestAccount")
+	accID, err := store.GetOrCreateAccount("TestAccount")
 	if err != nil {
 		t.Fatalf("Failed to create test account: %v", err)
 	}
 
-	catID, err := GetOrCreateCategory("TestCategory")
+	catID, err := store.GetOrCreateCategory("TestCategory")
 	if err != nil {
 		t.Fatalf("Failed to create test category: %v", err)
 	}
 
-	// Insert test transactions
 	txs := []TransactionModel{
 		{AccountID: accID, Date: "2024-01-01", Description: "Test 1", Amount: 100, CategoryID: &catID, Currency: defaultMainCurrency},
 		{AccountID: accID, Date: "2024-01-02", Description: "Test 2", Amount: 200, CategoryID: &catID, Currency: defaultMainCurrency},
 		{AccountID: accID, Date: "2024-01-03", Description: "Test 3", Amount: 300, CategoryID: &catID, Currency: defaultMainCurrency},
 	}
 
-	err = BatchInsertTransactions(txs)
-	if err != nil {
+	if err := store.BatchInsertTransactions(txs); err != nil {
 		t.Fatalf("Failed to insert test transactions: %v", err)
 	}
 
-	// Get inserted transaction IDs
-	fetched, err := GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
+	fetched, err := store.GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
 	if err != nil {
 		t.Fatalf("Failed to fetch transactions: %v", err)
 	}
@@ -45,8 +39,7 @@ func TestDeleteTransactions(t *testing.T) {
 		ids = append(ids, tx.ID)
 	}
 
-	// Delete single transaction
-	count, err := DeleteTransactions([]int64{ids[0]})
+	count, err := store.DeleteTransactions([]int64{ids[0]})
 	if err != nil {
 		t.Fatalf("DeleteTransactions failed: %v", err)
 	}
@@ -54,8 +47,7 @@ func TestDeleteTransactions(t *testing.T) {
 		t.Fatalf("Expected 1 row affected, got %d", count)
 	}
 
-	// Verify deletion
-	fetched, err = GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
+	fetched, err = store.GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
 	if err != nil {
 		t.Fatalf("Failed to fetch transactions after delete: %v", err)
 	}
@@ -63,8 +55,7 @@ func TestDeleteTransactions(t *testing.T) {
 		t.Fatalf("Expected 2 transactions after delete, got %d", len(fetched))
 	}
 
-	// Delete multiple transactions
-	count, err = DeleteTransactions([]int64{ids[1], ids[2]})
+	count, err = store.DeleteTransactions([]int64{ids[1], ids[2]})
 	if err != nil {
 		t.Fatalf("DeleteTransactions multiple failed: %v", err)
 	}
@@ -72,8 +63,7 @@ func TestDeleteTransactions(t *testing.T) {
 		t.Fatalf("Expected 2 rows affected, got %d", count)
 	}
 
-	// Verify all deleted
-	fetched, err = GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
+	fetched, err = store.GetAnalysisTransactions("2024-01-01", "2024-01-31", nil, nil)
 	if err != nil {
 		t.Fatalf("Failed to fetch transactions after multi delete: %v", err)
 	}
@@ -83,11 +73,10 @@ func TestDeleteTransactions(t *testing.T) {
 }
 
 func TestDeleteTransactionsEmptySlice(t *testing.T) {
-	setupTestDB(t)
-	defer teardownTestDB(t)
+	store := newTestStore(t)
+	defer store.Close()
 
-	// Empty slice should return 0, nil
-	count, err := DeleteTransactions([]int64{})
+	count, err := store.DeleteTransactions([]int64{})
 	if err != nil {
 		t.Fatalf("DeleteTransactions with empty slice failed: %v", err)
 	}
@@ -97,11 +86,10 @@ func TestDeleteTransactionsEmptySlice(t *testing.T) {
 }
 
 func TestDeleteTransactionsNonExistent(t *testing.T) {
-	setupTestDB(t)
-	defer teardownTestDB(t)
+	store := newTestStore(t)
+	defer store.Close()
 
-	// Deleting non-existent IDs should succeed with 0 rows affected
-	count, err := DeleteTransactions([]int64{99999, 100000})
+	count, err := store.DeleteTransactions([]int64{99999, 100000})
 	if err != nil {
 		t.Fatalf("DeleteTransactions with non-existent IDs failed: %v", err)
 	}

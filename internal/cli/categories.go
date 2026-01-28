@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/default-anton/cashmop/internal/cashmop"
 	"github.com/default-anton/cashmop/internal/database"
 )
 
@@ -29,7 +30,7 @@ type categoryResponse struct {
 	Name string `json:"name"`
 }
 
-func handleCategories(args []string) commandResult {
+func handleCategories(svc *cashmop.Service, args []string) commandResult {
 	if len(args) == 0 {
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -40,11 +41,11 @@ func handleCategories(args []string) commandResult {
 
 	switch args[0] {
 	case "list":
-		return handleCategoriesList(args[1:])
+		return handleCategoriesList(svc, args[1:])
 	case "rename":
-		return handleCategoriesRename(args[1:])
+		return handleCategoriesRename(svc, args[1:])
 	case "create":
-		return handleCategoriesCreate(args[1:])
+		return handleCategoriesCreate(svc, args[1:])
 	default:
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -54,13 +55,13 @@ func handleCategories(args []string) commandResult {
 	}
 }
 
-func handleCategoriesList(args []string) commandResult {
+func handleCategoriesList(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("categories list")
 	if ok, res := fs.parse(args, "categories"); !ok {
 		return res
 	}
 
-	items, err := database.GetAllCategories()
+	items, err := svc.GetCategories()
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -68,7 +69,7 @@ func handleCategoriesList(args []string) commandResult {
 	return commandResult{Response: categoryListResponse{Ok: true, Items: items}}
 }
 
-func handleCategoriesRename(args []string) commandResult {
+func handleCategoriesRename(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("categories rename")
 	var id int64
 	var name string
@@ -89,14 +90,14 @@ func handleCategoriesRename(args []string) commandResult {
 		return commandResult{Err: validationError(details...)}
 	}
 
-	if err := database.RenameCategory(id, name); err != nil {
+	if err := svc.RenameCategory(id, name); err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
 
 	return commandResult{Response: categoryResponse{Ok: true, ID: id, Name: name}}
 }
 
-func handleCategoriesCreate(args []string) commandResult {
+func handleCategoriesCreate(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("categories create")
 	var name string
 	fs.StringVar(&name, "name", "", "")
@@ -108,7 +109,7 @@ func handleCategoriesCreate(args []string) commandResult {
 		return commandResult{Err: validationError(requiredFlagError("name", "Provide --name <name>."))}
 	}
 
-	id, err := database.GetOrCreateCategory(name)
+	id, err := svc.CreateCategory(name)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}

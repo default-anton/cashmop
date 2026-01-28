@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/default-anton/cashmop/internal/cashmop"
 	"github.com/default-anton/cashmop/internal/database"
 )
 
@@ -83,7 +84,7 @@ type ruleDeleteResponse struct {
 	UncategorizedCount int   `json:"uncategorized_count"`
 }
 
-func handleRules(args []string) commandResult {
+func handleRules(svc *cashmop.Service, args []string) commandResult {
 	if len(args) == 0 {
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -94,15 +95,15 @@ func handleRules(args []string) commandResult {
 
 	switch args[0] {
 	case "list":
-		return handleRulesList(args[1:])
+		return handleRulesList(svc, args[1:])
 	case "preview":
-		return handleRulesPreview(args[1:])
+		return handleRulesPreview(svc, args[1:])
 	case "create":
-		return handleRulesCreate(args[1:])
+		return handleRulesCreate(svc, args[1:])
 	case "update":
-		return handleRulesUpdate(args[1:])
+		return handleRulesUpdate(svc, args[1:])
 	case "delete":
-		return handleRulesDelete(args[1:])
+		return handleRulesDelete(svc, args[1:])
 	default:
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -112,13 +113,13 @@ func handleRules(args []string) commandResult {
 	}
 }
 
-func handleRulesList(args []string) commandResult {
+func handleRulesList(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("rules list")
 	if ok, res := fs.parse(args, "rules"); !ok {
 		return res
 	}
 
-	rules, err := database.GetRules()
+	rules, err := svc.GetCategorizationRules()
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -149,7 +150,7 @@ func handleRulesList(args []string) commandResult {
 	return commandResult{Response: ruleListResponse{Ok: true, Items: out}}
 }
 
-func handleRulesPreview(args []string) commandResult {
+func handleRulesPreview(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("rules preview")
 	var matchValue string
 	var matchType string
@@ -191,7 +192,7 @@ func handleRulesPreview(args []string) commandResult {
 		maxCents = &v
 	}
 
-	preview, err := database.PreviewRuleMatches(matchValue, matchType, minCents, maxCents, true, 100)
+	preview, err := svc.PreviewRuleMatchesWithLimit(matchValue, matchType, minCents, maxCents, 100)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -226,7 +227,7 @@ func handleRulesPreview(args []string) commandResult {
 	}}
 }
 
-func handleRulesCreate(args []string) commandResult {
+func handleRulesCreate(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("rules create")
 	var matchValue string
 	var matchType string
@@ -273,23 +274,13 @@ func handleRulesCreate(args []string) commandResult {
 		maxCents = &v
 	}
 
-	catID, err := database.GetOrCreateCategory(category)
-	if err != nil {
-		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-	}
-
-	ruleID, err := database.SaveRule(database.CategorizationRule{
-		MatchType:  matchType,
-		MatchValue: matchValue,
-		CategoryID: catID,
-		AmountMin:  minCents,
-		AmountMax:  maxCents,
+	ruleID, affectedIDs, err := svc.SaveCategorizationRule(database.CategorizationRule{
+		MatchType:    matchType,
+		MatchValue:   matchValue,
+		CategoryName: category,
+		AmountMin:    minCents,
+		AmountMax:    maxCents,
 	})
-	if err != nil {
-		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-	}
-
-	_, affectedIDs, err := database.ApplyRuleWithIds(ruleID)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -297,7 +288,7 @@ func handleRulesCreate(args []string) commandResult {
 	return commandResult{Response: ruleCreateResponse{Ok: true, RuleID: ruleID, AffectedIDs: affectedIDs}}
 }
 
-func handleRulesUpdate(args []string) commandResult {
+func handleRulesUpdate(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("rules update")
 	var id int64
 	var matchValue optionalStringFlag
@@ -321,25 +312,9 @@ func handleRulesUpdate(args []string) commandResult {
 		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Rule ID is required.", Hint: "Provide --id <rule id>."})}
 	}
 
-	rule, err := database.GetRuleByID(id)
+	rule, err := svc.GetRuleByID(id)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-	}
-
-	uncategorizeCount := 0
-	if recategorize {
-		matches, err := database.SearchTransactionsByRule(rule.MatchValue, rule.MatchType, rule.AmountMin, rule.AmountMax, true)
-		if err != nil {
-			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-		}
-		ids := make([]int64, 0, len(matches))
-		for _, tx := range matches {
-			ids = append(ids, tx.ID)
-		}
-		if err := database.ClearTransactionCategories(ids); err != nil {
-			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-		}
-		uncategorizeCount = len(ids)
 	}
 
 	if matchValue.set {
@@ -349,11 +324,8 @@ func handleRulesUpdate(args []string) commandResult {
 		rule.MatchType = matchType.value
 	}
 	if category.set {
-		catID, err := database.GetOrCreateCategory(category.value)
-		if err != nil {
-			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-		}
-		rule.CategoryID = catID
+		rule.CategoryID = 0
+		rule.CategoryName = category.value
 	}
 	if amountMin.set {
 		if amountMin.value == "" {
@@ -378,17 +350,9 @@ func handleRulesUpdate(args []string) commandResult {
 		}
 	}
 
-	if err := database.UpdateRule(rule); err != nil {
+	uncategorizeCount, appliedCount, err := svc.UpdateCategorizationRule(rule, recategorize)
+	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-	}
-
-	appliedCount := 0
-	if recategorize {
-		_, affectedIDs, err := database.ApplyRuleWithIds(rule.ID)
-		if err != nil {
-			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-		}
-		appliedCount = len(affectedIDs)
 	}
 
 	return commandResult{Response: ruleUpdateResponse{
@@ -399,7 +363,7 @@ func handleRulesUpdate(args []string) commandResult {
 	}}
 }
 
-func handleRulesDelete(args []string) commandResult {
+func handleRulesDelete(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("rules delete")
 	var id int64
 	var uncategorize bool
@@ -413,28 +377,8 @@ func handleRulesDelete(args []string) commandResult {
 		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Rule ID is required.", Hint: "Provide --id <rule id>."})}
 	}
 
-	rule, err := database.GetRuleByID(id)
+	uncategorizedCount, err := svc.DeleteCategorizationRule(id, uncategorize)
 	if err != nil {
-		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-	}
-
-	uncategorizedCount := 0
-	if uncategorize {
-		matches, err := database.SearchTransactionsByRule(rule.MatchValue, rule.MatchType, rule.AmountMin, rule.AmountMax, true)
-		if err != nil {
-			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-		}
-		ids := make([]int64, 0, len(matches))
-		for _, tx := range matches {
-			ids = append(ids, tx.ID)
-		}
-		if err := database.ClearTransactionCategories(ids); err != nil {
-			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-		}
-		uncategorizedCount = len(ids)
-	}
-
-	if err := database.DeleteRule(id); err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
 

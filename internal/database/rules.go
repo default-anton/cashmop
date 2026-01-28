@@ -2,7 +2,6 @@ package database
 
 import (
 	"strings"
-	"sync"
 
 	"github.com/default-anton/cashmop/internal/fuzzy"
 )
@@ -23,32 +22,27 @@ type CategorizationRule struct {
 	CreatedAt    string `json:"created_at"`
 }
 
-var (
-	categoryCacheMu sync.RWMutex
-	categoryCache   []Category
-)
-
-func invalidateCategoryCache() {
-	categoryCacheMu.Lock()
-	categoryCache = nil
-	categoryCacheMu.Unlock()
+func (s *Store) invalidateCategoryCache() {
+	s.categoryCacheMu.Lock()
+	s.categoryCache = nil
+	s.categoryCacheMu.Unlock()
 }
 
-func loadCategories() ([]Category, error) {
-	categoryCacheMu.RLock()
-	cached := categoryCache
-	categoryCacheMu.RUnlock()
+func (s *Store) loadCategories() ([]Category, error) {
+	s.categoryCacheMu.RLock()
+	cached := s.categoryCache
+	s.categoryCacheMu.RUnlock()
 	if cached != nil {
 		return cached, nil
 	}
 
-	categoryCacheMu.Lock()
-	defer categoryCacheMu.Unlock()
-	if categoryCache != nil {
-		return categoryCache, nil
+	s.categoryCacheMu.Lock()
+	defer s.categoryCacheMu.Unlock()
+	if s.categoryCache != nil {
+		return s.categoryCache, nil
 	}
 
-	rows, err := DB.Query("SELECT id, name FROM categories ORDER BY name ASC")
+	rows, err := s.db.Query("SELECT id, name FROM categories ORDER BY name ASC")
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +60,7 @@ func loadCategories() ([]Category, error) {
 		return nil, err
 	}
 
-	categoryCache = categories
+	s.categoryCache = categories
 	return categories, nil
 }
 
@@ -76,13 +70,13 @@ func cloneCategories(items []Category) []Category {
 	return res
 }
 
-func GetOrCreateCategory(name string) (int64, error) {
+func (s *Store) GetOrCreateCategory(name string) (int64, error) {
 	var id int64
-	err := DB.QueryRow("SELECT id FROM categories WHERE name = ?", name).Scan(&id)
+	err := s.db.QueryRow("SELECT id FROM categories WHERE name = ?", name).Scan(&id)
 	if err == nil {
 		return id, nil
 	}
-	res, err := DB.Exec("INSERT INTO categories (name) VALUES (?)", name)
+	res, err := s.db.Exec("INSERT INTO categories (name) VALUES (?)", name)
 	if err != nil {
 		return 0, err
 	}
@@ -90,18 +84,18 @@ func GetOrCreateCategory(name string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	invalidateCategoryCache()
+	s.invalidateCategoryCache()
 	return insertedID, nil
 }
 
-func RenameCategory(id int64, newName string) error {
+func (s *Store) RenameCategory(id int64, newName string) error {
 	var oldName string
-	err := DB.QueryRow("SELECT name FROM categories WHERE id = ?", id).Scan(&oldName)
+	err := s.db.QueryRow("SELECT name FROM categories WHERE id = ?", id).Scan(&oldName)
 	if err != nil {
 		return err
 	}
 
-	tx, err := DB.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -116,12 +110,12 @@ func RenameCategory(id int64, newName string) error {
 		return err
 	}
 
-	invalidateCategoryCache()
+	s.invalidateCategoryCache()
 	return nil
 }
 
-func SaveRule(rule CategorizationRule) (int64, error) {
-	res, err := DB.Exec(`
+func (s *Store) SaveRule(rule CategorizationRule) (int64, error) {
+	res, err := s.db.Exec(`
         INSERT INTO categorization_rules (match_type, match_value, category_id, amount_min, amount_max)
         VALUES (?, ?, ?, ?, ?)
     `, rule.MatchType, rule.MatchValue, rule.CategoryID, rule.AmountMin, rule.AmountMax)
@@ -131,8 +125,8 @@ func SaveRule(rule CategorizationRule) (int64, error) {
 	return res.LastInsertId()
 }
 
-func GetRules() ([]CategorizationRule, error) {
-	rows, err := DB.Query(`
+func (s *Store) GetRules() ([]CategorizationRule, error) {
+	rows, err := s.db.Query(`
         SELECT r.id, r.match_type, r.match_value, r.category_id, COALESCE(c.name, ''), r.amount_min, r.amount_max, r.created_at
         FROM categorization_rules r
         LEFT JOIN categories c ON r.category_id = c.id
@@ -170,9 +164,9 @@ func GetRules() ([]CategorizationRule, error) {
 	return rules, nil
 }
 
-func GetRuleByID(id int64) (CategorizationRule, error) {
+func (s *Store) GetRuleByID(id int64) (CategorizationRule, error) {
 	var r CategorizationRule
-	err := DB.QueryRow(`
+	err := s.db.QueryRow(`
         SELECT r.id, r.match_type, r.match_value, r.category_id, COALESCE(c.name, ''), r.amount_min, r.amount_max, r.created_at
         FROM categorization_rules r
         LEFT JOIN categories c ON r.category_id = c.id
@@ -184,8 +178,8 @@ func GetRuleByID(id int64) (CategorizationRule, error) {
 	return r, nil
 }
 
-func UpdateRule(rule CategorizationRule) error {
-	_, err := DB.Exec(`
+func (s *Store) UpdateRule(rule CategorizationRule) error {
+	_, err := s.db.Exec(`
         UPDATE categorization_rules
         SET match_type = ?, match_value = ?, category_id = ?, amount_min = ?, amount_max = ?
         WHERE id = ?
@@ -193,28 +187,28 @@ func UpdateRule(rule CategorizationRule) error {
 	return err
 }
 
-func DeleteRule(id int64) error {
-	_, err := DB.Exec("DELETE FROM categorization_rules WHERE id = ?", id)
+func (s *Store) DeleteRule(id int64) error {
+	_, err := s.db.Exec("DELETE FROM categorization_rules WHERE id = ?", id)
 	return err
 }
 
-func GetRulesCount() (int, error) {
+func (s *Store) GetRulesCount() (int, error) {
 	var count int
-	err := DB.QueryRow("SELECT COUNT(*) FROM categorization_rules").Scan(&count)
+	err := s.db.QueryRow("SELECT COUNT(*) FROM categorization_rules").Scan(&count)
 	return count, err
 }
 
-func ApplyRule(ruleID int64) (int64, error) {
-	_, affectedIds, err := ApplyRuleWithIds(ruleID)
+func (s *Store) ApplyRule(ruleID int64) (int64, error) {
+	_, affectedIds, err := s.ApplyRuleWithIds(ruleID)
 	if err != nil {
 		return 0, err
 	}
 	return int64(len(affectedIds)), nil
 }
 
-func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
+func (s *Store) ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 	var r CategorizationRule
-	err := DB.QueryRow("SELECT match_type, match_value, category_id, amount_min, amount_max FROM categorization_rules WHERE id = ?", ruleID).
+	err := s.db.QueryRow("SELECT match_type, match_value, category_id, amount_min, amount_max FROM categorization_rules WHERE id = ?", ruleID).
 		Scan(&r.MatchType, &r.MatchValue, &r.CategoryID, &r.AmountMin, &r.AmountMax)
 	if err != nil {
 		return 0, nil, err
@@ -246,7 +240,7 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 	var baseCurrency string
 	needsAmountFilter := r.AmountMin != nil || r.AmountMax != nil
 	if needsAmountFilter {
-		settings, err := GetCurrencySettings()
+		settings, err := s.GetCurrencySettings()
 		if err != nil {
 			return 0, nil, err
 		}
@@ -256,7 +250,7 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 		}
 	}
 
-	rows, err := DB.Query(selectQuery, selectArgs...)
+	rows, err := s.db.Query(selectQuery, selectArgs...)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -272,7 +266,7 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 			return 0, nil, err
 		}
 		if needsAmountFilter {
-			converted, err := ConvertAmount(amount, baseCurrency, currency, date)
+			converted, err := s.ConvertAmount(amount, baseCurrency, currency, date)
 			if err != nil {
 				return 0, nil, err
 			}
@@ -302,7 +296,7 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 	}
 
 	updateQuery := "UPDATE transactions SET category_id = ? WHERE id IN (" + strings.Join(placeholders, ",") + ")"
-	res, err := DB.Exec(updateQuery, updateArgs...)
+	res, err := s.db.Exec(updateQuery, updateArgs...)
 	if err != nil {
 		return 0, nil, err
 	}
@@ -312,8 +306,8 @@ func ApplyRuleWithIds(ruleID int64) (int64, []int64, error) {
 	return affectedCount, affectedIds, nil
 }
 
-func UndoRule(ruleID int64, affectedTxIds []int64) error {
-	_, err := DB.Exec("DELETE FROM categorization_rules WHERE id = ?", ruleID)
+func (s *Store) UndoRule(ruleID int64, affectedTxIds []int64) error {
+	_, err := s.db.Exec("DELETE FROM categorization_rules WHERE id = ?", ruleID)
 	if err != nil {
 		return err
 	}
@@ -330,12 +324,12 @@ func UndoRule(ruleID int64, affectedTxIds []int64) error {
 	}
 
 	query := "UPDATE transactions SET category_id = NULL WHERE id IN (" + strings.Join(placeholders, ",") + ")"
-	_, err = DB.Exec(query, args...)
+	_, err = s.db.Exec(query, args...)
 	return err
 }
 
-func SearchCategories(query string) ([]Category, error) {
-	all, err := loadCategories()
+func (s *Store) SearchCategories(query string) ([]Category, error) {
+	all, err := s.loadCategories()
 	if err != nil {
 		return nil, err
 	}
@@ -368,22 +362,22 @@ func SearchCategories(query string) ([]Category, error) {
 	return res, nil
 }
 
-func GetAllCategories() ([]Category, error) {
-	categories, err := loadCategories()
+func (s *Store) GetAllCategories() ([]Category, error) {
+	categories, err := s.loadCategories()
 	if err != nil {
 		return nil, err
 	}
 	return cloneCategories(categories), nil
 }
 
-func ApplyAllRules() (int, error) {
-	rules, err := GetRules()
+func (s *Store) ApplyAllRules() (int, error) {
+	rules, err := s.GetRules()
 	if err != nil {
 		return 0, err
 	}
 	totalAffected := 0
 	for _, r := range rules {
-		affected, err := ApplyRule(r.ID)
+		affected, err := s.ApplyRule(r.ID)
 		if err != nil {
 			return totalAffected, err
 		}

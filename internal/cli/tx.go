@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/default-anton/cashmop/internal/cashmop"
 	"github.com/default-anton/cashmop/internal/database"
 	"github.com/default-anton/cashmop/internal/fuzzy"
 )
@@ -52,7 +53,7 @@ type txCategorizeResponse struct {
 	AffectedIDs   []int64 `json:"affected_ids"`
 }
 
-func handleTransactions(args []string) commandResult {
+func handleTransactions(svc *cashmop.Service, args []string) commandResult {
 	if len(args) == 0 {
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -63,9 +64,9 @@ func handleTransactions(args []string) commandResult {
 
 	switch args[0] {
 	case "list":
-		return handleTxList(args[1:])
+		return handleTxList(svc, args[1:])
 	case "categorize":
-		return handleTxCategorize(args[1:])
+		return handleTxCategorize(svc, args[1:])
 	default:
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -75,7 +76,7 @@ func handleTransactions(args []string) commandResult {
 	}
 }
 
-func handleTxList(args []string) commandResult {
+func handleTxList(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("tx list")
 	var start string
 	var end string
@@ -125,7 +126,6 @@ func handleTxList(args []string) commandResult {
 
 	var catIDs []int64
 	for _, s := range categoryIDs.values {
-		// handle comma separated if needed, though repeatable flag is also supported
 		parts := strings.Split(s, ",")
 		for _, p := range parts {
 			p = strings.TrimSpace(p)
@@ -143,12 +143,12 @@ func handleTxList(args []string) commandResult {
 		catIDs = append(catIDs, 0)
 	}
 
-	txs, err := database.GetAnalysisTransactions(start, end, catIDs, nil)
+	txs, err := svc.GetAnalysisTransactions(start, end, catIDs, nil)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
 
-	settings, err := database.GetCurrencySettings()
+	settings, err := svc.GetCurrencySettings()
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -162,7 +162,7 @@ func handleTxList(args []string) commandResult {
 		labels := make([]string, 0, len(txs))
 		txMap := make(map[string]database.TransactionModel)
 		for _, tx := range txs {
-			label := buildSearchLabel(tx, mainCurrency)
+			label := buildSearchLabel(tx)
 			labels = append(labels, label)
 			txMap[label] = tx
 		}
@@ -173,14 +173,14 @@ func handleTxList(args []string) commandResult {
 		}
 	}
 
-	// Pre-calculate converted amounts for filtering and sorting to avoid N+1 DB queries
+	// Pre-calculate converted amounts for filtering and sorting.
 	type txExt struct {
 		database.TransactionModel
 		ConvertedAmount *int64
 	}
 	extended := make([]txExt, len(txs))
 	for i, tx := range txs {
-		converted, _ := database.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date)
+		converted, _ := svc.ConvertAmount(tx.Amount, mainCurrency, tx.Currency, tx.Date)
 		extended[i] = txExt{TransactionModel: tx, ConvertedAmount: converted}
 	}
 
@@ -218,7 +218,7 @@ func handleTxList(args []string) commandResult {
 			} else {
 				less = *ci < *cj
 			}
-		default: // date
+		default:
 			if extended[i].Date != extended[j].Date {
 				less = extended[i].Date < extended[j].Date
 			} else {
@@ -253,11 +253,12 @@ func handleTxList(args []string) commandResult {
 	return commandResult{Response: txListResponse{Ok: true, Count: len(out), Transactions: out}}
 }
 
-func handleTxCategorize(args []string) commandResult {
+func handleTxCategorize(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("tx categorize")
 	var id int64
 	var category string
 	var uncategorize bool
+
 	fs.Int64Var(&id, "id", 0, "")
 	fs.StringVar(&category, "category", "", "")
 	fs.BoolVar(&uncategorize, "uncategorize", false, "")
@@ -269,30 +270,27 @@ func handleTxCategorize(args []string) commandResult {
 		return commandResult{Err: validationError(ErrorDetail{Field: "id", Message: "Transaction ID is required.", Hint: "Provide --id <transaction id>."})}
 	}
 
-	var catID int64
-	if !uncategorize {
-		if category == "" {
-			return commandResult{Err: validationError(ErrorDetail{
-				Field:   "category",
-				Message: "Either --category or --uncategorize must be provided.",
-				Hint:    "Provide --category <name> or use --uncategorize.",
-			})}
-		}
-		var err error
-		catID, err = database.GetOrCreateCategory(category)
-		if err != nil {
-			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-		}
+	if !uncategorize && category == "" {
+		return commandResult{Err: validationError(ErrorDetail{
+			Field:   "category",
+			Message: "Either --category or --uncategorize must be provided.",
+			Hint:    "Provide --category <name> or use --uncategorize.",
+		})}
 	}
 
-	if err := database.UpdateTransactionCategory(id, catID); err != nil {
+	catName := category
+	if uncategorize {
+		catName = ""
+	}
+
+	if err := svc.CategorizeTransaction(id, catName); err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
 
 	return commandResult{Response: txCategorizeResponse{Ok: true, TransactionID: id, AffectedIDs: []int64{id}}}
 }
 
-func buildSearchLabel(tx database.TransactionModel, mainCurrency string) string {
+func buildSearchLabel(tx database.TransactionModel) string {
 	cat := tx.CategoryName
 	if tx.CategoryID == nil {
 		cat = "Uncategorized"

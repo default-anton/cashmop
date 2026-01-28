@@ -3,8 +3,8 @@ package cli
 import (
 	"context"
 
+	"github.com/default-anton/cashmop/internal/cashmop"
 	"github.com/default-anton/cashmop/internal/database"
-	"github.com/default-anton/cashmop/internal/fx"
 )
 
 type fxStatusResponse struct {
@@ -19,7 +19,7 @@ type fxRateResponse struct {
 	Source   string  `json:"source"`
 }
 
-func handleFx(args []string) commandResult {
+func handleFx(svc *cashmop.Service, args []string) commandResult {
 	if len(args) == 0 {
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -30,11 +30,11 @@ func handleFx(args []string) commandResult {
 
 	switch args[0] {
 	case "status":
-		return handleFxStatus(args[1:])
+		return handleFxStatus(svc, args[1:])
 	case "sync":
-		return handleFxSync(args[1:])
+		return handleFxSync(svc, args[1:])
 	case "rate":
-		return handleFxRate(args[1:])
+		return handleFxRate(svc, args[1:])
 	default:
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -44,18 +44,18 @@ func handleFx(args []string) commandResult {
 	}
 }
 
-func handleFxStatus(args []string) commandResult {
+func handleFxStatus(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("fx status")
 	if ok, res := fs.parse(args, "fx"); !ok {
 		return res
 	}
 
-	settings, err := database.GetCurrencySettings()
+	settings, err := svc.GetCurrencySettings()
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
 
-	status, err := database.GetFxRateStatus(settings.MainCurrency)
+	status, err := svc.GetFxRateStatus(settings.MainCurrency)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -63,18 +63,13 @@ func handleFxStatus(args []string) commandResult {
 	return commandResult{Response: fxStatusResponse{Ok: true, FxRateStatus: status}}
 }
 
-func handleFxSync(args []string) commandResult {
+func handleFxSync(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("fx sync")
 	if ok, res := fs.parse(args, "fx"); !ok {
 		return res
 	}
 
-	settings, err := database.GetCurrencySettings()
-	if err != nil {
-		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
-	}
-
-	_, err = fx.SyncRates(context.Background(), settings.MainCurrency)
+	_, err := svc.SyncFxRatesForMainCurrency(context.Background())
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -82,7 +77,7 @@ func handleFxSync(args []string) commandResult {
 	return commandResult{Response: map[string]bool{"ok": true}}
 }
 
-func handleFxRate(args []string) commandResult {
+func handleFxRate(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("fx rate")
 	var base string
 	var quote string
@@ -108,7 +103,7 @@ func handleFxRate(args []string) commandResult {
 		return commandResult{Err: validationError(details...)}
 	}
 
-	rate, err := database.GetFxRate(base, quote, date)
+	rate, err := svc.GetFxRate(base, quote, date)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}

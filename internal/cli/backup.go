@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/default-anton/cashmop/internal/database"
+	"github.com/default-anton/cashmop/internal/cashmop"
 )
 
 type backupCreateResponse struct {
@@ -34,7 +34,7 @@ type backupRestoreResponse struct {
 	SafetyBackupPath string `json:"safety_backup_path"`
 }
 
-func handleBackup(args []string) commandResult {
+func handleBackup(svc *cashmop.Service, args []string) commandResult {
 	if len(args) == 0 {
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -45,13 +45,13 @@ func handleBackup(args []string) commandResult {
 
 	switch args[0] {
 	case "create":
-		return handleBackupCreate(args[1:])
+		return handleBackupCreate(svc, args[1:])
 	case "info":
-		return handleBackupInfo(args[1:])
+		return handleBackupInfo(svc, args[1:])
 	case "validate":
-		return handleBackupValidate(args[1:])
+		return handleBackupValidate(svc, args[1:])
 	case "restore":
-		return handleBackupRestore(args[1:])
+		return handleBackupRestore(svc, args[1:])
 	default:
 		return commandResult{Err: validationError(ErrorDetail{
 			Field:   "subcommand",
@@ -61,7 +61,7 @@ func handleBackup(args []string) commandResult {
 	}
 }
 
-func handleBackupCreate(args []string) commandResult {
+func handleBackupCreate(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("backup create")
 	var out string
 	fs.StringVar(&out, "out", "", "")
@@ -70,7 +70,7 @@ func handleBackupCreate(args []string) commandResult {
 	}
 
 	if out == "" {
-		backupDir, err := database.EnsureBackupDir()
+		backupDir, err := svc.EnsureBackupDir()
 		if err != nil {
 			return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 		}
@@ -86,20 +86,20 @@ func handleBackupCreate(args []string) commandResult {
 		}
 	}
 
-	if err := database.CreateBackup(out); err != nil {
+	if err := svc.CreateBackup(out); err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
 
 	return commandResult{Response: backupCreateResponse{Ok: true, Path: out}}
 }
 
-func handleBackupInfo(args []string) commandResult {
+func handleBackupInfo(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("backup info")
 	if ok, res := fs.parse(args, "backup"); !ok {
 		return res
 	}
 
-	lastTime, err := database.GetLastBackupTime()
+	lastTime, err := svc.GetLastBackupTime()
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -116,7 +116,7 @@ func handleBackupInfo(args []string) commandResult {
 	}}
 }
 
-func handleBackupValidate(args []string) commandResult {
+func handleBackupValidate(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("backup validate")
 	var file string
 	fs.StringVar(&file, "file", "", "")
@@ -128,7 +128,7 @@ func handleBackupValidate(args []string) commandResult {
 		return commandResult{Err: validationError(ErrorDetail{Field: "file", Message: "--file is required.", Hint: "Provide --file <path>."})}
 	}
 
-	count, err := database.ValidateBackup(file)
+	count, err := svc.ValidateBackup(file)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}
@@ -147,7 +147,7 @@ func handleBackupValidate(args []string) commandResult {
 	}}
 }
 
-func handleBackupRestore(args []string) commandResult {
+func handleBackupRestore(svc *cashmop.Service, args []string) commandResult {
 	fs := newSubcommandFlagSet("backup restore")
 	var file string
 	fs.StringVar(&file, "file", "", "")
@@ -159,7 +159,7 @@ func handleBackupRestore(args []string) commandResult {
 		return commandResult{Err: validationError(ErrorDetail{Field: "file", Message: "--file is required.", Hint: "Provide --file <path>."})}
 	}
 
-	safetyPath, err := database.RestoreBackupWithSafety(file)
+	safetyPath, err := svc.RestoreBackupWithSafety(file)
 	if err != nil {
 		return commandResult{Err: runtimeError(ErrorDetail{Message: err.Error()})}
 	}

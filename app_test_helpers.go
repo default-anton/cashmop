@@ -1,134 +1,84 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"encoding/base64"
 	"io"
 	"log/slog"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/default-anton/cashmop/internal/cashmop"
 	"github.com/default-anton/cashmop/internal/database"
-
-	_ "modernc.org/sqlite"
 )
 
-// NOTE: While this sets APP_ENV=test to prevent pre-migration backups,
-// some functions like RestoreBackup create safety backups to the real filesystem
-// as a side-effect. This is expected behavior for those production functions.
-func setupTestDB(t *testing.T) *sql.DB {
+func setupTestDB(t *testing.T) *database.Store {
 	t.Helper()
-
-	database.Close()
 
 	t.Setenv("APP_ENV", "test")
 
-	backupDir, err := database.EnsureBackupDir()
-	if err == nil {
-		files, _ := os.ReadDir(backupDir)
-		for _, f := range files {
-			if strings.HasPrefix(f.Name(), "cashmop_pre_restore_") {
-				_ = os.Remove(filepath.Join(backupDir, f.Name()))
-			}
-		}
-	}
-
-	db, err := sql.Open("sqlite", ":memory:")
+	store, err := database.Open(":memory:", slog.New(slog.NewTextHandler(io.Discard, nil)))
 	if err != nil {
-		t.Fatalf("Failed to open test database: %v", err)
+		t.Fatalf("open test store: %v", err)
 	}
-	db.SetMaxOpenConns(4)
+	t.Cleanup(func() { _ = store.Close() })
 
-	database.DB = db
-	database.SetLogger(slog.New(slog.NewTextHandler(io.Discard, nil)))
-
-	if err := database.Migrate(); err != nil {
-		t.Fatalf("Failed to run migrations: %v", err)
-	}
-
-	t.Cleanup(func() {
-		if db != nil {
-			db.Close()
-		}
-	})
-
-	return db
+	return store
 }
 
-func setupTestDBWithFile(t *testing.T) *sql.DB {
+func setupTestDBWithFile(t *testing.T) *database.Store {
 	t.Helper()
-
-	database.Close()
 
 	t.Setenv("APP_ENV", "test")
 
-	backupDir, err := database.EnsureBackupDir()
-	if err == nil {
-		files, _ := os.ReadDir(backupDir)
-		for _, f := range files {
-			if strings.HasPrefix(f.Name(), "cashmop_pre_restore_") {
-				_ = os.Remove(filepath.Join(backupDir, f.Name()))
-			}
-		}
+	path := filepath.Join(t.TempDir(), "cashmop_test.db")
+	store, err := database.Open(path, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if err != nil {
+		t.Fatalf("open test store: %v", err)
 	}
+	t.Cleanup(func() { _ = store.Close() })
 
-	database.InitDB(slog.New(slog.NewTextHandler(io.Discard, nil)))
-	db := database.DB
-
-	t.Cleanup(func() {
-		database.Close()
-		dbPath, _ := database.DatabasePath()
-		if dbPath != "" {
-			if err := os.Remove(dbPath); err != nil && !os.IsNotExist(err) {
-				t.Errorf("Error: failed to remove test database %s: %v", dbPath, err)
-			}
-		}
-		backupDir, _ := database.EnsureBackupDir()
-		if backupDir != "" {
-			os.RemoveAll(backupDir)
-		}
-	})
-
-	return db
+	return store
 }
 
-func teardownTestDB(t *testing.T, db *sql.DB) {
+func newTestApp(t *testing.T, store *database.Store) *App {
 	t.Helper()
-	if db != nil {
-		db.Close()
-	}
+	app := NewApp()
+	app.ctx = context.Background()
+	app.store = store
+	app.svc = cashmop.New(store)
+	return app
 }
 
-func createTestCategory(t *testing.T, name string) int64 {
+func createTestCategory(t *testing.T, store *database.Store, name string) int64 {
 	t.Helper()
-	id, err := database.GetOrCreateCategory(name)
+	id, err := store.GetOrCreateCategory(name)
 	if err != nil {
 		t.Fatalf("Failed to create test category '%s': %v", name, err)
 	}
 	return id
 }
 
-func createTestAccount(t *testing.T, name string) int64 {
+func createTestAccount(t *testing.T, store *database.Store, name string) int64 {
 	t.Helper()
-	id, err := database.GetOrCreateAccount(name)
+	id, err := store.GetOrCreateAccount(name)
 	if err != nil {
 		t.Fatalf("Failed to create test account '%s': %v", name, err)
 	}
 	return id
 }
 
-func createTestOwner(t *testing.T, name string) *int64 {
+func createTestOwner(t *testing.T, store *database.Store, name string) *int64 {
 	t.Helper()
-	id, err := database.GetOrCreateUser(name)
+	id, err := store.GetOrCreateUser(name)
 	if err != nil {
 		t.Fatalf("Failed to create test owner '%s': %v", name, err)
 	}
 	return id
 }
 
-func createTestTransaction(t *testing.T, accountID int64, ownerID *int64, date, description string, amount int64, categoryID *int64) database.TransactionModel {
+func createTestTransaction(t *testing.T, store *database.Store, accountID int64, ownerID *int64, date, description string, amount int64, categoryID *int64) database.TransactionModel {
 	t.Helper()
 
 	tx := database.TransactionModel{
@@ -141,13 +91,12 @@ func createTestTransaction(t *testing.T, accountID int64, ownerID *int64, date, 
 		Currency:    "CAD",
 	}
 
-	err := database.BatchInsertTransactions([]database.TransactionModel{tx})
-	if err != nil {
+	if err := store.BatchInsertTransactions([]database.TransactionModel{tx}); err != nil {
 		t.Fatalf("Failed to create test transaction: %v", err)
 	}
 
 	var insertedID int64
-	err = database.DB.QueryRow("SELECT id FROM transactions WHERE description = ? AND date = ?", description, date).Scan(&insertedID)
+	err := store.DB().QueryRow("SELECT id FROM transactions WHERE description = ? AND date = ?", description, date).Scan(&insertedID)
 	if err != nil {
 		t.Fatalf("Failed to get inserted transaction ID: %v", err)
 	}
@@ -156,9 +105,9 @@ func createTestTransaction(t *testing.T, accountID int64, ownerID *int64, date, 
 	return tx
 }
 
-func createTestRule(t *testing.T, rule database.CategorizationRule) int64 {
+func createTestRule(t *testing.T, store *database.Store, rule database.CategorizationRule) int64 {
 	t.Helper()
-	id, err := database.SaveRule(rule)
+	id, err := store.SaveRule(rule)
 	if err != nil {
 		t.Fatalf("Failed to create test rule: %v", err)
 	}
@@ -179,41 +128,37 @@ func readExcelFile(t *testing.T, filename string) string {
 	return base64.StdEncoding.EncodeToString(data)
 }
 
-func countTransactions(t *testing.T) int64 {
+func countTransactions(t *testing.T, store *database.Store) int64 {
 	t.Helper()
 	var count int64
-	err := database.DB.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&count)
-	if err != nil {
+	if err := store.DB().QueryRow("SELECT COUNT(*) FROM transactions").Scan(&count); err != nil {
 		t.Fatalf("Failed to count transactions: %v", err)
 	}
 	return count
 }
 
-func countCategories(t *testing.T) int64 {
+func countCategories(t *testing.T, store *database.Store) int64 {
 	t.Helper()
 	var count int64
-	err := database.DB.QueryRow("SELECT COUNT(*) FROM categories").Scan(&count)
-	if err != nil {
+	if err := store.DB().QueryRow("SELECT COUNT(*) FROM categories").Scan(&count); err != nil {
 		t.Fatalf("Failed to count categories: %v", err)
 	}
 	return count
 }
 
-func countAccounts(t *testing.T) int64 {
+func countAccounts(t *testing.T, store *database.Store) int64 {
 	t.Helper()
 	var count int64
-	err := database.DB.QueryRow("SELECT COUNT(*) FROM accounts").Scan(&count)
-	if err != nil {
+	if err := store.DB().QueryRow("SELECT COUNT(*) FROM accounts").Scan(&count); err != nil {
 		t.Fatalf("Failed to count accounts: %v", err)
 	}
 	return count
 }
 
-func countUsers(t *testing.T) int64 {
+func countUsers(t *testing.T, store *database.Store) int64 {
 	t.Helper()
 	var count int64
-	err := database.DB.QueryRow("SELECT COUNT(*) FROM users").Scan(&count)
-	if err != nil {
+	if err := store.DB().QueryRow("SELECT COUNT(*) FROM users").Scan(&count); err != nil {
 		t.Fatalf("Failed to count users: %v", err)
 	}
 	return count

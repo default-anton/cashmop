@@ -6,19 +6,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
-	"sync"
 )
-
-var (
-	fxRateCache   = make(map[string]*FxRateLookup)
-	fxRateCacheMu sync.RWMutex
-)
-
-func ClearFxRateCache() {
-	fxRateCacheMu.Lock()
-	defer fxRateCacheMu.Unlock()
-	fxRateCache = make(map[string]*FxRateLookup)
-}
 
 const (
 	AppSettingMainCurrency = "main_currency"
@@ -70,9 +58,15 @@ type FxRateStatus struct {
 	MaxTxDate    string             `json:"max_tx_date,omitempty"`
 }
 
-func GetAppSetting(key string) (string, error) {
+func (s *Store) ClearFxRateCache() {
+	s.fxRateCacheMu.Lock()
+	defer s.fxRateCacheMu.Unlock()
+	s.fxRateCache = make(map[string]*FxRateLookup)
+}
+
+func (s *Store) GetAppSetting(key string) (string, error) {
 	var value string
-	err := DB.QueryRow("SELECT value FROM app_settings WHERE key = ?", key).Scan(&value)
+	err := s.db.QueryRow("SELECT value FROM app_settings WHERE key = ?", key).Scan(&value)
 	if err == sql.ErrNoRows {
 		return "", nil
 	}
@@ -82,8 +76,8 @@ func GetAppSetting(key string) (string, error) {
 	return value, nil
 }
 
-func SetAppSetting(key, value string) error {
-	_, err := DB.Exec(`
+func (s *Store) SetAppSetting(key, value string) error {
+	_, err := s.db.Exec(`
 		INSERT INTO app_settings (key, value)
 		VALUES (?, ?)
 		ON CONFLICT(key) DO UPDATE SET value=excluded.value
@@ -91,13 +85,13 @@ func SetAppSetting(key, value string) error {
 	return err
 }
 
-func GetCurrencySettings() (CurrencySettings, error) {
-	mainCurrency, err := getOrCreateAppSetting(AppSettingMainCurrency, DefaultCurrency())
+func (s *Store) GetCurrencySettings() (CurrencySettings, error) {
+	mainCurrency, err := s.getOrCreateAppSetting(AppSettingMainCurrency, DefaultCurrency())
 	if err != nil {
 		return CurrencySettings{}, err
 	}
 
-	fxLastSync, err := getOrCreateAppSetting(AppSettingFxLastSync, "")
+	fxLastSync, err := s.getOrCreateAppSetting(AppSettingFxLastSync, "")
 	if err != nil {
 		return CurrencySettings{}, err
 	}
@@ -108,28 +102,28 @@ func GetCurrencySettings() (CurrencySettings, error) {
 	}, nil
 }
 
-func UpdateCurrencySettings(settings CurrencySettings) (CurrencySettings, error) {
+func (s *Store) UpdateCurrencySettings(settings CurrencySettings) (CurrencySettings, error) {
 	mainCurrency := strings.TrimSpace(settings.MainCurrency)
 	if mainCurrency == "" {
 		mainCurrency = DefaultCurrency()
 	}
 
-	if err := SetAppSetting(AppSettingMainCurrency, mainCurrency); err != nil {
+	if err := s.SetAppSetting(AppSettingMainCurrency, mainCurrency); err != nil {
 		return CurrencySettings{}, err
 	}
-	if err := SetAppSetting(AppSettingFxLastSync, strings.TrimSpace(settings.FxLastSync)); err != nil {
+	if err := s.SetAppSetting(AppSettingFxLastSync, strings.TrimSpace(settings.FxLastSync)); err != nil {
 		return CurrencySettings{}, err
 	}
 
-	return GetCurrencySettings()
+	return s.GetCurrencySettings()
 }
 
-func UpsertFxRates(rates []FxRate) error {
+func (s *Store) UpsertFxRates(rates []FxRate) error {
 	if len(rates) == 0 {
 		return nil
 	}
 
-	tx, err := DB.Begin()
+	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
@@ -167,7 +161,7 @@ func UpsertFxRates(rates []FxRate) error {
 	return tx.Commit()
 }
 
-func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) {
+func (s *Store) GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) {
 	base := strings.ToUpper(strings.TrimSpace(baseCurrency))
 	quote := strings.ToUpper(strings.TrimSpace(quoteCurrency))
 	if base == "" || quote == "" {
@@ -181,9 +175,9 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 	}
 
 	cacheKey := fmt.Sprintf("%s:%s:%s", base, quote, date)
-	fxRateCacheMu.RLock()
-	cached, ok := fxRateCache[cacheKey]
-	fxRateCacheMu.RUnlock()
+	s.fxRateCacheMu.RLock()
+	cached, ok := s.fxRateCache[cacheKey]
+	s.fxRateCacheMu.RUnlock()
 	if ok {
 		return cached, nil
 	}
@@ -191,7 +185,7 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 	var rateDate string
 	var rate float64
 	var source string
-	err := DB.QueryRow(`
+	err := s.db.QueryRow(`
 		SELECT rate_date, rate, source
 		FROM fx_rates
 		WHERE base_currency = ? AND quote_currency = ? AND rate_date <= ?
@@ -204,7 +198,7 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 		// No rate on/before transaction date. Check if date is in the future
 		// by comparing with the latest available rate date.
 		var latestDate string
-		errLatest := DB.QueryRow(`
+		errLatest := s.db.QueryRow(`
 			SELECT rate_date
 			FROM fx_rates
 			WHERE base_currency = ? AND quote_currency = ?
@@ -212,7 +206,7 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 			LIMIT 1
 		`, base, quote).Scan(&latestDate)
 		if errLatest == sql.ErrNoRows {
-			logger.Warn("no fx rates available for currency pair", "base", base, "quote", quote)
+			s.logger.Warn("no fx rates available for currency pair", "base", base, "quote", quote)
 			result = nil
 		} else if errLatest != nil {
 			return nil, errLatest
@@ -220,12 +214,12 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 			// If transaction date is after the latest rate date (i.e., in the future),
 			// use the latest available rate (for scheduled/recurring imports).
 			var err error
-			result, err = GetFxRate(base, quote, latestDate)
+			result, err = s.GetFxRate(base, quote, latestDate)
 			if err != nil {
 				return nil, err
 			}
 		} else {
-			logger.Warn("no fx rate for date, using nil", "base", base, "quote", quote, "date", date, "latest_available", latestDate)
+			s.logger.Warn("no fx rate for date, using nil", "base", base, "quote", quote, "date", date, "latest_available", latestDate)
 			result = nil
 		}
 	} else if err != nil {
@@ -236,16 +230,16 @@ func GetFxRate(baseCurrency, quoteCurrency, date string) (*FxRateLookup, error) 
 
 	// Only cache successful lookups, not nil results (to avoid caching "rate not found")
 	if result != nil {
-		fxRateCacheMu.Lock()
-		fxRateCache[cacheKey] = result
-		fxRateCacheMu.Unlock()
+		s.fxRateCacheMu.Lock()
+		s.fxRateCache[cacheKey] = result
+		s.fxRateCacheMu.Unlock()
 	}
 
 	return result, nil
 }
 
-func ConvertAmount(amount int64, baseCurrency, quoteCurrency, date string) (*int64, error) {
-	rate, err := GetFxRate(baseCurrency, quoteCurrency, date)
+func (s *Store) ConvertAmount(amount int64, baseCurrency, quoteCurrency, date string) (*int64, error) {
+	rate, err := s.GetFxRate(baseCurrency, quoteCurrency, date)
 	if err != nil {
 		return nil, err
 	}
@@ -260,9 +254,9 @@ func round(value float64) float64 {
 	return math.Floor(value + 0.5)
 }
 
-func GetTransactionCurrencyRanges(baseCurrency string) (map[string]FxDateRange, error) {
+func (s *Store) GetTransactionCurrencyRanges(baseCurrency string) (map[string]FxDateRange, error) {
 	base := strings.ToUpper(strings.TrimSpace(baseCurrency))
-	rows, err := DB.Query(`
+	rows, err := s.db.Query(`
 		SELECT currency, MIN(date), MAX(date)
 		FROM transactions
 		WHERE currency IS NOT NULL AND currency != ?
@@ -293,7 +287,7 @@ func GetTransactionCurrencyRanges(baseCurrency string) (map[string]FxDateRange, 
 	return ranges, nil
 }
 
-func GetFxRateRanges(baseCurrency string, quoteCurrencies []string) (map[string]FxDateRange, error) {
+func (s *Store) GetFxRateRanges(baseCurrency string, quoteCurrencies []string) (map[string]FxDateRange, error) {
 	base := strings.ToUpper(strings.TrimSpace(baseCurrency))
 	if len(quoteCurrencies) == 0 {
 		return map[string]FxDateRange{}, nil
@@ -320,7 +314,7 @@ func GetFxRateRanges(baseCurrency string, quoteCurrencies []string) (map[string]
 		WHERE base_currency = ? AND quote_currency IN (%s)
 		GROUP BY quote_currency
 	`, strings.Join(placeholders, ","))
-	rows, err := DB.Query(query, args...)
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -346,23 +340,23 @@ func GetFxRateRanges(baseCurrency string, quoteCurrencies []string) (map[string]
 	return ranges, nil
 }
 
-func GetFxRateStatus(baseCurrency string) (FxRateStatus, error) {
+func (s *Store) GetFxRateStatus(baseCurrency string) (FxRateStatus, error) {
 	base := strings.ToUpper(strings.TrimSpace(baseCurrency))
 	if base == "" {
 		base = DefaultCurrency()
 	}
 
-	lastSync, err := GetAppSetting(AppSettingFxLastSync)
+	lastSync, err := s.GetAppSetting(AppSettingFxLastSync)
 	if err != nil {
 		return FxRateStatus{}, err
 	}
 
-	txRanges, err := GetTransactionCurrencyRanges(base)
+	txRanges, err := s.GetTransactionCurrencyRanges(base)
 	if err != nil {
 		return FxRateStatus{}, err
 	}
 
-	rows, err := DB.Query(`
+	rows, err := s.db.Query(`
 		SELECT quote_currency, MAX(rate_date)
 		FROM fx_rates
 		WHERE base_currency = ?
@@ -404,11 +398,11 @@ func GetFxRateStatus(baseCurrency string) (FxRateStatus, error) {
 	}, nil
 }
 
-func getOrCreateAppSetting(key, defaultValue string) (string, error) {
+func (s *Store) getOrCreateAppSetting(key, defaultValue string) (string, error) {
 	var value string
-	err := DB.QueryRow("SELECT value FROM app_settings WHERE key = ?", key).Scan(&value)
+	err := s.db.QueryRow("SELECT value FROM app_settings WHERE key = ?", key).Scan(&value)
 	if err == sql.ErrNoRows {
-		if err := SetAppSetting(key, defaultValue); err != nil {
+		if err := s.SetAppSetting(key, defaultValue); err != nil {
 			return "", err
 		}
 		return defaultValue, nil

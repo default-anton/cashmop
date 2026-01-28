@@ -34,21 +34,26 @@ func main() {
 }
 
 func resetDB() error {
-	// Preserve worker ID for DB path resolution
 	workerID := os.Getenv("CASHMOP_WORKER_ID")
 	if workerID == "" {
-		workerID = "0" // Default to worker 0
+		workerID = "0"
 	}
 	os.Setenv("APP_ENV", "test")
-	os.Setenv("CASHMOP_WORKER_ID", workerID) // RE-SET for db.go
+	os.Setenv("CASHMOP_WORKER_ID", workerID)
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
 	return withBusyRetry(func() error {
-		database.InitDB(slog.Default())
-		defer database.Close()
-
-		// Dynamically find all tables to drop
-		rows, err := database.DB.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+		store, err := database.Open("", logger)
 		if err != nil {
+			return err
+		}
+
+		// Dynamically find all tables to drop.
+		db := store.DB()
+		rows, err := db.Query("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+		if err != nil {
+			_ = store.Close()
 			return fmt.Errorf("failed to fetch tables: %w", err)
 		}
 		defer rows.Close()
@@ -57,38 +62,41 @@ func resetDB() error {
 		for rows.Next() {
 			var name string
 			if err := rows.Scan(&name); err != nil {
+				_ = store.Close()
 				return err
 			}
 			tables = append(tables, name)
 		}
 
-		// Disable foreign keys temporarily to drop everything without order issues
-		if _, err := database.DB.Exec("PRAGMA foreign_keys = OFF"); err != nil {
+		// Disable foreign keys temporarily to drop everything without order issues.
+		if _, err := db.Exec("PRAGMA foreign_keys = OFF"); err != nil {
+			_ = store.Close()
 			return err
 		}
 
 		for _, table := range tables {
-			if _, err := database.DB.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", table)); err != nil {
+			if _, err := db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %s", table)); err != nil {
+				_ = store.Close()
 				return fmt.Errorf("failed to drop table %s: %w", table, err)
 			}
 		}
 
-		// Re-enable and re-run migrations
-		if _, err := database.DB.Exec("PRAGMA foreign_keys = ON"); err != nil {
+		_ = store.Close()
+
+		store, err = database.Open("", logger)
+		if err != nil {
 			return err
 		}
-		if err := database.Migrate(); err != nil {
-			return fmt.Errorf("failed to re-run migrations: %w", err)
-		}
+		defer store.Close()
 
-		return loadFixtures()
+		return loadFixtures(store)
 	})
 }
 
-func loadFixtures() error {
+func loadFixtures(store *database.Store) error {
 	fixtureDir := "frontend/tests/fixtures"
 
-	// Order matters for foreign keys
+	// Order matters for foreign keys.
 	tables := []string{
 		"users",
 		"categories",
@@ -118,7 +126,7 @@ func loadFixtures() error {
 
 		for _, attrs := range fixtures {
 			if err := withBusyRetry(func() error {
-				return insertFixture(table, attrs)
+				return insertFixture(store, table, attrs)
 			}); err != nil {
 				return fmt.Errorf("failed to insert fixture into %s: %w", table, err)
 			}
@@ -156,27 +164,22 @@ func isBusyError(err error) bool {
 	return strings.Contains(msg, "database is locked") || strings.Contains(msg, "sqlite_busy")
 }
 
-func insertFixture(table string, attrs map[string]interface{}) error {
+func insertFixture(store *database.Store, table string, attrs map[string]interface{}) error {
 	switch table {
 	case "users":
-		_, err := database.GetOrCreateUser(attrs["name"].(string))
+		_, err := store.GetOrCreateUser(attrs["name"].(string))
 		return err
 	case "categories":
-		_, err := database.GetOrCreateCategory(attrs["name"].(string))
+		_, err := store.GetOrCreateCategory(attrs["name"].(string))
 		return err
 	case "accounts":
-		// Accounts might have type and currency in the future, for now just name
-		_, err := database.GetOrCreateAccount(attrs["name"].(string))
-		// If we had more fields:
-		if err == nil && attrs["type"] != nil {
-			_, err = database.DB.Exec("UPDATE accounts SET type = ? WHERE name = ?", attrs["type"], attrs["name"])
-		}
+		_, err := store.GetOrCreateAccount(attrs["name"].(string))
 		return err
 	case "column_mappings":
-		_, err := database.SaveColumnMapping(attrs["name"].(string), attrs["mapping_json"].(string))
+		_, err := store.SaveColumnMapping(attrs["name"].(string), attrs["mapping_json"].(string))
 		return err
 	case "categorization_rules":
-		catID, err := database.GetOrCreateCategory(attrs["category"].(string))
+		catID, err := store.GetOrCreateCategory(attrs["category"].(string))
 		if err != nil {
 			return err
 		}
@@ -193,23 +196,23 @@ func insertFixture(table string, attrs map[string]interface{}) error {
 			centVal := int64(v * 100)
 			rule.AmountMax = &centVal
 		}
-		_, err = database.SaveRule(rule)
+		_, err = store.SaveRule(rule)
 		return err
 	case "transactions":
-		accID, err := database.GetOrCreateAccount(attrs["account"].(string))
+		accID, err := store.GetOrCreateAccount(attrs["account"].(string))
 		if err != nil {
 			return err
 		}
 		var ownerID *int64
 		if attrs["owner"] != nil {
-			ownerID, err = database.GetOrCreateUser(attrs["owner"].(string))
+			ownerID, err = store.GetOrCreateUser(attrs["owner"].(string))
 			if err != nil {
 				return err
 			}
 		}
 		var catID *int64
 		if attrs["category"] != nil {
-			id, err := database.GetOrCreateCategory(attrs["category"].(string))
+			id, err := store.GetOrCreateCategory(attrs["category"].(string))
 			if err != nil {
 				return err
 			}
@@ -225,11 +228,11 @@ func insertFixture(table string, attrs map[string]interface{}) error {
 			CategoryID:  catID,
 			Currency:    getStringWithDefault(attrs["currency"], "CAD"),
 		}
-		return database.BatchInsertTransactions([]database.TransactionModel{tx})
+		return store.BatchInsertTransactions([]database.TransactionModel{tx})
 	case "app_settings":
 		key := attrs["key"].(string)
 		value := attrs["value"].(string)
-		return database.SetAppSetting(key, value)
+		return store.SetAppSetting(key, value)
 	case "fx_rates":
 		rate := database.FxRate{
 			BaseCurrency:  attrs["base_currency"].(string),
@@ -238,7 +241,7 @@ func insertFixture(table string, attrs map[string]interface{}) error {
 			Rate:          getFloat(attrs["rate"]),
 			Source:        attrs["source"].(string),
 		}
-		return database.UpsertFxRates([]database.FxRate{rate})
+		return store.UpsertFxRates([]database.FxRate{rate})
 	}
 	return nil
 }
