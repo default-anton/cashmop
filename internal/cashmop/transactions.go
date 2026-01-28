@@ -22,6 +22,10 @@ func (s *Service) GetAnalysisTransactions(startDate string, endDate string, cate
 	return s.store.GetAnalysisTransactions(startDate, endDate, categoryIDs, ownerIDs)
 }
 
+func (s *Service) GetAnalysisFacets(startDate string, endDate string) (database.AnalysisFacets, error) {
+	return s.store.GetAnalysisFacets(startDate, endDate)
+}
+
 func (s *Service) DeleteTransactions(ids []int64) (int, error) {
 	return s.store.DeleteTransactions(ids)
 }

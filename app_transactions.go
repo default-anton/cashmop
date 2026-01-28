@@ -76,3 +76,15 @@ func (a *App) GetMonthList() ([]string, error) {
 func (a *App) GetAnalysisTransactions(startDate string, endDate string, categoryIDs []int64, ownerIDs []int64) ([]database.TransactionModel, error) {
 	return a.svc.GetAnalysisTransactions(startDate, endDate, categoryIDs, ownerIDs)
 }
+
+func (a *App) GetAnalysisView(startDate string, endDate string, categoryIDs []int64, ownerIDs []int64) (database.AnalysisView, error) {
+	transactions, err := a.svc.GetAnalysisTransactions(startDate, endDate, categoryIDs, ownerIDs)
+	if err != nil {
+		return database.AnalysisView{}, err
+	}
+	facets, err := a.svc.GetAnalysisFacets(startDate, endDate)
+	if err != nil {
+		return database.AnalysisView{}, err
+	}
+	return database.AnalysisView{Transactions: transactions, Facets: facets}, nil
+}

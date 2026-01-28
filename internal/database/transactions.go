@@ -739,7 +739,7 @@ func (s *Store) GetAnalysisTransactions(startDate string, endDate string, catego
 		var realIDs []int64
 
 		for _, id := range categoryIDs {
-			if id == 0 {
+			if id == MissingFilterID {
 				hasUncategorized = true
 			} else {
 				realIDs = append(realIDs, id)
@@ -771,7 +771,7 @@ func (s *Store) GetAnalysisTransactions(startDate string, endDate string, catego
 		hasNoOwner := false
 		var realOwnerIDs []int64
 		for _, id := range ownerIDs {
-			if id == 0 {
+			if id == MissingFilterID {
 				hasNoOwner = true
 			} else {
 				realOwnerIDs = append(realOwnerIDs, id)
