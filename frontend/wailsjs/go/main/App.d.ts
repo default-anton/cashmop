@@ -29,6 +29,8 @@ export function GetAllUsers():Promise<Array<database.User>>;
 
 export function GetAnalysisTransactions(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<number>):Promise<Array<database.TransactionModel>>;
 
+export function GetAnalysisView(arg1:string,arg2:string,arg3:Array<number>,arg4:Array<number>):Promise<database.AnalysisView>;
+
 export function GetCategories():Promise<Array<database.Category>>;
 
 export function GetCategorizationRules():Promise<Array<database.CategorizationRule>>;

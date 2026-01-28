@@ -8,6 +8,7 @@ import CategoryGhostInput from './CategoryGhostInput';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCents, formatCentsDecimal } from '../../../utils/currency';
+import { MISSING_FILTER_ID } from '@/utils/filterIds';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 
@@ -15,8 +16,17 @@ type TransactionWithFx = database.TransactionModel & { main_amount: number | nul
 
 interface GroupedTransactionListProps {
   transactions: TransactionWithFx[];
+
+  // Full lists (used for editing cells, etc.)
   categories: database.Category[];
   owners: database.User[];
+
+  // Filter lists (used only for filter dropdown options)
+  filterCategories?: { id: number; name: string }[];
+  filterOwners?: { id: number; name: string }[];
+  includeUncategorizedInFilter?: boolean;
+  includeNoOwnerInFilter?: boolean;
+
   groupBy: GroupBy;
   showSummary?: boolean;
   groupSortField: GroupSortField;
@@ -92,6 +102,10 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   transactions,
   categories,
   owners,
+  filterCategories,
+  filterOwners,
+  includeUncategorizedInFilter = true,
+  includeNoOwnerInFilter = true,
   groupBy,
   showSummary = true,
   groupSortField,
@@ -120,6 +134,9 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   const [activeFilter, setActiveFilter] = useState<{ tableId: string; filter: 'category' | 'owner' | 'date' } | null>(null);
   const [monthHighlightedIndex, setMonthHighlightedIndex] = useState(0);
   const { mainCurrency } = useCurrency();
+
+  const categoriesForFilter = filterCategories ?? categories;
+  const ownersForFilter = filterOwners ?? owners;
 
   useEffect(() => {
     if (activeFilter?.filter === 'category' && categoryFilterInputRef.current) {
@@ -402,8 +419,9 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
           positionKey: `${groupOrderKey}-${tableId}-category`,
           children: (
             <CategoryFilterContent
-              categories={categories}
+              categories={categoriesForFilter}
               selectedIds={selectedCategoryIds}
+              includeUncategorized={includeUncategorizedInFilter}
               onSelect={(id) => {
                 const newSelection = selectedCategoryIds.includes(id)
                   ? selectedCategoryIds.filter((sid) => sid !== id)
@@ -413,7 +431,10 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
               onSelectOnly={(id) => {
                 onCategoryFilterChange([id]);
               }}
-              onSelectAll={() => onCategoryFilterChange([0, ...categories.map(c => c.id)])}
+              onSelectAll={() => {
+                const ids = categoriesForFilter.map((c) => c.id);
+                onCategoryFilterChange(includeUncategorizedInFilter ? [MISSING_FILTER_ID, ...ids] : ids);
+              }}
               onClear={() => {
                 onCategoryFilterChange([]);
                 setActiveFilter(null);
@@ -455,8 +476,9 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
             positionKey: `${groupOrderKey}-${tableId}-owner`,
             children: (
               <OwnerFilterContent
-                owners={owners}
+                owners={ownersForFilter}
                 selectedIds={selectedOwnerIds}
+                includeNoOwner={includeNoOwnerInFilter}
                 onSelect={(id) => {
                   const newSelection = selectedOwnerIds.includes(id)
                     ? selectedOwnerIds.filter((sid) => sid !== id)
@@ -466,7 +488,10 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                 onSelectOnly={(id) => {
                   onOwnerFilterChange([id]);
                 }}
-                onSelectAll={() => onOwnerFilterChange([0, ...owners.map(o => o.id)])}
+                onSelectAll={() => {
+                  const ids = ownersForFilter.map((o) => o.id);
+                  onOwnerFilterChange(includeNoOwnerInFilter ? [MISSING_FILTER_ID, ...ids] : ids);
+                }}
                 onClear={() => {
                   onOwnerFilterChange([]);
                   setActiveFilter(null);
@@ -517,7 +542,32 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     });
 
     return cols;
-  }, [activeFilter, categoryFilterSearch, categories, filteredMonthOptions, groupBy, groupOrderKey, hasDifferentCurrency, mainCurrency, monthFilterSearch, monthHighlightedIndex, monthOptions, onCategorize, onCategoryFilterChange, onMonthChange, selectedCategoryIds, selectedMonth, owners, selectedOwnerIds, onOwnerFilterChange, ownerFilterSearch]);
+  }, [
+    activeFilter,
+    categoryFilterSearch,
+    categories,
+    categoriesForFilter,
+    includeUncategorizedInFilter,
+    filteredMonthOptions,
+    groupBy,
+    groupOrderKey,
+    hasDifferentCurrency,
+    includeNoOwnerInFilter,
+    mainCurrency,
+    monthFilterSearch,
+    monthHighlightedIndex,
+    monthOptions,
+    onCategorize,
+    onCategoryFilterChange,
+    onMonthChange,
+    selectedCategoryIds,
+    selectedMonth,
+    owners,
+    ownersForFilter,
+    selectedOwnerIds,
+    onOwnerFilterChange,
+    ownerFilterSearch,
+  ]);
 
   const getIcon = () => {
     if (groupBy === 'Owner') return <User className="w-4 h-4" />;

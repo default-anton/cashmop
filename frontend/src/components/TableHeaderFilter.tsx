@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Filter, X, ChevronDown, Search, Calendar, MoreHorizontal, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MISSING_FILTER_ID } from '../utils/filterIds';
 
 export type FilterType = 'category' | 'text' | 'amount' | 'date';
 
@@ -212,6 +213,7 @@ export const CategoryFilterContent: React.FC<{
   searchTerm: string;
   onSearchChange: (term: string) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  includeUncategorized?: boolean;
 }> = ({
   categories,
   selectedIds,
@@ -222,14 +224,17 @@ export const CategoryFilterContent: React.FC<{
   searchTerm,
   onSearchChange,
   inputRef,
+  includeUncategorized = true,
 }) => {
   const [filteredCategories, setFilteredCategories] = useState(categories);
 
   useEffect(() => {
-    const uncategorizedOption: { id: number; name: string } = { id: 0, name: 'Uncategorized' };
+    const uncategorizedOption: { id: number; name: string } = { id: MISSING_FILTER_ID, name: 'Uncategorized' };
+
+    const prefix = includeUncategorized ? [uncategorizedOption] : [];
 
     if (!searchTerm.trim()) {
-      setFilteredCategories([uncategorizedOption, ...categories]);
+      setFilteredCategories([...prefix, ...categories]);
       return;
     }
 
@@ -238,12 +243,12 @@ export const CategoryFilterContent: React.FC<{
       const ranked = rankedNames
         .map(name => categories.find(c => c.name === name))
         .filter((c): c is { id: number; name: string } => !!c);
-      setFilteredCategories([uncategorizedOption, ...ranked]);
+      setFilteredCategories([...prefix, ...ranked]);
     });
-  }, [categories, searchTerm]);
+  }, [categories, searchTerm, includeUncategorized]);
 
   const selectedCount = selectedIds.length;
-  const totalCount = categories.length + 1; // +1 for Uncategorized
+  const totalCount = categories.length + (includeUncategorized ? 1 : 0);
   const isAllSelected = selectedCount === totalCount;
 
   return (
@@ -349,6 +354,7 @@ export const OwnerFilterContent: React.FC<{
   searchTerm: string;
   onSearchChange: (term: string) => void;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  includeNoOwner?: boolean;
 }> = ({
   owners,
   selectedIds,
@@ -359,14 +365,17 @@ export const OwnerFilterContent: React.FC<{
   searchTerm,
   onSearchChange,
   inputRef,
+  includeNoOwner = true,
 }) => {
   const [filteredOwners, setFilteredOwners] = useState(owners);
 
   useEffect(() => {
-    const noOwnerOption: { id: number; name: string } = { id: 0, name: 'No Owner' };
+    const noOwnerOption: { id: number; name: string } = { id: MISSING_FILTER_ID, name: 'No Owner' };
+
+    const prefix = includeNoOwner ? [noOwnerOption] : [];
 
     if (!searchTerm.trim()) {
-      setFilteredOwners([noOwnerOption, ...owners]);
+      setFilteredOwners([...prefix, ...owners]);
       return;
     }
 
@@ -375,12 +384,12 @@ export const OwnerFilterContent: React.FC<{
       const ranked = rankedNames
         .map(name => owners.find(o => o.name === name))
         .filter((o): o is { id: number; name: string } => !!o);
-      setFilteredOwners([noOwnerOption, ...ranked]);
+      setFilteredOwners([...prefix, ...ranked]);
     });
-  }, [owners, searchTerm]);
+  }, [owners, searchTerm, includeNoOwner]);
 
   const selectedCount = selectedIds.length;
-  const totalCount = owners.length + 1; // +1 for No Owner
+  const totalCount = owners.length + (includeNoOwner ? 1 : 0);
   const isAllSelected = selectedCount === totalCount;
 
   return (

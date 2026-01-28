@@ -54,6 +54,10 @@ export function GetAnalysisTransactions(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['GetAnalysisTransactions'](arg1, arg2, arg3, arg4);
 }
 
+export function GetAnalysisView(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['GetAnalysisView'](arg1, arg2, arg3, arg4);
+}
+
 export function GetCategories() {
   return window['go']['main']['App']['GetCategories']();
 }

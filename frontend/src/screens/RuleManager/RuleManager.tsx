@@ -309,6 +309,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
           <CategoryFilterContent
             categories={categories}
             selectedIds={selectedCategoryIds}
+            includeUncategorized={false}
             onSelect={(id) => {
               setSelectedCategoryIds((prev) =>
                 prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]

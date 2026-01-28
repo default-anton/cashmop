@@ -11,6 +11,8 @@ import { BarChart3, ArrowUpDown, Download, AlertTriangle, Trash2 } from 'lucide-
 import TransactionSearch from './components/TransactionSearch';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { formatCents, formatCentsDecimal } from '../../utils/currency';
+import { MISSING_FILTER_ID } from '@/utils/filterIds';
+import { EVENT_CATEGORIES_UPDATED, EVENT_OWNERS_UPDATED, EVENT_TRANSACTIONS_UPDATED } from '@/utils/events';
 
 type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
 export type SortOrder = 'asc' | 'desc';
@@ -28,6 +30,8 @@ const Analysis: React.FC = () => {
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<number[]>([]);
   const [groupBy, setGroupBy] = useState<GroupBy>('All');
   const [transactions, setTransactions] = useState<database.TransactionModel[]>([]);
+  const [analysisFacets, setAnalysisFacets] = useState<database.AnalysisFacets | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
   const [exporting, setExporting] = useState(false);
@@ -46,11 +50,13 @@ const Analysis: React.FC = () => {
   const fetchData = useCallback(async () => {
     try {
       const monthList = await (window as any).go.main.App.GetMonthList();
-      setMonths(monthList || []);
-
-      if (monthList && monthList.length > 0 && !selectedMonth) {
-        setSelectedMonth(monthList[0]);
-      }
+      const nextMonths = monthList || [];
+      setMonths(nextMonths);
+      setSelectedMonth((prev) => {
+        if (nextMonths.length === 0) return '';
+        if (!prev || !nextMonths.includes(prev)) return nextMonths[0];
+        return prev;
+      });
 
       const categoryList = await (window as any).go.main.App.GetCategories();
       setCategories(categoryList || []);
@@ -60,26 +66,43 @@ const Analysis: React.FC = () => {
     } catch (e) {
       console.error('Failed to fetch initial analysis data', e);
     }
-  }, [selectedMonth]);
+  }, []);
 
-  const fetchTransactions = useCallback(async (silent = false) => {
+  const fetchAnalysisView = useCallback(async (silent = false) => {
     if (!selectedMonth) return;
 
-    if (!silent) setLoading(true);
+    if (!silent) {
+      setLoading(true);
+      setAnalysisFacets(null);
+    }
     try {
       const [year, month] = selectedMonth.split('-');
       const startDate = `${year}-${month}-01`;
       const endDate = `${year}-${month}-31`; // SQL handles this fine even if month has 30 days
 
-      const txs = await (window as any).go.main.App.GetAnalysisTransactions(
+      const raw = await (window as any).go.main.App.GetAnalysisView(
         startDate,
         endDate,
         selectedCategoryIds,
         selectedOwnerIds
       );
-      setTransactions(txs || []);
+      const view = database.AnalysisView.createFrom(raw || {});
+      setTransactions(view.transactions || []);
+      setAnalysisFacets(view.facets || database.AnalysisFacets.createFrom({
+        categories: [],
+        owners: [],
+        has_uncategorized: false,
+        has_no_owner: false,
+      }));
     } catch (e) {
-      console.error('Failed to fetch transactions', e);
+      console.error('Failed to fetch analysis view', e);
+      setTransactions([]);
+      setAnalysisFacets(database.AnalysisFacets.createFrom({
+        categories: [],
+        owners: [],
+        has_uncategorized: false,
+        has_no_owner: false,
+      }));
     } finally {
       if (!silent) setLoading(false);
     }
@@ -89,8 +112,8 @@ const Analysis: React.FC = () => {
     fetchData();
   }, [fetchData]);
   useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
+    fetchAnalysisView();
+  }, [fetchAnalysisView]);
 
   useEffect(() => {
     if (transactions.length === 0) {
@@ -104,10 +127,36 @@ const Analysis: React.FC = () => {
   // Reload transactions when FX rates are updated (to get converted amounts)
   useEffect(() => {
     const off = EventsOn('fx-rates-updated', () => {
-      fetchTransactions(true); // silent refresh
+      fetchAnalysisView(true); // silent refresh
     });
     return () => off?.();
-  }, [fetchTransactions]);
+  }, [fetchAnalysisView]);
+
+  const refreshDebounceRef = useRef<number | null>(null);
+  const scheduleRefresh = useCallback(() => {
+    if (refreshDebounceRef.current) {
+      window.clearTimeout(refreshDebounceRef.current);
+    }
+    refreshDebounceRef.current = window.setTimeout(async () => {
+      await fetchData();
+      fetchAnalysisView(true);
+    }, 50);
+  }, [fetchAnalysisView, fetchData]);
+
+  useEffect(() => {
+    const offs = [
+      EventsOn(EVENT_TRANSACTIONS_UPDATED, scheduleRefresh),
+      EventsOn(EVENT_CATEGORIES_UPDATED, scheduleRefresh),
+      EventsOn(EVENT_OWNERS_UPDATED, scheduleRefresh),
+    ];
+
+    return () => {
+      offs.forEach((off) => off?.());
+      if (refreshDebounceRef.current) {
+        window.clearTimeout(refreshDebounceRef.current);
+      }
+    };
+  }, [scheduleRefresh]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -142,11 +191,11 @@ const Analysis: React.FC = () => {
 
     try {
       await (window as any).go.main.App.CategorizeTransaction(txId, categoryName);
-      fetchTransactions(true);
+      fetchAnalysisView(true);
       fetchData();
     } catch (e) {
       console.error('Failed to categorize transaction', e);
-      fetchTransactions(true);
+      fetchAnalysisView(true);
     }
   };
   const handleExport = async (format?: ExportFormat) => {
@@ -216,7 +265,8 @@ const Analysis: React.FC = () => {
         `Deleted ${count} transaction${count !== 1 ? 's' : ''}`,
         'success'
       );
-      await fetchTransactions();
+      await fetchAnalysisView();
+      fetchData();
     } catch (e) {
       console.error('Delete failed', e);
       toast.showToast(
@@ -274,6 +324,41 @@ const Analysis: React.FC = () => {
   const monthOptions = useMemo(() => (
     months.map((month) => ({ value: month, label: formatMonthLabel(month) }))
   ), [months, formatMonthLabel]);
+
+  const filterCategories = useMemo(() => (
+    analysisFacets?.categories || []
+  ), [analysisFacets]);
+
+  const filterOwners = useMemo(() => (
+    analysisFacets?.owners || []
+  ), [analysisFacets]);
+
+  const includeUncategorizedInFilter = analysisFacets?.has_uncategorized || false;
+  const includeNoOwnerInFilter = analysisFacets?.has_no_owner || false;
+
+  useEffect(() => {
+    if (!analysisFacets) return;
+
+    const allowed = new Set<number>(filterCategories.map((c) => c.id));
+    if (includeUncategorizedInFilter) allowed.add(MISSING_FILTER_ID);
+
+    const next = selectedCategoryIds.filter((id) => allowed.has(id));
+    if (next.length !== selectedCategoryIds.length) {
+      setSelectedCategoryIds(next);
+    }
+  }, [analysisFacets, filterCategories, includeUncategorizedInFilter, selectedCategoryIds]);
+
+  useEffect(() => {
+    if (!analysisFacets) return;
+
+    const allowed = new Set<number>(filterOwners.map((o) => o.id));
+    if (includeNoOwnerInFilter) allowed.add(MISSING_FILTER_ID);
+
+    const next = selectedOwnerIds.filter((id) => allowed.has(id));
+    if (next.length !== selectedOwnerIds.length) {
+      setSelectedOwnerIds(next);
+    }
+  }, [analysisFacets, filterOwners, includeNoOwnerInFilter, selectedOwnerIds]);
 
   const hasForeignCurrency = useMemo(() => {
     const main = mainCurrency.toUpperCase();
@@ -448,6 +533,10 @@ const Analysis: React.FC = () => {
             transactions={displayedTransactionsWithFx}
             categories={categories}
             owners={owners}
+            filterCategories={filterCategories}
+            filterOwners={filterOwners}
+            includeUncategorizedInFilter={includeUncategorizedInFilter}
+            includeNoOwnerInFilter={includeNoOwnerInFilter}
             groupBy={groupBy}
             showSummary={false}
             groupSortField={groupSortField}

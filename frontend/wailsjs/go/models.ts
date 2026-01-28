@@ -14,6 +14,127 @@ export namespace database {
 	        this.max = source["max"];
 	    }
 	}
+	export class AnalysisFilterOption {
+	    id: number;
+	    name: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AnalysisFilterOption(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	    }
+	}
+	export class AnalysisFacets {
+	    categories: AnalysisFilterOption[];
+	    owners: AnalysisFilterOption[];
+	    has_uncategorized: boolean;
+	    has_no_owner: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AnalysisFacets(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.categories = this.convertValues(source["categories"], AnalysisFilterOption);
+	        this.owners = this.convertValues(source["owners"], AnalysisFilterOption);
+	        this.has_uncategorized = source["has_uncategorized"];
+	        this.has_no_owner = source["has_no_owner"];
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
+	
+	export class TransactionModel {
+	    id: number;
+	    account_id: number;
+	    account_name: string;
+	    owner_id?: number;
+	    owner_name: string;
+	    date: string;
+	    description: string;
+	    amount: number;
+	    category_id?: number;
+	    category_name: string;
+	    currency: string;
+	    raw_metadata: string;
+	    amount_in_main_currency?: number;
+	    main_currency: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new TransactionModel(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.account_id = source["account_id"];
+	        this.account_name = source["account_name"];
+	        this.owner_id = source["owner_id"];
+	        this.owner_name = source["owner_name"];
+	        this.date = source["date"];
+	        this.description = source["description"];
+	        this.amount = source["amount"];
+	        this.category_id = source["category_id"];
+	        this.category_name = source["category_name"];
+	        this.currency = source["currency"];
+	        this.raw_metadata = source["raw_metadata"];
+	        this.amount_in_main_currency = source["amount_in_main_currency"];
+	        this.main_currency = source["main_currency"];
+	    }
+	}
+	export class AnalysisView {
+	    transactions: TransactionModel[];
+	    facets: AnalysisFacets;
+	
+	    static createFrom(source: any = {}) {
+	        return new AnalysisView(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.transactions = this.convertValues(source["transactions"], TransactionModel);
+	        this.facets = this.convertValues(source["facets"], AnalysisFacets);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class BackupMetadata {
 	    path: string;
 	    size: number;
@@ -188,44 +309,6 @@ export namespace database {
 		    }
 		    return a;
 		}
-	}
-	export class TransactionModel {
-	    id: number;
-	    account_id: number;
-	    account_name: string;
-	    owner_id?: number;
-	    owner_name: string;
-	    date: string;
-	    description: string;
-	    amount: number;
-	    category_id?: number;
-	    category_name: string;
-	    currency: string;
-	    raw_metadata: string;
-	    amount_in_main_currency?: number;
-	    main_currency: string;
-	
-	    static createFrom(source: any = {}) {
-	        return new TransactionModel(source);
-	    }
-	
-	    constructor(source: any = {}) {
-	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.id = source["id"];
-	        this.account_id = source["account_id"];
-	        this.account_name = source["account_name"];
-	        this.owner_id = source["owner_id"];
-	        this.owner_name = source["owner_name"];
-	        this.date = source["date"];
-	        this.description = source["description"];
-	        this.amount = source["amount"];
-	        this.category_id = source["category_id"];
-	        this.category_name = source["category_name"];
-	        this.currency = source["currency"];
-	        this.raw_metadata = source["raw_metadata"];
-	        this.amount_in_main_currency = source["amount_in_main_currency"];
-	        this.main_currency = source["main_currency"];
-	    }
 	}
 	export class RuleMatchPreview {
 	    count: number;
