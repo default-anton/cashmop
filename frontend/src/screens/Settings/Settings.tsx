@@ -230,33 +230,35 @@ const Settings: React.FC = () => {
           </div>
 
           <div className="mt-5 bg-canvas-50 border border-canvas-200 rounded-lg p-3">
-            <div className="flex items-start gap-3">
-              <Clock className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isStale ? 'text-finance-expense' : 'text-canvas-500'}`} />
-              <div>
-                <p className="text-sm font-semibold text-canvas-800 select-none">Exchange rate freshness</p>
-                <p className={`text-sm ${isStale ? 'text-finance-expense' : 'text-canvas-600'}`}>
-                  {latestRateDate ? `Latest rate date: ${formatDateOnly(latestRateDate)}.` : 'No exchange rates cached yet.'}
-                  {isStale && latestRateDate ? ` Rates are ${staleDays} days old.` : ''}
-                </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <Clock className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isStale ? 'text-finance-expense' : 'text-canvas-500'}`} />
+                <div>
+                  <p className="text-sm font-semibold text-canvas-800 select-none">Exchange rate freshness</p>
+                  <p className={`text-sm ${isStale ? 'text-finance-expense' : 'text-canvas-600'}`}>
+                    {latestRateDate ? `Latest rate date: ${formatDateOnly(latestRateDate)}.` : 'No exchange rates cached yet.'}
+                    {isStale && latestRateDate ? ` Rates are ${staleDays} days old.` : ''}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 sm:justify-end">
+                <div className="flex items-baseline gap-2">
+                  <p className="text-xs uppercase text-canvas-500 font-bold select-none">Rates</p>
+                  <p className="text-xs text-canvas-500 hidden md:block">Pull only what your transactions need.</p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleSyncFxRates}
+                  disabled={fxSyncing || !isBaseSupported}
+                  className="px-3 py-1.5 flex items-center gap-2"
+                >
+                  <RefreshCcw className="w-4 h-4" />
+                  {fxSyncing ? 'Syncing…' : 'Sync rates'}
+                </Button>
               </div>
             </div>
-          </div>
-
-          <div className="mt-4 flex items-center justify-between gap-4 rounded-lg border border-canvas-200 bg-canvas-50 p-3">
-            <div>
-              <p className="text-xs uppercase text-canvas-500 font-bold select-none">Missing rates</p>
-              <p className="text-sm text-canvas-600">Pull only what your transactions need.</p>
-            </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleSyncFxRates}
-              disabled={fxSyncing || !isBaseSupported}
-              className="px-3 py-1.5 flex items-center gap-2"
-            >
-              <RefreshCcw className="w-4 h-4" />
-              {fxSyncing ? 'Syncing…' : 'Sync missing rates'}
-            </Button>
           </div>
         </Card>
 
