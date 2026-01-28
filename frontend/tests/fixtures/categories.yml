@@ -6,3 +6,6 @@ transport:
   name: "Transport"
 income:
   name: "Income"
+
+unused:
+  name: "Unused Category"

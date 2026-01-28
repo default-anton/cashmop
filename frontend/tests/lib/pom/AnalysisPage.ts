@@ -96,6 +96,46 @@ export class AnalysisPage {
     await expect(this.page.locator('tr').filter({ hasText: transactionDescription })).not.toBeVisible();
   }
 
+  private getFilterPopover(title: string) {
+    return this.page.locator('div').filter({ has: this.page.getByText(title, { exact: true }) }).first();
+  }
+
+  // Month filter methods (Date column)
+  getMonthFilterButton() {
+    return this.page.locator('th').filter({ hasText: 'Date' }).locator('button');
+  }
+
+  async openMonthFilter() {
+    await this.getMonthFilterButton().click();
+    await expect(this.page.getByText('Filter by Month', { exact: true })).toBeVisible();
+  }
+
+  async selectMonth(monthLabel: string) {
+    await this.openMonthFilter();
+    const popover = this.getFilterPopover('Filter by Month');
+    await popover.getByRole('button', { name: monthLabel, exact: true }).click();
+  }
+
+  // Category filter methods
+  getCategoryFilterButton() {
+    return this.page.locator('th').filter({ hasText: 'Category' }).locator('button');
+  }
+
+  async openCategoryFilter() {
+    await this.getCategoryFilterButton().click();
+    await expect(this.page.getByText('Filter by Category', { exact: true })).toBeVisible();
+  }
+
+  async expectCategoryOptionVisible(name: string) {
+    const popover = this.getFilterPopover('Filter by Category');
+    await expect(popover.getByRole('button', { name, exact: true })).toBeVisible();
+  }
+
+  async expectCategoryOptionHidden(name: string) {
+    const popover = this.getFilterPopover('Filter by Category');
+    await expect(popover.getByRole('button', { name, exact: true })).toHaveCount(0);
+  }
+
   // Owner filter methods
   getOwnerFilterButton() {
     return this.page.locator('th').filter({ hasText: 'Owner' }).locator('button');
@@ -107,6 +147,16 @@ export class AnalysisPage {
 
   async expectOwnerFilterVisible() {
     await expect(this.page.getByText('Filter by Owner', { exact: true })).toBeVisible();
+  }
+
+  async expectOwnerOptionVisible(name: string) {
+    const popover = this.getFilterPopover('Filter by Owner');
+    await expect(popover.getByRole('button', { name, exact: true })).toBeVisible();
+  }
+
+  async expectOwnerOptionHidden(name: string) {
+    const popover = this.getFilterPopover('Filter by Owner');
+    await expect(popover.getByRole('button', { name, exact: true })).toHaveCount(0);
   }
 
   async selectOwnerInFilter(ownerName: string) {
@@ -138,3 +188,4 @@ export class AnalysisPage {
     await this.page.keyboard.press('Escape');
   }
 }
+

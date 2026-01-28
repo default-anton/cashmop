@@ -2,3 +2,6 @@ me:
   name: "Me"
 partner:
   name: "Partner"
+
+friend:
+  name: "Friend"

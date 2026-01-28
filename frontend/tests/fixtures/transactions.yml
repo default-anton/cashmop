@@ -54,3 +54,27 @@ uncategorized_starbucks:
   description: "Starbucks"
   amount: -6.50
   category: null
+
+sept_groceries:
+  account: "Checking"
+  owner: "Me"
+  date: "2023-09-15"
+  description: "September Groceries"
+  amount: -10.00
+  category: "Groceries"
+
+sept_salary:
+  account: "Checking"
+  owner: "Me"
+  date: "2023-09-01"
+  description: "September Salary"
+  amount: 1000.00
+  category: "Income"
+
+sept_dinner:
+  account: "Credit Card"
+  owner: "Partner"
+  date: "2023-09-20"
+  description: "September Dinner"
+  amount: -25.00
+  category: "Dining Out"
