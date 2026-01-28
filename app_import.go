@@ -28,6 +28,11 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 		return err
 	}
 
+	// Import can create accounts/categories/owners and inserts transactions.
+	a.emit(EventTransactionsUpdated)
+	a.emit(EventCategoriesUpdated)
+	a.emit(EventOwnersUpdated)
+
 	if !isTestEnv() {
 		ctx := a.bgCtx
 		if ctx == nil {

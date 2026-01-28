@@ -108,7 +108,16 @@ func (a *App) RestoreBackup(backupPath string) error {
 	if strings.TrimSpace(backupPath) == "" {
 		return fmt.Errorf("No backup file selected.")
 	}
-	return a.svc.RestoreBackup(backupPath)
+	if err := a.svc.RestoreBackup(backupPath); err != nil {
+		return err
+	}
+
+	// Restore potentially changes everything.
+	a.emit(EventTransactionsUpdated)
+	a.emit(EventCategoriesUpdated)
+	a.emit(EventOwnersUpdated)
+
+	return nil
 }
 
 func (a *App) RestoreBackupFromDialog() (string, error) {
@@ -120,6 +129,11 @@ func (a *App) RestoreBackupFromDialog() (string, error) {
 	if err := a.svc.RestoreBackup(meta.Path); err != nil {
 		return "", fmt.Errorf("Unable to restore backup: %s", err.Error())
 	}
+
+	// Restore potentially changes everything.
+	a.emit(EventTransactionsUpdated)
+	a.emit(EventCategoriesUpdated)
+	a.emit(EventOwnersUpdated)
 
 	return meta.Path, nil
 }

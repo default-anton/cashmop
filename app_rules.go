@@ -7,6 +7,9 @@ func (a *App) SaveCategorizationRule(rule database.CategorizationRule) (*RuleRes
 	if err != nil {
 		return nil, err
 	}
+	if len(affectedIds) > 0 {
+		a.emit(EventTransactionsUpdated)
+	}
 	return &RuleResult{RuleID: id, AffectedIds: affectedIds}, nil
 }
 
@@ -31,6 +34,9 @@ func (a *App) UpdateCategorizationRule(rule database.CategorizationRule, recateg
 	if err != nil {
 		return nil, err
 	}
+	if uncategorizeCount > 0 || appliedCount > 0 {
+		a.emit(EventTransactionsUpdated)
+	}
 	return &RuleUpdateResult{RuleID: rule.ID, UncategorizeCount: uncategorizeCount, AppliedCount: appliedCount}, nil
 }
 
@@ -39,11 +45,20 @@ func (a *App) DeleteCategorizationRule(ruleID int64, uncategorize bool) (*RuleDe
 	if err != nil {
 		return nil, err
 	}
+	if uncategorizedCount > 0 {
+		a.emit(EventTransactionsUpdated)
+	}
 	return &RuleDeleteResult{RuleID: ruleID, UncategorizedCount: uncategorizedCount}, nil
 }
 
 func (a *App) UndoCategorizationRule(ruleId int64, transactionIds []int64) error {
-	return a.svc.UndoCategorizationRule(ruleId, transactionIds)
+	if err := a.svc.UndoCategorizationRule(ruleId, transactionIds); err != nil {
+		return err
+	}
+	if len(transactionIds) > 0 {
+		a.emit(EventTransactionsUpdated)
+	}
+	return nil
 }
 
 func (a *App) GetCategorizationRulesCount() (int, error) {

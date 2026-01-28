@@ -15,15 +15,31 @@ func (a *App) CategorizeTransaction(id int64, categoryName string) (*CategorizeR
 	if err := a.svc.CategorizeTransaction(id, categoryName); err != nil {
 		return nil, err
 	}
+
+	// Categorizing may create new categories.
+	a.emit(EventTransactionsUpdated)
+	a.emit(EventCategoriesUpdated)
+
 	return &CategorizeResult{TransactionID: id, AffectedIds: []int64{id}}, nil
 }
 
 func (a *App) DeleteTransactions(ids []int64) (int, error) {
-	return a.svc.DeleteTransactions(ids)
+	count, err := a.svc.DeleteTransactions(ids)
+	if err != nil {
+		return 0, err
+	}
+	if count > 0 {
+		a.emit(EventTransactionsUpdated)
+	}
+	return count, nil
 }
 
 func (a *App) RenameCategory(id int64, newName string) error {
-	return a.svc.RenameCategory(id, newName)
+	if err := a.svc.RenameCategory(id, newName); err != nil {
+		return err
+	}
+	a.emit(EventCategoriesUpdated)
+	return nil
 }
 
 func (a *App) FuzzySearch(query string, items []string) []string {
@@ -62,6 +78,7 @@ func (a *App) CreateOwner(name string) (int64, error) {
 	if res == nil {
 		return 0, fmt.Errorf("failed to create owner")
 	}
+	a.emit(EventOwnersUpdated)
 	return *res, nil
 }
 
