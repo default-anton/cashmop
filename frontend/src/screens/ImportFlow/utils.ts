@@ -5,9 +5,17 @@ export function parseDateLoose(value: string): Date | null {
   const v = value.trim();
   if (!v) return null;
 
-  // ISO-ish
-  if (/^\d{4}-\d{2}-\d{2}/.test(v)) {
-    const d = new Date(v);
+  // ISO-ish (YYYY-MM-DD ...)
+  // NOTE: `new Date("YYYY-MM-DD")` is parsed as UTC by JS, which can shift the
+  // local calendar date (e.g. 2025-12-01 becomes Nov 30 in America/Los_Angeles).
+  // For imports we treat these as *date-only* values and parse them into a local
+  // date to keep month bucketing stable.
+  const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
+  if (iso) {
+    const year = Number(iso[1]);
+    const month = Number(iso[2]);
+    const day = Number(iso[3]);
+    const d = new Date(year, month - 1, day);
     return Number.isNaN(d.getTime()) ? null : d;
   }
 

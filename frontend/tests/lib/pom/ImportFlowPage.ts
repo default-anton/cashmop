@@ -130,6 +130,14 @@ export class ImportFlowPage {
     await this.nextButton.click();
   }
 
+  async waitForMonthSelector() {
+    await this.page.getByRole('heading', { name: 'Select Range', exact: true }).waitFor({ state: 'visible', timeout: 10000 });
+  }
+
+  monthOptionButton(label: string) {
+    return this.page.locator('button', { hasText: label });
+  }
+
   async startImport() {
     await expect(this.startImportButton).toBeEnabled();
     await this.startImportButton.click();

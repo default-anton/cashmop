@@ -602,8 +602,12 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
         const rawCurrency = currencyIdx !== -1 ? row[currencyIdx] : '';
         const currency = (rawCurrency || activeMapping.currencyDefault || '').trim().toUpperCase();
 
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+
         out.push({
-          date: dateObj.toISOString().split('T')[0], // YYYY-MM-DD
+          date: `${y}-${m}-${day}`, // YYYY-MM-DD (local date)
           description: desc,
           amount: amount,
           category: '',
