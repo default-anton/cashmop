@@ -14,6 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.2.2] - 2026-01-28
+
+### Added
+- Settings: add "Sync missing rates" button to manually trigger FX rate synchronization
+
+### Changed
+- Import: perform FX rate sync synchronously so rates are available before the UI refreshes
+
+### Fixed
+- Improve FX sync and UI responsiveness after import (refresh transactions on FX updates, clear FX cache on import, allow retry for missing rates, always emit completion event)
+- Tighten exchange rate settings layout
+
 ## [0.2.1] - 2026-01-27
 
 ### Added
