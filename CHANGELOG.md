@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.2.5] - 2026-01-28
+
+### Added
+- Backend: add analysis view facets API to provide month-scoped filter options
+- Backend: emit update events (`transactions-updated`, `categories-updated`, `owners-updated`) so the UI can refresh after writes
+
+### Changed
+- Analysis: use backend facets for filter options to avoid stale/irrelevant values
+
 ## [0.2.4] - 2026-01-28
 
 ### Fixed
