@@ -15,7 +15,7 @@ func TestHashQueryDeterministic(t *testing.T) {
 func TestSearchWeb_UsesCache(t *testing.T) {
 	svc := New(nil)
 	q := "cached query"
-	key := hashQuery(q)
+	key := webSearchCacheKey(q, 5)
 	expected := []WebSearchResult{{Title: "t", URL: "https://example.com", Snippet: "s", Domain: "example.com"}}
 	svc.webSearchCache.Store(key, expected)
 

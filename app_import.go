@@ -29,7 +29,11 @@ func (a *App) ImportTransactions(transactions []TransactionInput) error {
 	}
 
 	if !isTestEnv() {
-		if _, err := a.syncFxRatesInternal(false); err != nil {
+		ctx := a.bgCtx
+		if ctx == nil {
+			ctx = a.ctx
+		}
+		if _, err := a.syncFxRatesInternal(ctx, false); err != nil {
 			if errors.Is(err, fx.ErrProviderUnsupported) {
 				log.Printf("FX sync skipped after import: %v", err)
 			} else {

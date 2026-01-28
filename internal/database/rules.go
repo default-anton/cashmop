@@ -33,7 +33,7 @@ func (s *Store) loadCategories() ([]Category, error) {
 	cached := s.categoryCache
 	s.categoryCacheMu.RUnlock()
 	if cached != nil {
-		return cached, nil
+		return cloneCategories(cached), nil
 	}
 
 	s.categoryCacheMu.Lock()
@@ -61,7 +61,7 @@ func (s *Store) loadCategories() ([]Category, error) {
 	}
 
 	s.categoryCache = categories
-	return categories, nil
+	return cloneCategories(categories), nil
 }
 
 func cloneCategories(items []Category) []Category {

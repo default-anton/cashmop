@@ -117,28 +117,55 @@ func (s *Store) RestoreBackupWithSafety(backupPath string) (string, error) {
 		return "", fmt.Errorf("Unable to create a safety backup before restoring.")
 	}
 
+	openDB := func() error {
+		if s.db != nil {
+			_ = s.db.Close()
+			s.db = nil
+		}
+
+		db, err := sql.Open("sqlite", sqliteDSN(s.dsnBase))
+		if err != nil {
+			return err
+		}
+		db.SetMaxOpenConns(4)
+		s.db = db
+
+		// Any cached data is now invalid.
+		s.ClearFxRateCache()
+		s.invalidateCategoryCache()
+		return nil
+	}
+
+	restoreFile := func(srcPath string) error {
+		tempPath := s.filePath + ".tmp"
+		if err := copyFile(srcPath, tempPath); err != nil {
+			return err
+		}
+		if err := os.Rename(tempPath, s.filePath); err != nil {
+			_ = os.Remove(tempPath)
+			return err
+		}
+		return nil
+	}
+
 	if err := s.Close(); err != nil {
 		return "", fmt.Errorf("Unable to prepare the database for restore.")
 	}
 
-	tempPath := s.filePath + ".tmp"
-	if err := copyFile(backupPath, tempPath); err != nil {
-		return "", fmt.Errorf("Unable to copy the backup file.")
-	}
-
-	if err := os.Rename(tempPath, s.filePath); err != nil {
+	if err := restoreFile(backupPath); err != nil {
+		_ = openDB()
 		return "", fmt.Errorf("Unable to restore the backup file.")
 	}
 
-	db, err := sql.Open("sqlite", sqliteDSN(s.dsnBase))
-	if err != nil {
+	if err := openDB(); err != nil {
+		// Best-effort recovery: revert to the pre-restore safety backup.
+		if rErr := restoreFile(safetyBackupPath); rErr == nil {
+			if rrErr := openDB(); rrErr == nil {
+				return "", fmt.Errorf("Unable to reopen the database after restore. The previous database was restored from a safety backup.")
+			}
+		}
 		return "", fmt.Errorf("Unable to reopen the database after restore.")
 	}
-	db.SetMaxOpenConns(4)
-	s.db = db
-	// Any cached data is now invalid.
-	s.ClearFxRateCache()
-	s.invalidateCategoryCache()
 
 	return safetyBackupPath, nil
 }

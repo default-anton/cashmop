@@ -35,7 +35,7 @@ const (
 	sqliteJournalModeWal = "WAL"
 )
 
-func Open(path string, logger *slog.Logger) (*Store, error) {
+func Open(path string, logger *slog.Logger) (store *Store, err error) {
 	l := logger
 	if l == nil {
 		l = slog.Default()
@@ -43,9 +43,9 @@ func Open(path string, logger *slog.Logger) (*Store, error) {
 
 	dsnBase := strings.TrimSpace(path)
 	if dsnBase == "" {
-		resolved, err := ResolveDatabasePath()
-		if err != nil {
-			return nil, err
+		resolved, rErr := ResolveDatabasePath()
+		if rErr != nil {
+			return nil, rErr
 		}
 		dsnBase = resolved
 	}
@@ -68,7 +68,7 @@ func Open(path string, logger *slog.Logger) (*Store, error) {
 
 	db.SetMaxOpenConns(4)
 
-	s := &Store{
+	store = &Store{
 		db:          db,
 		dsnBase:     dsnBase,
 		filePath:    filePath,
@@ -76,11 +76,12 @@ func Open(path string, logger *slog.Logger) (*Store, error) {
 		fxRateCache: make(map[string]*FxRateLookup),
 	}
 
-	if err := s.Migrate(); err != nil {
-		return nil, fmt.Errorf("failed to migrate database: %w", err)
+	if mErr := store.Migrate(); mErr != nil {
+		err = fmt.Errorf("failed to migrate database: %w", mErr)
+		return nil, err
 	}
 
-	return s, nil
+	return store, nil
 }
 
 func (s *Store) Close() error {
@@ -92,6 +93,7 @@ func (s *Store) Close() error {
 	return err
 }
 
+// DB exposes the underlying *sql.DB. Prefer Store methods; intended for tests/tooling.
 func (s *Store) DB() *sql.DB {
 	if s == nil {
 		return nil

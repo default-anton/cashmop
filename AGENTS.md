@@ -65,4 +65,4 @@ Current release platforms: macOS arm64, Linux amd64.
 - `assets/`: branding assets
 - `build/`: Wails build outputs
 - `wails.json`: Wails config
-- `app.go`, `main.go`: Wails app entrypoints
+- `app_*.go`, `main.go`: Wails app entrypoints

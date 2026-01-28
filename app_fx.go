@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -11,31 +12,50 @@ import (
 )
 
 func (a *App) SyncFxRates() error {
-	go a.syncFxRates()
+	ctx := a.bgCtx
+	if ctx == nil {
+		ctx = a.ctx
+	}
+	go a.syncFxRates(ctx)
 	return nil
 }
 
 func (a *App) SyncFxRatesNow() error {
-	_, err := a.syncFxRatesInternal(true)
+	ctx := a.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	_, err := a.syncFxRatesInternal(ctx, true)
 	return err
 }
 
-func (a *App) syncFxRatesInternal(emit bool) (fx.SyncResult, error) {
-	if a.ctx == nil {
-		return fx.SyncResult{}, fmt.Errorf("app context not initialized")
+func (a *App) syncFxRatesInternal(ctx context.Context, emit bool) (fx.SyncResult, error) {
+	if a.svc == nil {
+		return fx.SyncResult{}, fmt.Errorf("service not initialized")
 	}
-	result, err := a.svc.SyncFxRatesForMainCurrency(a.ctx)
+
+	runCtx := ctx
+	if runCtx == nil {
+		runCtx = context.Background()
+	}
+
+	result, err := a.svc.SyncFxRatesForMainCurrency(runCtx)
 	if err != nil {
 		return fx.SyncResult{}, err
 	}
-	if emit {
+
+	if emit && a.ctx != nil {
 		wailsRuntime.EventsEmit(a.ctx, "fx-rates-updated", result)
 	}
+
 	return result, nil
 }
 
-func (a *App) syncFxRates() {
-	if _, err := a.syncFxRatesInternal(true); err != nil {
+func (a *App) syncFxRates(ctx context.Context) {
+	if _, err := a.syncFxRatesInternal(ctx, true); err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return
+		}
 		if errors.Is(err, fx.ErrProviderUnsupported) {
 			log.Printf("FX sync unsupported: %v", err)
 			return

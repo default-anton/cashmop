@@ -21,6 +21,10 @@ type App struct {
 	store *database.Store
 	svc   *cashmop.Service
 
+	bgCtx    context.Context
+	bgCancel context.CancelFunc
+	bgWg     sync.WaitGroup
+
 	testDialogMu    sync.RWMutex
 	testDialogPaths TestDialogPaths
 	testDirMu       sync.Mutex
@@ -41,6 +45,7 @@ func (a *App) IsTestEnv() bool {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.bgCtx, a.bgCancel = context.WithCancel(ctx)
 
 	store, err := database.Open("", slog.Default())
 	if err != nil {
@@ -54,16 +59,37 @@ func (a *App) startup(ctx context.Context) {
 		return
 	}
 
+	a.bgWg.Add(1)
 	go func() {
+		defer a.bgWg.Done()
 		if _, err := a.TriggerAutoBackup(); err != nil {
 			log.Printf("Auto-backup failed: %v", err)
 		}
 	}()
 
-	go a.syncFxRates()
+	a.bgWg.Add(1)
+	go func() {
+		defer a.bgWg.Done()
+		a.syncFxRates(a.bgCtx)
+	}()
 }
 
 func (a *App) shutdown(ctx context.Context) {
+	if a.bgCancel != nil {
+		a.bgCancel()
+	}
+
+	bgDone := make(chan struct{})
+	go func() {
+		a.bgWg.Wait()
+		close(bgDone)
+	}()
+	select {
+	case <-bgDone:
+	case <-time.After(10 * time.Second):
+		log.Printf("Background tasks did not stop within 10 seconds")
+	}
+
 	// Trigger auto-backup on exit if needed (with timeout to prevent hanging)
 	done := make(chan struct{})
 	go func() {

@@ -21,15 +21,22 @@ func hashQuery(query string) string {
 	return fmt.Sprintf("%x", h)[:16]
 }
 
+func webSearchCacheKey(query string, count int) string {
+	return hashQuery(fmt.Sprintf("%s|%d", query, count))
+}
+
 func (s *Service) SearchWeb(query string, count int) ([]WebSearchResult, error) {
 	q := strings.TrimSpace(query)
 	if q == "" {
 		return nil, fmt.Errorf("Please enter a search term.")
 	}
 
-	cacheKey := hashQuery(q)
+	cacheKey := webSearchCacheKey(q, count)
 	if cached, ok := s.webSearchCache.Load(cacheKey); ok {
-		return cached.([]WebSearchResult), nil
+		if res, ok := cached.([]WebSearchResult); ok {
+			return res, nil
+		}
+		s.webSearchCache.Delete(cacheKey)
 	}
 
 	results, err := brave.Search(q, count)

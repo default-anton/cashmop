@@ -53,32 +53,35 @@ func (s *Service) ImportTransactions(transactions []TransactionImportInput, opts
 		}
 
 		var ownerID *int64
-		if strings.TrimSpace(t.Owner) != "" {
-			cached, ok := userCache[t.Owner]
+		ownerKey := strings.TrimSpace(t.Owner)
+		if ownerKey != "" {
+			cached, ok := userCache[ownerKey]
 			if !ok {
-				id, err := s.store.GetOrCreateUser(t.Owner)
+				id, err := s.store.GetOrCreateUser(ownerKey)
 				if err != nil {
 					return fmt.Errorf("Unable to process owner '%s'. Please check the file format.", t.Owner)
 				}
 				ownerID = id
-				userCache[t.Owner] = ownerID
+				userCache[ownerKey] = ownerID
 			} else {
 				ownerID = cached
 			}
 		}
 
 		var catID *int64
-		if strings.TrimSpace(t.Category) != "" {
-			id, ok := categoryCache[t.Category]
+		catKey := strings.TrimSpace(t.Category)
+		if catKey != "" {
+			id, ok := categoryCache[catKey]
 			if !ok {
-				id2, err := s.store.GetOrCreateCategory(t.Category)
+				id2, err := s.store.GetOrCreateCategory(catKey)
 				if err != nil {
 					return fmt.Errorf("Unable to process category '%s'. Please check the file format.", t.Category)
 				}
 				id = id2
-				categoryCache[t.Category] = id
+				categoryCache[catKey] = id
 			}
-			catID = &id
+			idCopy := id
+			catID = &idCopy
 		}
 
 		currency := strings.ToUpper(strings.TrimSpace(t.Currency))
