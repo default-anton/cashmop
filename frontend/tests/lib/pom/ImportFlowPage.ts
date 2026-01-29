@@ -23,13 +23,13 @@ export class ImportFlowPage {
 
   async goto() {
     await this.page.goto("/");
+
     const importNav = this.page.getByLabel("Navigate to Import", { exact: true });
     await importNav.waitFor({ state: "visible", timeout: 10000 });
-    await this.page.evaluate(() => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "2" }));
-    });
-    await this.page.getByText("Import Transactions", { exact: true }).waitFor({ state: "visible", timeout: 10000 });
-    await this.fileInput.waitFor({ state: "attached", timeout: 10000 });
+    await importNav.click();
+
+    await this.page.getByText("Import Transactions", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+    await this.fileInput.waitFor({ state: "attached", timeout: 15000 });
   }
 
   async uploadFile(path: string) {

@@ -41,6 +41,7 @@ Wails dev server multi-instance:
 - DB isolation: `CASHMOP_WORKER_ID=<index>` → DB suffix `_w<id>`
 - Playwright: override `baseURL` fixture with `testInfo.parallelIndex`
 - Shared Frontend: uses single Vite instance via `-frontenddevserverurl`
+- Wails still runs `frontend:dev:watcher`; for integration we keep it as a lightweight no-op via `CASHMOP_SKIP_WAILS_FRONTEND_WATCHER=1`.
 - See: `docs/specs/integration-test-parallelization.md`
 
 ## Reference Examples

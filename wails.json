@@ -4,7 +4,7 @@
   "outputfilename": "cashmop",
   "frontend:install": "pnpm install",
   "frontend:build": "pnpm build",
-  "frontend:dev:watcher": "pnpm dev",
+  "frontend:dev:watcher": "node scripts/wails-dev-watcher.mjs",
   "frontend:dev:serverUrl": "auto",
   "author": {
     "name": "Anton Kuzmenko",

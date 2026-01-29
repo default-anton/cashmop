@@ -1,7 +1,58 @@
 #!/bin/bash
 set -e
 
-WORKER_COUNT=${WORKER_COUNT:-2}
+cpu_count() {
+    local count=""
+
+    if command -v getconf > /dev/null 2>&1; then
+        count=$(getconf _NPROCESSORS_ONLN 2>/dev/null || true)
+    fi
+
+    if [ -z "$count" ] && command -v nproc > /dev/null 2>&1; then
+        count=$(nproc 2>/dev/null || true)
+    fi
+
+    if [ -z "$count" ] && command -v sysctl > /dev/null 2>&1; then
+        count=$(sysctl -n hw.ncpu 2>/dev/null || true)
+    fi
+
+    if [ -z "$count" ]; then
+        count=2
+    fi
+
+    echo "$count"
+}
+
+default_worker_count() {
+    # CI should be stable and resource-light by default.
+    if [ -n "${CI:-}" ]; then
+        echo 1
+        return
+    fi
+
+    local count
+    count=$(cpu_count)
+
+    if [ "$count" -lt 1 ]; then
+        echo 1
+        return
+    fi
+
+    # Wails dev instances are relatively heavy. Cap parallelism so local runs
+    # stay fast without spiking CPU/memory.
+    local max=4
+    if [ "$count" -gt "$max" ]; then
+        echo "$max"
+        return
+    fi
+
+    echo "$count"
+}
+
+if [ -z "${WORKER_COUNT:-}" ]; then
+    WORKER_COUNT=$(default_worker_count)
+    echo "WORKER_COUNT not set; using WORKER_COUNT=$WORKER_COUNT"
+fi
 
 # Validate WORKER_COUNT
 if [ "$WORKER_COUNT" -lt 1 ] || [ "$WORKER_COUNT" -gt 8 ]; then
@@ -93,7 +144,7 @@ echo "Building test-helper..."
 mkdir -p build/bin
 go build -o ./build/bin/test-helper ./cmd/test-helper/main.go
 
-# Generate bindings once to avoid race conditions
+# Generate bindings once to avoid races and avoid each Wails instance doing it.
 echo "Generating bindings..."
 if ! wails build -s -nopackage -o bindings-gen 2>&1; then
     echo "ERROR: Failed to generate bindings"
@@ -107,7 +158,7 @@ PID_FILES=()
 cleanup() {
     echo "Cleaning up..."
     # Kill Vite
-    if [ -n "$VITE_PID" ]; then
+    if [ -n "${VITE_PID:-}" ]; then
         echo "Stopping Vite dev server (PID: $VITE_PID)..."
         kill "$VITE_PID" 2>/dev/null || true
     fi
@@ -131,7 +182,7 @@ cleanup() {
     done
 
     # Remove temp dirs
-    if [ -n "$CASHMOP_TEST_RUN_ID" ]; then
+    if [ -n "${CASHMOP_TEST_RUN_ID:-}" ]; then
         TMP_BASE="${TMPDIR:-/tmp}"
         TEST_DIR="${TMP_BASE%/}/cashmop-test/$CASHMOP_TEST_RUN_ID"
         if [ -d "$TEST_DIR" ]; then
@@ -185,14 +236,21 @@ start_worker() {
         frontend_args=(-frontenddevserverurl "http://localhost:$VITE_PORT")
     fi
 
+    local bindings_args=(-skipbindings)
+
     local wails_prefix=()
     if command -v xvfb-run > /dev/null 2>&1; then
         wails_prefix=(xvfb-run -a)
     fi
 
+    local env_args=(APP_ENV=test CASHMOP_WORKER_ID=$index)
+    if [ "$WORKER_COUNT" -gt 1 ]; then
+        env_args+=(CASHMOP_SKIP_WAILS_FRONTEND_WATCHER=1)
+        env_args+=(CASHMOP_VITE_URL="http://localhost:$VITE_PORT/")
+    fi
+
     echo "  Worker $index on port $port..."
-    APP_ENV=test CASHMOP_WORKER_ID=$index \
-        "${wails_prefix[@]}" wails dev -devserver localhost:$port "${frontend_args[@]}" -m -s -nogorebuild -noreload -skipbindings > "$log_file" 2>&1 &
+    env "${env_args[@]}" "${wails_prefix[@]}" wails dev -devserver localhost:$port "${frontend_args[@]}" -m -s -nogorebuild -noreload "${bindings_args[@]}" > "$log_file" 2>&1 &
     echo $! > "$pid_file"
     PID_FILES+=("$pid_file")
 }
@@ -238,6 +296,7 @@ if [ "$WORKER_COUNT" -gt 1 ]; then
     start_vite
     wait_for_vite
 fi
+
 echo "Starting $WORKER_COUNT Wails instances..."
 for i in $(seq 0 $((WORKER_COUNT-1))); do
     start_worker "$i"

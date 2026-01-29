@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 import { EventsOn } from "../wailsjs/runtime/runtime";
@@ -11,11 +11,12 @@ import ImportFlow from "./screens/ImportFlow/ImportFlow";
 import RuleManager from "./screens/RuleManager/RuleManager";
 import Settings from "./screens/Settings/Settings";
 
+type Screen = "import" | "categorize" | "categories" | "rules" | "analysis" | "settings";
+
 function App() {
   const [showAbout, setShowAbout] = useState(false);
-  const [screen, setScreen] = useState<"import" | "categorize" | "categories" | "rules" | "analysis" | "settings">(
-    "analysis",
-  );
+  const [screen, setScreen] = useState<Screen>("analysis");
+  const userNavigatedRef = useRef(false);
   const [hasUncategorized, setHasUncategorized] = useState(false);
   const [hasData, setHasData] = useState(false);
   const [ruleCategoryFilterIds, setRuleCategoryFilterIds] = useState<number[]>([]);
@@ -53,6 +54,10 @@ function App() {
     });
 
     checkStatus().then(({ anyData, anyUncategorized }) => {
+      // Don't override explicit user navigation if the user clicks around while
+      // the initial status check is still in-flight.
+      if (userNavigatedRef.current) return;
+
       if (!anyData) {
         setScreen("import");
       } else if (anyUncategorized) {
@@ -71,27 +76,32 @@ function App() {
         return;
       }
 
+      const navigate = (next: Screen) => {
+        userNavigatedRef.current = true;
+        setScreen(next);
+      };
+
       switch (e.key) {
         case "1":
-          if (hasData) setScreen("analysis");
+          if (hasData) navigate("analysis");
           break;
         case "2":
-          setScreen("import");
+          navigate("import");
           break;
         case "3":
-          if (hasData) setScreen("categorize");
+          if (hasData) navigate("categorize");
           break;
         case "4":
           if (hasData) {
             setRuleCategoryFilterIds([]);
-            setScreen("rules");
+            navigate("rules");
           }
           break;
         case "5":
-          setScreen("categories");
+          navigate("categories");
           break;
         case "6":
-          setScreen("settings");
+          navigate("settings");
           break;
       }
     };
@@ -134,7 +144,10 @@ function App() {
           <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex gap-1 p-1 bg-canvas-50/80 backdrop-blur-md border border-canvas-200 rounded-full shadow-lg">
             {hasData && (
               <button
-                onClick={() => setScreen("analysis")}
+                onClick={() => {
+                  userNavigatedRef.current = true;
+                  setScreen("analysis");
+                }}
                 aria-label="Navigate to Analysis"
                 className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${
                   screen === "analysis" ? "bg-brand text-white" : "text-canvas-500 hover:text-canvas-800"
@@ -144,7 +157,10 @@ function App() {
               </button>
             )}
             <button
-              onClick={() => setScreen("import")}
+              onClick={() => {
+                userNavigatedRef.current = true;
+                setScreen("import");
+              }}
               aria-label="Navigate to Import"
               className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${
                 screen === "import" ? "bg-brand text-white" : "text-canvas-500 hover:text-canvas-800"
@@ -154,7 +170,10 @@ function App() {
             </button>
             {hasUncategorized && (
               <button
-                onClick={() => setScreen("categorize")}
+                onClick={() => {
+                  userNavigatedRef.current = true;
+                  setScreen("categorize");
+                }}
                 aria-label="Navigate to Categorize"
                 className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all whitespace-nowrap ${
                   screen === "categorize" ? "bg-brand text-white" : "text-canvas-500 hover:text-canvas-800"
@@ -166,6 +185,7 @@ function App() {
             {hasData && (
               <button
                 onClick={() => {
+                  userNavigatedRef.current = true;
                   setRuleCategoryFilterIds([]);
                   setScreen("rules");
                 }}
@@ -178,7 +198,10 @@ function App() {
               </button>
             )}
             <button
-              onClick={() => setScreen("categories")}
+              onClick={() => {
+                userNavigatedRef.current = true;
+                setScreen("categories");
+              }}
               aria-label="Navigate to Categories"
               className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${
                 screen === "categories" ? "bg-brand text-white" : "text-canvas-500 hover:text-canvas-800"
@@ -187,7 +210,10 @@ function App() {
               Categories
             </button>
             <button
-              onClick={() => setScreen("settings")}
+              onClick={() => {
+                userNavigatedRef.current = true;
+                setScreen("settings");
+              }}
               aria-label="Navigate to Settings"
               className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase transition-all ${
                 screen === "settings" ? "bg-brand text-white" : "text-canvas-500 hover:text-canvas-800"
@@ -206,6 +232,7 @@ function App() {
           ) : screen === "categories" ? (
             <CategoryManager
               onViewRules={(categoryId) => {
+                userNavigatedRef.current = true;
                 setRuleCategoryFilterIds([categoryId]);
                 setScreen("rules");
               }}
