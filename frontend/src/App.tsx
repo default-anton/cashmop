@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { ToastProvider } from "@/contexts/ToastContext";
+import { resetZoom, zoomIn, zoomOut } from "@/utils/uiScale";
 import { EventsOn } from "../wailsjs/runtime/runtime";
 import logoLandscape from "./assets/branding/logo-landscape.png";
 import About from "./screens/About/About";
@@ -72,9 +73,37 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return;
+      const modKey = e.metaKey || e.ctrlKey;
+
+      if (modKey && !e.altKey) {
+        switch (e.key) {
+          // Browsers treat Cmd/Ctrl + "=" as zoom in (even without Shift)
+          case "=":
+          case "+":
+            e.preventDefault();
+            e.stopPropagation();
+            zoomIn();
+            return;
+          case "-":
+          case "_":
+            e.preventDefault();
+            e.stopPropagation();
+            zoomOut();
+            return;
+          case "0":
+            e.preventDefault();
+            e.stopPropagation();
+            resetZoom();
+            return;
+        }
       }
+
+      const target = e.target;
+      const isEditable =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLElement && target.isContentEditable);
+      if (isEditable) return;
 
       const navigate = (next: Screen) => {
         userNavigatedRef.current = true;

@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ui-scale: 1;
+}
+
+html {
+  /* Tailwind uses rem heavily; scaling the root font-size scales the whole UI. */
+  font-size: calc(16px * var(--ui-scale));
+}
+
 html,
 body {
   height: 100%;
