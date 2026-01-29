@@ -1,11 +1,18 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Landmark, List, Tag, Trash2, User } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { MISSING_FILTER_ID } from "@/utils/filterIds";
 import type { database } from "../../../../wailsjs/go/models";
-import { Card, CategoryFilterContent, type FilterConfig, Input, OwnerFilterContent } from "../../../components";
+import {
+  Card,
+  CategoryFilterContent,
+  type FilterConfig,
+  Input,
+  OwnerFilterContent,
+  TableHeaderFilter,
+} from "../../../components";
 import Table from "../../../components/Table";
 import { formatCents, formatCentsDecimal } from "../../../utils/currency";
 import type { GroupSortField, SortOrder, TransactionSortField } from "../Analysis";
@@ -133,9 +140,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   const ownerFilterInputRef = useRef<HTMLInputElement>(null);
   const [monthFilterSearch, setMonthFilterSearch] = useState("");
   const [filteredMonthOptions, setFilteredMonthOptions] = useState(monthOptions);
-  const [activeFilter, setActiveFilter] = useState<{ tableId: string; filter: "category" | "owner" | "date" } | null>(
-    null,
-  );
+  const [activeFilter, setActiveFilter] = useState<"category" | "owner" | "date" | null>(null);
   const [monthHighlightedIndex, setMonthHighlightedIndex] = useState(0);
   const { mainCurrency } = useCurrency();
 
@@ -143,7 +148,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   const ownersForFilter = filterOwners ?? owners;
 
   useEffect(() => {
-    if (activeFilter?.filter === "category" && categoryFilterInputRef.current) {
+    if (activeFilter === "category" && categoryFilterInputRef.current) {
       // Small delay to ensure the popover is rendered
       setTimeout(() => {
         categoryFilterInputRef.current?.focus();
@@ -152,7 +157,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   }, [activeFilter]);
 
   useEffect(() => {
-    if (activeFilter?.filter === "owner" && ownerFilterInputRef.current) {
+    if (activeFilter === "owner" && ownerFilterInputRef.current) {
       setTimeout(() => {
         ownerFilterInputRef.current?.focus();
       }, 50);
@@ -160,7 +165,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
   }, [activeFilter]);
 
   useEffect(() => {
-    if (activeFilter?.filter === "date") {
+    if (activeFilter === "date") {
       setMonthFilterSearch("");
       const selectedIndex = filteredMonthOptions.findIndex((option) => option.value === selectedMonth);
       setMonthHighlightedIndex(selectedIndex >= 0 ? selectedIndex : 0);
@@ -186,13 +191,6 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       setMonthHighlightedIndex(0);
     });
   }, [monthFilterSearch, monthOptions]);
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(`${dateStr}T00:00:00`); // Ensure local timezone
-    const day = date.getDate().toString().padStart(2, "0");
-    const month = date.toLocaleString("default", { month: "short" }).toUpperCase();
-    return { day, month };
-  };
 
   const hasDifferentCurrency = useMemo(() => {
     const main = mainCurrency.toUpperCase();
@@ -255,322 +253,138 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     return result;
   }, [transactions, groupBy, groupSortField, groupSortOrder, transactionSortField, transactionSortOrder]);
 
-  const monthIds = useMemo(() => groups.map(([name]) => `${groupBy}-${name}`), [groupBy, groups]);
-
-  const groupOrderKey = useMemo(() => groups.map(([name]) => name).join("|"), [groups]);
-
-  useEffect(() => {
-    if (!activeFilter) return;
-    if (monthIds.includes(activeFilter.tableId)) return;
-    const nextId = monthIds[0] || `${groupBy}-empty`;
-    setActiveFilter({ tableId: nextId, filter: activeFilter.filter });
-  }, [activeFilter, groupBy, monthIds]);
-
-  const buildColumns = useCallback(
-    (tableId: string) => {
-      const cols: any[] = [
-        {
-          key: "checkbox",
-          isCheckbox: true,
-        },
-        {
-          key: "date",
-          header: "Date",
-          className: "w-24",
-          sortable: true,
-          ...(monthOptions.length > 0 && {
-            filter: {
-              config: {
-                type: "date",
-                isActive: !!selectedMonth,
-              } as FilterConfig,
-              isOpen: activeFilter?.tableId === tableId && activeFilter.filter === "date",
-              onOpenChange: (open: boolean) => {
-                setActiveFilter(open ? { tableId, filter: "date" } : null);
-              },
-              positionKey: `${groupOrderKey}-${tableId}-date`,
-              children: (
-                <div className="p-3 space-y-3">
-                  <div className="flex items-center justify-between px-1">
-                    <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
-                      Filter by Month
-                    </span>
-                  </div>
-                  <Input
-                    value={monthFilterSearch}
-                    onChange={(e) => setMonthFilterSearch(e.target.value)}
-                    placeholder="Search months..."
-                    className="w-full"
-                    autoFocus
-                    onKeyDown={(event) => {
-                      if (filteredMonthOptions.length === 0) return;
-                      if (event.key === "ArrowDown") {
-                        event.preventDefault();
-                        setMonthHighlightedIndex((prev) => Math.min(prev + 1, filteredMonthOptions.length - 1));
-                      }
-                      if (event.key === "ArrowUp") {
-                        event.preventDefault();
-                        setMonthHighlightedIndex((prev) => Math.max(prev - 1, 0));
-                      }
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        const selected = filteredMonthOptions[monthHighlightedIndex];
-                        if (!selected) return;
-                        onMonthChange(selected.value);
-                        setActiveFilter(null);
-                        setMonthFilterSearch("");
-                      }
-                    }}
-                  />
-                  <div className="max-h-56 overflow-y-auto -mx-1 px-1">
-                    {filteredMonthOptions.length === 0 ? (
-                      <div className="px-3 py-6 text-center text-xs text-canvas-500 select-none">No months found.</div>
-                    ) : (
-                      filteredMonthOptions.map((option, index) => {
-                        const isSelected = option.value === selectedMonth;
-                        const isHighlighted = index === monthHighlightedIndex;
-                        return (
-                          <button
-                            key={option.value}
-                            onClick={() => {
-                              onMonthChange(option.value);
-                              setActiveFilter(null);
-                              setMonthFilterSearch("");
-                            }}
-                            className={`
-                            w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none
-                            ${
-                              isSelected
-                                ? "bg-brand/10 text-brand font-semibold"
-                                : isHighlighted
-                                  ? "bg-canvas-100 text-canvas-800"
-                                  : "text-canvas-700 hover:bg-canvas-100"
-                            }
-                          `}
-                          >
-                            <span>{option.label}</span>
-                            {isSelected && <Check className="w-4 h-4" />}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              ),
-            },
-          }),
-          render: (dateStr: string) => {
-            const { day, month } = formatDate(dateStr);
-            return (
-              <div className="flex items-center gap-2 group/date">
-                <div className="flex flex-col items-center justify-center min-w-[36px] h-[38px] rounded-lg bg-canvas-100 border border-canvas-200 group-hover/date:border-brand/30 group-hover/date:bg-brand/[0.02] transition-colors">
-                  <span className="text-[10px] font-bold text-canvas-600 leading-none mb-0.5">{month}</span>
-                  <span className="text-sm font-black text-canvas-700 leading-none">{day}</span>
-                </div>
-              </div>
-            );
-          },
-        },
-        {
-          key: "description",
-          header: "Description",
-        },
-      ];
-
-      if (groupBy !== "Account") {
-        cols.push({
-          key: "account_name",
-          header: "Account",
-          className: "w-40",
-          sortable: true,
-          render: (val: string) => (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-100 text-[10px] font-bold text-canvas-600 border border-canvas-200 tracking-tight">
-              {val}
-            </span>
-          ),
-        });
-      }
-
-      cols.push({
-        key: "category_name",
-        header: "Category",
-        className: "w-40",
+  const columns = useMemo(() => {
+    const cols: any[] = [
+      {
+        key: "checkbox",
+        isCheckbox: true,
+      },
+      {
+        key: "date",
+        header: "Date",
+        className: "w-24",
         sortable: true,
-        render: (_val: string, tx: database.TransactionModel) => (
-          <EditableCategoryCell transaction={tx} categories={categories} onSave={onCategorize} />
-        ),
-        ...(onCategoryFilterChange && {
-          filter: {
-            config: {
-              type: "category",
-              isActive: selectedCategoryIds.length > 0,
-            } as FilterConfig,
-            onClear: () => {
-              onCategoryFilterChange([]);
-              setActiveFilter(null);
-            },
-            isOpen: activeFilter?.tableId === tableId && activeFilter.filter === "category",
-            onOpenChange: (open: boolean) => {
-              setActiveFilter(open ? { tableId, filter: "category" } : null);
-            },
-            positionKey: `${groupOrderKey}-${tableId}-category`,
-            children: (
-              <CategoryFilterContent
-                categories={categoriesForFilter}
-                selectedIds={selectedCategoryIds}
-                includeUncategorized={includeUncategorizedInFilter}
-                onSelect={(id) => {
-                  const newSelection = selectedCategoryIds.includes(id)
-                    ? selectedCategoryIds.filter((sid) => sid !== id)
-                    : [...selectedCategoryIds, id];
-                  onCategoryFilterChange(newSelection);
-                }}
-                onSelectOnly={(id) => {
-                  onCategoryFilterChange([id]);
-                }}
-                onSelectAll={() => {
-                  const ids = categoriesForFilter.map((c) => c.id);
-                  onCategoryFilterChange(includeUncategorizedInFilter ? [MISSING_FILTER_ID, ...ids] : ids);
-                }}
-                onClear={() => {
-                  onCategoryFilterChange([]);
-                  setActiveFilter(null);
-                }}
-                searchTerm={categoryFilterSearch}
-                onSearchChange={setCategoryFilterSearch}
-                inputRef={categoryFilterInputRef}
-              />
-            ),
-          },
-        }),
-      });
-
-      if (groupBy !== "Owner") {
-        cols.push({
-          key: "owner_name",
-          header: "Owner",
-          className: "w-32",
-          sortable: true,
-          render: (val: string) => (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 tracking-tight">
-              {val || "No Owner"}
-            </span>
-          ),
-          ...(onOwnerFilterChange && {
-            filter: {
-              config: {
-                type: "category",
-                isActive: selectedOwnerIds.length > 0,
-              } as FilterConfig,
-              onClear: () => {
-                onOwnerFilterChange([]);
-                setActiveFilter(null);
-              },
-              isOpen: activeFilter?.tableId === tableId && activeFilter.filter === "owner",
-              onOpenChange: (open: boolean) => {
-                setActiveFilter(open ? { tableId, filter: "owner" } : null);
-              },
-              positionKey: `${groupOrderKey}-${tableId}-owner`,
-              children: (
-                <OwnerFilterContent
-                  owners={ownersForFilter}
-                  selectedIds={selectedOwnerIds}
-                  includeNoOwner={includeNoOwnerInFilter}
-                  onSelect={(id) => {
-                    const newSelection = selectedOwnerIds.includes(id)
-                      ? selectedOwnerIds.filter((sid) => sid !== id)
-                      : [...selectedOwnerIds, id];
-                    onOwnerFilterChange(newSelection);
-                  }}
-                  onSelectOnly={(id) => {
-                    onOwnerFilterChange([id]);
-                  }}
-                  onSelectAll={() => {
-                    const ids = ownersForFilter.map((o) => o.id);
-                    onOwnerFilterChange(includeNoOwnerInFilter ? [MISSING_FILTER_ID, ...ids] : ids);
-                  }}
-                  onClear={() => {
-                    onOwnerFilterChange([]);
-                    setActiveFilter(null);
-                  }}
-                  searchTerm={ownerFilterSearch}
-                  onSearchChange={setOwnerFilterSearch}
-                  inputRef={ownerFilterInputRef}
-                />
-              ),
-            },
-          }),
-        });
-      }
-
-      cols.push({
-        key: "amount",
-        header: (
-          <div className="flex flex-col items-end">
-            <span className="text-canvas-600 select-none">Amount ({mainCurrency})</span>
-            {hasDifferentCurrency && (
-              <span className="text-[9px] font-semibold text-canvas-400 mt-0.5 select-none">Transaction currency</span>
-            )}
-          </div>
-        ),
-        className: "text-right font-mono font-bold w-32 whitespace-nowrap",
-        sortable: true,
-        render: (_amount: number, tx: TransactionWithFx) => {
-          const txCurrency = (tx.currency || mainCurrency).toUpperCase();
-          const main = mainCurrency.toUpperCase();
-          const showOriginal = txCurrency !== main;
-          const amount = tx.main_amount;
-          const formatted = formatCents(amount, mainCurrency);
-          const [symbol, value] = formatted !== "—" ? [formatted.slice(0, 1), formatted.slice(1)] : ["", "—"];
+        render: (dateStr: string) => {
+          const date = new Date(`${dateStr}T00:00:00`);
+          const day = date.getDate().toString().padStart(2, "0");
+          const month = date.toLocaleString("default", { month: "short" }).toUpperCase();
           return (
-            <div className="flex flex-col items-end gap-0.5">
-              <div
-                className={`flex items-baseline justify-end gap-0.5 ${amount === null ? "text-canvas-400" : amount >= 0 ? "text-finance-income" : "text-finance-expense"}`}
-              >
-                {symbol && <span className="text-[10px] opacity-40 font-sans tracking-tighter">{symbol}</span>}
-                <span className="text-sm tracking-tight">{value}</span>
+            <div className="flex items-center gap-2 group/date">
+              <div className="flex flex-col items-center justify-center min-w-[36px] h-[38px] rounded-lg bg-canvas-100 border border-canvas-200 group-hover/date:border-brand/30 group-hover/date:bg-brand/[0.02] transition-colors">
+                <span className="text-[10px] font-bold text-canvas-600 leading-none mb-0.5">{month}</span>
+                <span className="text-sm font-black text-canvas-700 leading-none">{day}</span>
               </div>
-              {showOriginal && (
-                <span
-                  className={`text-[10px] font-sans ${tx.amount < 0 ? "text-finance-expense/70" : "text-finance-income/70"}`}
-                >
-                  {txCurrency} {formatCentsDecimal(Math.abs(tx.amount))}
-                </span>
-              )}
             </div>
           );
         },
-      });
+      },
+      {
+        key: "description",
+        header: "Description",
+      },
+    ];
 
-      return cols;
-    },
-    [
-      activeFilter,
-      categoryFilterSearch,
-      categories,
-      categoriesForFilter,
-      includeUncategorizedInFilter,
-      filteredMonthOptions,
-      groupBy,
-      groupOrderKey,
-      hasDifferentCurrency,
-      includeNoOwnerInFilter,
-      mainCurrency,
-      monthFilterSearch,
-      monthHighlightedIndex,
-      monthOptions,
-      onCategorize,
-      onCategoryFilterChange,
-      onMonthChange,
-      selectedCategoryIds,
-      selectedMonth,
-      owners,
-      ownersForFilter,
-      selectedOwnerIds,
-      onOwnerFilterChange,
-      ownerFilterSearch,
-    ],
+    if (groupBy !== "Account") {
+      cols.push({
+        key: "account_name",
+        header: "Account",
+        className: "w-40",
+        sortable: true,
+        render: (val: string) => (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-100 text-[10px] font-bold text-canvas-600 border border-canvas-200 tracking-tight">
+            {val}
+          </span>
+        ),
+      });
+    }
+
+    cols.push({
+      key: "category_name",
+      header: "Category",
+      className: "w-40",
+      sortable: true,
+      render: (_val: string, tx: database.TransactionModel) => (
+        <EditableCategoryCell transaction={tx} categories={categories} onSave={onCategorize} />
+      ),
+    });
+
+    if (groupBy !== "Owner") {
+      cols.push({
+        key: "owner_name",
+        header: "Owner",
+        className: "w-32",
+        sortable: true,
+        render: (val: string) => (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 tracking-tight">
+            {val || "No Owner"}
+          </span>
+        ),
+      });
+    }
+
+    cols.push({
+      key: "amount",
+      header: (
+        <div className="flex flex-col items-end">
+          <span className="text-canvas-600 select-none">Amount ({mainCurrency})</span>
+          {hasDifferentCurrency && (
+            <span className="text-[9px] font-semibold text-canvas-400 mt-0.5 select-none">Transaction currency</span>
+          )}
+        </div>
+      ),
+      className: "text-right font-mono font-bold w-32 whitespace-nowrap",
+      sortable: true,
+      render: (_amount: number, tx: TransactionWithFx) => {
+        const txCurrency = (tx.currency || mainCurrency).toUpperCase();
+        const main = mainCurrency.toUpperCase();
+        const showOriginal = txCurrency !== main;
+        const amount = tx.main_amount;
+        const formatted = formatCents(amount, mainCurrency);
+        const [symbol, value] = formatted !== "—" ? [formatted.slice(0, 1), formatted.slice(1)] : ["", "—"];
+        return (
+          <div className="flex flex-col items-end gap-0.5">
+            <div
+              className={`flex items-baseline justify-end gap-0.5 ${amount === null ? "text-canvas-400" : amount >= 0 ? "text-finance-income" : "text-finance-expense"}`}
+            >
+              {symbol && <span className="text-[10px] opacity-40 font-sans tracking-tighter">{symbol}</span>}
+              <span className="text-sm tracking-tight">{value}</span>
+            </div>
+            {showOriginal && (
+              <span
+                className={`text-[10px] font-sans ${tx.amount < 0 ? "text-finance-expense/70" : "text-finance-income/70"}`}
+              >
+                {txCurrency} {formatCentsDecimal(Math.abs(tx.amount))}
+              </span>
+            )}
+          </div>
+        );
+      },
+    });
+
+    return cols;
+  }, [categories, groupBy, hasDifferentCurrency, mainCurrency, onCategorize]);
+  const selectedMonthLabel = useMemo(
+    () => monthOptions.find((option) => option.value === selectedMonth)?.label,
+    [monthOptions, selectedMonth],
   );
+
+  const monthFilterConfig: FilterConfig = {
+    type: "date",
+    isActive: !!selectedMonth,
+    label: selectedMonthLabel || "All",
+  };
+
+  const categoryFilterConfig: FilterConfig = {
+    type: "category",
+    isActive: selectedCategoryIds.length > 0,
+    label: selectedCategoryIds.length > 0 ? `${selectedCategoryIds.length} selected` : "All",
+  };
+
+  const ownerFilterConfig: FilterConfig = {
+    type: "category",
+    isActive: selectedOwnerIds.length > 0,
+    label: selectedOwnerIds.length > 0 ? `${selectedOwnerIds.length} selected` : "All",
+  };
 
   const getIcon = () => {
     if (groupBy === "Owner") return <User className="w-4 h-4" />;
@@ -631,6 +445,173 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-3 pb-2 border-b border-canvas-200">
+        <div className="flex flex-wrap items-center gap-3">
+          {monthOptions.length > 0 && (
+            <TableHeaderFilter
+              variant="bar"
+              titleLabel="Month"
+              config={monthFilterConfig}
+              ariaLabel="Month filter"
+              isOpen={activeFilter === "date"}
+              onOpenChange={(open) => setActiveFilter(open ? "date" : null)}
+              positionKey={`analysis-filter-month-${groupBy}`}
+            >
+              <div className="p-3 space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
+                    Filter by Month
+                  </span>
+                </div>
+                <Input
+                  value={monthFilterSearch}
+                  onChange={(e) => setMonthFilterSearch(e.target.value)}
+                  placeholder="Search months..."
+                  className="w-full"
+                  autoFocus
+                  onKeyDown={(event) => {
+                    if (filteredMonthOptions.length === 0) return;
+                    if (event.key === "ArrowDown") {
+                      event.preventDefault();
+                      setMonthHighlightedIndex((prev) => Math.min(prev + 1, filteredMonthOptions.length - 1));
+                    }
+                    if (event.key === "ArrowUp") {
+                      event.preventDefault();
+                      setMonthHighlightedIndex((prev) => Math.max(prev - 1, 0));
+                    }
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      const selected = filteredMonthOptions[monthHighlightedIndex];
+                      if (!selected) return;
+                      onMonthChange(selected.value);
+                      setActiveFilter(null);
+                      setMonthFilterSearch("");
+                    }
+                  }}
+                />
+                <div className="max-h-56 overflow-y-auto -mx-1 px-1">
+                  {filteredMonthOptions.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-xs text-canvas-500 select-none">No months found.</div>
+                  ) : (
+                    filteredMonthOptions.map((option, index) => {
+                      const isSelected = option.value === selectedMonth;
+                      const isHighlighted = index === monthHighlightedIndex;
+                      return (
+                        <button
+                          key={option.value}
+                          onClick={() => {
+                            onMonthChange(option.value);
+                            setActiveFilter(null);
+                            setMonthFilterSearch("");
+                          }}
+                          className={`
+                              w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none
+                              ${
+                                isSelected
+                                  ? "bg-brand/10 text-brand font-semibold"
+                                  : isHighlighted
+                                    ? "bg-canvas-100 text-canvas-800"
+                                    : "text-canvas-700 hover:bg-canvas-100"
+                              }
+                            `}
+                        >
+                          <span>{option.label}</span>
+                          {isSelected && <Check className="w-4 h-4" />}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </TableHeaderFilter>
+          )}
+
+          {onCategoryFilterChange && (
+            <TableHeaderFilter
+              variant="bar"
+              titleLabel="Category"
+              config={categoryFilterConfig}
+              ariaLabel="Category filter"
+              onClear={() => {
+                onCategoryFilterChange([]);
+                setActiveFilter(null);
+              }}
+              isOpen={activeFilter === "category"}
+              onOpenChange={(open) => setActiveFilter(open ? "category" : null)}
+              positionKey={`analysis-filter-category-${groupBy}`}
+            >
+              <CategoryFilterContent
+                categories={categoriesForFilter}
+                selectedIds={selectedCategoryIds}
+                includeUncategorized={includeUncategorizedInFilter}
+                onSelect={(id) => {
+                  const newSelection = selectedCategoryIds.includes(id)
+                    ? selectedCategoryIds.filter((sid) => sid !== id)
+                    : [...selectedCategoryIds, id];
+                  onCategoryFilterChange(newSelection);
+                }}
+                onSelectOnly={(id) => {
+                  onCategoryFilterChange([id]);
+                }}
+                onSelectAll={() => {
+                  const ids = categoriesForFilter.map((c) => c.id);
+                  onCategoryFilterChange(includeUncategorizedInFilter ? [MISSING_FILTER_ID, ...ids] : ids);
+                }}
+                onClear={() => {
+                  onCategoryFilterChange([]);
+                  setActiveFilter(null);
+                }}
+                searchTerm={categoryFilterSearch}
+                onSearchChange={setCategoryFilterSearch}
+                inputRef={categoryFilterInputRef}
+              />
+            </TableHeaderFilter>
+          )}
+
+          {onOwnerFilterChange && (
+            <TableHeaderFilter
+              variant="bar"
+              titleLabel="Owner"
+              config={ownerFilterConfig}
+              ariaLabel="Owner filter"
+              onClear={() => {
+                onOwnerFilterChange([]);
+                setActiveFilter(null);
+              }}
+              isOpen={activeFilter === "owner"}
+              onOpenChange={(open) => setActiveFilter(open ? "owner" : null)}
+              positionKey={`analysis-filter-owner-${groupBy}`}
+            >
+              <OwnerFilterContent
+                owners={ownersForFilter}
+                selectedIds={selectedOwnerIds}
+                includeNoOwner={includeNoOwnerInFilter}
+                onSelect={(id) => {
+                  const newSelection = selectedOwnerIds.includes(id)
+                    ? selectedOwnerIds.filter((sid) => sid !== id)
+                    : [...selectedOwnerIds, id];
+                  onOwnerFilterChange(newSelection);
+                }}
+                onSelectOnly={(id) => {
+                  onOwnerFilterChange([id]);
+                }}
+                onSelectAll={() => {
+                  const ids = ownersForFilter.map((o) => o.id);
+                  onOwnerFilterChange(includeNoOwnerInFilter ? [MISSING_FILTER_ID, ...ids] : ids);
+                }}
+                onClear={() => {
+                  onOwnerFilterChange([]);
+                  setActiveFilter(null);
+                }}
+                searchTerm={ownerFilterSearch}
+                onSearchChange={setOwnerFilterSearch}
+                inputRef={ownerFilterInputRef}
+              />
+            </TableHeaderFilter>
+          )}
+        </div>
+      </div>
+
       <div className="space-y-4 relative">
         <AnimatePresence mode="popLayout" initial={false}>
           {groups.map(([name, data]) => (
@@ -670,7 +651,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                 </div>
 
                 <Table
-                  columns={buildColumns(`${groupBy}-${name}`)}
+                  columns={columns}
                   data={data.transactions}
                   className="!border-none !rounded-none shadow-none"
                   sortField={transactionSortField}
@@ -722,7 +703,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
               </div>
 
               <Table
-                columns={buildColumns(`${groupBy}-empty`)}
+                columns={columns}
                 data={[]}
                 className="!border-none !rounded-none shadow-none"
                 sortField={transactionSortField}

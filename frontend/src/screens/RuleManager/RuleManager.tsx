@@ -1,10 +1,19 @@
-import { Check, Pencil, Plus, Trash2 } from "lucide-react";
+import { Check, Pencil, Trash2 } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import type { database } from "../../../wailsjs/go/models";
-import { Button, Card, CategoryFilterContent, Modal, ScreenLayout, Table, useToast } from "../../components";
-import type { FilterConfig } from "../../components/TableHeaderFilter";
+import type { FilterConfig } from "../../components";
+import {
+  Button,
+  Card,
+  CategoryFilterContent,
+  Modal,
+  ScreenLayout,
+  Table,
+  TableHeaderFilter,
+  useToast,
+} from "../../components";
 import { useFuzzySearch } from "../../hooks/useFuzzySearch";
 import { formatCents } from "../../utils/currency";
 import RuleEditorModal from "./components/RuleEditorModal";
@@ -38,6 +47,8 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
   const [categoryFilterSearch, setCategoryFilterSearch] = useState("");
   const categoryFilterInputRef = useRef<HTMLInputElement>(null);
 
+  const [activeFilter, setActiveFilter] = useState<"match_type" | "category" | null>(null);
+
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
@@ -52,6 +63,13 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
   useEffect(() => {
     setSelectedCategoryIds(initialCategoryIds);
   }, [initialCategoryIds]);
+
+  useEffect(() => {
+    if (activeFilter !== "category") return;
+    setTimeout(() => {
+      categoryFilterInputRef.current?.focus();
+    }, 50);
+  }, [activeFilter]);
 
   const fetchRules = useCallback(async () => {
     setLoading(true);
@@ -218,12 +236,13 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
   const matchTypeFilterConfig: FilterConfig = {
     type: "text",
     isActive: selectedMatchTypes.length > 0,
+    label: selectedMatchTypes.length > 0 ? `${selectedMatchTypes.length} selected` : "All",
   };
 
   const categoryFilterConfig: FilterConfig = {
     type: "category",
     isActive: selectedCategoryIds.length > 0,
-    label: selectedCategoryIds.length > 0 ? `${selectedCategoryIds.length} selected` : undefined,
+    label: selectedCategoryIds.length > 0 ? `${selectedCategoryIds.length} selected` : "All",
   };
 
   const columns = [
@@ -231,47 +250,6 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       key: "match_type",
       header: "Match Type",
       sortable: true,
-      filter: {
-        config: matchTypeFilterConfig,
-        onClear: () => setSelectedMatchTypes([]),
-        children: (
-          <div className="p-3 space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
-                Filter by Type
-              </span>
-              <button
-                onClick={() => setSelectedMatchTypes([])}
-                className="text-xs text-canvas-400 hover:text-canvas-700 select-none"
-              >
-                Clear
-              </button>
-            </div>
-            <div className="space-y-1">
-              {matchTypeOptions.map((option) => {
-                const isActive = selectedMatchTypes.includes(option.value);
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => {
-                      setSelectedMatchTypes((prev) =>
-                        prev.includes(option.value) ? prev.filter((t) => t !== option.value) : [...prev, option.value],
-                      );
-                    }}
-                    className={`
-                      w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none
-                      ${isActive ? "bg-brand/10 text-brand font-semibold" : "text-canvas-700 hover:bg-canvas-100"}
-                    `}
-                  >
-                    <span>{option.label}</span>
-                    {isActive && <Check className="w-4 h-4" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ),
-      },
       render: (value: MatchType) => {
         const label = matchTypeOptions.find((opt) => opt.value === value)?.label || value;
         return (
@@ -299,29 +277,6 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       key: "category_name",
       header: "Category",
       sortable: true,
-      filter: {
-        config: categoryFilterConfig,
-        onClear: () => setSelectedCategoryIds([]),
-        children: (
-          <CategoryFilterContent
-            categories={categories}
-            selectedIds={selectedCategoryIds}
-            includeUncategorized={false}
-            onSelect={(id) => {
-              setSelectedCategoryIds((prev) => (prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]));
-            }}
-            onSelectOnly={(id, e) => {
-              e?.stopPropagation();
-              setSelectedCategoryIds([id]);
-            }}
-            onSelectAll={() => setSelectedCategoryIds(categories.map((c) => c.id))}
-            onClear={() => setSelectedCategoryIds([])}
-            searchTerm={categoryFilterSearch}
-            onSearchChange={setCategoryFilterSearch}
-            inputRef={categoryFilterInputRef}
-          />
-        ),
-      },
       render: (value: string) => (
         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-tight bg-brand/5 text-brand border border-brand/10">
           {value}
@@ -380,19 +335,115 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
           onCreate={openCreateModal}
         />
 
-        <Card variant="elevated" className="p-4">
+        <Card variant="elevated" className="overflow-hidden">
           {loading ? (
             <div className="py-12 text-center text-canvas-400 select-none">Loading rules...</div>
           ) : (
-            <Table
-              columns={columns}
-              data={filteredRules}
-              sortField={sortField}
-              sortOrder={sortOrder}
-              onSort={(field) => handleSort(field as SortField)}
-              emptyMessage="No rules yet"
-              emptyDetail="Create a rule to automatically categorize new transactions."
-            />
+            <>
+              <div className="px-6 py-4 bg-canvas-100/50 border-b border-canvas-200">
+                <div className="flex flex-wrap items-center gap-3">
+                  <TableHeaderFilter
+                    variant="bar"
+                    titleLabel="Match Type"
+                    config={matchTypeFilterConfig}
+                    ariaLabel="Match type filter"
+                    onClear={() => {
+                      setSelectedMatchTypes([]);
+                      setActiveFilter(null);
+                    }}
+                    isOpen={activeFilter === "match_type"}
+                    onOpenChange={(open) => setActiveFilter(open ? "match_type" : null)}
+                    positionKey={`rule-manager-filter-match-type-${selectedMatchTypes.length}`}
+                  >
+                    <div className="p-3 space-y-3">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
+                          Filter by Type
+                        </span>
+                        <button
+                          onClick={() => setSelectedMatchTypes([])}
+                          className="text-xs text-canvas-400 hover:text-canvas-700 select-none"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                      <div className="space-y-1">
+                        {matchTypeOptions.map((option) => {
+                          const isActive = selectedMatchTypes.includes(option.value);
+                          return (
+                            <button
+                              key={option.value}
+                              onClick={() => {
+                                setSelectedMatchTypes((prev) =>
+                                  prev.includes(option.value)
+                                    ? prev.filter((t) => t !== option.value)
+                                    : [...prev, option.value],
+                                );
+                              }}
+                              className={`
+                                w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none
+                                ${isActive ? "bg-brand/10 text-brand font-semibold" : "text-canvas-700 hover:bg-canvas-100"}
+                              `}
+                            >
+                              <span>{option.label}</span>
+                              {isActive && <Check className="w-4 h-4" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </TableHeaderFilter>
+
+                  <TableHeaderFilter
+                    variant="bar"
+                    titleLabel="Category"
+                    config={categoryFilterConfig}
+                    ariaLabel="Rule category filter"
+                    onClear={() => {
+                      setSelectedCategoryIds([]);
+                      setActiveFilter(null);
+                    }}
+                    isOpen={activeFilter === "category"}
+                    onOpenChange={(open) => setActiveFilter(open ? "category" : null)}
+                    positionKey={`rule-manager-filter-category-${selectedCategoryIds.length}`}
+                  >
+                    <CategoryFilterContent
+                      categories={categories}
+                      selectedIds={selectedCategoryIds}
+                      includeUncategorized={false}
+                      onSelect={(id) => {
+                        setSelectedCategoryIds((prev) =>
+                          prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id],
+                        );
+                      }}
+                      onSelectOnly={(id, e) => {
+                        e?.stopPropagation();
+                        setSelectedCategoryIds([id]);
+                      }}
+                      onSelectAll={() => setSelectedCategoryIds(categories.map((c) => c.id))}
+                      onClear={() => {
+                        setSelectedCategoryIds([]);
+                        setActiveFilter(null);
+                      }}
+                      searchTerm={categoryFilterSearch}
+                      onSearchChange={setCategoryFilterSearch}
+                      inputRef={categoryFilterInputRef}
+                    />
+                  </TableHeaderFilter>
+                </div>
+              </div>
+
+              <Table
+                columns={columns}
+                data={filteredRules}
+                className="!border-none !rounded-none shadow-none"
+                sortField={sortField}
+                sortOrder={sortOrder}
+                onSort={(field) => handleSort(field as SortField)}
+                emptyMessage="No rules yet"
+                emptyDetail="Create a rule to automatically categorize new transactions."
+              />
+            </>
           )}
         </Card>
       </div>

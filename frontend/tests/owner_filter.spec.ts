@@ -8,18 +8,12 @@ test.describe("Owner Filter in Analysis", () => {
     await expect(page.getByRole("heading", { name: "Financial Analysis" })).toBeVisible({ timeout: 15000 });
   });
 
-  test("should show owner filter button in table header", async ({ page }) => {
-    // The Owner column header should have a filter button
-    const ownerHeader = page.locator("th").filter({ hasText: "Owner" });
-    await expect(ownerHeader).toBeVisible();
-
-    const filterButton = ownerHeader.locator("button");
-    await expect(filterButton).toBeVisible();
+  test("should show owner filter button above the table", async ({ page }) => {
+    await expect(page.getByLabel("Owner filter", { exact: true })).toBeVisible();
   });
 
   test("should open owner filter popover when clicked", async ({ page }) => {
-    const ownerHeader = page.locator("th").filter({ hasText: "Owner" });
-    await ownerHeader.locator("button").click();
+    await page.getByLabel("Owner filter", { exact: true }).click();
 
     // Should show filter content
     await expect(page.getByText("Filter by Owner", { exact: true })).toBeVisible();
@@ -27,8 +21,7 @@ test.describe("Owner Filter in Analysis", () => {
   });
 
   test("should show all owners and No Owner option in filter", async ({ page }) => {
-    const ownerHeader = page.locator("th").filter({ hasText: "Owner" });
-    await ownerHeader.locator("button").click();
+    await page.getByLabel("Owner filter", { exact: true }).click();
 
     // Should show "Me" and "Partner" from fixtures, and "No Owner" option
     await expect(page.locator("button").filter({ hasText: "Me", exact: true })).toBeVisible();
@@ -42,8 +35,7 @@ test.describe("Owner Filter in Analysis", () => {
     await expect(page.locator("tr").filter({ hasText: "Subway" })).toBeVisible();
 
     // Open owner filter
-    const ownerHeader = page.locator("th").filter({ hasText: "Owner" });
-    await ownerHeader.locator("button").click();
+    await page.getByLabel("Owner filter", { exact: true }).click();
 
     // Wait for filter content to be visible
     await expect(page.getByText("Filter by Owner", { exact: true })).toBeVisible();
@@ -70,8 +62,7 @@ test.describe("Owner Filter in Analysis", () => {
 
   test("should filter transactions by owner - Partner", async ({ page }) => {
     // Open owner filter
-    const ownerHeader = page.locator("th").filter({ hasText: "Owner" });
-    await ownerHeader.locator("button").click();
+    await page.getByLabel("Owner filter", { exact: true }).click();
 
     await expect(page.getByText("Filter by Owner", { exact: true })).toBeVisible();
 
@@ -96,8 +87,7 @@ test.describe("Owner Filter in Analysis", () => {
 
   test("should filter by No Owner", async ({ page }) => {
     // Open owner filter
-    const ownerHeader = page.locator("th").filter({ hasText: "Owner" });
-    await ownerHeader.locator("button").click();
+    await page.getByLabel("Owner filter", { exact: true }).click();
 
     await expect(page.getByText("Filter by Owner", { exact: true })).toBeVisible();
 
@@ -123,8 +113,7 @@ test.describe("Owner Filter in Analysis", () => {
 
   test("should search owners in filter", async ({ page }) => {
     // Open owner filter
-    const ownerHeader = page.locator("th").filter({ hasText: "Owner" });
-    await ownerHeader.locator("button").click();
+    await page.getByLabel("Owner filter", { exact: true }).click();
 
     await expect(page.getByText("Filter by Owner", { exact: true })).toBeVisible();
 

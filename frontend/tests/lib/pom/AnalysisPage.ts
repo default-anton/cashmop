@@ -103,9 +103,9 @@ export class AnalysisPage {
       .first();
   }
 
-  // Month filter methods (Date column)
+  // Month filter methods
   getMonthFilterButton() {
-    return this.page.locator("th").filter({ hasText: "Date" }).locator("button");
+    return this.page.getByLabel("Month filter", { exact: true });
   }
 
   async openMonthFilter() {
@@ -121,7 +121,7 @@ export class AnalysisPage {
 
   // Category filter methods
   getCategoryFilterButton() {
-    return this.page.locator("th").filter({ hasText: "Category" }).locator("button");
+    return this.page.getByLabel("Category filter", { exact: true });
   }
 
   async openCategoryFilter() {
@@ -141,11 +141,12 @@ export class AnalysisPage {
 
   // Owner filter methods
   getOwnerFilterButton() {
-    return this.page.locator("th").filter({ hasText: "Owner" }).locator("button");
+    return this.page.getByLabel("Owner filter", { exact: true });
   }
 
   async openOwnerFilter() {
     await this.getOwnerFilterButton().click();
+    await this.expectOwnerFilterVisible();
   }
 
   async expectOwnerFilterVisible() {
@@ -163,28 +164,36 @@ export class AnalysisPage {
   }
 
   async selectOwnerInFilter(ownerName: string) {
-    await this.page.locator("button").filter({ hasText: ownerName, exact: true }).click();
+    const popover = this.getFilterPopover("Filter by Owner");
+    await popover.getByRole("button", { name: ownerName, exact: true }).click();
   }
 
   async clickSelectAllOwners() {
-    await this.page.getByRole("button", { name: "Select All", exact: true }).click();
+    const popover = this.getFilterPopover("Filter by Owner");
+    await popover.getByRole("button", { name: "Select All", exact: true }).click();
   }
 
   async clickDeselectAllOwners() {
-    await this.page.getByRole("button", { name: "Deselect All", exact: true }).click();
+    const popover = this.getFilterPopover("Filter by Owner");
+    await popover.getByRole("button", { name: "Deselect All", exact: true }).click();
   }
 
   async clickOnlyOwner(ownerName: string) {
-    const ownerRow = this.page.locator("button").filter({ hasText: ownerName, exact: true }).locator("..");
-    await ownerRow.locator("button", { hasText: "ONLY" }).click();
+    const popover = this.getFilterPopover("Filter by Owner");
+    const ownerButton = popover.getByRole("button", { name: ownerName, exact: true });
+    await ownerButton.hover();
+    const ownerRow = ownerButton.locator("..");
+    await ownerRow.getByRole("button", { name: "ONLY", exact: true }).click();
   }
 
   async searchOwners(searchTerm: string) {
-    await this.page.locator('input[placeholder="Search owners..."]').fill(searchTerm);
+    const popover = this.getFilterPopover("Filter by Owner");
+    await popover.locator('input[placeholder="Search owners..."]').fill(searchTerm);
   }
 
   async clearOwnerFilter() {
-    await this.page.getByRole("button", { name: "Reset", exact: true }).click();
+    const popover = this.getFilterPopover("Filter by Owner");
+    await popover.getByRole("button", { name: "Reset", exact: true }).click();
   }
 
   async closeOwnerFilter() {

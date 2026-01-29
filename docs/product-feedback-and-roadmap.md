@@ -3,10 +3,9 @@ General:
 2. UI is boring, and colors are dull.
 
 Analysis screen:
-1. Filters should be above the table (Also, do this on the rule manager screen)
-2. Use tabs for months so that I can quickly switch between last three months. But also keep the filter by month.
-3. Add "Group by" label before "All, Category, Owner, Account". Add "Order/Sort by" label before "Total" (remove order by Name)
-4. When the current transactions only have one category, we hide group by category. This is incorrect. We should always keep it visible. And the same thing applies to the group by owner and group by account.
+1. Use tabs for months so that I can quickly switch between last three months. But also keep the filter by month dropdown so that I can select any month in the past.
+2. Add "Group by" label before "All, Category, Owner, Account". Add "Order/Sort by" label before "Total" (remove order by Name)
+3. When the current transactions only have one category, we hide group by category. This is incorrect. We should always keep it visible. And the same thing applies to the group by owner and group by account.
 
 Import screen:
 1. Support importing xls files.

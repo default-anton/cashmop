@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ChevronDown, Search, X } from "lucide-react";
+import { Check, ChevronDown, Filter as Funnel, Search, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -13,6 +13,8 @@ export interface FilterConfig {
   label?: string;
 }
 
+type TableHeaderFilterVariant = "header" | "bar";
+
 interface TableHeaderFilterProps {
   config: FilterConfig;
   children: React.ReactNode;
@@ -21,6 +23,9 @@ interface TableHeaderFilterProps {
   onOpenChange?: (open: boolean) => void;
   onToggle?: () => void;
   positionKey?: string | number;
+  ariaLabel?: string;
+  titleLabel?: string;
+  variant?: TableHeaderFilterVariant;
 }
 
 export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
@@ -31,6 +36,9 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
   onOpenChange,
   onToggle,
   positionKey,
+  ariaLabel,
+  titleLabel,
+  variant = "header",
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -124,7 +132,20 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, setIsOpen]);
 
-  const FilterIcon = Search;
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, setIsOpen]);
+
+  const Icon = variant === "bar" ? Funnel : Search;
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -177,21 +198,44 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
           handleToggle();
         }}
         className={`
-          flex items-center gap-1.5 px-2 py-1 rounded-md transition-all duration-200 group relative z-10
+          flex items-center gap-2 transition-all duration-200 group relative z-10 select-none
           ${
-            config.isActive
-              ? "bg-brand/10 text-brand hover:bg-brand/15"
-              : "text-canvas-400 hover:text-canvas-600 hover:bg-canvas-100"
+            variant === "bar"
+              ? `px-3 py-1.5 rounded-full border shadow-sm ${
+                  config.isActive
+                    ? "border-brand/20 bg-brand/[0.06] text-canvas-900"
+                    : "border-canvas-200 bg-canvas-50 text-canvas-800"
+                } hover:bg-canvas-100`
+              : `px-2 py-1 rounded-md ${
+                  config.isActive
+                    ? "bg-brand/10 text-brand hover:bg-brand/15"
+                    : "text-canvas-400 hover:text-canvas-600 hover:bg-canvas-100"
+                }`
           }
         `}
+        aria-label={ariaLabel}
         title={config.isActive ? "Filter active - click to edit" : "Add filter"}
       >
-        <FilterIcon className="w-3.5 h-3.5" />
-        {config.isActive && config.label && (
-          <span className="text-[10px] font-bold uppercase tracking-tight">{config.label}</span>
+        <Icon className="w-3.5 h-3.5 opacity-70" />
+
+        {variant === "bar" ? (
+          <div className="flex items-baseline gap-1.5">
+            {titleLabel && (
+              <span className="text-[10px] font-bold uppercase tracking-widest text-canvas-600">{titleLabel}:</span>
+            )}
+            <span className={`text-xs font-semibold ${config.isActive ? "text-canvas-900" : "text-canvas-700"}`}>
+              {config.label}
+            </span>
+          </div>
+        ) : (
+          config.isActive &&
+          config.label && <span className="text-[10px] font-bold uppercase tracking-tight">{config.label}</span>
         )}
-        {onClear && config.isActive && <X className="w-3 h-3 hover:text-canvas-900" onClick={handleClear} />}
-        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+
+        <div className="flex items-center gap-1 ml-auto">
+          {onClear && config.isActive && <X className="w-3 h-3 hover:text-canvas-900" onClick={handleClear} />}
+          <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+        </div>
       </button>
 
       {createPortal(popover, document.body)}
