@@ -1,7 +1,6 @@
 General:
 1. Fonts are too small.
 2. UI is boring, and colors are dull.
-3. Remove the button that leads to the about page from all pages. Keep the about menu item in the app native menu.
 
 Analysis screen:
 1. Filters should be above the table (Also, do this on the rule manager screen)
