@@ -6,7 +6,7 @@ import { useToast } from '@/contexts/ToastContext';
 import { useCurrency } from '@/contexts/CurrencyContext';
 
 import FileDropZone from './components/FileDropZone';
-import { MappingPunchThrough } from './components/MappingPunchThrough';
+import { MappingPunchThrough } from './components/mappingPunchThrough/MappingPunchThrough';
 import { type ImportMapping, type SavedMapping } from './components/ColumnMapperTypes';
 import MonthSelector, { type MonthOption } from './components/MonthSelector';
 import { createAmountParser, parseDateLoose } from './utils';
