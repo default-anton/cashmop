@@ -1,11 +1,11 @@
-import React from 'react';
+import type React from "react";
 
-import type { MappingPunchThroughModel } from '../useMappingPunchThroughModel';
+import type { MappingPunchThroughModel } from "../useMappingPunchThroughModel";
 
 export const PreviewTable: React.FC<{ model: MappingPunchThroughModel }> = ({ model }) => {
   return (
     <div
-      className={`bg-canvas-50 rounded-2xl border transition-all duration-300 overflow-hidden shadow-sm ${model.hoveredColIdx !== null ? 'border-brand/40 ring-1 ring-brand/10' : 'border-canvas-200'}`}
+      className={`bg-canvas-50 rounded-2xl border transition-all duration-300 overflow-hidden shadow-sm ${model.hoveredColIdx !== null ? "border-brand/40 ring-1 ring-brand/10" : "border-canvas-200"}`}
     >
       <div className="px-6 py-3 bg-canvas-100 border-b border-canvas-200 flex justify-between items-center">
         <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest select-none">
@@ -32,21 +32,21 @@ export const PreviewTable: React.FC<{ model: MappingPunchThroughModel }> = ({ mo
                     onClick={() => model.handleHeaderClick(header)}
                     onMouseEnter={() => model.setHoveredColIdx(index)}
                     className={
-                      'px-3 py-3 text-left text-xs font-bold uppercase tracking-wider transition-all duration-200 border-b-2 min-w-[150px] cursor-pointer select-none ' +
-                      (status === 'current'
-                        ? 'bg-brand/10 border-brand text-brand'
-                        : status === 'other'
-                          ? 'bg-canvas-50 border-canvas-300 text-canvas-400 cursor-not-allowed'
-                          : 'text-canvas-600 border-transparent hover:bg-canvas-100 hover:text-canvas-800')
+                      "px-3 py-3 text-left text-xs font-bold uppercase tracking-wider transition-all duration-200 border-b-2 min-w-[150px] cursor-pointer select-none " +
+                      (status === "current"
+                        ? "bg-brand/10 border-brand text-brand"
+                        : status === "other"
+                          ? "bg-canvas-50 border-canvas-300 text-canvas-400 cursor-not-allowed"
+                          : "text-canvas-600 border-transparent hover:bg-canvas-100 hover:text-canvas-800")
                     }
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="truncate">{header}</span>
-                      {status !== 'none' && label && (
+                      {status !== "none" && label && (
                         <span
                           className={
-                            'rounded px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap flex-shrink-0 ' +
-                            (status === 'current' ? 'bg-brand text-white' : 'bg-canvas-200 text-canvas-500')
+                            "rounded px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap flex-shrink-0 " +
+                            (status === "current" ? "bg-brand text-white" : "bg-canvas-200 text-canvas-500")
                           }
                         >
                           as {label}
@@ -66,15 +66,15 @@ export const PreviewTable: React.FC<{ model: MappingPunchThroughModel }> = ({ mo
                   const isHovered = model.hoveredColIdx === index;
 
                   const cellClass =
-                    status === 'current'
-                      ? 'bg-brand/10 text-brand cursor-pointer'
-                      : status === 'other'
-                        ? 'bg-brand/[0.02] text-brand/40 cursor-not-allowed'
+                    status === "current"
+                      ? "bg-brand/10 text-brand cursor-pointer"
+                      : status === "other"
+                        ? "bg-brand/[0.02] text-brand/40 cursor-not-allowed"
                         : isHovered
-                          ? 'bg-brand/5 text-brand/80 cursor-pointer'
-                          : 'text-canvas-600 cursor-pointer hover:bg-canvas-200/50';
+                          ? "bg-brand/5 text-brand/80 cursor-pointer"
+                          : "text-canvas-600 cursor-pointer hover:bg-canvas-200/50";
 
-                  const cell = row[j] ?? '';
+                  const cell = row[j] ?? "";
                   return (
                     <td
                       key={header || j}

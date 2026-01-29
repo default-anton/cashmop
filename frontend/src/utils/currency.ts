@@ -4,10 +4,10 @@
  * @param currency - Currency code (default: 'CAD')
  * @returns Formatted currency string (e.g., "$20.00")
  */
-export function formatCents(cents: number | null | undefined, currency: string = 'CAD'): string {
-  if (cents === null || cents === undefined) return '—';
+export function formatCents(cents: number | null | undefined, currency: string = "CAD"): string {
+  if (cents === null || cents === undefined) return "—";
   const dollars = cents / 100;
-  return new Intl.NumberFormat('en-CA', { style: 'currency', currency }).format(Math.abs(dollars));
+  return new Intl.NumberFormat("en-CA", { style: "currency", currency }).format(Math.abs(dollars));
 }
 
 /**
@@ -18,11 +18,14 @@ export function formatCents(cents: number | null | undefined, currency: string =
  */
 export function parseCents(value: string | number | null | undefined): number {
   if (value === null || value === undefined) return 0;
-  if (typeof value === 'number') {
+  if (typeof value === "number") {
     return Math.round(value * 100);
   }
   // Remove non-numeric characters except minus, decimal point, and comma
-  const cleaned = value.toString().replace(/[^0-9.,-]/g, '').replace(',', '.');
+  const cleaned = value
+    .toString()
+    .replace(/[^0-9.,-]/g, "")
+    .replace(",", ".");
   const dollars = parseFloat(cleaned) || 0;
   return Math.round(dollars * 100);
 }
@@ -33,6 +36,6 @@ export function parseCents(value: string | number | null | undefined): number {
  * @returns Formatted string (e.g., "20.00")
  */
 export function formatCentsDecimal(cents: number | null | undefined): string {
-  if (cents === null || cents === undefined) return '—';
+  if (cents === null || cents === undefined) return "—";
   return (cents / 100).toFixed(2);
 }

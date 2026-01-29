@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { createPortal } from 'react-dom';
-import { database } from '../../../../wailsjs/go/models';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from "framer-motion";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import type { database } from "../../../../wailsjs/go/models";
 
 interface CategoryGhostInputProps {
   categories: database.Category[];
@@ -10,13 +11,8 @@ interface CategoryGhostInputProps {
   onCancel: () => void;
 }
 
-const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
-  categories,
-  initialValue,
-  onSave,
-  onCancel,
-}) => {
-  const [value, setValue] = useState(initialValue || '');
+const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({ categories, initialValue, onSave, onCancel }) => {
+  const [value, setValue] = useState(initialValue || "");
   const [suggestions, setSuggestions] = useState<database.Category[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
@@ -29,10 +25,10 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
       return;
     }
 
-    const names = categories.map(c => c.name);
+    const names = categories.map((c) => c.name);
     (window as any).go.main.App.FuzzySearch(value, names).then((rankedNames: string[]) => {
       const ranked = rankedNames
-        .map(name => categories.find(c => c.name === name))
+        .map((name) => categories.find((c) => c.name === name))
         .filter((c): c is database.Category => !!c && c.name.toLowerCase() !== value.toLowerCase())
         .slice(0, 5);
       setSuggestions(ranked);
@@ -50,7 +46,7 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
   useEffect(() => {
     inputRef.current?.focus();
     inputRef.current?.select();
-    
+
     if (inputRef.current) {
       const rect = inputRef.current.getBoundingClientRect();
       setCoords({
@@ -62,29 +58,29 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       const finalValue = selectedIndex >= 0 ? suggestions[selectedIndex].name : value;
       onSave(finalValue);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       onCancel();
-    } else if (e.key === 'Tab') {
+    } else if (e.key === "Tab") {
       if (suggestions.length > 0) {
         e.preventDefault();
         if (e.shiftKey) {
-          setSelectedIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+          setSelectedIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
         } else {
-          setSelectedIndex(prev => (prev >= suggestions.length - 1 ? 0 : prev + 1));
+          setSelectedIndex((prev) => (prev >= suggestions.length - 1 ? 0 : prev + 1));
         }
       }
-    } else if (e.key === 'ArrowDown') {
+    } else if (e.key === "ArrowDown") {
       if (suggestions.length > 0) {
         e.preventDefault();
-        setSelectedIndex(prev => (prev >= suggestions.length - 1 ? 0 : prev + 1));
+        setSelectedIndex((prev) => (prev >= suggestions.length - 1 ? 0 : prev + 1));
       }
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === "ArrowUp") {
       if (suggestions.length > 0) {
         e.preventDefault();
-        setSelectedIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+        setSelectedIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
       }
     }
   };
@@ -99,13 +95,13 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
   const dropdown = (
     <AnimatePresence>
       {suggestions.length > 0 && (
-        <motion.div 
+        <motion.div
           ref={dropdownRef}
           initial={{ opacity: 0, y: -4, scale: 0.98 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -4, scale: 0.98 }}
           style={{
-            position: 'absolute',
+            position: "absolute",
             top: coords.top,
             left: coords.left,
             width: coords.width,
@@ -117,7 +113,7 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
             <div
               key={suggestion.id}
               className={`px-3 py-1.5 text-[10px] font-bold tracking-tight cursor-pointer transition-colors ${
-                index === selectedIndex ? 'bg-brand/10 text-brand' : 'text-canvas-600 hover:bg-canvas-50'
+                index === selectedIndex ? "bg-brand/10 text-brand" : "text-canvas-600 hover:bg-canvas-50"
               }`}
               onClick={() => onSave(suggestion.name)}
             >
@@ -130,11 +126,7 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({
   );
 
   return (
-    <motion.div 
-      initial={{ scale: 0.95, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      className="relative w-full"
-    >
+    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative w-full">
       <input
         ref={inputRef}
         type="text"

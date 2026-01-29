@@ -1,16 +1,15 @@
-import React, { RefObject } from 'react';
-import { Wand2, X, MousePointer2 } from 'lucide-react';
-import { formatCents, formatCentsDecimal } from '../../../utils/currency';
-
+import { MousePointer2, Wand2, X } from "lucide-react";
+import type React from "react";
+import { formatCents, formatCentsDecimal } from "../../../utils/currency";
 
 export interface SelectionRule {
   text: string;
-  mode: 'contains' | 'starts_with' | 'ends_with' | 'exact';
+  mode: "contains" | "starts_with" | "ends_with" | "exact";
   startIndex?: number;
 }
 
 export interface AmountFilter {
-  operator: 'none' | 'gt' | 'lt' | 'between';
+  operator: "none" | "gt" | "lt" | "between";
   value1: string;
   value2: string;
 }
@@ -46,19 +45,20 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
   showCategoryColumn = false,
   showCategoryHint = true,
 }) => {
-  const modeLabel = selectionRule?.mode === 'starts_with'
-    ? 'starting with'
-    : selectionRule?.mode === 'ends_with'
-      ? 'ending with'
-      : selectionRule?.mode === 'exact'
-        ? 'matching exactly'
-        : 'containing';
+  const modeLabel =
+    selectionRule?.mode === "starts_with"
+      ? "starting with"
+      : selectionRule?.mode === "ends_with"
+        ? "ending with"
+        : selectionRule?.mode === "exact"
+          ? "matching exactly"
+          : "containing";
 
   const totalMatches = matchingCount ?? matchingTransactions.length;
-  const hasMatchText = (selectionRule?.text || '').trim().length > 0;
+  const hasMatchText = (selectionRule?.text || "").trim().length > 0;
   const previewVisible = matchingLoading || hasMatchText || totalMatches > 0;
 
-  const buildDefaultAmountValues = (op: AmountFilter['operator']) => {
+  const buildDefaultAmountValues = (op: AmountFilter["operator"]) => {
     const currentValue = currentAmount ?? 0;
     const fallback = Math.abs(currentValue / 100) || 0;
     const minValue = amountDefaults?.min ?? currentValue;
@@ -66,19 +66,19 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
     const minAbs = minValue !== undefined && minValue !== null ? Math.abs(minValue / 100) : fallback;
     const maxAbs = maxValue !== undefined && maxValue !== null ? Math.abs(maxValue / 100) : fallback;
 
-    if (op === 'between') {
+    if (op === "between") {
       return {
-        value1: String(Math.min(minAbs, maxAbs) || ''),
-        value2: String(Math.max(minAbs, maxAbs) || ''),
+        value1: String(Math.min(minAbs, maxAbs) || ""),
+        value2: String(Math.max(minAbs, maxAbs) || ""),
       };
     }
 
-    const value = op === 'gt' ? Math.min(minAbs, maxAbs) : Math.max(minAbs, maxAbs);
-    return { value1: String(value || ''), value2: '' };
+    const value = op === "gt" ? Math.min(minAbs, maxAbs) : Math.max(minAbs, maxAbs);
+    return { value1: String(value || ""), value2: "" };
   };
 
   return (
-    <div className={`relative w-full transition-all duration-300 ${selectionRule ? 'min-h-[220px]' : 'h-44'}`}>
+    <div className={`relative w-full transition-all duration-300 ${selectionRule ? "min-h-[220px]" : "h-44"}`}>
       {selectionRule ? (
         <div className="w-full h-full animate-snap-in">
           <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex flex-col justify-center gap-4 text-brand shadow-lg backdrop-blur-sm h-full select-none">
@@ -93,7 +93,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                       Auto-Rule
                     </span>
                     <span className="text-sm font-bold text-canvas-800">
-                      Matching descriptions {modeLabel}{' '}
+                      Matching descriptions {modeLabel}{" "}
                       <span className="text-brand underline underline-offset-4 decoration-2">
                         "{selectionRule.text}"
                       </span>
@@ -122,53 +122,52 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
               </span>
 
               <div className="flex bg-white rounded-lg p-1 border border-brand/20">
-                {(['none', 'gt', 'lt', 'between'] as const).map((op) => (
+                {(["none", "gt", "lt", "between"] as const).map((op) => (
                   <button
                     key={op}
                     onClick={() => {
-                      const defaults = op === 'none' ? { value1: '', value2: '' } : buildDefaultAmountValues(op);
+                      const defaults = op === "none" ? { value1: "", value2: "" } : buildDefaultAmountValues(op);
                       setAmountFilter({
                         operator: op,
                         value1: defaults.value1,
                         value2: defaults.value2,
                       });
-                      if (op !== 'none') {
+                      if (op !== "none") {
                         setTimeout(() => amountInputRef.current?.focus(), 0);
                       }
                     }}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all select-none ${amountFilter.operator === op
-                      ? 'bg-brand text-white shadow-sm'
-                      : 'text-canvas-500 hover:text-brand hover:bg-brand/5'
-                      }`}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all select-none ${
+                      amountFilter.operator === op
+                        ? "bg-brand text-white shadow-sm"
+                        : "text-canvas-500 hover:text-brand hover:bg-brand/5"
+                    }`}
                   >
-                    {op === 'none' && 'Any'}
-                    {op === 'gt' && '≥ More'}
-                    {op === 'lt' && '≤ Less'}
-                    {op === 'between' && 'Between'}
+                    {op === "none" && "Any"}
+                    {op === "gt" && "≥ More"}
+                    {op === "lt" && "≤ Less"}
+                    {op === "between" && "Between"}
                   </button>
                 ))}
               </div>
 
-              {amountFilter.operator !== 'none' && (
+              {amountFilter.operator !== "none" && (
                 <div className="flex items-center gap-2 animate-snap-in">
                   <input
                     ref={amountInputRef}
                     type="number"
-                    placeholder={amountFilter.operator === 'between' ? 'Min' : 'Value'}
+                    placeholder={amountFilter.operator === "between" ? "Min" : "Value"}
                     value={amountFilter.value1}
                     onChange={(e) => setAmountFilter({ ...amountFilter, value1: e.target.value })}
                     className="w-28 px-3 py-1.5 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
                   />
-                  {amountFilter.operator === 'between' && (
+                  {amountFilter.operator === "between" && (
                     <>
                       <span className="text-xs text-canvas-500 font-bold select-none">AND</span>
                       <input
                         type="number"
                         placeholder="Max"
                         value={amountFilter.value2}
-                        onChange={(e) =>
-                          setAmountFilter({ ...amountFilter, value2: e.target.value })
-                        }
+                        onChange={(e) => setAmountFilter({ ...amountFilter, value2: e.target.value })}
                         className="w-28 px-3 py-1.5 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
                       />
                     </>
@@ -180,7 +179,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
               <div className="mt-2 animate-snap-in">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em] select-none">
-                    {totalMatches} Matching Transaction{totalMatches !== 1 ? 's' : ''}
+                    {totalMatches} Matching Transaction{totalMatches !== 1 ? "s" : ""}
                   </span>
                   {totalMatches > matchingTransactions.length && (
                     <span className="text-[10px] font-semibold text-canvas-400 select-none">
@@ -224,14 +223,16 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                           {matchingTransactions.map((tx) => (
                             <tr key={tx.id} className="hover:bg-brand/5 transition-colors group">
                               <td className="px-3 py-1.5 text-[10px] font-medium text-canvas-500 whitespace-nowrap">
-                                {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                {new Date(tx.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                               </td>
                               <td className="px-3 py-1.5 text-[11px] font-bold text-canvas-700 truncate max-w-[200px]">
                                 {tx.description}
                               </td>
                               <td className="px-3 py-1.5 text-right">
                                 <div className="flex flex-col items-end">
-                                  <span className={`text-[10px] font-black ${tx.main_amount === null ? 'text-canvas-400' : tx.main_amount < 0 ? 'text-finance-expense' : 'text-finance-income'}`}>
+                                  <span
+                                    className={`text-[10px] font-black ${tx.main_amount === null ? "text-canvas-400" : tx.main_amount < 0 ? "text-finance-expense" : "text-finance-income"}`}
+                                  >
                                     {formatCents(tx.main_amount, mainCurrency)}
                                   </span>
                                   {(() => {
@@ -239,7 +240,9 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                                     const main = mainCurrency.toUpperCase();
                                     const showOriginal = txCurrency !== main;
                                     return showOriginal ? (
-                                      <span className={`text-[9px] ${tx.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
+                                      <span
+                                        className={`text-[9px] ${tx.amount < 0 ? "text-finance-expense/70" : "text-finance-income/70"}`}
+                                      >
                                         {txCurrency} {formatCentsDecimal(Math.abs(tx.amount))}
                                       </span>
                                     ) : null;
@@ -248,8 +251,10 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                               </td>
                               {showCategoryColumn && (
                                 <td className="px-3 py-1.5">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-tight ${tx.category_name ? 'bg-brand/5 text-brand border border-brand/10' : 'bg-canvas-200 text-canvas-600 border border-canvas-300'}`}>
-                                    {tx.category_name || 'Uncategorized'}
+                                  <span
+                                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-tight ${tx.category_name ? "bg-brand/5 text-brand border border-brand/10" : "bg-canvas-200 text-canvas-600 border border-canvas-300"}`}
+                                  >
+                                    {tx.category_name || "Uncategorized"}
                                   </span>
                                 </td>
                               )}

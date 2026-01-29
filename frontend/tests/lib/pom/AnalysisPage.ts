@@ -1,4 +1,4 @@
-import { expect, Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export class AnalysisPage {
   readonly page: Page;
@@ -11,12 +11,12 @@ export class AnalysisPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.getByRole('heading', { name: 'Financial Analysis' });
-    this.analysisButton = page.getByLabel('Navigate to Analysis', { exact: true });
-    this.prevMonthButton = page.getByLabel('Previous Month', { exact: true });
-    this.nextMonthButton = page.getByLabel('Next Month', { exact: true });
-    this.currentMonthLabel = page.getByLabel('Current Month', { exact: true });
-    this.deleteButton = this.page.getByRole('button', { name: /Delete \(\d+\)/ });
+    this.heading = page.getByRole("heading", { name: "Financial Analysis" });
+    this.analysisButton = page.getByLabel("Navigate to Analysis", { exact: true });
+    this.prevMonthButton = page.getByLabel("Previous Month", { exact: true });
+    this.nextMonthButton = page.getByLabel("Next Month", { exact: true });
+    this.currentMonthLabel = page.getByLabel("Current Month", { exact: true });
+    this.deleteButton = this.page.getByRole("button", { name: /Delete \(\d+\)/ });
   }
 
   async expectVisible() {
@@ -45,7 +45,7 @@ export class AnalysisPage {
   }
 
   getTransactionCheckbox(transactionDescription: string) {
-    return this.page.locator('tr').filter({ hasText: transactionDescription }).locator('input[type="checkbox"]');
+    return this.page.locator("tr").filter({ hasText: transactionDescription }).locator('input[type="checkbox"]');
   }
 
   async selectTransaction(transactionDescription: string) {
@@ -77,68 +77,71 @@ export class AnalysisPage {
   }
 
   async expectDeleteButtonWithCount(count: number) {
-    await expect(this.page.getByRole('button', { name: `Delete (${count})`, exact: true })).toBeVisible();
+    await expect(this.page.getByRole("button", { name: `Delete (${count})`, exact: true })).toBeVisible();
   }
 
   async confirmDelete() {
-    await this.page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await this.page.getByRole("button", { name: "Delete", exact: true }).click();
   }
 
   async cancelDelete() {
-    await this.page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await this.page.getByRole("button", { name: "Cancel", exact: true }).click();
   }
 
   async expectTransactionVisible(transactionDescription: string) {
-    await expect(this.page.locator('tr').filter({ hasText: transactionDescription })).toBeVisible();
+    await expect(this.page.locator("tr").filter({ hasText: transactionDescription })).toBeVisible();
   }
 
   async expectTransactionNotVisible(transactionDescription: string) {
-    await expect(this.page.locator('tr').filter({ hasText: transactionDescription })).not.toBeVisible();
+    await expect(this.page.locator("tr").filter({ hasText: transactionDescription })).not.toBeVisible();
   }
 
   private getFilterPopover(title: string) {
-    return this.page.locator('div').filter({ has: this.page.getByText(title, { exact: true }) }).first();
+    return this.page
+      .locator("div")
+      .filter({ has: this.page.getByText(title, { exact: true }) })
+      .first();
   }
 
   // Month filter methods (Date column)
   getMonthFilterButton() {
-    return this.page.locator('th').filter({ hasText: 'Date' }).locator('button');
+    return this.page.locator("th").filter({ hasText: "Date" }).locator("button");
   }
 
   async openMonthFilter() {
     await this.getMonthFilterButton().click();
-    await expect(this.page.getByText('Filter by Month', { exact: true })).toBeVisible();
+    await expect(this.page.getByText("Filter by Month", { exact: true })).toBeVisible();
   }
 
   async selectMonth(monthLabel: string) {
     await this.openMonthFilter();
-    const popover = this.getFilterPopover('Filter by Month');
-    await popover.getByRole('button', { name: monthLabel, exact: true }).click();
+    const popover = this.getFilterPopover("Filter by Month");
+    await popover.getByRole("button", { name: monthLabel, exact: true }).click();
   }
 
   // Category filter methods
   getCategoryFilterButton() {
-    return this.page.locator('th').filter({ hasText: 'Category' }).locator('button');
+    return this.page.locator("th").filter({ hasText: "Category" }).locator("button");
   }
 
   async openCategoryFilter() {
     await this.getCategoryFilterButton().click();
-    await expect(this.page.getByText('Filter by Category', { exact: true })).toBeVisible();
+    await expect(this.page.getByText("Filter by Category", { exact: true })).toBeVisible();
   }
 
   async expectCategoryOptionVisible(name: string) {
-    const popover = this.getFilterPopover('Filter by Category');
-    await expect(popover.getByRole('button', { name, exact: true })).toBeVisible();
+    const popover = this.getFilterPopover("Filter by Category");
+    await expect(popover.getByRole("button", { name, exact: true })).toBeVisible();
   }
 
   async expectCategoryOptionHidden(name: string) {
-    const popover = this.getFilterPopover('Filter by Category');
-    await expect(popover.getByRole('button', { name, exact: true })).toHaveCount(0);
+    const popover = this.getFilterPopover("Filter by Category");
+    await expect(popover.getByRole("button", { name, exact: true })).toHaveCount(0);
   }
 
   // Owner filter methods
   getOwnerFilterButton() {
-    return this.page.locator('th').filter({ hasText: 'Owner' }).locator('button');
+    return this.page.locator("th").filter({ hasText: "Owner" }).locator("button");
   }
 
   async openOwnerFilter() {
@@ -146,34 +149,34 @@ export class AnalysisPage {
   }
 
   async expectOwnerFilterVisible() {
-    await expect(this.page.getByText('Filter by Owner', { exact: true })).toBeVisible();
+    await expect(this.page.getByText("Filter by Owner", { exact: true })).toBeVisible();
   }
 
   async expectOwnerOptionVisible(name: string) {
-    const popover = this.getFilterPopover('Filter by Owner');
-    await expect(popover.getByRole('button', { name, exact: true })).toBeVisible();
+    const popover = this.getFilterPopover("Filter by Owner");
+    await expect(popover.getByRole("button", { name, exact: true })).toBeVisible();
   }
 
   async expectOwnerOptionHidden(name: string) {
-    const popover = this.getFilterPopover('Filter by Owner');
-    await expect(popover.getByRole('button', { name, exact: true })).toHaveCount(0);
+    const popover = this.getFilterPopover("Filter by Owner");
+    await expect(popover.getByRole("button", { name, exact: true })).toHaveCount(0);
   }
 
   async selectOwnerInFilter(ownerName: string) {
-    await this.page.locator('button').filter({ hasText: ownerName, exact: true }).click();
+    await this.page.locator("button").filter({ hasText: ownerName, exact: true }).click();
   }
 
   async clickSelectAllOwners() {
-    await this.page.getByRole('button', { name: 'Select All', exact: true }).click();
+    await this.page.getByRole("button", { name: "Select All", exact: true }).click();
   }
 
   async clickDeselectAllOwners() {
-    await this.page.getByRole('button', { name: 'Deselect All', exact: true }).click();
+    await this.page.getByRole("button", { name: "Deselect All", exact: true }).click();
   }
 
   async clickOnlyOwner(ownerName: string) {
-    const ownerRow = this.page.locator('button').filter({ hasText: ownerName, exact: true }).locator('..');
-    await ownerRow.locator('button', { hasText: 'ONLY' }).click();
+    const ownerRow = this.page.locator("button").filter({ hasText: ownerName, exact: true }).locator("..");
+    await ownerRow.locator("button", { hasText: "ONLY" }).click();
   }
 
   async searchOwners(searchTerm: string) {
@@ -181,11 +184,10 @@ export class AnalysisPage {
   }
 
   async clearOwnerFilter() {
-    await this.page.getByRole('button', { name: 'Reset', exact: true }).click();
+    await this.page.getByRole("button", { name: "Reset", exact: true }).click();
   }
 
   async closeOwnerFilter() {
-    await this.page.keyboard.press('Escape');
+    await this.page.keyboard.press("Escape");
   }
 }
-

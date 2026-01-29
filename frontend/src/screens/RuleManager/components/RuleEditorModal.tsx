@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { database } from '../../../../wailsjs/go/models';
-import { AutocompleteInput, Button, Input, Modal, useToast } from '../../../components';
-import { RuleEditor, AmountFilter, SelectionRule } from '../../CategorizationLoop/components/RuleEditor';
-import { useCurrency } from '@/contexts/CurrencyContext';
-import { parseCents } from '../../../utils/currency';
-import { MatchType, RulePayload, RuleRow } from '../types';
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import type { database } from "../../../../wailsjs/go/models";
+import { AutocompleteInput, Button, Input, Modal, useToast } from "../../../components";
+import { parseCents } from "../../../utils/currency";
+import { type AmountFilter, RuleEditor, type SelectionRule } from "../../CategorizationLoop/components/RuleEditor";
+import type { MatchType, RulePayload, RuleRow } from "../types";
 
 type MatchTypeOption = { value: MatchType; label: string };
 
@@ -25,11 +26,11 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
 }) => {
   const toast = useToast();
   const { mainCurrency } = useCurrency();
-  const [matchType, setMatchType] = useState<MatchType>('contains');
-  const [matchValue, setMatchValue] = useState('');
-  const [categoryInput, setCategoryInput] = useState('');
+  const [matchType, setMatchType] = useState<MatchType>("contains");
+  const [matchValue, setMatchValue] = useState("");
+  const [categoryInput, setCategoryInput] = useState("");
   const [categoryId, setCategoryId] = useState(0);
-  const [amountFilter, setAmountFilter] = useState<AmountFilter>({ operator: 'none', value1: '', value2: '' });
+  const [amountFilter, setAmountFilter] = useState<AmountFilter>({ operator: "none", value1: "", value2: "" });
   const amountInputRef = useRef<HTMLInputElement | null>(null);
 
   const [categorySuggestions, setCategorySuggestions] = useState<database.Category[]>([]);
@@ -48,14 +49,14 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
   };
 
   const buildAmountBounds = useCallback((filter: AmountFilter, basis: number) => {
-    if (filter.operator === 'none') {
+    if (filter.operator === "none") {
       return { amountMin: null, amountMax: null };
     }
 
     const v1 = parseAmountValue(filter.value1);
     const v2 = parseAmountValue(filter.value2);
 
-    if (v1 === null || (filter.operator === 'between' && v2 === null)) {
+    if (v1 === null || (filter.operator === "between" && v2 === null)) {
       return { amountMin: null, amountMax: null };
     }
 
@@ -63,24 +64,18 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
     const abs1 = Math.abs(v1);
     const abs2 = v2 !== null ? Math.abs(v2) : null;
 
-    if (filter.operator === 'gt') {
-      return isExpense
-        ? { amountMin: null, amountMax: -abs1 }
-        : { amountMin: abs1, amountMax: null };
+    if (filter.operator === "gt") {
+      return isExpense ? { amountMin: null, amountMax: -abs1 } : { amountMin: abs1, amountMax: null };
     }
 
-    if (filter.operator === 'lt') {
-      return isExpense
-        ? { amountMin: -abs1, amountMax: null }
-        : { amountMin: null, amountMax: abs1 };
+    if (filter.operator === "lt") {
+      return isExpense ? { amountMin: -abs1, amountMax: null } : { amountMin: null, amountMax: abs1 };
     }
 
     const minVal = abs2 !== null ? Math.min(abs1, abs2) : abs1;
     const maxVal = abs2 !== null ? Math.max(abs1, abs2) : abs1;
 
-    return isExpense
-      ? { amountMin: -maxVal, amountMax: -minVal }
-      : { amountMin: minVal, amountMax: maxVal };
+    return isExpense ? { amountMin: -maxVal, amountMax: -minVal } : { amountMin: minVal, amountMax: maxVal };
   }, []);
 
   useEffect(() => {
@@ -111,10 +106,10 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
       if (mainAmount !== null && mainAmount !== undefined) return mainAmount;
       return first.amount;
     }
-    if (activeRule && (activeRule.amount_min !== null && activeRule.amount_min !== undefined)) {
+    if (activeRule && activeRule.amount_min !== null && activeRule.amount_min !== undefined) {
       return activeRule.amount_min || 0;
     }
-    if (activeRule && (activeRule.amount_max !== null && activeRule.amount_max !== undefined)) {
+    if (activeRule && activeRule.amount_max !== null && activeRule.amount_max !== undefined) {
       return activeRule.amount_max || 0;
     }
     if (matchingAmountRange.max !== undefined && matchingAmountRange.max !== null) {
@@ -153,7 +148,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
         }
       } catch (e) {
         if (!cancelled) {
-          console.error('Failed to fetch matching transactions', e);
+          console.error("Failed to fetch matching transactions", e);
           setMatchingTransactions([]);
           setMatchingCount(0);
           setMatchingAmountRange({});
@@ -176,14 +171,14 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
     const max = rule.amount_max ?? null;
 
     if (min === null && max === null) {
-      return { operator: 'none', value1: '', value2: '' };
+      return { operator: "none", value1: "", value2: "" };
     }
 
     if (min !== null && max !== null) {
       const absMin = Math.abs(min) / 100;
       const absMax = Math.abs(max) / 100;
       return {
-        operator: 'between',
+        operator: "between",
         value1: String(Math.min(absMin, absMax)),
         value2: String(Math.max(absMin, absMax)),
       };
@@ -191,25 +186,25 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
 
     if (min !== null) {
       return {
-        operator: min < 0 ? 'lt' : 'gt',
+        operator: min < 0 ? "lt" : "gt",
         value1: String(Math.abs(min) / 100),
-        value2: '',
+        value2: "",
       };
     }
 
     return {
-      operator: max !== null && max < 0 ? 'gt' : 'lt',
+      operator: max !== null && max < 0 ? "gt" : "lt",
       value1: String(Math.abs(max || 0) / 100),
-      value2: '',
+      value2: "",
     };
   };
 
   const resetEditorState = useCallback(() => {
-    setMatchType('contains');
-    setMatchValue('');
-    setCategoryInput('');
+    setMatchType("contains");
+    setMatchValue("");
+    setCategoryInput("");
     setCategoryId(0);
-    setAmountFilter({ operator: 'none', value1: '', value2: '' });
+    setAmountFilter({ operator: "none", value1: "", value2: "" });
     setMatchingTransactions([]);
     setMatchingCount(0);
     setMatchingAmountRange({});
@@ -222,7 +217,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
     if (activeRule) {
       setMatchType(activeRule.match_type);
       setMatchValue(activeRule.match_value);
-      setCategoryInput(activeRule.category_name || '');
+      setCategoryInput(activeRule.category_name || "");
       setCategoryId(activeRule.category_id || 0);
       setAmountFilter(deriveAmountFilter(activeRule));
     } else {
@@ -252,11 +247,11 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
 
   const handleSaveRule = async () => {
     if (!matchValue.trim()) {
-      toast.showToast('Match value is required', 'error');
+      toast.showToast("Match value is required", "error");
       return;
     }
     if (!categoryInput.trim()) {
-      toast.showToast('Category is required', 'error');
+      toast.showToast("Category is required", "error");
       return;
     }
 
@@ -265,25 +260,25 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
     try {
       const res = await (window as any).go.main.App.SaveCategorizationRule(payload);
       toast.showToast(
-        `Rule created and applied to ${res?.affected_ids?.length || 0} transaction${(res?.affected_ids?.length || 0) !== 1 ? 's' : ''}`,
-        'success'
+        `Rule created and applied to ${res?.affected_ids?.length || 0} transaction${(res?.affected_ids?.length || 0) !== 1 ? "s" : ""}`,
+        "success",
       );
       handleClose();
       onSaved();
     } catch (e) {
-      console.error('Failed to save rule', e);
-      toast.showToast('Failed to save rule', 'error');
+      console.error("Failed to save rule", e);
+      toast.showToast("Failed to save rule", "error");
     }
   };
 
   const handleUpdateRule = async (recategorize: boolean) => {
     if (!activeRule) return;
     if (!matchValue.trim()) {
-      toast.showToast('Match value is required', 'error');
+      toast.showToast("Match value is required", "error");
       return;
     }
     if (!categoryInput.trim()) {
-      toast.showToast('Category is required', 'error');
+      toast.showToast("Category is required", "error");
       return;
     }
 
@@ -294,16 +289,16 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
       if (recategorize) {
         toast.showToast(
           `Rule updated: ${res?.uncategorize_count || 0} uncategorized, ${res?.applied_count || 0} recategorized`,
-          'success'
+          "success",
         );
       } else {
-        toast.showToast('Rule updated', 'success');
+        toast.showToast("Rule updated", "success");
       }
       handleClose();
       onSaved();
     } catch (e) {
-      console.error('Failed to update rule', e);
-      toast.showToast('Failed to update rule', 'error');
+      console.error("Failed to update rule", e);
+      toast.showToast("Failed to update rule", "error");
     } finally {
       setConfirmUpdateOpen(false);
     }
@@ -318,7 +313,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
       const count = await (window as any).go.main.App.GetRuleMatchCount(activeRule.id);
       setConfirmMatchCount(count || 0);
     } catch (e) {
-      console.error('Failed to fetch rule match count', e);
+      console.error("Failed to fetch rule match count", e);
       setConfirmMatchCount(0);
     } finally {
       setConfirmLoading(false);
@@ -337,24 +332,22 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
 
   return (
     <>
-      <Modal
-        isOpen={isOpen}
-        onClose={handleClose}
-        title={activeRule ? 'Edit Rule' : 'Create Rule'}
-        size="lg"
-      >
+      <Modal isOpen={isOpen} onClose={handleClose} title={activeRule ? "Edit Rule" : "Create Rule"} size="lg">
         <div className="space-y-6">
           <div className="space-y-4">
             <div>
-              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 select-none">Match Type</div>
+              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 select-none">
+                Match Type
+              </div>
               <div className="flex bg-white rounded-xl p-1 border border-canvas-200">
                 {matchTypeOptions.map((option) => (
                   <button
                     key={option.value}
                     onClick={() => setMatchType(option.value)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all select-none ${matchType === option.value
-                      ? 'bg-brand text-white shadow-sm'
-                      : 'text-canvas-500 hover:text-brand hover:bg-brand/5'
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all select-none ${
+                      matchType === option.value
+                        ? "bg-brand text-white shadow-sm"
+                        : "text-canvas-500 hover:text-brand hover:bg-brand/5"
                     }`}
                   >
                     {option.label}
@@ -364,7 +357,9 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block select-none">Match Value</label>
+              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block select-none">
+                Match Value
+              </label>
               <Input
                 value={matchValue}
                 onChange={(e) => setMatchValue(e.target.value)}
@@ -374,7 +369,9 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
             </div>
 
             <div>
-              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block select-none">Category</label>
+              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block select-none">
+                Category
+              </label>
               <AutocompleteInput
                 value={categoryInput}
                 onChange={(value) => {
@@ -397,7 +394,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
 
           <RuleEditor
             selectionRule={selectionRule}
-            onClearRule={() => setMatchValue('')}
+            onClearRule={() => setMatchValue("")}
             amountFilter={amountFilter}
             setAmountFilter={setAmountFilter}
             amountInputRef={amountInputRef}
@@ -412,7 +409,9 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
           />
 
           <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+            <Button variant="secondary" onClick={handleClose}>
+              Cancel
+            </Button>
             {activeRule ? (
               <Button onClick={openUpdateConfirm}>Save Changes</Button>
             ) : (
@@ -422,23 +421,22 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
         </div>
       </Modal>
 
-      <Modal
-        isOpen={confirmUpdateOpen}
-        onClose={() => setConfirmUpdateOpen(false)}
-        title="Update Rule"
-        size="sm"
-      >
+      <Modal isOpen={confirmUpdateOpen} onClose={() => setConfirmUpdateOpen(false)} title="Update Rule" size="sm">
         <div className="space-y-4">
           <p className="text-sm text-canvas-600 select-none">Choose how to apply your updated rule.</p>
           <div className="text-xs text-canvas-500 select-none">
-            {confirmLoading ? 'Checking matches...' : `${confirmMatchCount} matching transaction${confirmMatchCount !== 1 ? 's' : ''}`}
+            {confirmLoading
+              ? "Checking matches..."
+              : `${confirmMatchCount} matching transaction${confirmMatchCount !== 1 ? "s" : ""}`}
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setConfirmUpdateOpen(false)}>Cancel</Button>
-            <Button variant="secondary" onClick={() => handleUpdateRule(false)}>Update Rule Only</Button>
-            <Button onClick={() => handleUpdateRule(true)}>
-              Update + Recategorize ({confirmMatchCount})
+            <Button variant="secondary" onClick={() => setConfirmUpdateOpen(false)}>
+              Cancel
             </Button>
+            <Button variant="secondary" onClick={() => handleUpdateRule(false)}>
+              Update Rule Only
+            </Button>
+            <Button onClick={() => handleUpdateRule(true)}>Update + Recategorize ({confirmMatchCount})</Button>
           </div>
         </div>
       </Modal>

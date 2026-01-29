@@ -1,49 +1,47 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { EventsOn } from '../../../wailsjs/runtime/runtime';
-import { useFuzzySearch } from '../../hooks/useFuzzySearch';
-import {
-  GroupedTransactionList
-} from './components';
-import { database } from '../../../wailsjs/go/models';
-import { Button, Modal, ScreenLayout } from '../../components';
-import { useToast } from '../../components';
-import { BarChart3, ArrowUpDown, Download, AlertTriangle, Trash2 } from 'lucide-react';
-import TransactionSearch from './components/TransactionSearch';
-import { useCurrency } from '@/contexts/CurrencyContext';
-import { formatCents, formatCentsDecimal } from '../../utils/currency';
-import { MISSING_FILTER_ID } from '@/utils/filterIds';
-import { EVENT_CATEGORIES_UPDATED, EVENT_OWNERS_UPDATED, EVENT_TRANSACTIONS_UPDATED } from '@/utils/events';
+import { AlertTriangle, ArrowUpDown, BarChart3, Download } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { EVENT_CATEGORIES_UPDATED, EVENT_OWNERS_UPDATED, EVENT_TRANSACTIONS_UPDATED } from "@/utils/events";
+import { MISSING_FILTER_ID } from "@/utils/filterIds";
+import { database } from "../../../wailsjs/go/models";
+import { EventsOn } from "../../../wailsjs/runtime/runtime";
+import { Button, Modal, ScreenLayout, useToast } from "../../components";
+import { useFuzzySearch } from "../../hooks/useFuzzySearch";
+import { formatCentsDecimal } from "../../utils/currency";
+import { GroupedTransactionList } from "./components";
+import TransactionSearch from "./components/TransactionSearch";
 
-type GroupBy = 'All' | 'Category' | 'Owner' | 'Account';
-export type SortOrder = 'asc' | 'desc';
-export type GroupSortField = 'name' | 'amount';
-export type TransactionSortField = 'date' | 'amount' | 'account_name' | 'category_name' | 'owner_name';
-type ExportFormat = 'csv' | 'xlsx';
+type GroupBy = "All" | "Category" | "Owner" | "Account";
+export type SortOrder = "asc" | "desc";
+export type GroupSortField = "name" | "amount";
+export type TransactionSortField = "date" | "amount" | "account_name" | "category_name" | "owner_name";
+type ExportFormat = "csv" | "xlsx";
 
 const Analysis: React.FC = () => {
   const toast = useToast();
   const [months, setMonths] = useState<string[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [categories, setCategories] = useState<database.Category[]>([]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [owners, setOwners] = useState<database.User[]>([]);
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<number[]>([]);
-  const [groupBy, setGroupBy] = useState<GroupBy>('All');
+  const [groupBy, setGroupBy] = useState<GroupBy>("All");
   const [transactions, setTransactions] = useState<database.TransactionModel[]>([]);
   const [analysisFacets, setAnalysisFacets] = useState<database.AnalysisFacets | null>(null);
 
   const [loading, setLoading] = useState(true);
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('csv');
+  const [exportFormat, _setExportFormat] = useState<ExportFormat>("csv");
   const [exporting, setExporting] = useState(false);
   const [exportDropdownOpen, setExportDropdownOpen] = useState(false);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
-  const { warning, mainCurrency, updateSettings, settings } = useCurrency();
+  const { warning, mainCurrency } = useCurrency();
   const [hasMissingRates, setHasMissingRates] = useState(false);
-  const [transactionSearch, setTransactionSearch] = useState('');
-  const [groupSortField, setGroupSortField] = useState<GroupSortField>('name');
-  const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>('asc');
-  const [transactionSortField, setTransactionSortField] = useState<TransactionSortField>('date');
-  const [transactionSortOrder, setTransactionSortOrder] = useState<SortOrder>('desc');
+  const [transactionSearch, setTransactionSearch] = useState("");
+  const [groupSortField, setGroupSortField] = useState<GroupSortField>("name");
+  const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>("asc");
+  const [transactionSortField, setTransactionSortField] = useState<TransactionSortField>("date");
+  const [transactionSortOrder, setTransactionSortOrder] = useState<SortOrder>("desc");
   const [selectedTxIds, setSelectedTxIds] = useState<Set<number>>(new Set());
   const [deleting, setDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -53,7 +51,7 @@ const Analysis: React.FC = () => {
       const nextMonths = monthList || [];
       setMonths(nextMonths);
       setSelectedMonth((prev) => {
-        if (nextMonths.length === 0) return '';
+        if (nextMonths.length === 0) return "";
         if (!prev || !nextMonths.includes(prev)) return nextMonths[0];
         return prev;
       });
@@ -64,49 +62,57 @@ const Analysis: React.FC = () => {
       const ownerList = await (window as any).go.main.App.GetAllUsers();
       setOwners(ownerList || []);
     } catch (e) {
-      console.error('Failed to fetch initial analysis data', e);
+      console.error("Failed to fetch initial analysis data", e);
     }
   }, []);
 
-  const fetchAnalysisView = useCallback(async (silent = false) => {
-    if (!selectedMonth) return;
+  const fetchAnalysisView = useCallback(
+    async (silent = false) => {
+      if (!selectedMonth) return;
 
-    if (!silent) {
-      setLoading(true);
-      setAnalysisFacets(null);
-    }
-    try {
-      const [year, month] = selectedMonth.split('-');
-      const startDate = `${year}-${month}-01`;
-      const endDate = `${year}-${month}-31`; // SQL handles this fine even if month has 30 days
+      if (!silent) {
+        setLoading(true);
+        setAnalysisFacets(null);
+      }
+      try {
+        const [year, month] = selectedMonth.split("-");
+        const startDate = `${year}-${month}-01`;
+        const endDate = `${year}-${month}-31`; // SQL handles this fine even if month has 30 days
 
-      const raw = await (window as any).go.main.App.GetAnalysisView(
-        startDate,
-        endDate,
-        selectedCategoryIds,
-        selectedOwnerIds
-      );
-      const view = database.AnalysisView.createFrom(raw || {});
-      setTransactions(view.transactions || []);
-      setAnalysisFacets(view.facets || database.AnalysisFacets.createFrom({
-        categories: [],
-        owners: [],
-        has_uncategorized: false,
-        has_no_owner: false,
-      }));
-    } catch (e) {
-      console.error('Failed to fetch analysis view', e);
-      setTransactions([]);
-      setAnalysisFacets(database.AnalysisFacets.createFrom({
-        categories: [],
-        owners: [],
-        has_uncategorized: false,
-        has_no_owner: false,
-      }));
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, [selectedMonth, selectedCategoryIds, selectedOwnerIds]);
+        const raw = await (window as any).go.main.App.GetAnalysisView(
+          startDate,
+          endDate,
+          selectedCategoryIds,
+          selectedOwnerIds,
+        );
+        const view = database.AnalysisView.createFrom(raw || {});
+        setTransactions(view.transactions || []);
+        setAnalysisFacets(
+          view.facets ||
+            database.AnalysisFacets.createFrom({
+              categories: [],
+              owners: [],
+              has_uncategorized: false,
+              has_no_owner: false,
+            }),
+        );
+      } catch (e) {
+        console.error("Failed to fetch analysis view", e);
+        setTransactions([]);
+        setAnalysisFacets(
+          database.AnalysisFacets.createFrom({
+            categories: [],
+            owners: [],
+            has_uncategorized: false,
+            has_no_owner: false,
+          }),
+        );
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [selectedMonth, selectedCategoryIds, selectedOwnerIds],
+  );
 
   useEffect(() => {
     fetchData();
@@ -120,13 +126,13 @@ const Analysis: React.FC = () => {
       setHasMissingRates(false);
       return;
     }
-    const missing = transactions.some(tx => tx.amount_in_main_currency === null);
+    const missing = transactions.some((tx) => tx.amount_in_main_currency === null);
     setHasMissingRates(missing);
   }, [transactions]);
 
   // Reload transactions when FX rates are updated (to get converted amounts)
   useEffect(() => {
-    const off = EventsOn('fx-rates-updated', () => {
+    const off = EventsOn("fx-rates-updated", () => {
       fetchAnalysisView(true); // silent refresh
     });
     return () => off?.();
@@ -151,7 +157,9 @@ const Analysis: React.FC = () => {
     ];
 
     return () => {
-      offs.forEach((off) => off?.());
+      offs.forEach((off) => {
+        off?.();
+      });
       if (refreshDebounceRef.current) {
         window.clearTimeout(refreshDebounceRef.current);
       }
@@ -165,36 +173,34 @@ const Analysis: React.FC = () => {
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
   const handleSortGroup = (field: GroupSortField) => {
     if (groupSortField === field) {
-      setGroupSortOrder(groupSortOrder === 'asc' ? 'desc' : 'asc');
+      setGroupSortOrder(groupSortOrder === "asc" ? "desc" : "asc");
     } else {
       setGroupSortField(field);
-      setGroupSortOrder(field === 'amount' ? 'desc' : 'asc');
+      setGroupSortOrder(field === "amount" ? "desc" : "asc");
     }
   };
   const handleSortTransaction = (field: TransactionSortField) => {
     if (transactionSortField === field) {
-      setTransactionSortOrder(transactionSortOrder === 'asc' ? 'desc' : 'asc');
+      setTransactionSortOrder(transactionSortOrder === "asc" ? "desc" : "asc");
     } else {
       setTransactionSortField(field);
-      setTransactionSortOrder(field === 'date' ? 'desc' : 'asc');
+      setTransactionSortOrder(field === "date" ? "desc" : "asc");
     }
   };
   const handleCategorize = async (txId: number, categoryName: string) => {
-    setTransactions(prev => prev.map(tx =>
-      tx.id === txId ? { ...tx, category_name: categoryName } : tx
-    ));
+    setTransactions((prev) => prev.map((tx) => (tx.id === txId ? { ...tx, category_name: categoryName } : tx)));
 
     try {
       await (window as any).go.main.App.CategorizeTransaction(txId, categoryName);
       fetchAnalysisView(true);
       fetchData();
     } catch (e) {
-      console.error('Failed to categorize transaction', e);
+      console.error("Failed to categorize transaction", e);
       fetchAnalysisView(true);
     }
   };
@@ -202,14 +208,14 @@ const Analysis: React.FC = () => {
     const targetFormat = format || exportFormat;
 
     if (!selectedMonth) {
-      toast.showToast('Please select a month first', 'error');
+      toast.showToast("Please select a month first", "error");
       return;
     }
 
     setExporting(true);
     setExportDropdownOpen(false);
     try {
-      const [year, month] = selectedMonth.split('-');
+      const [year, month] = selectedMonth.split("-");
       const startDate = `${year}-${month}-01`;
       const endDate = `${year}-${month}-31`;
 
@@ -218,26 +224,23 @@ const Analysis: React.FC = () => {
         endDate,
         selectedCategoryIds,
         selectedOwnerIds,
-        targetFormat
+        targetFormat,
       );
 
       toast.showToast(
-        `Successfully exported ${rowsExported} transaction${rowsExported !== 1 ? 's' : ''} to ${targetFormat.toUpperCase()}`,
-        'success'
+        `Successfully exported ${rowsExported} transaction${rowsExported !== 1 ? "s" : ""} to ${targetFormat.toUpperCase()}`,
+        "success",
       );
     } catch (e) {
-      console.error('Export failed', e);
-      toast.showToast(
-        e instanceof Error ? e.message : 'Export failed. Please try again.',
-        'error'
-      );
+      console.error("Export failed", e);
+      toast.showToast(e instanceof Error ? e.message : "Export failed. Please try again.", "error");
     } finally {
       setExporting(false);
     }
   };
 
   const handleSelectionChange = useCallback((id: string | number, selected: boolean) => {
-    setSelectedTxIds(prev => {
+    setSelectedTxIds((prev) => {
       const next = new Set(prev);
       if (selected) {
         next.add(Number(id));
@@ -261,18 +264,12 @@ const Analysis: React.FC = () => {
       const ids = Array.from(selectedTxIds);
       await (window as any).go.main.App.DeleteTransactions(ids);
       setSelectedTxIds(new Set());
-      toast.showToast(
-        `Deleted ${count} transaction${count !== 1 ? 's' : ''}`,
-        'success'
-      );
+      toast.showToast(`Deleted ${count} transaction${count !== 1 ? "s" : ""}`, "success");
       await fetchAnalysisView();
       fetchData();
     } catch (e) {
-      console.error('Delete failed', e);
-      toast.showToast(
-        e instanceof Error ? e.message : 'Failed to delete transactions. Please try again.',
-        'error'
-      );
+      console.error("Delete failed", e);
+      toast.showToast(e instanceof Error ? e.message : "Failed to delete transactions. Please try again.", "error");
     } finally {
       setDeleting(false);
     }
@@ -280,58 +277,57 @@ const Analysis: React.FC = () => {
 
   const displayWarning = hasMissingRates
     ? {
-        tone: 'error' as const,
-        title: 'Exchange rates missing',
-        detail: 'Some transactions are missing rates. Converted totals exclude those items.',
+        tone: "error" as const,
+        title: "Exchange rates missing",
+        detail: "Some transactions are missing rates. Converted totals exclude those items.",
       }
     : warning;
-  const buildTransactionSearchLabel = useCallback((tx: database.TransactionModel) => {
-    const parts = [
-      tx.description || '',
-      tx.account_name || '',
-      tx.category_name || 'Uncategorized',
-      tx.owner_name || 'No Owner',
-      tx.date,
-      formatCentsDecimal(tx.amount),
-      tx.currency || mainCurrency,
-    ];
-    return `${parts.join(' | ')} ::${tx.id}`;
-  }, [mainCurrency]);
-
-  const filteredTransactions = useFuzzySearch(
-    transactions,
-    buildTransactionSearchLabel,
-    transactionSearch
+  const buildTransactionSearchLabel = useCallback(
+    (tx: database.TransactionModel) => {
+      const parts = [
+        tx.description || "",
+        tx.account_name || "",
+        tx.category_name || "Uncategorized",
+        tx.owner_name || "No Owner",
+        tx.date,
+        formatCentsDecimal(tx.amount),
+        tx.currency || mainCurrency,
+      ];
+      return `${parts.join(" | ")} ::${tx.id}`;
+    },
+    [mainCurrency],
   );
+
+  const filteredTransactions = useFuzzySearch(transactions, buildTransactionSearchLabel, transactionSearch);
   const searchActive = transactionSearch.trim().length > 0;
-  const displayedTransactions = useMemo(() => (
-    searchActive ? filteredTransactions : transactions
-  ), [filteredTransactions, searchActive, transactions]);
-  const displayedTransactionsWithFx = useMemo(() => (
-    displayedTransactions.map((tx) => ({
-      ...tx,
-      main_amount: tx.amount_in_main_currency ?? null,
-    }))
-  ), [displayedTransactions]);
+  const displayedTransactions = useMemo(
+    () => (searchActive ? filteredTransactions : transactions),
+    [filteredTransactions, searchActive, transactions],
+  );
+  const displayedTransactionsWithFx = useMemo(
+    () =>
+      displayedTransactions.map((tx) => ({
+        ...tx,
+        main_amount: tx.amount_in_main_currency ?? null,
+      })),
+    [displayedTransactions],
+  );
 
   const formatMonthLabel = useCallback((monthStr: string) => {
-    if (!monthStr) return '';
-    const [year, month] = monthStr.split('-');
+    if (!monthStr) return "";
+    const [year, month] = monthStr.split("-");
     const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1);
-    return date.toLocaleDateString('default', { month: 'short', year: 'numeric' });
+    return date.toLocaleDateString("default", { month: "short", year: "numeric" });
   }, []);
 
-  const monthOptions = useMemo(() => (
-    months.map((month) => ({ value: month, label: formatMonthLabel(month) }))
-  ), [months, formatMonthLabel]);
+  const monthOptions = useMemo(
+    () => months.map((month) => ({ value: month, label: formatMonthLabel(month) })),
+    [months, formatMonthLabel],
+  );
 
-  const filterCategories = useMemo(() => (
-    analysisFacets?.categories || []
-  ), [analysisFacets]);
+  const filterCategories = useMemo(() => analysisFacets?.categories || [], [analysisFacets]);
 
-  const filterOwners = useMemo(() => (
-    analysisFacets?.owners || []
-  ), [analysisFacets]);
+  const filterOwners = useMemo(() => analysisFacets?.owners || [], [analysisFacets]);
 
   const includeUncategorizedInFilter = analysisFacets?.has_uncategorized || false;
   const includeNoOwnerInFilter = analysisFacets?.has_no_owner || false;
@@ -369,9 +365,9 @@ const Analysis: React.FC = () => {
     if (transactions.length === 0) {
       return { category: false, owner: false, account: false };
     }
-    const categories = new Set(transactions.map(tx => tx.category_name));
-    const owners = new Set(transactions.map(tx => tx.owner_name));
-    const accounts = new Set(transactions.map(tx => tx.account_name));
+    const categories = new Set(transactions.map((tx) => tx.category_name));
+    const owners = new Set(transactions.map((tx) => tx.owner_name));
+    const accounts = new Set(transactions.map((tx) => tx.account_name));
     return {
       category: categories.size > 1,
       owner: owners.size > 1,
@@ -380,16 +376,16 @@ const Analysis: React.FC = () => {
   }, [transactions]);
 
   const groupingOptions: GroupBy[] = useMemo(() => {
-    const options: GroupBy[] = ['All'];
-    if (uniqueGroups.category) options.push('Category');
-    if (uniqueGroups.owner) options.push('Owner');
-    if (uniqueGroups.account) options.push('Account');
+    const options: GroupBy[] = ["All"];
+    if (uniqueGroups.category) options.push("Category");
+    if (uniqueGroups.owner) options.push("Owner");
+    if (uniqueGroups.account) options.push("Account");
     return options;
   }, [uniqueGroups]);
 
   useEffect(() => {
     if (!groupingOptions.includes(groupBy)) {
-      setGroupBy('All');
+      setGroupBy("All");
     }
   }, [groupingOptions, groupBy]);
 
@@ -403,7 +399,9 @@ const Analysis: React.FC = () => {
             </div>
             <div>
               <h1 className="text-3xl font-black text-canvas-800 tracking-tight select-none">Financial Analysis</h1>
-              <p className="text-canvas-600 font-medium select-none">Deep dive into your cash flow and spending habits.</p>
+              <p className="text-canvas-600 font-medium select-none">
+                Deep dive into your cash flow and spending habits.
+              </p>
             </div>
           </div>
 
@@ -414,9 +412,10 @@ const Analysis: React.FC = () => {
                 disabled={exporting}
                 className={`
                   p-2 rounded-lg transition-all
-                  ${exporting
-                    ? 'bg-canvas-100 text-canvas-400 cursor-not-allowed'
-                    : 'text-canvas-500 hover:text-canvas-700 hover:bg-canvas-200'
+                  ${
+                    exporting
+                      ? "bg-canvas-100 text-canvas-400 cursor-not-allowed"
+                      : "text-canvas-500 hover:text-canvas-700 hover:bg-canvas-200"
                   }
                 `}
                 title="Export transactions"
@@ -431,14 +430,14 @@ const Analysis: React.FC = () => {
               {exportDropdownOpen && (
                 <div className="absolute right-0 top-full mt-1 w-36 bg-canvas-50 rounded-lg border border-canvas-200 shadow-card overflow-hidden z-10">
                   <button
-                    onClick={() => handleExport('csv')}
+                    onClick={() => handleExport("csv")}
                     disabled={!selectedMonth}
                     className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors select-none"
                   >
                     CSV
                   </button>
                   <button
-                    onClick={() => handleExport('xlsx')}
+                    onClick={() => handleExport("xlsx")}
                     disabled={!selectedMonth}
                     className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors select-none"
                   >
@@ -451,11 +450,13 @@ const Analysis: React.FC = () => {
         </div>
 
         {displayWarning && (
-          <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
-            displayWarning.tone === 'error'
-              ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
-              : 'bg-yellow-100 border-yellow-300 text-yellow-800'
-          }`}>
+          <div
+            className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
+              displayWarning.tone === "error"
+                ? "bg-finance-expense/10 border-finance-expense/20 text-finance-expense"
+                : "bg-yellow-100 border-yellow-300 text-yellow-800"
+            }`}
+          >
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 select-none" />
             <div>
               <p className="text-sm font-semibold select-none">{displayWarning.title}</p>
@@ -473,9 +474,11 @@ const Analysis: React.FC = () => {
                   onClick={() => setGroupBy(option)}
                   className={`
                     px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none
-                    ${groupBy === option
-                      ? 'bg-brand text-white shadow-brand-glow'
-                      : 'text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100'}
+                    ${
+                      groupBy === option
+                        ? "bg-brand text-white shadow-brand-glow"
+                        : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
+                    }
                   `}
                 >
                   {option}
@@ -483,37 +486,45 @@ const Analysis: React.FC = () => {
               ))}
             </div>
 
-            {groupBy !== 'All' && (
+            {groupBy !== "All" && (
               <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
                 <button
-                  onClick={() => handleSortGroup('name')}
+                  onClick={() => handleSortGroup("name")}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all select-none
-                    ${groupSortField === 'name' ? 'bg-brand text-white shadow-brand-glow' : 'text-canvas-600 hover:bg-canvas-100'}
+                    ${groupSortField === "name" ? "bg-brand text-white shadow-brand-glow" : "text-canvas-600 hover:bg-canvas-100"}
                   `}
                 >
                   Name
-                  {groupSortField === 'name' && <ArrowUpDown className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
+                  {groupSortField === "name" && (
+                    <ArrowUpDown
+                      className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === "desc" ? "rotate-180" : ""}`}
+                    />
+                  )}
                 </button>
                 <button
-                  onClick={() => handleSortGroup('amount')}
+                  onClick={() => handleSortGroup("amount")}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all select-none
-                    ${groupSortField === 'amount' ? 'bg-brand text-white shadow-brand-glow' : 'text-canvas-600 hover:bg-canvas-100'}
+                    ${groupSortField === "amount" ? "bg-brand text-white shadow-brand-glow" : "text-canvas-600 hover:bg-canvas-100"}
                   `}
                 >
                   Total
-                  {groupSortField === 'amount' && <ArrowUpDown className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === 'desc' ? 'rotate-180' : ''}`} />}
+                  {groupSortField === "amount" && (
+                    <ArrowUpDown
+                      className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === "desc" ? "rotate-180" : ""}`}
+                    />
+                  )}
                 </button>
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center gap-3">
             <TransactionSearch
               value={transactionSearch}
               onChange={setTransactionSearch}
-              onClear={() => setTransactionSearch('')}
+              onClear={() => setTransactionSearch("")}
             />
             <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">
               {searchActive
@@ -567,7 +578,7 @@ const Analysis: React.FC = () => {
       >
         <div className="space-y-4">
           <p className="text-sm text-canvas-600 select-none">
-            Delete {selectedTxIds.size} transaction{selectedTxIds.size !== 1 ? 's' : ''}? This action cannot be undone.
+            Delete {selectedTxIds.size} transaction{selectedTxIds.size !== 1 ? "s" : ""}? This action cannot be undone.
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setDeleteConfirmOpen(false)}>
@@ -578,7 +589,7 @@ const Analysis: React.FC = () => {
               disabled={deleting}
               className="bg-finance-expense hover:bg-finance-expense/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? "Deleting..." : "Delete"}
             </Button>
           </div>
         </div>

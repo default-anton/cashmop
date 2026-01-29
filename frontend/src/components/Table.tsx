@@ -1,6 +1,6 @@
-import React from 'react';
-import { ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
-import { TableHeaderFilter, FilterConfig } from './TableHeaderFilter';
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import type React from "react";
+import { type FilterConfig, TableHeaderFilter } from "./TableHeaderFilter";
 
 interface Column<T> {
   key: string;
@@ -27,7 +27,7 @@ interface TableProps<T> {
   emptyDetail?: string;
   className?: string;
   sortField?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   onSort?: (key: string) => void;
   rowKey?: (row: T) => string | number;
   selectedIds?: Set<string | number>;
@@ -37,9 +37,9 @@ interface TableProps<T> {
 const Table = <T,>({
   columns,
   data,
-  emptyMessage = 'No transactions found for this selection.',
-  emptyDetail = 'Use the filter above to adjust your selection.',
-  className = '',
+  emptyMessage = "No transactions found for this selection.",
+  emptyDetail = "Use the filter above to adjust your selection.",
+  className = "",
   sortField,
   sortOrder,
   onSort,
@@ -61,24 +61,21 @@ const Table = <T,>({
             {columns.map((column) => {
               const isCheckbox = column.isCheckbox;
               if (isCheckbox) {
-                const allSelected = data.length > 0 && data.every(row => selectedIds?.has(getRowKey(row, 0)));
-                const someSelected = data.some(row => selectedIds?.has(getRowKey(row, 0)));
+                const allSelected = data.length > 0 && data.every((row) => selectedIds?.has(getRowKey(row, 0)));
+                const someSelected = data.some((row) => selectedIds?.has(getRowKey(row, 0)));
                 return (
-                  <th
-                    key="checkbox"
-                    className="px-6 py-3 text-left w-10"
-                  >
+                  <th key="checkbox" className="px-6 py-3 text-left w-10">
                     <input
                       type="checkbox"
                       checked={allSelected}
-                      ref={input => {
+                      ref={(input) => {
                         if (input) {
                           input.indeterminate = someSelected && !allSelected;
                         }
                       }}
                       onChange={(e) => {
                         const selected = e.target.checked;
-                        data.forEach(row => {
+                        data.forEach((row) => {
                           const key = getRowKey(row, 0);
                           onSelectionChange?.(key, selected);
                         });
@@ -96,12 +93,14 @@ const Table = <T,>({
                 <th
                   key={column.key as string}
                   className={`px-6 py-3 text-left text-[10px] font-bold text-canvas-500 uppercase tracking-widest transition-colors group relative select-none ${
-                    canSort ? 'cursor-pointer hover:bg-canvas-200/50 hover:text-canvas-700' : ''
-                  } ${column.className || ''}`}
+                    canSort ? "cursor-pointer hover:bg-canvas-200/50 hover:text-canvas-700" : ""
+                  } ${column.className || ""}`}
                   onClick={() => canSort && onSort(column.key)}
                   title={canSort ? `Sort by ${column.key}` : undefined}
                 >
-                  <div className={`flex items-center gap-2 ${column.className?.includes('text-right') || column.className?.includes('justify-end') ? 'justify-end' : ''}`}>
+                  <div
+                    className={`flex items-center gap-2 ${column.className?.includes("text-right") || column.className?.includes("justify-end") ? "justify-end" : ""}`}
+                  >
                     {column.header}
                     <div className="flex items-center gap-1 shrink-0">
                       {canSort && (
@@ -110,10 +109,10 @@ const Table = <T,>({
                             e.stopPropagation();
                             onSort(column.key);
                           }}
-                          className={`cursor-pointer hover:text-brand select-none ${hasFilter ? '' : ''}`}
+                          className={`cursor-pointer hover:text-brand select-none ${hasFilter ? "" : ""}`}
                         >
                           {isSorted ? (
-                            sortOrder === 'asc' ? (
+                            sortOrder === "asc" ? (
                               <ArrowUp className="w-3 h-3 text-brand" />
                             ) : (
                               <ArrowDown className="w-3 h-3 text-brand" />
@@ -159,17 +158,14 @@ const Table = <T,>({
               <tr
                 key={getRowKey(row, rowIndex)}
                 className={`hover:bg-brand/[0.02] even:bg-canvas-100/30 transition-colors group ${
-                  selectedIds?.has(getRowKey(row, rowIndex)) ? 'bg-brand/[0.03]' : ''
+                  selectedIds?.has(getRowKey(row, rowIndex)) ? "bg-brand/[0.03]" : ""
                 }`}
               >
                 {columns.map((column) => {
                   if (column.isCheckbox) {
                     const rowKeyVal = getRowKey(row, rowIndex);
                     return (
-                      <td
-                        key="checkbox"
-                        className="px-6 py-4"
-                      >
+                      <td key="checkbox" className="px-6 py-4">
                         <input
                           type="checkbox"
                           checked={selectedIds?.has(rowKeyVal) || false}
@@ -186,7 +182,7 @@ const Table = <T,>({
                   return (
                     <td
                       key={column.key as string}
-                      className={`px-6 py-4 text-sm text-canvas-700 ${column.className || ''}`}
+                      className={`px-6 py-4 text-sm text-canvas-700 ${column.className || ""}`}
                     >
                       {renderedValue}
                     </td>

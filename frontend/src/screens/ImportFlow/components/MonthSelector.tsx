@@ -1,10 +1,10 @@
-import React, { useMemo, useState } from 'react';
-import { Calendar, Check, ArrowLeft, ArrowRight, Table as TableIcon } from 'lucide-react';
-import { Button, Card } from '../../../components';
-import { type ImportMapping } from './ColumnMapperTypes';
-import { type ParsedFile } from '../ImportFlow';
-import { createAmountParser, parseDateLoose, sampleUniqueRows } from '../utils';
-import { formatCentsDecimal } from '../../../utils/currency';
+import { ArrowLeft, ArrowRight, Calendar, Check, Table as TableIcon } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Button, Card } from "../../../components";
+import { formatCentsDecimal } from "../../../utils/currency";
+import type { ParsedFile } from "../ImportFlow";
+import { createAmountParser, parseDateLoose, sampleUniqueRows } from "../utils";
+import type { ImportMapping } from "./ColumnMapperTypes";
 
 export type MonthOption = {
   key: string;
@@ -47,7 +47,9 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
   const totalSelectedTxns = useMemo(() => {
     const byKey = new Map(months.map((m) => [m.key, m.count] as const));
     let total = 0;
-    selected.forEach((k) => (total += byKey.get(k) ?? 0));
+    for (const k of selected) {
+      total += byKey.get(k) ?? 0;
+    }
     return total;
   }, [months, selected]);
 
@@ -81,19 +83,19 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
 
     const dateColIdx = headers.indexOf(mapping.csv.date);
 
-    const filteredRows = rows.filter(row => {
+    const filteredRows = rows.filter((row) => {
       const dStr = row[dateColIdx];
-      const d = parseDateLoose(dStr || '');
+      const d = parseDateLoose(dStr || "");
       if (!d) return false;
 
       const year = d.getFullYear();
       const month = d.getMonth() + 1;
-      const key = `${year}-${String(month).padStart(2, '0')}`;
+      const key = `${year}-${String(month).padStart(2, "0")}`;
 
       return selected.has(key);
     });
 
-    const sample = sampleUniqueRows(filteredRows, 5, (r) => r.join('\u0000'));
+    const sample = sampleUniqueRows(filteredRows, 5, (r) => r.join("\u0000"));
     const colIdx = (col: string | undefined) => (col ? headers.indexOf(col) : -1);
 
     const dateIdx = colIdx(mapping.csv.date);
@@ -104,33 +106,41 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
 
     const amountFn = createAmountParser(mapping, headers);
 
-    return sample.map(row => ({
-      date: dateIdx >= 0 ? row[dateIdx] : '',
-      description: descIdxs.map(i => row[i]).filter(Boolean).join(' '),
+    return sample.map((row) => ({
+      date: dateIdx >= 0 ? row[dateIdx] : "",
+      description: descIdxs
+        .map((i) => row[i])
+        .filter(Boolean)
+        .join(" "),
       amount: amountFn(row),
-      owner: ownerIdx >= 0 ? row[ownerIdx] : (mapping.defaultOwner || ''),
-      account: accountIdx >= 0 ? row[accountIdx] : (mapping.account || ''),
+      owner: ownerIdx >= 0 ? row[ownerIdx] : mapping.defaultOwner || "",
+      account: accountIdx >= 0 ? row[accountIdx] : mapping.account || "",
       currency: currencyIdx >= 0 ? row[currencyIdx] : mapping.currencyDefault,
     }));
   }, [parsed, mapping, selected]);
 
-  const previewColumns = useMemo(() => [
-    { key: 'date', header: 'Date', className: 'whitespace-nowrap font-mono text-xs' },
-    { key: 'description', header: 'Description', className: 'whitespace-nowrap text-xs' },
-    {
-      key: 'amount',
-      header: 'Amount',
-      className: 'whitespace-nowrap text-right font-mono text-xs',
-      render: (val: number) => (
-        <span className={val < 0 ? 'text-finance-expense' : 'text-finance-income'}>
-          {val < 0 ? '-' : '+'}{formatCentsDecimal(Math.abs(val))}
-        </span>
-      )
-    },
-    { key: 'account', header: 'Account', className: 'whitespace-nowrap text-xs' },
-    { key: 'owner', header: 'Owner', className: 'whitespace-nowrap text-xs' },
-    { key: 'currency', header: 'Currency', className: 'whitespace-nowrap text-xs text-center' },
-  ] as const, []);
+  const previewColumns = useMemo(
+    () =>
+      [
+        { key: "date", header: "Date", className: "whitespace-nowrap font-mono text-xs" },
+        { key: "description", header: "Description", className: "whitespace-nowrap text-xs" },
+        {
+          key: "amount",
+          header: "Amount",
+          className: "whitespace-nowrap text-right font-mono text-xs",
+          render: (val: number) => (
+            <span className={val < 0 ? "text-finance-expense" : "text-finance-income"}>
+              {val < 0 ? "-" : "+"}
+              {formatCentsDecimal(Math.abs(val))}
+            </span>
+          ),
+        },
+        { key: "account", header: "Account", className: "whitespace-nowrap text-xs" },
+        { key: "owner", header: "Owner", className: "whitespace-nowrap text-xs" },
+        { key: "currency", header: "Currency", className: "whitespace-nowrap text-xs text-center" },
+      ] as const,
+    [],
+  );
 
   return (
     <div className="flex flex-col gap-8 animate-snap-in">
@@ -143,7 +153,8 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
             <div>
               <h2 className="text-xl font-bold text-canvas-800 select-none">Select Range</h2>
               <p className="text-canvas-500 select-none">
-                Found transactions spanning {months.length} month{months.length === 1 ? '' : 's'}. File {fileIndex + 1} of {fileCount}.
+                Found transactions spanning {months.length} month{months.length === 1 ? "" : "s"}. File {fileIndex + 1}{" "}
+                of {fileCount}.
               </p>
             </div>
           </div>
@@ -151,12 +162,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
             <Button variant="secondary" size="sm" onClick={onBack}>
               <ArrowLeft className="w-4 h-4 mr-1" /> Back
             </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => onComplete(Array.from(selected))}
-              disabled={!canStart}
-            >
+            <Button variant="primary" size="sm" onClick={() => onComplete(Array.from(selected))} disabled={!canStart}>
               {primaryActionLabel} <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
@@ -167,9 +173,19 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
             Selected: <span className="font-mono text-brand select-none">{totalSelectedTxns}</span> transactions
           </div>
           <div className="flex gap-2">
-            <button onClick={selectAll} className="text-[10px] font-bold text-brand uppercase hover:underline select-none">Select All</button>
+            <button
+              onClick={selectAll}
+              className="text-[10px] font-bold text-brand uppercase hover:underline select-none"
+            >
+              Select All
+            </button>
             <span className="text-canvas-300 select-none">|</span>
-            <button onClick={deselectAll} className="text-[10px] font-bold text-canvas-500 uppercase hover:underline select-none">Deselect All</button>
+            <button
+              onClick={deselectAll}
+              className="text-[10px] font-bold text-canvas-500 uppercase hover:underline select-none"
+            >
+              Deselect All
+            </button>
           </div>
         </div>
 
@@ -181,20 +197,26 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
                 key={m.key}
                 onClick={() => toggleMonth(m.key)}
                 className={
-                  'flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 group ' +
+                  "flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-200 group " +
                   (isSelected
-                    ? 'bg-brand/5 border-brand text-canvas-800 shadow-sm'
-                    : 'bg-canvas-100 border-transparent text-canvas-500 hover:bg-canvas-200')
+                    ? "bg-brand/5 border-brand text-canvas-800 shadow-sm"
+                    : "bg-canvas-100 border-transparent text-canvas-500 hover:bg-canvas-200")
                 }
               >
                 <div className="flex flex-col items-start select-none">
-                  <span className={`text-sm font-bold ${isSelected ? 'text-canvas-800' : 'text-canvas-600'}`}>{m.label}</span>
-                  <span className={`text-[10px] font-mono ${isSelected ? 'text-brand' : 'text-canvas-500'}`}>{m.count} items</span>
+                  <span className={`text-sm font-bold ${isSelected ? "text-canvas-800" : "text-canvas-600"}`}>
+                    {m.label}
+                  </span>
+                  <span className={`text-[10px] font-mono ${isSelected ? "text-brand" : "text-canvas-500"}`}>
+                    {m.count} items
+                  </span>
                 </div>
-                <div className={`
+                <div
+                  className={`
                   w-6 h-6 rounded-full flex items-center justify-center border-2 transition-all
-                  ${isSelected ? 'bg-brand border-brand text-white' : 'border-canvas-300 bg-white group-hover:border-canvas-400'}
-                `}>
+                  ${isSelected ? "bg-brand border-brand text-white" : "border-canvas-300 bg-white group-hover:border-canvas-400"}
+                `}
+                >
                   {isSelected && <Check className="w-3.5 h-3.5" strokeWidth={4} />}
                 </div>
               </button>
@@ -207,7 +229,9 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
         <div className="px-6 py-3 bg-canvas-100 border-b border-canvas-200 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <TableIcon className="w-4 h-4 text-canvas-400" />
-            <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest select-none">Mapped Data Preview</span>
+            <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest select-none">
+              Mapped Data Preview
+            </span>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -230,10 +254,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
                   {previewColumns.map((col: any) => {
                     const val = (row as any)[col.key];
                     return (
-                      <td
-                        key={col.key}
-                        className={`px-4 py-3 text-sm text-canvas-600 ${col.className}`}
-                      >
+                      <td key={col.key} className={`px-4 py-3 text-sm text-canvas-600 ${col.className}`}>
                         {col.render ? col.render(val) : val}
                       </td>
                     );

@@ -1,26 +1,25 @@
-import React, { useEffect, useState } from 'react';
-import { CheckCircle2, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 
-import { Button, ScreenLayout } from '@/components';
-import { useToast } from '@/contexts/ToastContext';
-import { useCurrency } from '@/contexts/CurrencyContext';
-
-import FileDropZone from './components/FileDropZone';
-import { MappingPunchThrough } from './components/mappingPunchThrough/MappingPunchThrough';
-import { type ImportMapping, type SavedMapping } from './components/ColumnMapperTypes';
-import MonthSelector, { type MonthOption } from './components/MonthSelector';
-import { createAmountParser, parseDateLoose } from './utils';
-import { pickBestMapping, uniqueSortedNormalizedHeaders } from './mappingDetection';
+import { Button, ScreenLayout } from "@/components";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useToast } from "@/contexts/ToastContext";
+import type { ImportMapping, SavedMapping } from "./components/ColumnMapperTypes";
+import FileDropZone from "./components/FileDropZone";
+import MonthSelector, { type MonthOption } from "./components/MonthSelector";
+import { MappingPunchThrough } from "./components/mappingPunchThrough/MappingPunchThrough";
+import { pickBestMapping, uniqueSortedNormalizedHeaders } from "./mappingDetection";
+import { createAmountParser, parseDateLoose } from "./utils";
 
 export type ParsedFile = {
   file: File;
-  kind: 'csv' | 'excel';
+  kind: "csv" | "excel";
   headers: string[];
   rows: string[][]; // rows without header
   rawRows: string[][];
   hasHeader: boolean;
   detectedHasHeader: boolean;
-  headerSource: 'auto' | 'manual';
+  headerSource: "auto" | "manual";
   mapping?: ImportMapping;
   autoMatchedMappingId?: number;
   autoMatchedMappingName?: string;
@@ -28,24 +27,24 @@ export type ParsedFile = {
 };
 
 const HEADER_KEYWORDS = [
-  'date',
-  'amount',
-  'description',
-  'memo',
-  'payee',
-  'merchant',
-  'account',
-  'category',
-  'debit',
-  'credit',
-  'type',
-  'currency',
-  'balance',
-  'value',
+  "date",
+  "amount",
+  "description",
+  "memo",
+  "payee",
+  "merchant",
+  "account",
+  "category",
+  "debit",
+  "credit",
+  "type",
+  "currency",
+  "balance",
+  "value",
 ];
 
 const toColumnName = (index: number) => {
-  let name = '';
+  let name = "";
   let n = index;
 
   while (n >= 0) {
@@ -83,7 +82,7 @@ const detectHeaderRow = (rows: string[][]) => {
         continue;
       }
 
-      const cleaned = value.replace(/[^0-9.-]/g, '');
+      const cleaned = value.replace(/[^0-9.-]/g, "");
       if (cleaned && !Number.isNaN(Number(cleaned))) {
         numericCount++;
         continue;
@@ -114,7 +113,7 @@ const normalizeRows = (rows: string[][], width: number) =>
   rows.map((row) => {
     const trimmed = row.slice(0, width);
     if (trimmed.length < width) {
-      trimmed.push(...Array(width - trimmed.length).fill(''));
+      trimmed.push(...Array(width - trimmed.length).fill(""));
     }
     return trimmed;
   });
@@ -133,7 +132,7 @@ const buildParsedRows = (rawRows: string[][], hasHeader: boolean) => {
   const headerRow = rawRows[0] ?? [];
   const headerCount = Math.max(headerRow.length, maxColumns);
   const headers = Array.from({ length: headerCount }, (_, i) => {
-    const raw = headerRow[i]?.trim() ?? '';
+    const raw = headerRow[i]?.trim() ?? "";
     return raw || `Column ${toColumnName(i)}`;
   });
 
@@ -143,7 +142,7 @@ const buildParsedRows = (rawRows: string[][], hasHeader: boolean) => {
 
 function parseCSVLine(line: string): string[] {
   const out: string[] = [];
-  let cur = '';
+  let cur = "";
   let inQuotes = false;
 
   for (let i = 0; i < line.length; i++) {
@@ -159,9 +158,9 @@ function parseCSVLine(line: string): string[] {
       continue;
     }
 
-    if (ch === ',' && !inQuotes) {
+    if (ch === "," && !inQuotes) {
       out.push(cur.trim());
-      cur = '';
+      cur = "";
       continue;
     }
 
@@ -172,19 +171,26 @@ function parseCSVLine(line: string): string[] {
   return out;
 }
 
-function parseCSV(
-  text: string
-): { headers: string[]; rows: string[][]; rawRows: string[][]; detectedHasHeader: boolean; hasHeader: boolean } {
-  const normalized = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+function parseCSV(text: string): {
+  headers: string[];
+  rows: string[][];
+  rawRows: string[][];
+  detectedHasHeader: boolean;
+  hasHeader: boolean;
+} {
+  const normalized = text
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
 
-  const lines = normalized.split('\n');
+  const lines = normalized.split("\n");
   const rawRows = lines
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .map((line) => parseCSVLine(line));
 
   if (rawRows.length === 0) {
-    throw new Error('File appears to be empty or contains only whitespace.');
+    throw new Error("File appears to be empty or contains only whitespace.");
   }
 
   const maxColumns = rawRows.reduce((max, row) => Math.max(max, row.length), 0);
@@ -200,7 +206,7 @@ function parseCSV(
   }
 
   if (headers.length === 0) {
-    throw new Error('No columns detected in the file. Ensure your CSV uses commas (,) as separators.');
+    throw new Error("No columns detected in the file. Ensure your CSV uses commas (,) as separators.");
   }
 
   return { headers, rows, rawRows, detectedHasHeader, hasHeader };
@@ -221,20 +227,21 @@ const readFileText = async (file: File) => {
         });
     });
 
-  const readWithFileReader = () => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsText(file);
-  });
+  const readWithFileReader = () =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
 
   try {
-    return await withTimeout(readWithFileReader(), 5000, 'FileReader');
+    return await withTimeout(readWithFileReader(), 5000, "FileReader");
   } catch (err) {
-    console.warn('FileReader failed, falling back to file.text()', err);
+    console.warn("FileReader failed, falling back to file.text()", err);
   }
 
-  return await withTimeout(file.text(), 5000, 'file.text');
+  return await withTimeout(file.text(), 5000, "file.text");
 };
 
 // Validates file signature to detect file type mismatches
@@ -248,17 +255,17 @@ async function validateFileSignature(file: File, expectedExtension: string): Pro
 
   const bytes = await signaturePromise;
 
-  if (expectedExtension === '.xlsx') {
+  if (expectedExtension === ".xlsx") {
     // XLSX files are ZIP archives: signature is "PK\x03\x04"
-    if (bytes[0] !== 0x50 || bytes[1] !== 0x4B || bytes[2] !== 0x03 || bytes[3] !== 0x04) {
-      throw new Error('This doesn\'t look like a valid Excel file. Please check the file format.');
+    if (bytes[0] !== 0x50 || bytes[1] !== 0x4b || bytes[2] !== 0x03 || bytes[3] !== 0x04) {
+      throw new Error("This doesn't look like a valid Excel file. Please check the file format.");
     }
-  } else if (expectedExtension === '.xls') {
+  } else if (expectedExtension === ".xls") {
     // XLS files use OLE2 compound document storage: signature is D0 CF 11 E0 A0 B1 1A E1
-    const ole2Signature = [0xD0, 0xCF, 0x11, 0xE0, 0xA0, 0xB1, 0x1A, 0xE1];
+    const ole2Signature = [0xd0, 0xcf, 0x11, 0xe0, 0xa0, 0xb1, 0x1a, 0xe1];
     for (let i = 0; i < 8; i++) {
       if (bytes[i] !== ole2Signature[i]) {
-        throw new Error('This doesn\'t look like a valid .xls file. Try saving it as .xlsx instead.');
+        throw new Error("This doesn't look like a valid .xls file. Try saving it as .xlsx instead.");
       }
     }
   }
@@ -267,30 +274,30 @@ async function validateFileSignature(file: File, expectedExtension: string): Pro
 async function parseFile(file: File): Promise<ParsedFile> {
   const name = file.name.toLowerCase();
   if (file.size === 0) {
-    throw new Error('File is empty (0 bytes). Please select a valid CSV or Excel export.');
+    throw new Error("File is empty (0 bytes). Please select a valid CSV or Excel export.");
   }
   if (file.size > 10 * 1024 * 1024) {
-    throw new Error('File exceeds 10 MB limit. Please split large exports into smaller files.');
+    throw new Error("File exceeds 10 MB limit. Please split large exports into smaller files.");
   }
-  if (name.endsWith('.csv')) {
+  if (name.endsWith(".csv")) {
     const text = await readFileText(file);
     if (text.trim().length === 0) {
-      throw new Error('File contains no readable text. Ensure it is a valid CSV file.');
+      throw new Error("File contains no readable text. Ensure it is a valid CSV file.");
     }
     const { headers, rows, rawRows, detectedHasHeader, hasHeader } = parseCSV(text);
     return {
       file,
-      kind: 'csv',
+      kind: "csv",
       headers,
       rows,
       rawRows,
       hasHeader,
       detectedHasHeader,
-      headerSource: 'auto',
+      headerSource: "auto",
     };
   }
-  if (name.endsWith('.xlsx')) {
-    await validateFileSignature(file, '.xlsx');
+  if (name.endsWith(".xlsx")) {
+    await validateFileSignature(file, ".xlsx");
     const reader = new FileReader();
     const base64Promise = new Promise<string>((resolve, reject) => {
       reader.onload = () => resolve(reader.result as string);
@@ -305,7 +312,7 @@ async function parseFile(file: File): Promise<ParsedFile> {
         ? result.allRows
         : [result?.headers ?? [], ...(result?.rows ?? [])];
       if (rawRows.length === 0) {
-        throw new Error('The Excel file is empty. Please choose a file with data.');
+        throw new Error("The Excel file is empty. Please choose a file with data.");
       }
 
       const detectedHasHeader = detectHeaderRow(rawRows);
@@ -314,20 +321,20 @@ async function parseFile(file: File): Promise<ParsedFile> {
 
       return {
         file,
-        kind: 'excel',
+        kind: "excel",
         headers,
         rows,
         rawRows,
         hasHeader,
         detectedHasHeader,
-        headerSource: 'auto',
+        headerSource: "auto",
       };
     } catch (e) {
-      throw new Error('Unable to read the Excel file. Please check if it\'s corrupted or password-protected.');
+      throw new Error("Unable to read the Excel file. Please check if it's corrupted or password-protected.");
     }
   }
-  if (name.endsWith('.xls')) {
-    await validateFileSignature(file, '.xls');
+  if (name.endsWith(".xls")) {
+    await validateFileSignature(file, ".xls");
     const reader = new FileReader();
     const base64Promise = new Promise<string>((resolve, reject) => {
       reader.onload = () => resolve(reader.result as string);
@@ -342,7 +349,7 @@ async function parseFile(file: File): Promise<ParsedFile> {
         ? result.allRows
         : [result?.headers ?? [], ...(result?.rows ?? [])];
       if (rawRows.length === 0) {
-        throw new Error('The Excel file is empty. Please choose a file with data.');
+        throw new Error("The Excel file is empty. Please choose a file with data.");
       }
 
       const detectedHasHeader = detectHeaderRow(rawRows);
@@ -351,19 +358,19 @@ async function parseFile(file: File): Promise<ParsedFile> {
 
       return {
         file,
-        kind: 'excel',
+        kind: "excel",
         headers,
         rows,
         rawRows,
         hasHeader,
         detectedHasHeader,
-        headerSource: 'auto',
+        headerSource: "auto",
       };
     } catch (e) {
-      throw new Error('Unable to read the Excel file. Please check if it\'s corrupted or password-protected.');
+      throw new Error("Unable to read the Excel file. Please check if it's corrupted or password-protected.");
     }
   }
-  throw new Error('Unsupported file type. Please upload a .csv or .xlsx file.');
+  throw new Error("Unsupported file type. Please upload a .csv or .xlsx file.");
 }
 
 interface ImportFlowProps {
@@ -395,7 +402,6 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     setStep(2);
   }, [parsedFiles.length, step]);
 
-
   const resolveMappingForFile = (file: ParsedFile | null, entries: SavedMapping[]) => {
     if (!file) return null;
     if (file.mapping) return file.mapping;
@@ -413,7 +419,6 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     setMapping(nextMapping);
   }, [currentFileIdx, currentFile?.headers, currentFile?.hasHeader, currentFile?.headerSource, savedMappings]);
 
-
   const loadMappings = async (): Promise<SavedMapping[]> => {
     try {
       const dbMappings: any[] = await (window as any).go.main.App.GetColumnMappings();
@@ -429,14 +434,14 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
             mapping: parsed as ImportMapping,
           });
         } catch (e) {
-          console.warn(`Skipping invalid saved mapping: ${m?.name ?? m?.id ?? 'unknown'}`, e);
+          console.warn(`Skipping invalid saved mapping: ${m?.name ?? m?.id ?? "unknown"}`, e);
         }
       }
 
       setSavedMappings(loaded);
       return loaded;
     } catch (e) {
-      console.error('Failed to load saved mappings', e);
+      console.error("Failed to load saved mappings", e);
       return [];
     }
   };
@@ -455,16 +460,16 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     });
 
   const suggestMappingName = (file: ParsedFile) => {
-    const base = file.file.name.replace(/\.[^.]+$/, '');
+    const base = file.file.name.replace(/\.[^.]+$/, "");
     const cleaned = base
-      .replace(/[_-]+/g, ' ')
-      .replace(/\b\d{4}[-_]\d{2}([-_]\d{2})?\b/g, '')
-      .replace(/\b\d{1,2}[-_]\d{1,2}[-_]\d{2,4}\b/g, '')
-      .replace(/\b\d{4}\b/g, '')
-      .replace(/\s+/g, ' ')
+      .replace(/[_-]+/g, " ")
+      .replace(/\b\d{4}[-_]\d{2}([-_]\d{2})?\b/g, "")
+      .replace(/\b\d{1,2}[-_]\d{1,2}[-_]\d{2,4}\b/g, "")
+      .replace(/\b\d{4}\b/g, "")
+      .replace(/\s+/g, " ")
       .trim();
 
-    return cleaned || base.trim() || 'Import mapping';
+    return cleaned || base.trim() || "Import mapping";
   };
 
   const saveMapping = async (name: string, m: ImportMapping, source: { headers: string[]; hasHeader: boolean }) => {
@@ -500,7 +505,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
           const parsed = await parseFile(file);
           parsedResults.push(parsed);
         } catch (e) {
-          errors.set(file.name, e instanceof Error ? e.message : 'Failed to parse file');
+          errors.set(file.name, e instanceof Error ? e.message : "Failed to parse file");
         }
       }
 
@@ -508,7 +513,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
       if (parsedResults.length === 0) {
         setParsedFiles([]);
-        setParseError('No files could be parsed. Check errors above.');
+        setParseError("No files could be parsed. Check errors above.");
         return [] as ParsedFile[];
       }
 
@@ -533,12 +538,12 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     if (idx === -1) return [];
 
     for (const row of pf.rows) {
-      const d = parseDateLoose(row[idx] ?? '');
+      const d = parseDateLoose(row[idx] ?? "");
       if (!d) continue;
 
       const year = d.getFullYear();
       const month = d.getMonth() + 1;
-      const key = `${year}-${String(month).padStart(2, '0')}`;
+      const key = `${year}-${String(month).padStart(2, "0")}`;
 
       const cur = buckets.get(key);
       if (cur) cur.count += 1;
@@ -548,7 +553,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     return Array.from(buckets.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, v]) => {
-        const label = new Date(v.year, v.month - 1, 1).toLocaleString('en-US', { month: 'short', year: 'numeric' });
+        const label = new Date(v.year, v.month - 1, 1).toLocaleString("en-US", { month: "short", year: "numeric" });
         return { key, label, count: v.count };
       });
   };
@@ -569,7 +574,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     setStep(3);
   };
 
-  const rebuildFileHeaders = (file: ParsedFile, hasHeader: boolean, source: 'auto' | 'manual') => {
+  const rebuildFileHeaders = (file: ParsedFile, hasHeader: boolean, source: "auto" | "manual") => {
     const { headers, rows } = buildParsedRows(file.rawRows, hasHeader);
     return {
       ...file,
@@ -589,7 +594,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
     setParsedFiles((prev) => {
       const next = [...prev];
-      next[currentFileIdx] = rebuildFileHeaders(next[currentFileIdx], hasHeader, 'manual');
+      next[currentFileIdx] = rebuildFileHeaders(next[currentFileIdx], hasHeader, "manual");
       return next;
     });
 
@@ -616,32 +621,35 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
       for (const row of pf.rows) {
         const dStr = row[dateIdx];
-        const dateObj = parseDateLoose(dStr ?? '');
+        const dateObj = parseDateLoose(dStr ?? "");
         if (!dateObj) continue;
 
         const year = dateObj.getFullYear();
         const month = dateObj.getMonth() + 1;
-        const key = `${year}-${String(month).padStart(2, '0')}`;
+        const key = `${year}-${String(month).padStart(2, "0")}`;
         if (!selectedSet.has(key)) continue;
 
-        const desc = descIdxs.map((i) => row[i]).filter(Boolean).join(' ');
+        const desc = descIdxs
+          .map((i) => row[i])
+          .filter(Boolean)
+          .join(" ");
 
         const amount = amountFn(row);
 
-        const rawCurrency = currencyIdx !== -1 ? row[currencyIdx] : '';
-        const currency = (rawCurrency || activeMapping.currencyDefault || '').trim().toUpperCase();
+        const rawCurrency = currencyIdx !== -1 ? row[currencyIdx] : "";
+        const currency = (rawCurrency || activeMapping.currencyDefault || "").trim().toUpperCase();
 
         const y = dateObj.getFullYear();
-        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const day = String(dateObj.getDate()).padStart(2, '0');
+        const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const day = String(dateObj.getDate()).padStart(2, "0");
 
         out.push({
           date: `${y}-${m}-${day}`, // YYYY-MM-DD (local date)
           description: desc,
           amount: amount,
-          category: '',
+          category: "",
           account: accountIdx !== -1 ? row[accountIdx] : activeMapping.account,
-          owner: ownerIdx !== -1 ? row[ownerIdx] : (activeMapping.defaultOwner || 'Unassigned'),
+          owner: ownerIdx !== -1 ? row[ownerIdx] : activeMapping.defaultOwner || "Unassigned",
           currency: currency || activeMapping.currencyDefault,
         });
       }
@@ -687,21 +695,26 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     } catch (e) {
       console.error(e);
       const errorMsg = e instanceof Error ? e.message : String(e);
-      toast.showToast(`Unable to import transactions: ${errorMsg}. Please check your file format and try again.`, 'error');
+      toast.showToast(
+        `Unable to import transactions: ${errorMsg}. Please check your file format and try again.`,
+        "error",
+      );
     }
   };
 
-  const primaryActionLabel = isLastFile ? 'Start Import' : 'Map Next File';
+  const primaryActionLabel = isLastFile ? "Start Import" : "Map Next File";
 
   return (
     <ScreenLayout size="wide">
       <div className="font-sans text-canvas-800">
         {warning && (
-          <div className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${
-            warning.tone === 'error'
-              ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
-              : 'bg-yellow-100 border-yellow-300 text-yellow-800'
-          }`}>
+          <div
+            className={`mb-6 flex items-start gap-3 rounded-xl border px-4 py-3 ${
+              warning.tone === "error"
+                ? "bg-finance-expense/10 border-finance-expense/20 text-finance-expense"
+                : "bg-yellow-100 border-yellow-300 text-yellow-800"
+            }`}
+          >
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <div className="select-none">
               <p className="text-sm font-semibold select-none">{warning.title}</p>
@@ -725,7 +738,10 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
                 <h4 className="text-sm font-semibold text-finance-expense mb-2 select-none">File Errors</h4>
                 <div className="space-y-2">
                   {Array.from(fileErrors.entries()).map(([fileName, error]) => (
-                    <div key={fileName} className="text-xs text-canvas-600 bg-canvas-300/60 border border-canvas-400 rounded-lg px-3 py-2 select-none">
+                    <div
+                      key={fileName}
+                      className="text-xs text-canvas-600 bg-canvas-300/60 border border-canvas-400 rounded-lg px-3 py-2 select-none"
+                    >
                       <span className="font-mono select-none">{fileName}</span>: {error}
                     </div>
                   ))}
@@ -759,9 +775,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <h2 className="text-xl font-bold text-canvas-800 mb-2 select-none">Preparing your file</h2>
-            <p className="text-canvas-500 text-center max-w-md select-none">
-              Parsing columns and sample rows...
-            </p>
+            <p className="text-canvas-500 text-center max-w-md select-none">Parsing columns and sample rows...</p>
           </div>
         )}
 
@@ -787,11 +801,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
             <p className="text-canvas-500 text-center max-w-md select-none">
               Your transactions have been successfully imported.
             </p>
-            <Button
-              onClick={() => setStep(1)}
-              variant="primary"
-              className="mt-8"
-            >
+            <Button onClick={() => setStep(1)} variant="primary" className="mt-8">
               Import More
             </Button>
           </div>

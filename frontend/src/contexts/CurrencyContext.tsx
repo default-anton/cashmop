@@ -1,13 +1,14 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { EventsOn } from '../../wailsjs/runtime/runtime';
-import { GetCurrencySettings, GetFxRateStatus, UpdateCurrencySettings } from '../../wailsjs/go/main/App';
-import { database } from '../../wailsjs/go/models';
-import { useToast } from './ToastContext';
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { GetCurrencySettings, GetFxRateStatus, UpdateCurrencySettings } from "../../wailsjs/go/main/App";
+import type { database } from "../../wailsjs/go/models";
+import { EventsOn } from "../../wailsjs/runtime/runtime";
+import { useToast } from "./ToastContext";
 
 type CurrencySettings = database.CurrencySettings;
 type FxRateStatus = database.FxRateStatus;
 
-type FxWarningTone = 'warning' | 'error';
+type FxWarningTone = "warning" | "error";
 
 type FxWarning = {
   tone: FxWarningTone;
@@ -31,20 +32,19 @@ type CurrencyContextValue = {
 
 const CurrencyContext = createContext<CurrencyContextValue | undefined>(undefined);
 
-const supportedBaseCurrencies = new Set(['CAD']);
+const supportedBaseCurrencies = new Set(["CAD"]);
 
 const getCurrencyCodes = () => {
   const supportedValuesOf = (Intl as { supportedValuesOf?: (type: string) => string[] }).supportedValuesOf;
-  if (typeof supportedValuesOf === 'function') {
-    return supportedValuesOf('currency').slice().sort();
+  if (typeof supportedValuesOf === "function") {
+    return supportedValuesOf("currency").slice().sort();
   }
-  return ['CAD'];
+  return ["CAD"];
 };
 
 const buildCurrencyOptions = () => {
-  const displayNames = typeof Intl.DisplayNames === 'function'
-    ? new Intl.DisplayNames(['en'], { type: 'currency' })
-    : null;
+  const displayNames =
+    typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["en"], { type: "currency" }) : null;
   return getCurrencyCodes().map((code: string) => ({
     value: code,
     label: displayNames?.of(code) ? `${code} — ${displayNames.of(code)}` : code,
@@ -68,14 +68,14 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const nextSettings = await GetCurrencySettings();
       setSettings(nextSettings);
     } catch (e) {
-      console.error('Failed to load currency settings', e);
+      console.error("Failed to load currency settings", e);
       setSettings(null);
     }
     try {
       const status = await GetFxRateStatus();
       setFxStatus(status);
     } catch (e) {
-      console.error('Failed to load FX status', e);
+      console.error("Failed to load FX status", e);
       setFxStatus(null);
     }
   }, []);
@@ -85,8 +85,8 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [refresh]);
 
   useEffect(() => {
-    const offFx = EventsOn('fx-rates-updated', () => {
-      toast.showToast('Exchange rates updated', 'success');
+    const offFx = EventsOn("fx-rates-updated", () => {
+      toast.showToast("Exchange rates updated", "success");
       refresh();
     });
     return () => {
@@ -101,26 +101,28 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const status = await GetFxRateStatus();
       setFxStatus(status);
     } catch (e) {
-      console.error('Failed to refresh FX status', e);
+      console.error("Failed to refresh FX status", e);
       setFxStatus(null);
     }
     return updated;
   }, []);
 
-  const mainCurrency = settings?.main_currency || 'CAD';
+  const mainCurrency = settings?.main_currency || "CAD";
   const isBaseSupported = supportedBaseCurrencies.has(mainCurrency.toUpperCase());
 
   const latestRateDate = useMemo(() => {
-    if (!fxStatus?.pairs || fxStatus.pairs.length === 0) return '';
-    return fxStatus.pairs
-      .map((pair) => pair.latest_rate_date)
-      .filter(Boolean)
-      .sort()
-      .slice(-1)[0] || '';
+    if (!fxStatus?.pairs || fxStatus.pairs.length === 0) return "";
+    return (
+      fxStatus.pairs
+        .map((pair) => pair.latest_rate_date)
+        .filter(Boolean)
+        .sort()
+        .slice(-1)[0] || ""
+    );
   }, [fxStatus]);
 
   const maxTxDate = useMemo(() => {
-    return fxStatus?.max_tx_date || '';
+    return fxStatus?.max_tx_date || "";
   }, [fxStatus]);
 
   const { isStale, staleDays, shouldWarn } = useMemo(() => {
@@ -148,65 +150,64 @@ export const CurrencyProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!settings) return null;
     if (!isBaseSupported) {
       return {
-        tone: 'error',
+        tone: "error",
         title: `Exchange rates unavailable for ${mainCurrency}`,
-        detail: 'Select a supported main currency to enable conversions.',
+        detail: "Select a supported main currency to enable conversions.",
       };
     }
     if (fxStatus?.pairs?.length === 0 && fxStatus?.last_sync) {
       return {
-        tone: 'error',
-        title: 'Exchange rates missing',
-        detail: 'No cached rates were found for your transactions. Sync again or choose a supported currency.',
+        tone: "error",
+        title: "Exchange rates missing",
+        detail: "No cached rates were found for your transactions. Sync again or choose a supported currency.",
       };
     }
     if (shouldWarn && latestRateDate) {
       return {
-        tone: 'warning',
-        title: 'Exchange rates are stale',
+        tone: "warning",
+        title: "Exchange rates are stale",
         detail: `Latest rate date is ${latestRateDate} (${staleDays} days ago).`,
       };
     }
     return null;
   }, [fxStatus, isBaseSupported, shouldWarn, latestRateDate, mainCurrency, settings, staleDays]);
 
-  const value = useMemo<CurrencyContextValue>(() => ({
-    settings,
-    fxStatus,
-    mainCurrency,
-    currencyOptions,
-    isBaseSupported,
-    latestRateDate,
-    isStale,
-    staleDays,
-    warning,
-    refresh,
-    updateSettings,
-  }), [
-    settings,
-    fxStatus,
-    mainCurrency,
-    currencyOptions,
-    isBaseSupported,
-    latestRateDate,
-    isStale,
-    staleDays,
-    warning,
-    refresh,
-    updateSettings,
-  ]);
-
-  return (
-    <CurrencyContext.Provider value={value}>
-      {children}
-    </CurrencyContext.Provider>
+  const value = useMemo<CurrencyContextValue>(
+    () => ({
+      settings,
+      fxStatus,
+      mainCurrency,
+      currencyOptions,
+      isBaseSupported,
+      latestRateDate,
+      isStale,
+      staleDays,
+      warning,
+      refresh,
+      updateSettings,
+    }),
+    [
+      settings,
+      fxStatus,
+      mainCurrency,
+      currencyOptions,
+      isBaseSupported,
+      latestRateDate,
+      isStale,
+      staleDays,
+      warning,
+      refresh,
+      updateSettings,
+    ],
   );
+
+  return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
 };
 
 export const useCurrency = () => {
   const context = useContext(CurrencyContext);
   if (!context) {
-    throw new Error('useCurrency must be used within a CurrencyProvider');
+    throw new Error("useCurrency must be used within a CurrencyProvider");
   }
   return context;
 };

@@ -5,9 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsgo --noEmit && vite build",
     "preview": "vite preview",
-    "test:integration": "playwright test"
+    "test:integration": "playwright test",
+    "check": "biome check . && tsgo --noEmit",
+    "fmt": "biome check --write --javascript-linter-enabled=false ."
   },
   "dependencies": {
     "framer-motion": "^12.23.26",
@@ -16,15 +18,17 @@
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.3.5",
     "@playwright/test": "^1.57.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@typescript/native-preview": "7.0.0-dev.20260120.1",
     "@vitejs/plugin-react": "^2.0.1",
     "autoprefixer": "^10.4.22",
     "playwright": "^1.57.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
-    "typescript": "^4.9.5",
+    "typescript": "^5.9.2",
     "vite": "^3.2.11"
   }
 }

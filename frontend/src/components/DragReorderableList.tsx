@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import Pill from './Pill';
+import type React from "react";
+import { useState } from "react";
+import Pill from "./Pill";
 
 interface DragReorderableListProps<T> {
   items: T[];
@@ -16,20 +17,20 @@ const DragReorderableList = <T,>({
   onReorder,
   onRemove,
   emptyPlaceholder,
-  className = '',
+  className = "",
 }: DragReorderableListProps<T>) => {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const handleDragStart = (index: number) => (e: React.DragEvent) => {
     setDraggingIndex(index);
-    e.dataTransfer.setData('text/plain', index.toString());
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData("text/plain", index.toString());
+    e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (index: number) => (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
     setDragOverIndex(index);
   };
 
@@ -41,7 +42,7 @@ const DragReorderableList = <T,>({
 
   const handleDrop = (index: number) => (e: React.DragEvent) => {
     e.preventDefault();
-    const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    const sourceIndex = parseInt(e.dataTransfer.getData("text/plain"), 10);
     onReorder(sourceIndex, index);
     setDragOverIndex(null);
     setDraggingIndex(null);

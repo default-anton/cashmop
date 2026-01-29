@@ -2,6 +2,8 @@
 
 - Read `./tailwind.config.js` before UI edits; match tokens (colors/fonts/shadows/animations)
 - After .ts/.tsx edits: `make typescript`
+- Formatting: `make fmt` (runs Biome for frontend) or `pnpm run fmt`
+- Lint: `make check` (runs Biome check for frontend) or `pnpm run check`
 - Wails events: Go `runtime.EventsEmit(ctx, "event")`; React `EventsOn` + cleanup `return () => off?.()`; example `ShowAbout()` emits "show-about"
 - Use label "Owner" for `owner_name`
 - Visual stability/motion: optimistic updates; no global loading that unmounts lists; `framer-motion` `layout` + `AnimatePresence` mode="popLayout"; subtle 4–8px vertical offsets; `easeOut` or high-damping springs; no exit scale; in-place success feedback while backend syncs

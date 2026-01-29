@@ -1,21 +1,21 @@
-import { type ImportMapping, type SavedMapping } from './components/ColumnMapperTypes';
+import type { ImportMapping, SavedMapping } from "./components/ColumnMapperTypes";
 
 type FileForMappingDetection = {
   headers: string[];
   hasHeader: boolean;
-  headerSource: 'auto' | 'manual';
+  headerSource: "auto" | "manual";
 };
 
 export type PickedMapping = { mapping: ImportMapping; id: number; name: string };
 
-export const normalizeHeader = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+export const normalizeHeader = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
 
 export const normalizedHeaders = (headers: string[]) => headers.map(normalizeHeader).filter((h) => h.length > 0);
 
 export const uniqueSortedNormalizedHeaders = (headers: string[]) =>
   Array.from(new Set(normalizedHeaders(headers))).sort((a, b) => a.localeCompare(b));
 
-export const headersSignature = (headers: string[]) => uniqueSortedNormalizedHeaders(headers).join('\u0000');
+export const headersSignature = (headers: string[]) => uniqueSortedNormalizedHeaders(headers).join("\u0000");
 
 export const hasAmbiguousNormalizedHeaders = (headers: string[]) => {
   const seen = new Set<string>();
@@ -37,7 +37,7 @@ export const rebindMappingToHeaders = (m: ImportMapping, fileHeaders: string[]) 
   }
 
   const resolve = (h?: string) => {
-    const key = h ? normalizeHeader(h) : '';
+    const key = h ? normalizeHeader(h) : "";
     if (!key) return h;
     return map.get(key) ?? h;
   };
@@ -45,8 +45,8 @@ export const rebindMappingToHeaders = (m: ImportMapping, fileHeaders: string[]) 
   const csv = m.csv;
   const amountMapping = (() => {
     const am = csv.amountMapping;
-    if (am.type === 'single') return { ...am, column: resolve(am.column) || am.column };
-    if (am.type === 'debitCredit') {
+    if (am.type === "single") return { ...am, column: resolve(am.column) || am.column };
+    if (am.type === "debitCredit") {
       return {
         ...am,
         debitColumn: am.debitColumn ? resolve(am.debitColumn) : undefined,
@@ -78,13 +78,13 @@ const MIN_HEADERS_FOR_SUBSET_MATCH = 4;
 
 export const pickBestMapping = (file: FileForMappingDetection, entries: SavedMapping[]): PickedMapping | null => {
   if (!file.hasHeader) return null;
-  if (file.headerSource !== 'auto') return null;
+  if (file.headerSource !== "auto") return null;
   if (hasAmbiguousNormalizedHeaders(file.headers)) return null;
 
   const fileSig = headersSignature(file.headers);
 
   for (const sm of entries) {
-    const sig = sm.mapping.meta?.headers ? headersSignature(sm.mapping.meta.headers) : '';
+    const sig = sm.mapping.meta?.headers ? headersSignature(sm.mapping.meta.headers) : "";
     const sigHasHeader = sm.mapping.meta?.hasHeader;
     if (sig && sig === fileSig && (sigHasHeader === undefined || sigHasHeader === file.hasHeader)) {
       return { mapping: rebindMappingToHeaders(sm.mapping, file.headers), id: sm.id, name: sm.name };
@@ -122,7 +122,7 @@ export const pickBestMapping = (file: FileForMappingDetection, entries: SavedMap
       if (!subset) continue;
     }
 
-    const wants = (v?: string) => (v ? normalizeHeader(v) : '');
+    const wants = (v?: string) => (v ? normalizeHeader(v) : "");
     let possible = 0;
     let score = 0;
 
@@ -143,11 +143,11 @@ export const pickBestMapping = (file: FileForMappingDetection, entries: SavedMap
 
     let amountMatch = false;
     const am = m.csv.amountMapping;
-    if (am.type === 'single') {
+    if (am.type === "single") {
       possible += 1;
       amountMatch = headerSet.has(wants(am.column));
       if (amountMatch) score += 1;
-    } else if (am.type === 'debitCredit') {
+    } else if (am.type === "debitCredit") {
       const debit = wants(am.debitColumn);
       const credit = wants(am.creditColumn);
       if (debit) possible += 1;
@@ -157,7 +157,7 @@ export const pickBestMapping = (file: FileForMappingDetection, entries: SavedMap
       amountMatch = debitOk || creditOk;
       if (debitOk) score += 1;
       if (creditOk) score += 1;
-    } else if (am.type === 'amountWithType') {
+    } else if (am.type === "amountWithType") {
       possible += 2;
       const amountOk = headerSet.has(wants(am.amountColumn));
       const typeOk = headerSet.has(wants(am.typeColumn));

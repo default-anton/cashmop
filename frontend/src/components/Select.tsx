@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from "react";
 
 interface SelectOption {
   value: string;
@@ -11,13 +11,7 @@ interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   placeholder?: string;
 }
 
-const Select: React.FC<SelectProps> = ({
-  options,
-  placeholder,
-  className = '',
-  disabled,
-  ...props
-}) => {
+const Select: React.FC<SelectProps> = ({ options, placeholder, className = "", disabled, ...props }) => {
   return (
     <select
       className={`bg-canvas-50 border border-canvas-300 text-sm rounded-md px-2 py-1 focus:ring-1 focus:ring-brand outline-none disabled:opacity-50 disabled:cursor-not-allowed ${className}`}

@@ -1,5 +1,5 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import { X } from "lucide-react";
+import type React from "react";
 
 interface PillProps {
   children: React.ReactNode;
@@ -26,17 +26,16 @@ const Pill: React.FC<PillProps> = ({
   onDragLeave,
   onDrop,
   onDragEnd,
-  className = '',
+  className = "",
 }) => {
-  const baseClasses = 'inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border select-none';
-  const stateClasses = isDragOver
-    ? 'border-brand bg-brand/10'
-    : 'border-canvas-200 bg-canvas-50';
-  const cursorClass = draggable ? 'cursor-grab active:cursor-grabbing' : '';
+  const baseClasses = "inline-flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded border select-none";
+  const stateClasses = isDragOver ? "border-brand bg-brand/10" : "border-canvas-200 bg-canvas-50";
+  const cursorClass = draggable ? "cursor-grab active:cursor-grabbing" : "";
+  const draggingClasses = isDragging ? "opacity-60" : "";
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
     onDragOver?.(e);
   };
 
@@ -47,7 +46,7 @@ const Pill: React.FC<PillProps> = ({
 
   return (
     <span
-      className={`${baseClasses} ${stateClasses} ${cursorClass} ${className}`}
+      className={`${baseClasses} ${stateClasses} ${cursorClass} ${draggingClasses} ${className}`}
       draggable={draggable}
       onDragStart={onDragStart}
       onDragOver={handleDragOver}
@@ -57,11 +56,7 @@ const Pill: React.FC<PillProps> = ({
     >
       {children}
       {onRemove && (
-        <button
-          onClick={onRemove}
-          className="text-canvas-500 hover:text-brand"
-          aria-label="Remove"
-        >
+        <button onClick={onRemove} className="text-canvas-500 hover:text-brand" aria-label="Remove">
           <X className="w-3 h-3" />
         </button>
       )}

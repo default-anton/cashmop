@@ -1,27 +1,28 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useFuzzySearch } from '../../hooks/useFuzzySearch';
-import { Plus, Wand2, Pencil, Trash2, Check } from 'lucide-react';
-import { database } from '../../../wailsjs/go/models';
-import { Button, Card, CategoryFilterContent, Modal, ScreenLayout, Table, useToast } from '../../components';
-import { FilterConfig } from '../../components/TableHeaderFilter';
-import { useCurrency } from '@/contexts/CurrencyContext';
-import RuleEditorModal from './components/RuleEditorModal';
-import RuleManagerHeader from './components/RuleManagerHeader';
-import { MatchType, RuleRow } from './types';
-import { formatCents } from '../../utils/currency';
+import { Check, Pencil, Plus, Trash2 } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import type { database } from "../../../wailsjs/go/models";
+import { Button, Card, CategoryFilterContent, Modal, ScreenLayout, Table, useToast } from "../../components";
+import type { FilterConfig } from "../../components/TableHeaderFilter";
+import { useFuzzySearch } from "../../hooks/useFuzzySearch";
+import { formatCents } from "../../utils/currency";
+import RuleEditorModal from "./components/RuleEditorModal";
+import RuleManagerHeader from "./components/RuleManagerHeader";
+import type { MatchType, RuleRow } from "./types";
 
-type SortField = 'match_type' | 'match_value' | 'amount' | 'category_name' | 'created_at';
-type SortOrder = 'asc' | 'desc';
+type SortField = "match_type" | "match_value" | "amount" | "category_name" | "created_at";
+type SortOrder = "asc" | "desc";
 
 interface RuleManagerProps {
   initialCategoryIds?: number[];
 }
 
 const matchTypeOptions: { value: MatchType; label: string }[] = [
-  { value: 'contains', label: 'Contains' },
-  { value: 'starts_with', label: 'Starts With' },
-  { value: 'ends_with', label: 'Ends With' },
-  { value: 'exact', label: 'Exact' },
+  { value: "contains", label: "Contains" },
+  { value: "starts_with", label: "Starts With" },
+  { value: "ends_with", label: "Ends With" },
+  { value: "exact", label: "Exact" },
 ];
 
 const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) => {
@@ -30,15 +31,15 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
   const [rules, setRules] = useState<RuleRow[]>([]);
   const [categories, setCategories] = useState<database.Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [ruleSearch, setRuleSearch] = useState('');
+  const [ruleSearch, setRuleSearch] = useState("");
 
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [selectedMatchTypes, setSelectedMatchTypes] = useState<MatchType[]>([]);
-  const [categoryFilterSearch, setCategoryFilterSearch] = useState('');
+  const [categoryFilterSearch, setCategoryFilterSearch] = useState("");
   const categoryFilterInputRef = useRef<HTMLInputElement>(null);
 
-  const [sortField, setSortField] = useState<SortField>('created_at');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [activeRule, setActiveRule] = useState<RuleRow | null>(null);
@@ -62,7 +63,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       setRules(ruleList || []);
       setCategories(categoryList || []);
     } catch (e) {
-      console.error('Failed to fetch rules', e);
+      console.error("Failed to fetch rules", e);
     } finally {
       setLoading(false);
     }
@@ -92,16 +93,16 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       const res = await (window as any).go.main.App.DeleteCategorizationRule(rule.id, uncategorize);
       if (uncategorize) {
         toast.showToast(
-          `Rule deleted and ${res?.uncategorized_count || 0} transaction${(res?.uncategorized_count || 0) !== 1 ? 's' : ''} uncategorized`,
-          'success'
+          `Rule deleted and ${res?.uncategorized_count || 0} transaction${(res?.uncategorized_count || 0) !== 1 ? "s" : ""} uncategorized`,
+          "success",
         );
       } else {
-        toast.showToast('Rule deleted', 'success');
+        toast.showToast("Rule deleted", "success");
       }
       fetchRules();
     } catch (e) {
-      console.error('Failed to delete rule', e);
-      toast.showToast('Failed to delete rule', 'error');
+      console.error("Failed to delete rule", e);
+      toast.showToast("Failed to delete rule", "error");
     } finally {
       setConfirmOpen(false);
       setConfirmRule(null);
@@ -117,7 +118,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       const count = await (window as any).go.main.App.GetRuleMatchCount(rule.id);
       setConfirmMatchCount(count || 0);
     } catch (e) {
-      console.error('Failed to fetch rule match count', e);
+      console.error("Failed to fetch rule match count", e);
       setConfirmMatchCount(0);
     } finally {
       setConfirmLoading(false);
@@ -128,7 +129,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
     const min = rule.amount_min ?? null;
     const max = rule.amount_max ?? null;
 
-    if (min === null && max === null) return 'Any';
+    if (min === null && max === null) return "Any";
 
     if (min !== null && max !== null) {
       const minAbs = Math.abs(min);
@@ -149,12 +150,12 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
     const parts = [
       rule.match_type,
       rule.match_value,
-      rule.amount_min ?? '',
-      rule.amount_max ?? '',
-      rule.category_name || 'Uncategorized',
-      rule.created_at || '',
+      rule.amount_min ?? "",
+      rule.amount_max ?? "",
+      rule.category_name || "Uncategorized",
+      rule.created_at || "",
     ];
-    return `${parts.join(' | ')} ::${rule.id}`;
+    return `${parts.join(" | ")} ::${rule.id}`;
   }, []);
 
   const baseFilteredRules = useMemo(() => {
@@ -180,23 +181,23 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
     const compare = (a: RuleRow, b: RuleRow) => {
       let result = 0;
       switch (sortField) {
-        case 'match_type':
+        case "match_type":
           result = a.match_type.localeCompare(b.match_type);
           break;
-        case 'match_value':
+        case "match_value":
           result = a.match_value.localeCompare(b.match_value);
           break;
-        case 'amount':
+        case "amount":
           result = getAmountSortValue(a) - getAmountSortValue(b);
           break;
-        case 'category_name':
-          result = (a.category_name || '').localeCompare(b.category_name || '');
+        case "category_name":
+          result = (a.category_name || "").localeCompare(b.category_name || "");
           break;
-        case 'created_at':
-          result = (new Date(a.created_at || 0).getTime()) - (new Date(b.created_at || 0).getTime());
+        case "created_at":
+          result = new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
           break;
       }
-      return sortOrder === 'asc' ? result : -result;
+      return sortOrder === "asc" ? result : -result;
     };
 
     next.sort(compare);
@@ -207,28 +208,28 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortOrder(field === 'created_at' ? 'desc' : 'asc');
+      setSortOrder(field === "created_at" ? "desc" : "asc");
     }
   };
 
   const matchTypeFilterConfig: FilterConfig = {
-    type: 'text',
+    type: "text",
     isActive: selectedMatchTypes.length > 0,
   };
 
   const categoryFilterConfig: FilterConfig = {
-    type: 'category',
+    type: "category",
     isActive: selectedCategoryIds.length > 0,
     label: selectedCategoryIds.length > 0 ? `${selectedCategoryIds.length} selected` : undefined,
   };
 
   const columns = [
     {
-      key: 'match_type',
-      header: 'Match Type',
+      key: "match_type",
+      header: "Match Type",
       sortable: true,
       filter: {
         config: matchTypeFilterConfig,
@@ -236,7 +237,9 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
         children: (
           <div className="p-3 space-y-3">
             <div className="flex items-center justify-between px-1">
-              <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">Filter by Type</span>
+              <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
+                Filter by Type
+              </span>
               <button
                 onClick={() => setSelectedMatchTypes([])}
                 className="text-xs text-canvas-400 hover:text-canvas-700 select-none"
@@ -252,16 +255,12 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
                     key={option.value}
                     onClick={() => {
                       setSelectedMatchTypes((prev) =>
-                        prev.includes(option.value)
-                          ? prev.filter((t) => t !== option.value)
-                          : [...prev, option.value]
+                        prev.includes(option.value) ? prev.filter((t) => t !== option.value) : [...prev, option.value],
                       );
                     }}
                     className={`
                       w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none
-                      ${isActive
-                        ? 'bg-brand/10 text-brand font-semibold'
-                        : 'text-canvas-700 hover:bg-canvas-100'}
+                      ${isActive ? "bg-brand/10 text-brand font-semibold" : "text-canvas-700 hover:bg-canvas-100"}
                     `}
                   >
                     <span>{option.label}</span>
@@ -283,24 +282,22 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       },
     },
     {
-      key: 'match_value',
-      header: 'Match Value',
+      key: "match_value",
+      header: "Match Value",
       sortable: true,
-      render: (value: string) => (
-        <span className="font-mono text-xs text-canvas-700">{value}</span>
-      ),
+      render: (value: string) => <span className="font-mono text-xs text-canvas-700">{value}</span>,
     },
     {
-      key: 'amount',
-      header: 'Amount Filter',
+      key: "amount",
+      header: "Amount Filter",
       sortable: true,
       render: (_: any, row: RuleRow) => (
         <span className="text-xs font-semibold text-canvas-600">{formatAmountFilter(row)}</span>
       ),
     },
     {
-      key: 'category_name',
-      header: 'Category',
+      key: "category_name",
+      header: "Category",
       sortable: true,
       filter: {
         config: categoryFilterConfig,
@@ -311,9 +308,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
             selectedIds={selectedCategoryIds}
             includeUncategorized={false}
             onSelect={(id) => {
-              setSelectedCategoryIds((prev) =>
-                prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]
-              );
+              setSelectedCategoryIds((prev) => (prev.includes(id) ? prev.filter((cid) => cid !== id) : [...prev, id]));
             }}
             onSelectOnly={(id, e) => {
               e?.stopPropagation();
@@ -334,18 +329,26 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       ),
     },
     {
-      key: 'created_at',
-      header: 'Created',
+      key: "created_at",
+      header: "Created",
       sortable: true,
       render: (value: string) => (
         <span className="text-xs text-canvas-600">
-          {value ? new Date(value).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'}
+          {value
+            ? new Date(value).toLocaleString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "—"}
         </span>
       ),
     },
     {
-      key: 'actions',
-      header: 'Actions',
+      key: "actions",
+      header: "Actions",
       render: (_: any, row: RuleRow) => (
         <div className="flex items-center gap-2">
           <button
@@ -373,7 +376,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
         <RuleManagerHeader
           ruleSearch={ruleSearch}
           onRuleSearchChange={setRuleSearch}
-          onClearSearch={() => setRuleSearch('')}
+          onClearSearch={() => setRuleSearch("")}
           onCreate={openCreateModal}
         />
 
@@ -412,18 +415,29 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-sm text-canvas-600 select-none">Choose how to handle existing categorizations for this rule.</p>
+          <p className="text-sm text-canvas-600 select-none">
+            Choose how to handle existing categorizations for this rule.
+          </p>
           <div className="text-xs text-canvas-500 select-none">
-            {confirmLoading ? 'Checking matches...' : `${confirmMatchCount} matching transaction${confirmMatchCount !== 1 ? 's' : ''}`}
+            {confirmLoading
+              ? "Checking matches..."
+              : `${confirmMatchCount} matching transaction${confirmMatchCount !== 1 ? "s" : ""}`}
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => {
-              setConfirmOpen(false);
-              setConfirmRule(null);
-            }}>Cancel</Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setConfirmOpen(false);
+                setConfirmRule(null);
+              }}
+            >
+              Cancel
+            </Button>
             {confirmRule && (
               <>
-                <Button variant="secondary" onClick={() => handleDeleteRule(confirmRule, false)}>Delete Rule Only</Button>
+                <Button variant="secondary" onClick={() => handleDeleteRule(confirmRule, false)}>
+                  Delete Rule Only
+                </Button>
                 <Button onClick={() => handleDeleteRule(confirmRule, true)}>
                   Delete + Uncategorize ({confirmMatchCount})
                 </Button>

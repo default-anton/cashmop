@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { ExternalLink, Globe, Loader2, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { openExternal } from '../../../utils/openExternal';
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, ChevronUp, ExternalLink, Globe, Loader2, X } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import { openExternal } from "../../../utils/openExternal";
 
 interface WebSearchResult {
   title: string;
@@ -47,11 +48,7 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full"
-    >
+    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="w-full">
       <div className="bg-white rounded-xl border border-canvas-200 shadow-sm overflow-hidden">
         <button
           onClick={() => {
@@ -65,14 +62,8 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
         >
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-brand" />
-            <span className="text-sm font-bold text-canvas-700 select-none">
-              Web Search Context
-            </span>
-            {query && (
-              <span className="text-xs text-canvas-500 font-mono truncate max-w-[200px]">
-                "{query}"
-              </span>
-            )}
+            <span className="text-sm font-bold text-canvas-700 select-none">Web Search Context</span>
+            {query && <span className="text-xs text-canvas-500 font-mono truncate max-w-[200px]">"{query}"</span>}
           </div>
           <div className="flex items-center gap-2">
             {loading && <Loader2 className="w-4 h-4 text-brand animate-spin" />}
@@ -85,13 +76,12 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
             >
               <X className="w-4 h-4 text-canvas-500" />
             </button>
-            {!loading && (
-              isExpanded ? (
+            {!loading &&
+              (isExpanded ? (
                 <ChevronUp className="w-4 h-4 text-canvas-500" />
               ) : (
                 <ChevronDown className="w-4 h-4 text-canvas-500" />
-              )
-            )}
+              ))}
           </div>
         </button>
 
@@ -99,7 +89,7 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
           {isExpanded && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
+              animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
               className="overflow-hidden"
@@ -115,10 +105,7 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
                 {error && (
                   <div className="py-6 text-center text-canvas-500 select-none">
                     <p className="text-sm">{error}</p>
-                    <button
-                      onClick={onSearch}
-                      className="mt-2 text-brand text-sm font-bold hover:underline"
-                    >
+                    <button onClick={onSearch} className="mt-2 text-brand text-sm font-bold hover:underline">
                       Try again
                     </button>
                   </div>
@@ -150,14 +137,10 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
                               <ExternalLink className="w-3 h-3 text-canvas-400 flex-shrink-0" />
                             </div>
                             {result.snippet && (
-                              <p className="text-sm text-canvas-600 line-clamp-2 mb-1">
-                                {result.snippet}
-                              </p>
+                              <p className="text-sm text-canvas-600 line-clamp-2 mb-1">{result.snippet}</p>
                             )}
                             {result.domain && (
-                              <span className="text-xs text-canvas-400 font-medium">
-                                {result.domain}
-                              </span>
+                              <span className="text-xs text-canvas-400 font-medium">{result.domain}</span>
                             )}
                           </div>
                         </div>

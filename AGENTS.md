@@ -22,8 +22,8 @@ Current release platforms: macOS arm64, Linux amd64.
 - Feature specs: `docs/specs/`
 - Release process: `docs/release.md`
 - Frontend deps: `frontend/package.json` only; never root
-- After Go changes: `make fmt` (goimports -w)
-- After Go or frontend changes: `make check` (tidy, goimports check, vet, go test, typescript, vulncheck, integration)
+- After Go or frontend formatting changes: `make fmt` (goimports -w + biome)
+- After Go or frontend changes: `make check` (tidy, goimports check, biome check, vet, go test, typescript, vulncheck, integration)
 - Docs-only changes: skip `make check`
 - Use plain `make` commands by default (no `V=1`) unless explicitly requested.
 - Integration tests rules: `frontend/tests/AGENTS.md`

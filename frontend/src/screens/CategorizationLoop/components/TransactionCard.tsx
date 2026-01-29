@@ -1,8 +1,7 @@
-import React from 'react';
-import { Card } from '../../../components';
-import { formatCents, formatCentsDecimal } from '../../../utils/currency';
-
-import { Wand2 } from 'lucide-react';
+import { Wand2 } from "lucide-react";
+import React from "react";
+import { Card } from "../../../components";
+import { formatCents, formatCentsDecimal } from "../../../utils/currency";
 
 interface Transaction {
   id: number;
@@ -17,7 +16,7 @@ interface Transaction {
 
 interface SelectionRule {
   text: string;
-  mode: 'contains' | 'starts_with' | 'ends_with';
+  mode: "contains" | "starts_with" | "ends_with";
   startIndex?: number;
 }
 
@@ -56,7 +55,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
       if (x > rect.right) return transaction.description.length;
     }
 
-    let range;
+    let range: Range | null = null;
     if (document.caretRangeFromPoint) {
       range = document.caretRangeFromPoint(x, y);
     } else if ((document as any).caretPositionFromPoint) {
@@ -103,7 +102,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
       }
     };
 
-    const handleGlobalMouseUp = (e: MouseEvent) => {
+    const handleGlobalMouseUp = (_e: MouseEvent) => {
       if (dragStart !== null) {
         setDragStart(null);
         if (onMouseUp) onMouseUp();
@@ -111,13 +110,13 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
     };
 
     if (dragStart !== null) {
-      window.addEventListener('mousemove', handleGlobalMouseMove);
-      window.addEventListener('mouseup', handleGlobalMouseUp);
+      window.addEventListener("mousemove", handleGlobalMouseMove);
+      window.addEventListener("mouseup", handleGlobalMouseUp);
     }
 
     return () => {
-      window.removeEventListener('mousemove', handleGlobalMouseMove);
-      window.removeEventListener('mouseup', handleGlobalMouseUp);
+      window.removeEventListener("mousemove", handleGlobalMouseMove);
+      window.removeEventListener("mouseup", handleGlobalMouseUp);
     };
   }, [dragStart, onSelectionChange, onMouseUp, transaction.description]);
 
@@ -161,9 +160,9 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
     if (index === -1) return desc;
 
     const matchesMode =
-      (mode === 'starts_with' && index === 0) ||
-      (mode === 'ends_with' && index + text.length === desc.length) ||
-      mode === 'contains';
+      (mode === "starts_with" && index === 0) ||
+      (mode === "ends_with" && index + text.length === desc.length) ||
+      mode === "contains";
 
     if (!matchesMode) return desc;
 
@@ -198,19 +197,23 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
                 Date
               </span>
               <span className="text-sm font-bold text-canvas-700">
-                {new Date(transaction.date).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
+                {new Date(transaction.date).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
                 })}
               </span>
             </div>
 
             <div className="flex flex-col items-center">
-              <span className={`text-[9px] font-black uppercase tracking-[0.2em] mb-0.5 select-none ${isExpense ? 'text-finance-expense/60' : 'text-finance-income/60'}`}>
-                {isExpense ? 'Expense' : 'Income'}
+              <span
+                className={`text-[9px] font-black uppercase tracking-[0.2em] mb-0.5 select-none ${isExpense ? "text-finance-expense/60" : "text-finance-income/60"}`}
+              >
+                {isExpense ? "Expense" : "Income"}
               </span>
-              <span className={`text-sm font-mono font-black tracking-tight ${mainAmount === null ? 'text-canvas-400' : isExpense ? 'text-finance-expense' : 'text-finance-income'}`}>
+              <span
+                className={`text-sm font-mono font-black tracking-tight ${mainAmount === null ? "text-canvas-400" : isExpense ? "text-finance-expense" : "text-finance-income"}`}
+              >
                 {formattedMain}
               </span>
               {(() => {
@@ -218,7 +221,9 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
                 const main = mainCurrency.toUpperCase();
                 const showOriginal = txCurrency !== main;
                 return showOriginal ? (
-                  <span className={`text-[10px] font-sans mt-1 ${transaction.amount < 0 ? 'text-finance-expense/70' : 'text-finance-income/70'}`}>
+                  <span
+                    className={`text-[10px] font-sans mt-1 ${transaction.amount < 0 ? "text-finance-expense/70" : "text-finance-income/70"}`}
+                  >
                     {txCurrency} {formatCentsDecimal(Math.abs(transaction.amount))}
                   </span>
                 ) : null;
@@ -230,18 +235,14 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
                 <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5 select-none">
                   Account
                 </span>
-                <span className="text-sm font-black text-brand tracking-tight">
-                  {transaction.account_name}
-                </span>
+                <span className="text-sm font-black text-brand tracking-tight">{transaction.account_name}</span>
               </div>
               {transaction.owner_name && (
                 <div className="flex flex-col items-end text-right border-l border-canvas-200/50 pl-6">
                   <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5 select-none">
                     Owner
                   </span>
-                  <span className="text-sm font-black text-canvas-800 tracking-tight">
-                    {transaction.owner_name}
-                  </span>
+                  <span className="text-sm font-black text-canvas-800 tracking-tight">{transaction.owner_name}</span>
                 </div>
               )}
             </div>

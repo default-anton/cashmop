@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from "react";
 
 interface HeaderProps {
   title: string;
@@ -6,7 +6,7 @@ interface HeaderProps {
   className?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ title, children, className = '' }) => {
+const Header: React.FC<HeaderProps> = ({ title, children, className = "" }) => {
   return (
     <div className={`bg-canvas-100 p-4 border-b border-canvas-200 flex justify-between items-center ${className}`}>
       <div className="flex items-center gap-3">

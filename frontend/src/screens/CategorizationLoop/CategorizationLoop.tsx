@@ -1,20 +1,21 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { EventsOn } from '../../../wailsjs/runtime/runtime';
-import { AlertTriangle } from 'lucide-react';
-import { database } from '../../../wailsjs/go/models';
-import { useToast } from '@/contexts/ToastContext';
-import { useCurrency } from '@/contexts/CurrencyContext';
-import { ScreenLayout } from '@/components';
-import { parseCents } from '@/utils/currency';
+import { AlertTriangle } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ScreenLayout } from "@/components";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { useToast } from "@/contexts/ToastContext";
+import { parseCents } from "@/utils/currency";
+import { database } from "../../../wailsjs/go/models";
+import { EventsOn } from "../../../wailsjs/runtime/runtime";
 import {
+  CategoryInput,
   InboxZero,
   ProgressHeader,
-  TransactionCard,
   RuleEditor,
-  CategoryInput,
-  WebSearchResults,
+  TransactionCard,
   UndoToast,
-} from './components';
+  WebSearchResults,
+} from "./components";
 
 interface Transaction {
   id: number;
@@ -31,7 +32,7 @@ interface Transaction {
   amount_in_main_currency?: number | null;
 }
 
-type UndoActionType = 'single' | 'rule' | 'skip' | null;
+type UndoActionType = "single" | "rule" | "skip" | null;
 
 interface UndoState {
   type: UndoActionType;
@@ -55,19 +56,19 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTxId, setCurrentTxId] = useState<number | null>(null);
-  const [categoryInput, setCategoryInput] = useState('');
+  const [categoryInput, setCategoryInput] = useState("");
   const [suggestions, setSuggestions] = useState<Category[]>([]);
   const [selectionRule, setSelectionRule] = useState<{
     text: string;
-    mode: 'contains' | 'starts_with' | 'ends_with';
+    mode: "contains" | "starts_with" | "ends_with";
     startIndex?: number;
   } | null>(null);
   const [debouncedRule, setDebouncedRule] = useState(selectionRule);
   const [amountFilter, setAmountFilter] = useState<{
-    operator: 'none' | 'gt' | 'lt' | 'between';
+    operator: "none" | "gt" | "lt" | "between";
     value1: string;
     value2: string;
-  }>({ operator: 'none', value1: '', value2: '' });
+  }>({ operator: "none", value1: "", value2: "" });
   const [matchingTransactions, setMatchingTransactions] = useState<Transaction[]>([]);
   const [matchingCount, setMatchingCount] = useState(0);
   const [matchingAmountRange, setMatchingAmountRange] = useState<{ min?: number | null; max?: number | null }>({});
@@ -101,7 +102,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       setTransactions(items);
       return items;
     } catch (e) {
-      console.error('Failed to fetch transactions', e);
+      console.error("Failed to fetch transactions", e);
       return [];
     }
   }, []);
@@ -139,7 +140,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         setCurrentTxId(currentList[nextIdx].id);
       }
     },
-    [skippedIds]
+    [skippedIds],
   );
 
   useEffect(() => {
@@ -160,13 +161,13 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       setHasMissingRates(false);
       return;
     }
-    const missing = transactions.some(tx => tx.amount_in_main_currency === null);
+    const missing = transactions.some((tx) => tx.amount_in_main_currency === null);
     setHasMissingRates(missing);
   }, [transactions]);
 
   // Reload transactions when FX rates are updated (to get converted amounts)
   useEffect(() => {
-    const off = EventsOn('fx-rates-updated', () => {
+    const off = EventsOn("fx-rates-updated", () => {
       fetchTransactions();
     });
     return () => off?.();
@@ -229,22 +230,22 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
         const isExpense = currentMainAmount < 0;
 
-        if (amountFilter.operator !== 'none') {
+        if (amountFilter.operator !== "none") {
           let v1 = parseCents(parseFloat(amountFilter.value1) || 0);
           let v2 = parseCents(parseFloat(amountFilter.value2) || 0);
-          if (amountFilter.operator === 'between' && v1 > v2) [v1, v2] = [v2, v1];
+          if (amountFilter.operator === "between" && v1 > v2) [v1, v2] = [v2, v1];
 
           if (isExpense) {
-            if (amountFilter.operator === 'gt') amountMax = -v1;
-            else if (amountFilter.operator === 'lt') amountMin = -v1;
-            else if (amountFilter.operator === 'between') {
+            if (amountFilter.operator === "gt") amountMax = -v1;
+            else if (amountFilter.operator === "lt") amountMin = -v1;
+            else if (amountFilter.operator === "between") {
               amountMin = -v2;
               amountMax = -v1;
             }
           } else {
-            if (amountFilter.operator === 'gt') amountMin = v1;
-            else if (amountFilter.operator === 'lt') amountMax = v1;
-            else if (amountFilter.operator === 'between') {
+            if (amountFilter.operator === "gt") amountMin = v1;
+            else if (amountFilter.operator === "lt") amountMax = v1;
+            else if (amountFilter.operator === "between") {
               amountMin = v1;
               amountMax = v2;
             }
@@ -260,7 +261,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         setMatchingCount(res?.count || 0);
         setMatchingAmountRange({ min: amountRange?.min ?? null, max: amountRange?.max ?? null });
       } catch (e) {
-        console.error('Failed to fetch matching transactions', e);
+        console.error("Failed to fetch matching transactions", e);
       }
     };
 
@@ -269,21 +270,21 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         if (currentTx) {
           handleWebSearch();
         }
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         if (undoStack.length > 0) {
           handleUndo();
         }
       }
 
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "z" && e.shiftKey) {
         e.preventDefault();
         if (redoStack.length > 0) {
           handleRedo();
@@ -291,8 +292,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentTx, undoStack, redoStack]);
 
   const handleWebSearch = async () => {
@@ -306,8 +307,8 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       const results = await (window as any).go.main.App.SearchWeb(currentTx.description);
       setWebSearchResults(results);
     } catch (e) {
-      console.error('Web search failed', e);
-      setWebSearchError('Web search unavailable. Try again later');
+      console.error("Web search failed", e);
+      setWebSearchError("Web search unavailable. Try again later");
     } finally {
       setWebSearchLoading(false);
     }
@@ -324,28 +325,29 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     const action = undoStack[undoStack.length - 1];
 
     try {
-      let successMessage = '';
+      let successMessage = "";
 
       switch (action.type) {
-        case 'single':
-          await (window as any).go.main.App.CategorizeTransaction(action.transactionId, '');
-          successMessage = 'Undo complete - transaction uncategorized';
+        case "single":
+          await (window as any).go.main.App.CategorizeTransaction(action.transactionId, "");
+          successMessage = "Undo complete - transaction uncategorized";
           break;
-        case 'rule':
+        case "rule": {
           await (window as any).go.main.App.UndoCategorizationRule(
             action.ruleId || 0,
-            action.affectedTransactionIds || []
+            action.affectedTransactionIds || [],
           );
           const count = (action.affectedTransactionIds || []).length;
-          successMessage = `Undo complete - ${count} transaction${count !== 1 ? 's' : ''} reverted, rule removed`;
+          successMessage = `Undo complete - ${count} transaction${count !== 1 ? "s" : ""} reverted, rule removed`;
           break;
-        case 'skip':
+        }
+        case "skip":
           setSkippedIds((prev) => {
             const next = new Set(prev);
             next.delete(action.transactionId);
             return next;
           });
-          successMessage = 'Undo complete - transaction back in queue';
+          successMessage = "Undo complete - transaction back in queue";
           break;
       }
 
@@ -357,21 +359,21 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         setShowUndoToast(false);
         if (onFinish) onFinish();
       } else {
-        const undoneTxExists = updated.some(t => t.id === action.transactionId);
+        const undoneTxExists = updated.some((t) => t.id === action.transactionId);
         setCurrentTxId(undoneTxExists ? action.transactionId : updated[0].id);
       }
 
-      setCategoryInput('');
+      setCategoryInput("");
       setSuggestions([]);
       setSelectionRule(null);
-      setAmountFilter({ operator: 'none', value1: '', value2: '' });
+      setAmountFilter({ operator: "none", value1: "", value2: "" });
       setWebSearchResults(null);
       setWebSearchError(null);
 
       setShowUndoToast(true);
-      showToast(successMessage, 'success', 2000);
+      showToast(successMessage, "success", 2000);
     } catch (e) {
-      console.error('Undo failed', e);
+      console.error("Undo failed", e);
     }
   };
 
@@ -381,26 +383,27 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     const action = redoStack[redoStack.length - 1];
 
     try {
-      let successMessage = '';
+      let successMessage = "";
 
       switch (action.type) {
-        case 'single':
-          await (window as any).go.main.App.CategorizeTransaction(action.transactionId, action.categoryName || '');
-          successMessage = 'Redo complete - transaction categorized';
+        case "single":
+          await (window as any).go.main.App.CategorizeTransaction(action.transactionId, action.categoryName || "");
+          successMessage = "Redo complete - transaction categorized";
           break;
-        case 'rule':
+        case "rule": {
           const rule = new database.CategorizationRule();
-          rule.match_type = 'contains';
-          rule.match_value = action.matchValue || '';
+          rule.match_type = "contains";
+          rule.match_value = action.matchValue || "";
           rule.category_id = 0;
-          rule.category_name = action.categoryName || '';
+          rule.category_name = action.categoryName || "";
 
-          const ruleResult = await (window as any).go.main.App.SaveCategorizationRule(rule);
-          successMessage = `Redo complete - rule applied to ${(action.affectedTransactionIds || []).length} transaction${(action.affectedTransactionIds || []).length !== 1 ? 's' : ''}`;
+          await (window as any).go.main.App.SaveCategorizationRule(rule);
+          successMessage = `Redo complete - rule applied to ${(action.affectedTransactionIds || []).length} transaction${(action.affectedTransactionIds || []).length !== 1 ? "s" : ""}`;
           break;
-        case 'skip':
+        }
+        case "skip":
           setSkippedIds((prev) => new Set([...prev, action.transactionId]));
-          successMessage = 'Redo complete - transaction skipped';
+          successMessage = "Redo complete - transaction skipped";
           break;
       }
 
@@ -412,7 +415,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         setShowUndoToast(false);
         if (onFinish) onFinish();
       } else {
-        const currentIdx = updated.findIndex(t => t.id === action.transactionId);
+        const currentIdx = updated.findIndex((t) => t.id === action.transactionId);
         if (currentIdx !== -1) {
           goToNext(updated, action.transactionId, false);
         } else {
@@ -420,17 +423,17 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         }
       }
 
-      setCategoryInput('');
+      setCategoryInput("");
       setSuggestions([]);
       setSelectionRule(null);
-      setAmountFilter({ operator: 'none', value1: '', value2: '' });
+      setAmountFilter({ operator: "none", value1: "", value2: "" });
       setWebSearchResults(null);
       setWebSearchError(null);
 
       setShowUndoToast(true);
-      showToast(successMessage, 'success', 2000);
+      showToast(successMessage, "success", 2000);
     } catch (e) {
-      console.error('Redo failed', e);
+      console.error("Redo failed", e);
     }
   };
 
@@ -438,37 +441,39 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     if (redoStack.length > 0) {
       const action = redoStack[redoStack.length - 1];
       switch (action.type) {
-        case 'single':
-          return `Redo ${action.categoryName || 'categorization'}`;
-        case 'rule':
+        case "single":
+          return `Redo ${action.categoryName || "categorization"}`;
+        case "rule": {
           const count = (action.affectedTransactionIds || []).length;
           if (count === 1) {
-            return `Redo rule: ${action.matchValue} → ${action.categoryName || 'category'}`;
+            return `Redo rule: ${action.matchValue} → ${action.categoryName || "category"}`;
           }
-          return `Redo rule: ${action.matchValue} → ${action.categoryName || 'category'} (${count} transactions)`;
-        case 'skip':
-          return 'Redo skip';
+          return `Redo rule: ${action.matchValue} → ${action.categoryName || "category"} (${count} transactions)`;
+        }
+        case "skip":
+          return "Redo skip";
         default:
-          return '';
+          return "";
       }
     }
 
     const action = undoStack.length > 0 ? undoStack[undoStack.length - 1] : null;
-    if (!action) return '';
+    if (!action) return "";
 
     switch (action.type) {
-      case 'single':
-        return `Undo ${action.categoryName || 'categorization'}`;
-      case 'rule':
+      case "single":
+        return `Undo ${action.categoryName || "categorization"}`;
+      case "rule": {
         const count = (action.affectedTransactionIds || []).length;
         if (count === 1) {
-          return `Undo rule: ${action.matchValue} → ${action.categoryName || 'category'}`;
+          return `Undo rule: ${action.matchValue} → ${action.categoryName || "category"}`;
         }
-        return `Undo rule: ${action.matchValue} → ${action.categoryName || 'category'} (${count} transactions)`;
-      case 'skip':
-        return 'Undo skip';
+        return `Undo rule: ${action.matchValue} → ${action.categoryName || "category"} (${count} transactions)`;
+      }
+      case "skip":
+        return "Undo skip";
       default:
-        return '';
+        return "";
     }
   }, [undoStack, redoStack]);
 
@@ -484,32 +489,32 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         rule.category_id = categoryId || 0;
         rule.category_name = categoryName;
 
-        if (amountFilter.operator !== 'none') {
+        if (amountFilter.operator !== "none") {
           let v1 = parseCents(parseFloat(amountFilter.value1) || 0);
           let v2 = parseCents(parseFloat(amountFilter.value2) || 0);
 
-          if (amountFilter.operator === 'between' && v1 > v2) {
+          if (amountFilter.operator === "between" && v1 > v2) {
             [v1, v2] = [v2, v1];
           }
 
-          const currentTx = transactions.find(t => t.id === oldId);
+          const currentTx = transactions.find((t) => t.id === oldId);
           const isExpense = (currentTx ? (currentTx.amount_in_main_currency ?? currentTx.amount) : 0) < 0;
 
           if (isExpense) {
-            if (amountFilter.operator === 'gt') {
+            if (amountFilter.operator === "gt") {
               rule.amount_max = -v1;
-            } else if (amountFilter.operator === 'lt') {
+            } else if (amountFilter.operator === "lt") {
               rule.amount_min = -v1;
-            } else if (amountFilter.operator === 'between') {
+            } else if (amountFilter.operator === "between") {
               rule.amount_min = -v2;
               rule.amount_max = -v1;
             }
           } else {
-            if (amountFilter.operator === 'gt') {
+            if (amountFilter.operator === "gt") {
               rule.amount_min = v1;
-            } else if (amountFilter.operator === 'lt') {
+            } else if (amountFilter.operator === "lt") {
               rule.amount_max = v1;
-            } else if (amountFilter.operator === 'between') {
+            } else if (amountFilter.operator === "between") {
               rule.amount_min = v1;
               rule.amount_max = v2;
             }
@@ -518,7 +523,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
         const ruleResult = await (window as any).go.main.App.SaveCategorizationRule(rule);
         const newAction: UndoState = {
-          type: 'rule',
+          type: "rule",
           transactionId: oldId,
           ruleId: ruleResult.rule_id,
           affectedTransactionIds: ruleResult.affected_ids,
@@ -529,12 +534,12 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         setRedoStack([]);
         setShowUndoToast(true);
         setSelectionRule(null);
-        setAmountFilter({ operator: 'none', value1: '', value2: '' });
+        setAmountFilter({ operator: "none", value1: "", value2: "" });
         setHasRules(true);
       } else {
         await (window as any).go.main.App.CategorizeTransaction(oldId, categoryName);
         const newAction: UndoState = {
-          type: 'single',
+          type: "single",
           transactionId: oldId,
           categoryName,
         };
@@ -550,19 +555,19 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
         goToNext(updated, oldId, false);
       }
 
-      setCategoryInput('');
+      setCategoryInput("");
       setSuggestions([]);
       setWebSearchResults(null);
       setWebSearchError(null);
     } catch (e) {
-      console.error('Failed to (rule-)categorize', e);
+      console.error("Failed to (rule-)categorize", e);
     }
   };
 
   const handleSkip = () => {
     if (currentTxId !== null) {
       const newAction: UndoState = {
-        type: 'skip',
+        type: "skip",
         transactionId: currentTxId,
       };
       setUndoStack((prev) => [...prev, newAction]);
@@ -570,10 +575,10 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       setShowUndoToast(true);
     }
     goToNext(transactions, currentTxId, true);
-    setCategoryInput('');
+    setCategoryInput("");
     setSuggestions([]);
     setSelectionRule(null);
-    setAmountFilter({ operator: 'none', value1: '', value2: '' });
+    setAmountFilter({ operator: "none", value1: "", value2: "" });
     setWebSearchResults(null);
     setWebSearchError(null);
   };
@@ -582,49 +587,52 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
    * Replaced by manual selection from TransactionCard to support custom highlighting
    * without fighting browser selection behavior.
    */
-  const handleManualSelection = useCallback((startIndex: number, endIndex: number) => {
-    if (!currentTxId) return;
-    const tx = transactions.find((t) => t.id === currentTxId);
-    if (!tx) return;
+  const handleManualSelection = useCallback(
+    (startIndex: number, endIndex: number) => {
+      if (!currentTxId) return;
+      const tx = transactions.find((t) => t.id === currentTxId);
+      if (!tx) return;
 
-    if (startIndex > endIndex) {
-      [startIndex, endIndex] = [endIndex, startIndex];
-    }
+      if (startIndex > endIndex) {
+        [startIndex, endIndex] = [endIndex, startIndex];
+      }
 
-    startIndex = Math.max(0, startIndex);
-    endIndex = Math.min(tx.description.length, endIndex);
+      startIndex = Math.max(0, startIndex);
+      endIndex = Math.min(tx.description.length, endIndex);
 
-    const rawText = tx.description.substring(startIndex, endIndex);
-    const trimmedText = rawText.trim();
+      const rawText = tx.description.substring(startIndex, endIndex);
+      const trimmedText = rawText.trim();
 
-    if (trimmedText.length < 1) {
-      if (rawText.length === 0) setSelectionRule(null);
-      return;
-    }
+      if (trimmedText.length < 1) {
+        if (rawText.length === 0) setSelectionRule(null);
+        return;
+      }
 
-    const leadingWhitespaceMatch = rawText.match(/^\s*/);
-    const leadingLen = leadingWhitespaceMatch ? leadingWhitespaceMatch[0].length : 0;
-    const trailingWhitespaceMatch = rawText.match(/\s*$/);
-    const trailingLen = trailingWhitespaceMatch ? trailingWhitespaceMatch[0].length : 0;
+      const leadingWhitespaceMatch = rawText.match(/^\s*/);
+      const leadingLen = leadingWhitespaceMatch ? leadingWhitespaceMatch[0].length : 0;
+      const trailingWhitespaceMatch = rawText.match(/\s*$/);
+      const trailingLen = trailingWhitespaceMatch ? trailingWhitespaceMatch[0].length : 0;
 
-    const finalStart = startIndex + leadingLen;
-    const finalEnd = endIndex - trailingLen;
+      const finalStart = startIndex + leadingLen;
+      const finalEnd = endIndex - trailingLen;
 
-    const description = tx.description;
-    let mode: 'contains' | 'starts_with' | 'ends_with' = 'contains';
+      const description = tx.description;
+      let mode: "contains" | "starts_with" | "ends_with" = "contains";
 
-    if (finalStart === 0 && finalEnd === description.length) {
-      mode = 'contains';
-    } else if (finalStart === 0) {
-      mode = 'starts_with';
-    } else if (finalEnd === description.length) {
-      mode = 'ends_with';
-    } else {
-      mode = 'contains';
-    }
+      if (finalStart === 0 && finalEnd === description.length) {
+        mode = "contains";
+      } else if (finalStart === 0) {
+        mode = "starts_with";
+      } else if (finalEnd === description.length) {
+        mode = "ends_with";
+      } else {
+        mode = "contains";
+      }
 
-    setSelectionRule({ text: trimmedText, mode, startIndex: finalStart });
-  }, [currentTxId, transactions]);
+      setSelectionRule({ text: trimmedText, mode, startIndex: finalStart });
+    },
+    [currentTxId, transactions],
+  );
 
   const handleSelectionMouseUp = useCallback(() => {
     if (selectionRule) {
@@ -642,9 +650,9 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
   const displayWarning = hasMissingRates
     ? {
-        tone: 'error' as const,
-        title: 'Exchange rates missing',
-        detail: 'Some transactions are missing rates. Converted amounts exclude those items.',
+        tone: "error" as const,
+        title: "Exchange rates missing",
+        detail: "Some transactions are missing rates. Converted amounts exclude those items.",
       }
     : warning;
 
@@ -652,11 +660,13 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     <ScreenLayout size="medium" centerContent>
       <div className="w-full max-w-2xl flex flex-col items-stretch gap-6">
         {displayWarning && (
-          <div className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
-            displayWarning.tone === 'error'
-              ? 'bg-finance-expense/10 border-finance-expense/20 text-finance-expense'
-              : 'bg-yellow-100 border-yellow-300 text-yellow-800'
-          }`}>
+          <div
+            className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
+              displayWarning.tone === "error"
+                ? "bg-finance-expense/10 border-finance-expense/20 text-finance-expense"
+                : "bg-yellow-100 border-yellow-300 text-yellow-800"
+            }`}
+          >
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold select-none">{displayWarning.title}</p>
@@ -690,7 +700,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           selectionRule={selectionRule}
           onClearRule={() => {
             setSelectionRule(null);
-            setAmountFilter({ operator: 'none', value1: '', value2: '' });
+            setAmountFilter({ operator: "none", value1: "", value2: "" });
           }}
           amountFilter={amountFilter}
           setAmountFilter={setAmountFilter}

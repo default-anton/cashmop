@@ -1,1 +1,1 @@
-export { default as GroupedTransactionList } from './GroupedTransactionList';
+export { default as GroupedTransactionList } from "./GroupedTransactionList";

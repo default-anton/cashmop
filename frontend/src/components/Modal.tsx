@@ -1,26 +1,26 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import { X } from "lucide-react";
+import type React from "react";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg' | 'full';
-  variant?: 'default' | 'full';
+  size?: "sm" | "md" | "lg" | "full";
+  variant?: "default" | "full";
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md', variant = 'default' }) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = "md", variant = "default" }) => {
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    full: 'max-w-2xl',
+    sm: "max-w-md",
+    md: "max-w-lg",
+    lg: "max-w-2xl",
+    full: "max-w-2xl",
   };
 
-  const isFull = variant === 'full';
+  const isFull = variant === "full";
 
   return (
     <div
@@ -29,7 +29,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className={`w-full ${sizeClasses[size]} ${isFull ? 'bg-gradient-to-br from-canvas-50 to-canvas-100 rounded-3xl' : 'bg-canvas-50 rounded-xl'} shadow-glass animate-snap-in`}>
+      <div
+        className={`w-full ${sizeClasses[size]} ${isFull ? "bg-gradient-to-br from-canvas-50 to-canvas-100 rounded-3xl" : "bg-canvas-50 rounded-xl"} shadow-glass animate-snap-in`}
+      >
         {!isFull && (
           <div className="flex items-center justify-between p-4 border-b border-canvas-200">
             <h3 className="text-lg font-semibold text-canvas-800 select-none">{title}</h3>
@@ -42,7 +44,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 
             </button>
           </div>
         )}
-        <div className={isFull ? 'overflow-hidden' : 'p-6'}>{children}</div>
+        <div className={isFull ? "overflow-hidden" : "p-6"}>{children}</div>
       </div>
     </div>
   );

@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type FuzzySearchIndex<T> = {
   labels: string[];
   lookup: Map<string, T>;
 };
 
-const buildIndex = <T,>(items: T[], buildLabel: (item: T) => string): FuzzySearchIndex<T> => {
+const buildIndex = <T>(items: T[], buildLabel: (item: T) => string): FuzzySearchIndex<T> => {
   const labels: string[] = [];
   const lookup = new Map<string, T>();
   items.forEach((item) => {
@@ -22,11 +22,7 @@ const runFuzzySearch = async (query: string, labels: string[], requestId: number
   return ranked;
 };
 
-export const useFuzzySearch = <T,>(
-  items: T[],
-  buildLabel: (item: T) => string,
-  query: string
-) => {
+export const useFuzzySearch = <T>(items: T[], buildLabel: (item: T) => string, query: string) => {
   const searchRequestId = useRef(0);
   const [results, setResults] = useState<T[]>(items);
 
@@ -42,9 +38,7 @@ export const useFuzzySearch = <T,>(
     const requestId = ++searchRequestId.current;
     runFuzzySearch(trimmed, index.labels, requestId, searchRequestId).then((ranked) => {
       if (!ranked) return;
-      const next = ranked
-        .map((label) => index.lookup.get(label))
-        .filter((item): item is T => !!item);
+      const next = ranked.map((label) => index.lookup.get(label)).filter((item): item is T => !!item);
       setResults(next);
     });
   }, [index, items, query]);

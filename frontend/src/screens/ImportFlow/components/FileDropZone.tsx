@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { Upload, X, FileText } from 'lucide-react';
-import { Button } from '../../../components';
+import { FileText, Upload, X } from "lucide-react";
+import type React from "react";
+import { useRef, useState } from "react";
+import { Button } from "../../../components";
 
 interface FileDropZoneProps {
   busy?: boolean;
@@ -59,8 +60,8 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
       <div
         className={
           `relative group cursor-pointer rounded-2xl border-2 border-dashed transition-all duration-200 ease-out\n` +
-          `flex flex-col items-center justify-center ${selectedFiles.length > 0 ? 'h-auto py-8' : 'h-80'}\n` +
-          'border-canvas-300 bg-canvas-50 hover:border-canvas-600 hover:bg-canvas-200'
+          `flex flex-col items-center justify-center ${selectedFiles.length > 0 ? "h-auto py-8" : "h-80"}\n` +
+          "border-canvas-300 bg-canvas-50 hover:border-canvas-600 hover:bg-canvas-200"
         }
         onClick={() => inputRef.current?.click()}
         aria-busy={busy}
@@ -81,7 +82,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
             </div>
 
             <h3 className="text-xl font-bold text-canvas-800 mb-2 select-none">
-              {multiple ? 'Choose your bank exports' : 'Choose your bank export'}
+              {multiple ? "Choose your bank exports" : "Choose your bank export"}
             </h3>
             <p className="text-canvas-500 text-sm select-none">CSV or Excel (.xlsx)</p>
           </>
@@ -94,17 +95,14 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-canvas-800 select-none">
-                    {selectedFiles.length} file{selectedFiles.length === 1 ? '' : 's'} selected
+                    {selectedFiles.length} file{selectedFiles.length === 1 ? "" : "s"} selected
                   </h3>
-                  <p className="text-sm text-canvas-500 select-none">{multiple ? 'Add more files or continue' : 'Replace file'}</p>
+                  <p className="text-sm text-canvas-500 select-none">
+                    {multiple ? "Add more files or continue" : "Replace file"}
+                  </p>
                 </div>
               </div>
-              <Button
-                onClick={clearAll}
-                variant="secondary"
-                size="sm"
-                disabled={selectedFiles.length === 0}
-              >
+              <Button onClick={clearAll} variant="secondary" size="sm" disabled={selectedFiles.length === 0}>
                 Clear All
               </Button>
             </div>
@@ -126,7 +124,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-mono px-2 py-1 rounded bg-canvas-300 border border-canvas-400 text-canvas-600 select-none">
-                      {file.name.endsWith('.csv') ? 'CSV' : 'Excel'}
+                      {file.name.endsWith(".csv") ? "CSV" : "Excel"}
                     </span>
                     <Button
                       onClick={() => removeFile(idx)}
@@ -154,7 +152,7 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
 
         {busy && (
           <div className="mt-6 text-sm font-mono text-canvas-500 bg-canvas-200/60 border border-canvas-300 rounded-lg px-3 py-2 select-none">
-            Parsing file{selectedFiles.length > 1 ? 's...' : '...'}
+            Parsing file{selectedFiles.length > 1 ? "s..." : "..."}
           </div>
         )}
 
@@ -170,7 +168,9 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-canvas-500 text-center select-none">Transactions are parsed locally and never leave your device.</p>
+      <p className="mt-4 text-xs text-canvas-500 text-center select-none">
+        Transactions are parsed locally and never leave your device.
+      </p>
     </div>
   );
 };

@@ -1,6 +1,6 @@
-import React from 'react';
-import { CheckCircle2 } from 'lucide-react';
-import { Button } from '../../../components';
+import { CheckCircle2 } from "lucide-react";
+import type React from "react";
+import { Button } from "../../../components";
 
 interface InboxZeroProps {
   onRefresh: () => void;

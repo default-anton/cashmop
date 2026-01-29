@@ -1,7 +1,7 @@
 # All targets: show output only on failure (silent success)
 # Unless V=1 is passed.
 
-.PHONY: check dev test vet tidy goimports fmt vulncheck typescript build integration integration-file integration-test
+.PHONY: check dev test vet tidy goimports frontend-check fmt fmt-go fmt-frontend vulncheck typescript build integration integration-file integration-test
 
 # Macro to run a command with optional verbosity
 # Usage: $(call run,Label,Command)
@@ -20,7 +20,7 @@ define run
 	fi
 endef
 
-check: tidy goimports vet test typescript vulncheck integration
+check: tidy goimports vet test frontend-check typescript vulncheck integration
 
 dev:
 	@wails dev
@@ -37,14 +37,22 @@ tidy:
 goimports:
 	$(call run,goimports check,files=$$(goimports -l $$(go list -f '{{.Dir}}' ./...)); if [ -n "$$files" ]; then echo "$$files"; exit 1; fi)
 
-fmt:
+frontend-check:
+	$(call run,frontend biome check,cd frontend && pnpm exec biome check .)
+
+fmt: fmt-go fmt-frontend
+
+fmt-go:
 	$(call run,goimports -w,goimports -w $$(go list -f '{{.Dir}}' ./...))
+
+fmt-frontend:
+	$(call run,frontend biome fmt,cd frontend && pnpm exec biome check --write --javascript-linter-enabled=false .)
 
 vulncheck:
 	$(call run,govulncheck ./...,govulncheck ./...)
 
 typescript:
-	$(call run,typescript check,cd frontend && pnpm exec tsc --noEmit)
+	$(call run,typescript check,cd frontend && pnpm exec tsgo --noEmit)
 
 build:
 	$(call run,wails build,wails build)

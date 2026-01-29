@@ -1,22 +1,21 @@
-import React from 'react';
+import type React from "react";
 
-import { Card } from '../../../../components';
-
-import { STEPS } from './steps';
-import type { MappingPunchThroughModel } from './useMappingPunchThroughModel';
-import { WizardHeader } from './components/WizardHeader';
-import { HeaderRowToggle } from './components/HeaderRowToggle';
-import { AutoMappingBanner } from './components/AutoMappingBanner';
-import { RememberMapping } from './components/RememberMapping';
-import { AmountStepPanel } from './components/AmountStepPanel';
-import { DescriptionStepPanel } from './components/DescriptionStepPanel';
-import { AccountStepPanel } from './components/AccountStepPanel';
-import { OwnerStepPanel } from './components/OwnerStepPanel';
-import { CurrencyStepPanel } from './components/CurrencyStepPanel';
-import { PreviewTable } from './components/PreviewTable';
+import { Card } from "../../../../components";
+import { AccountStepPanel } from "./components/AccountStepPanel";
+import { AmountStepPanel } from "./components/AmountStepPanel";
+import { AutoMappingBanner } from "./components/AutoMappingBanner";
+import { CurrencyStepPanel } from "./components/CurrencyStepPanel";
+import { DescriptionStepPanel } from "./components/DescriptionStepPanel";
+import { HeaderRowToggle } from "./components/HeaderRowToggle";
+import { OwnerStepPanel } from "./components/OwnerStepPanel";
+import { PreviewTable } from "./components/PreviewTable";
+import { RememberMapping } from "./components/RememberMapping";
+import { WizardHeader } from "./components/WizardHeader";
+import { STEPS } from "./steps";
+import type { MappingPunchThroughModel } from "./useMappingPunchThroughModel";
 
 export const MappingPunchThroughView: React.FC<{ model: MappingPunchThroughModel }> = ({ model }) => {
-  const accountStepIdx = STEPS.findIndex((s) => s.key === 'account');
+  const accountStepIdx = STEPS.findIndex((s) => s.key === "account");
 
   return (
     <div className="flex flex-col gap-6 animate-snap-in">
@@ -43,11 +42,11 @@ export const MappingPunchThroughView: React.FC<{ model: MappingPunchThroughModel
           />
         )}
 
-        {model.currentStep.key === 'amount' && <AmountStepPanel model={model} />}
-        {model.currentStep.key === 'description' && <DescriptionStepPanel model={model} />}
-        {model.currentStep.key === 'account' && <AccountStepPanel model={model} />}
-        {model.currentStep.key === 'owner' && <OwnerStepPanel model={model} />}
-        {model.currentStep.key === 'currency' && <CurrencyStepPanel model={model} />}
+        {model.currentStep.key === "amount" && <AmountStepPanel model={model} />}
+        {model.currentStep.key === "description" && <DescriptionStepPanel model={model} />}
+        {model.currentStep.key === "account" && <AccountStepPanel model={model} />}
+        {model.currentStep.key === "owner" && <OwnerStepPanel model={model} />}
+        {model.currentStep.key === "currency" && <CurrencyStepPanel model={model} />}
 
         {!model.canProceed && model.currentStepIdx >= accountStepIdx && (
           <div className="mt-6 text-xs text-canvas-500 select-none">

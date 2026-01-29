@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import Input from './Input';
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import Input from "./Input";
 
 type AutocompleteOption = string | { value: string; label: string };
 
@@ -13,7 +14,7 @@ interface AutocompleteInputProps {
   placeholder?: string;
   className?: string;
   autoFocus?: boolean;
-  filterMode?: 'includes' | 'none';
+  filterMode?: "includes" | "none";
   dropdownClassName?: string;
 }
 
@@ -26,8 +27,8 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   placeholder,
   className,
   autoFocus,
-  filterMode = 'includes',
-  dropdownClassName = 'z-20',
+  filterMode = "includes",
+  dropdownClassName = "z-20",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,22 +46,21 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         setIsOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const normalizedOptions = useMemo(() => (
-    options.map((opt) => (
-      typeof opt === 'string' ? { value: opt, label: opt } : opt
-    ))
-  ), [options]);
+  const normalizedOptions = useMemo(
+    () => options.map((opt) => (typeof opt === "string" ? { value: opt, label: opt } : opt)),
+    [options],
+  );
 
   const filteredOptions = useMemo(() => {
-    if (filterMode === 'none') return normalizedOptions;
+    if (filterMode === "none") return normalizedOptions;
     if (!value) return normalizedOptions;
     const needle = value.toLowerCase();
-    return normalizedOptions.filter((opt) =>
-      opt.label.toLowerCase().includes(needle) || opt.value.toLowerCase().includes(needle)
+    return normalizedOptions.filter(
+      (opt) => opt.label.toLowerCase().includes(needle) || opt.value.toLowerCase().includes(needle),
     );
   }, [filterMode, normalizedOptions, value]);
 
@@ -78,11 +78,11 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
       });
     };
     update();
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
     return () => {
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
     };
   }, [isOpen, value]);
 
@@ -95,12 +95,12 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
+    if (event.key === "Enter") {
       event.preventDefault();
       if (showDropdown) {
         const needle = value.trim().toLowerCase();
-        const exact = filteredOptions.find((option) =>
-          option.value.toLowerCase() === needle || option.label.toLowerCase() === needle
+        const exact = filteredOptions.find(
+          (option) => option.value.toLowerCase() === needle || option.label.toLowerCase() === needle,
         );
         handleSelect(exact || filteredOptions[0]);
       } else if (onSubmit) {
@@ -112,7 +112,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   const dropdown = showDropdown ? (
     <div
       ref={dropdownRef}
-      style={{ position: 'absolute', top: coords.top, left: coords.left, width: coords.width }}
+      style={{ position: "absolute", top: coords.top, left: coords.left, width: coords.width }}
       className={dropdownClassName}
       data-autocomplete-dropdown="true"
       onMouseDown={(event) => event.preventDefault()}

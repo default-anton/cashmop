@@ -1,4 +1,4 @@
-import { BrowserOpenURL } from '../../wailsjs/runtime/runtime';
+import { BrowserOpenURL } from "../../wailsjs/runtime/runtime";
 
 let testEnvPromise: Promise<boolean> | null = null;
 

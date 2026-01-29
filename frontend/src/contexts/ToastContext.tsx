@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react';
-import { EventsOn } from '../../wailsjs/runtime/runtime';
+import React, { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import { EventsOn } from "../../wailsjs/runtime/runtime";
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType = "success" | "error" | "warning" | "info";
 
 interface Toast {
   id: string;
@@ -20,7 +20,7 @@ const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 export const useToast = () => {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
+    throw new Error("useToast must be used within a ToastProvider");
   }
   return context;
 };
@@ -33,21 +33,19 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
+    setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const showToast = useCallback((message: string, type: ToastType = 'info', duration: number = 5000) => {
+  const showToast = useCallback((message: string, type: ToastType = "info", duration: number = 5000) => {
     const id = Math.random().toString(36).substring(2, 9);
-    setToasts(prev => [...prev, { id, message, type, duration }]);
+    setToasts((prev) => [...prev, { id, message, type, duration }]);
     return id;
   }, []);
 
   useEffect(() => {
-    const off = EventsOn('fx-rates-sync-failed', (message: string) => {
-      const text = message?.trim()
-        ? message
-        : "Couldn't fetch exchange rates just now. Try syncing again in Settings.";
-      showToast(text, 'warning');
+    const off = EventsOn("fx-rates-sync-failed", (message: string) => {
+      const text = message?.trim() ? message : "Couldn't fetch exchange rates just now. Try syncing again in Settings.";
+      showToast(text, "warning");
     });
     return () => off?.();
   }, [showToast]);
@@ -68,7 +66,7 @@ interface ToastContainerProps {
 const ToastContainer: React.FC<ToastContainerProps> = ({ toasts, removeToast }) => {
   return (
     <div className="fixed top-10 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
-      {toasts.map(toast => (
+      {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onClose={() => removeToast(toast.id)} />
       ))}
     </div>
@@ -90,24 +88,24 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onClose }) => {
 
   const typeConfig = {
     success: {
-      bg: 'bg-finance-income/10',
-      border: 'border-finance-income/30',
-      text: 'text-finance-income',
+      bg: "bg-finance-income/10",
+      border: "border-finance-income/30",
+      text: "text-finance-income",
     },
     error: {
-      bg: 'bg-finance-expense/10',
-      border: 'border-finance-expense/30',
-      text: 'text-finance-expense',
+      bg: "bg-finance-expense/10",
+      border: "border-finance-expense/30",
+      text: "text-finance-expense",
     },
     warning: {
-      bg: 'bg-yellow-100',
-      border: 'border-yellow-300',
-      text: 'text-yellow-800',
+      bg: "bg-yellow-100",
+      border: "border-yellow-300",
+      text: "text-yellow-800",
     },
     info: {
-      bg: 'bg-blue-100',
-      border: 'border-blue-300',
-      text: 'text-blue-800',
+      bg: "bg-blue-100",
+      border: "border-blue-300",
+      text: "text-blue-800",
     },
   };
 

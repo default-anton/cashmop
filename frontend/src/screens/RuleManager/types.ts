@@ -1,4 +1,4 @@
-export type MatchType = 'contains' | 'starts_with' | 'ends_with' | 'exact';
+export type MatchType = "contains" | "starts_with" | "ends_with" | "exact";
 
 export type RuleRow = {
   id: number;

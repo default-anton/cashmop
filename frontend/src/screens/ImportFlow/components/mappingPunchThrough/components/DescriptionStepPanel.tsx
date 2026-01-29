@@ -1,6 +1,6 @@
-import React from 'react';
+import type React from "react";
 
-import type { MappingPunchThroughModel } from '../useMappingPunchThroughModel';
+import type { MappingPunchThroughModel } from "../useMappingPunchThroughModel";
 
 export const DescriptionStepPanel: React.FC<{ model: MappingPunchThroughModel }> = ({ model }) => {
   return (

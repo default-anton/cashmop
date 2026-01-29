@@ -1,4 +1,4 @@
-import { expect, Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export class SettingsPage {
   readonly page: Page;
@@ -18,15 +18,20 @@ export class SettingsPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.heading = page.getByRole('heading', { name: 'Settings' });
-    this.settingsButton = page.getByLabel('Navigate to Settings', { exact: true });
-    this.lastBackupLabel = page.getByRole('paragraph').filter({ hasText: /Last Auto Backup/ }).locator('..').getByRole('paragraph').nth(1);
-    this.refreshButton = page.getByRole('button', { name: /Refresh/i });
-    this.createBackupButton = page.getByRole('button', { name: /Create Backup/i });
-    this.openBackupFolderButton = page.getByRole('button', { name: /Open Backup Folder/i });
-    this.selectBackupFileButton = page.getByRole('button', { name: /Select Backup File/i });
-    this.restoreBackupButton = page.getByRole('button', { name: /Restore Backup/i });
-    this.cancelRestoreButton = page.getByRole('button', { name: /Cancel/i });
+    this.heading = page.getByRole("heading", { name: "Settings" });
+    this.settingsButton = page.getByLabel("Navigate to Settings", { exact: true });
+    this.lastBackupLabel = page
+      .getByRole("paragraph")
+      .filter({ hasText: /Last Auto Backup/ })
+      .locator("..")
+      .getByRole("paragraph")
+      .nth(1);
+    this.refreshButton = page.getByRole("button", { name: /Refresh/i });
+    this.createBackupButton = page.getByRole("button", { name: /Create Backup/i });
+    this.openBackupFolderButton = page.getByRole("button", { name: /Open Backup Folder/i });
+    this.selectBackupFileButton = page.getByRole("button", { name: /Select Backup File/i });
+    this.restoreBackupButton = page.getByRole("button", { name: /Restore Backup/i });
+    this.cancelRestoreButton = page.getByRole("button", { name: /Cancel/i });
     this.backupDetailsSection = page.getByText(/Backup Details/i);
     this.transactionCountLabel = page.getByText(/Transactions:/);
     this.backupSizeLabel = page.getByText(/Size:/);
@@ -38,7 +43,7 @@ export class SettingsPage {
   }
 
   async navigateTo() {
-    await this.settingsButton.waitFor({ state: 'visible', timeout: 15000 });
+    await this.settingsButton.waitFor({ state: "visible", timeout: 15000 });
     await this.settingsButton.click();
     await this.expectVisible();
   }

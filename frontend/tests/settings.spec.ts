@@ -1,14 +1,14 @@
-import { test, expect } from './lib/fixtures';
+import { expect, test } from "./lib/fixtures";
 
-test.describe('Settings Screen', () => {
-  test('should navigate to Settings screen', async ({ page, settingsPage }) => {
-    await page.goto('/');
+test.describe("Settings Screen", () => {
+  test("should navigate to Settings screen", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
     await settingsPage.expectVisible();
   });
 
-  test('should show last backup info', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should show last backup info", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // The last backup info should be visible
@@ -19,24 +19,24 @@ test.describe('Settings Screen', () => {
     expect(lastBackupText).toBeTruthy();
   });
 
-  test('should show manual backup controls', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should show manual backup controls", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     await expect(settingsPage.createBackupButton).toBeVisible();
     await expect(settingsPage.openBackupFolderButton).toBeVisible();
   });
 
-  test('should show restore controls', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should show restore controls", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     await expect(settingsPage.selectBackupFileButton).toBeVisible();
     await settingsPage.expectBackupDetailsHidden();
   });
 
-  test('should refresh backup info', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should refresh backup info", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Click refresh button
@@ -46,66 +46,64 @@ test.describe('Settings Screen', () => {
     await settingsPage.expectLastBackupVisible();
   });
 
-  test('should show all navigation buttons including Settings', async ({ page }) => {
-    await page.goto('/');
+  test("should show all navigation buttons including Settings", async ({ page }) => {
+    await page.goto("/");
 
     // Check that Settings button is visible in navigation
-    const settingsButton = page.getByLabel('Navigate to Settings', { exact: true });
+    const settingsButton = page.getByLabel("Navigate to Settings", { exact: true });
     await expect(settingsButton).toBeVisible();
   });
 });
 
-test.describe('Settings Backup Flow', () => {
-  test('should have backup information card', async ({ page, settingsPage }) => {
-    await page.goto('/');
+test.describe("Settings Backup Flow", () => {
+  test("should have backup information card", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Check for the Last Auto Backup card
     await expect(page.getByText(/Last Auto Backup/i)).toBeVisible();
   });
 
-  test('should have manual backup section', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should have manual backup section", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Check for Manual Backup heading
-    await expect(page.getByRole('heading', { name: /Manual Backup/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Manual Backup/i })).toBeVisible();
 
     // Check for descriptive text
     await expect(page.getByText(/Create a backup of your entire database/i)).toBeVisible();
   });
 
-  test('should have restore section with warning', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should have restore section with warning", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Check for Restore from Backup heading
-    await expect(page.getByRole('heading', { name: /Restore from Backup/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Restore from Backup/i })).toBeVisible();
 
     // Check for warning message
     await expect(page.getByText(/Warning: This will replace your current data/i)).toBeVisible();
   });
 
-  test('should have automatic backups info section', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should have automatic backups info section", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Check for Automatic Backups heading
-    await expect(page.getByRole('heading', { name: /Automatic Backups/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Automatic Backups/i })).toBeVisible();
 
     // Check for description
     await expect(page.getByText(/Automatic backups run daily when 24\+ hours have passed/i)).toBeVisible();
   });
 });
 
-test.describe('Backup Creation Flow', () => {
-  test('should create manual backup successfully', async ({ page, settingsPage }) => {
-    await page.goto('/');
+test.describe("Backup Creation Flow", () => {
+  test("should create manual backup successfully", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Get initial last backup state
-    const initialBackupText = await settingsPage.lastBackupLabel.textContent();
-    const initialShowedNever = initialBackupText?.toLowerCase().includes('never');
 
     // Click create backup - this will show the file picker
     // Note: In automated testing, we can't actually interact with the file picker,
@@ -116,8 +114,8 @@ test.describe('Backup Creation Flow', () => {
     await settingsPage.expectVisible();
   });
 
-  test('should show backup folder when clicked', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should show backup folder when clicked", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Click open backup folder
@@ -128,9 +126,9 @@ test.describe('Backup Creation Flow', () => {
   });
 });
 
-test.describe('Restore Flow', () => {
-  test('should show validation dialog when backup file is selected', async ({ page, settingsPage }) => {
-    await page.goto('/');
+test.describe("Restore Flow", () => {
+  test("should show validation dialog when backup file is selected", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Backup details should be hidden initially
@@ -142,16 +140,16 @@ test.describe('Restore Flow', () => {
     await expect(settingsPage.selectBackupFileButton).toBeVisible();
   });
 
-  test('should have cancel button in restore confirmation', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should have cancel button in restore confirmation", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Cancel button should NOT be visible initially (only shows after backup selection)
     await expect(settingsPage.cancelRestoreButton).not.toBeVisible();
   });
 
-  test('should show backup details section when restore is initiated', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should show backup details section when restore is initiated", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     // Initially, backup details should be hidden
@@ -162,8 +160,8 @@ test.describe('Restore Flow', () => {
     await expect(settingsPage.selectBackupFileButton).toBeVisible();
   });
 
-  test('should restore from backup using test dialog path', async ({ page, settingsPage }) => {
-    await page.goto('/');
+  test("should restore from backup using test dialog path", async ({ page, settingsPage }) => {
+    await page.goto("/");
     await settingsPage.navigateTo();
 
     const backupPath = await page.evaluate(async () => {

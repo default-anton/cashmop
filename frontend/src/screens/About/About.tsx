@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Code, Heart, ExternalLink, GitBranch, Users, X } from 'lucide-react';
-import { Card, Button, Modal } from '../../components';
-import { openExternal } from '../../utils/openExternal';
-import logoSquare from '../../assets/branding/logo-square.png';
+import { Code, ExternalLink, GitBranch, Heart, Users, X } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import logoSquare from "../../assets/branding/logo-square.png";
+import { Button, Card, Modal } from "../../components";
+import { openExternal } from "../../utils/openExternal";
 
 interface AboutProps {
   isOpen: boolean;
@@ -10,7 +11,7 @@ interface AboutProps {
 }
 
 const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
-  const [version, setVersion] = useState<string>('');
+  const [version, setVersion] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   const year = new Date().getFullYear();
@@ -21,7 +22,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
         const ver = await (window as any).go.main.App.GetVersion();
         setVersion(ver);
       } catch (e) {
-        console.error('Failed to fetch version', e);
+        console.error("Failed to fetch version", e);
       } finally {
         setLoading(false);
       }
@@ -32,24 +33,24 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         onClose();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
   const handleCheckForUpdates = () => {
-    openExternal('https://github.com/default-anton/cashmop/releases');
+    openExternal("https://github.com/default-anton/cashmop/releases");
   };
 
   const handleViewLicense = () => {
-    openExternal('https://www.apache.org/licenses/LICENSE-2.0');
+    openExternal("https://www.apache.org/licenses/LICENSE-2.0");
   };
 
   const handleViewSource = () => {
-    openExternal('https://github.com/default-anton/cashmop');
+    openExternal("https://github.com/default-anton/cashmop");
   };
 
   return (
@@ -78,7 +79,9 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
                 <GitBranch className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xs uppercase text-canvas-600 font-semibold tracking-wider mb-0.5 select-none">Version</p>
+                <p className="text-xs uppercase text-canvas-600 font-semibold tracking-wider mb-0.5 select-none">
+                  Version
+                </p>
                 {loading ? (
                   <p className="text-canvas-800 font-semibold text-lg">Loading...</p>
                 ) : version ? (
@@ -126,7 +129,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
                 </div>
               </div>
               <button
-                onClick={() => openExternal('https://github.com/default-anton')}
+                onClick={() => openExternal("https://github.com/default-anton")}
                 className="text-canvas-400 hover:text-brand transition-colors"
                 aria-label="View GitHub profile"
               >
@@ -135,9 +138,11 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase text-canvas-600 tracking-wider mb-2 select-none">Built With</p>
+              <p className="text-xs font-semibold uppercase text-canvas-600 tracking-wider mb-2 select-none">
+                Built With
+              </p>
               <div className="flex flex-wrap gap-2">
-                {['Go 1.25', 'React 19', 'Wails v2', 'SQLite', 'Tailwind CSS', 'TypeScript'].map((item) => (
+                {["Go 1.25", "React 19", "Wails v2", "SQLite", "Tailwind CSS", "TypeScript"].map((item) => (
                   <span
                     key={item}
                     className="rounded-full border border-canvas-200 bg-canvas-100 px-3 py-1 text-xs text-canvas-700"

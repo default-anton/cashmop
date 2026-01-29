@@ -1,6 +1,5 @@
-import React from 'react';
-import { Layers } from 'lucide-react';
-
+import { Layers } from "lucide-react";
+import type React from "react";
 
 interface ProgressHeaderProps {
   currentIndex: number;

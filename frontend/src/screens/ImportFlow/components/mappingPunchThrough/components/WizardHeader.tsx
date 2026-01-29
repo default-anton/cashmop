@@ -1,9 +1,9 @@
-import React from 'react';
-import { ArrowRight, ChevronLeft } from 'lucide-react';
+import { ArrowRight, ChevronLeft } from "lucide-react";
+import type React from "react";
 
-import { Button } from '../../../../../components';
-import { STEPS } from '../steps';
-import type { MappingPunchThroughModel } from '../useMappingPunchThroughModel';
+import { Button } from "../../../../../components";
+import { STEPS } from "../steps";
+import type { MappingPunchThroughModel } from "../useMappingPunchThroughModel";
 
 export const WizardHeader: React.FC<{ model: MappingPunchThroughModel }> = ({ model }) => {
   return (
@@ -29,7 +29,7 @@ export const WizardHeader: React.FC<{ model: MappingPunchThroughModel }> = ({ mo
         </Button>
 
         <Button variant="primary" size="sm" onClick={model.handleAdvance} disabled={!model.canGoNext || model.saveBusy}>
-          {model.saveBusy ? 'Saving…' : model.currentStepIdx === STEPS.length - 1 ? 'Continue' : 'Next'}{' '}
+          {model.saveBusy ? "Saving…" : model.currentStepIdx === STEPS.length - 1 ? "Continue" : "Next"}{" "}
           <ArrowRight className="w-4 h-4" />
         </Button>
       </div>

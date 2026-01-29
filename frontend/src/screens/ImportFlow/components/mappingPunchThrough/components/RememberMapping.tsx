@@ -1,7 +1,7 @@
-import React from 'react';
-import { Check } from 'lucide-react';
+import { Check } from "lucide-react";
+import type React from "react";
 
-import { Input } from '../../../../../components';
+import { Input } from "../../../../../components";
 
 export const RememberMapping: React.FC<{
   rememberMapping: boolean;
@@ -10,14 +10,7 @@ export const RememberMapping: React.FC<{
   mappingName: string;
   setMappingName: React.Dispatch<React.SetStateAction<string>>;
   saveError: string | null;
-}> = ({
-  rememberMapping,
-  setRememberMapping,
-  detectedMappingName,
-  mappingName,
-  setMappingName,
-  saveError,
-}) => {
+}> = ({ rememberMapping, setRememberMapping, detectedMappingName, mappingName, setMappingName, saveError }) => {
   return (
     <div
       className="mt-4 grid gap-3 rounded-xl border border-canvas-200 bg-canvas-50 px-4 py-3"
@@ -27,7 +20,7 @@ export const RememberMapping: React.FC<{
         <div>
           <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">Remember</div>
           <div className="text-sm text-canvas-700 select-none">
-            {detectedMappingName ? 'Update this mapping for next time' : 'Save this mapping for next time'}
+            {detectedMappingName ? "Update this mapping for next time" : "Save this mapping for next time"}
           </div>
         </div>
         <button
@@ -37,11 +30,11 @@ export const RememberMapping: React.FC<{
           role="checkbox"
           aria-checked={rememberMapping}
         >
-          <span className="text-sm font-semibold text-canvas-700 select-none">{rememberMapping ? 'On' : 'Off'}</span>
+          <span className="text-sm font-semibold text-canvas-700 select-none">{rememberMapping ? "On" : "Off"}</span>
           <div
             className={
               `w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all ` +
-              (rememberMapping ? 'bg-brand border-brand text-white' : 'border-canvas-200 bg-white')
+              (rememberMapping ? "bg-brand border-brand text-white" : "border-canvas-200 bg-white")
             }
           >
             {rememberMapping && <Check className="w-3 h-3" strokeWidth={4} />}
@@ -51,7 +44,9 @@ export const RememberMapping: React.FC<{
 
       {rememberMapping && (
         <div className="max-w-sm">
-          <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1 select-none">Mapping name</div>
+          <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1 select-none">
+            Mapping name
+          </div>
           <Input value={mappingName} onChange={(e) => setMappingName(e.target.value)} placeholder="e.g. RBC Checking" />
         </div>
       )}

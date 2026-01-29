@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 
 interface AccordionItem {
   id: string;
@@ -13,7 +14,7 @@ interface AccordionProps {
   className?: string;
 }
 
-const Accordion: React.FC<AccordionProps> = ({ items, allowMultiple = false, className = '' }) => {
+const Accordion: React.FC<AccordionProps> = ({ items, allowMultiple = false, className = "" }) => {
   const [openItems, setOpenItems] = useState<string[]>([]);
 
   const toggleItem = (id: string) => {
@@ -30,7 +31,7 @@ const Accordion: React.FC<AccordionProps> = ({ items, allowMultiple = false, cla
     <div className={`space-y-2 ${className}`}>
       {items.map((item) => {
         const isOpen = openItems.includes(item.id);
-        
+
         return (
           <div key={item.id} className="border border-canvas-200 rounded-lg overflow-hidden">
             <button
@@ -39,16 +40,10 @@ const Accordion: React.FC<AccordionProps> = ({ items, allowMultiple = false, cla
             >
               <span className="font-semibold text-canvas-800 select-none">{item.title}</span>
               <ChevronDown
-                className={`w-5 h-5 text-canvas-500 transition-transform ${
-                  isOpen ? 'transform rotate-180' : ''
-                }`}
+                className={`w-5 h-5 text-canvas-500 transition-transform ${isOpen ? "transform rotate-180" : ""}`}
               />
             </button>
-            {isOpen && (
-              <div className="p-4 border-t border-canvas-200 bg-canvas-50">
-                {item.content}
-              </div>
-            )}
+            {isOpen && <div className="p-4 border-t border-canvas-200 bg-canvas-50">{item.content}</div>}
           </div>
         );
       })}

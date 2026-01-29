@@ -1,11 +1,11 @@
-import { test, expect } from './lib/fixtures';
+import { expect, test } from "./lib/fixtures";
 
-test.describe('Undo/Redo Categorization', () => {
-  test('should show undo toast after single categorization', async ({ categorizationPage }) => {
+test.describe("Undo/Redo Categorization", () => {
+  test("should show undo toast after single categorization", async ({ categorizationPage }) => {
     await categorizationPage.goto();
 
     // Categorize the transaction
-    await categorizationPage.categorize('Shopping');
+    await categorizationPage.categorize("Shopping");
 
     // Expect undo toast to appear with Undo button
     await categorizationPage.expectUndoToast();
@@ -17,16 +17,16 @@ test.describe('Undo/Redo Categorization', () => {
     await categorizationPage.expectNoUndoToast();
   });
 
-  test('should support undo for single categorization', async ({ categorizationPage }) => {
+  test("should support undo for single categorization", async ({ categorizationPage }) => {
     await categorizationPage.goto();
 
     // Get current transaction description
-    const descriptionLocator = categorizationPage.page.getByLabel('Transaction Description', { exact: true });
-    await descriptionLocator.waitFor({ state: 'visible', timeout: 10000 });
+    const descriptionLocator = categorizationPage.page.getByLabel("Transaction Description", { exact: true });
+    await descriptionLocator.waitFor({ state: "visible", timeout: 10000 });
     const transactionDesc = await descriptionLocator.textContent();
 
     // Categorize the transaction
-    await categorizationPage.categorize('Shopping');
+    await categorizationPage.categorize("Shopping");
 
     // Verify undo toast appeared
     await categorizationPage.expectUndoToast();
@@ -35,17 +35,17 @@ test.describe('Undo/Redo Categorization', () => {
     await categorizationPage.clickUndo();
 
     // Verify we're back at the same transaction
-    await categorizationPage.expectTransaction(transactionDesc || '');
+    await categorizationPage.expectTransaction(transactionDesc || "");
 
     // Verify the category input is empty (transaction is uncategorized again)
-    const categoryInput = categorizationPage.page.getByLabel('Category', { exact: true });
-    await expect(categoryInput).toHaveValue('');
+    const categoryInput = categorizationPage.page.getByLabel("Category", { exact: true });
+    await expect(categoryInput).toHaveValue("");
 
     // Toast should show Redo button
     await expect(categorizationPage.redoButton).toBeVisible();
   });
 
-  test('should show undo toast after skip', async ({ categorizationPage }) => {
+  test("should show undo toast after skip", async ({ categorizationPage }) => {
     await categorizationPage.goto();
 
     // Skip the transaction
@@ -57,12 +57,12 @@ test.describe('Undo/Redo Categorization', () => {
     await expect(categorizationPage.redoButton).not.toBeVisible();
   });
 
-  test('should support undo for skip', async ({ categorizationPage }) => {
+  test("should support undo for skip", async ({ categorizationPage }) => {
     await categorizationPage.goto();
 
     // Get current transaction description
-    const descriptionLocator = categorizationPage.page.getByLabel('Transaction Description', { exact: true });
-    await descriptionLocator.waitFor({ state: 'visible', timeout: 10000 });
+    const descriptionLocator = categorizationPage.page.getByLabel("Transaction Description", { exact: true });
+    await descriptionLocator.waitFor({ state: "visible", timeout: 10000 });
     const transactionDesc = await descriptionLocator.textContent();
 
     // Skip the transaction
@@ -72,24 +72,24 @@ test.describe('Undo/Redo Categorization', () => {
     await categorizationPage.clickUndo();
 
     // Verify we're back at the skipped transaction
-    await categorizationPage.expectTransaction(transactionDesc || '');
+    await categorizationPage.expectTransaction(transactionDesc || "");
 
     // Toast should show Redo button
     await expect(categorizationPage.redoButton).toBeVisible();
   });
 
-  test('should show undo toast for rule-based categorization', async ({ categorizationPage }) => {
+  test("should show undo toast for rule-based categorization", async ({ categorizationPage }) => {
     await categorizationPage.goto();
 
     // Get current transaction description
-    const descriptionLocator = categorizationPage.page.getByLabel('Transaction Description', { exact: true });
-    await descriptionLocator.waitFor({ state: 'visible', timeout: 10000 });
+    const descriptionLocator = categorizationPage.page.getByLabel("Transaction Description", { exact: true });
+    await descriptionLocator.waitFor({ state: "visible", timeout: 10000 });
 
     // Select text to trigger rule mode
     await descriptionLocator.selectText();
 
     // Categorize with text selection (creates a rule)
-    await categorizationPage.categorize('Shopping');
+    await categorizationPage.categorize("Shopping");
 
     // Verify undo toast appeared with rule message
     await categorizationPage.expectUndoToast();
@@ -97,35 +97,35 @@ test.describe('Undo/Redo Categorization', () => {
     await expect(categorizationPage.redoButton).not.toBeVisible();
   });
 
-  test('should support undo for rule-based categorization', async ({ categorizationPage }) => {
+  test("should support undo for rule-based categorization", async ({ categorizationPage }) => {
     await categorizationPage.goto();
 
     // Get current transaction description
-    const descriptionLocator = categorizationPage.page.getByLabel('Transaction Description', { exact: true });
-    await descriptionLocator.waitFor({ state: 'visible', timeout: 10000 });
+    const descriptionLocator = categorizationPage.page.getByLabel("Transaction Description", { exact: true });
+    await descriptionLocator.waitFor({ state: "visible", timeout: 10000 });
     const transactionDesc = await descriptionLocator.textContent();
 
     // Select text to trigger rule mode
     await descriptionLocator.selectText();
 
     // Categorize with text selection (creates a rule)
-    await categorizationPage.categorize('Shopping');
+    await categorizationPage.categorize("Shopping");
 
     // Click undo
     await categorizationPage.clickUndo();
 
     // Verify we're back at the original transaction
-    await categorizationPage.expectTransaction(transactionDesc || '');
+    await categorizationPage.expectTransaction(transactionDesc || "");
 
     // Toast should show Redo button
     await expect(categorizationPage.redoButton).toBeVisible();
   });
 
-  test('should clear redo stack on new action', async ({ categorizationPage }) => {
+  test("should clear redo stack on new action", async ({ categorizationPage }) => {
     await categorizationPage.goto();
 
     // Categorize first transaction
-    await categorizationPage.categorize('Shopping');
+    await categorizationPage.categorize("Shopping");
     await categorizationPage.expectUndoToast();
 
     // Undo to populate redo stack
@@ -133,20 +133,20 @@ test.describe('Undo/Redo Categorization', () => {
     await expect(categorizationPage.redoButton).toBeVisible();
 
     // Categorize again (should clear redo stack)
-    await categorizationPage.categorize('Dining');
+    await categorizationPage.categorize("Dining");
 
     // Redo button should be gone
     await expect(categorizationPage.redoButton).not.toBeVisible();
   });
 
-  test('undo toast should auto-dismiss after 5 seconds', async ({ page, categorizationPage }) => {
+  test("undo toast should auto-dismiss after 5 seconds", async ({ page, categorizationPage }) => {
     await categorizationPage.goto();
 
     // Use clock to speed up the test
     await page.clock.install();
 
     // Categorize the transaction
-    await categorizationPage.categorize('Shopping');
+    await categorizationPage.categorize("Shopping");
 
     // Verify undo toast appeared
     await categorizationPage.expectUndoToast();

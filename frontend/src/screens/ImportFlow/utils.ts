@@ -1,5 +1,5 @@
-import { ImportMapping } from './components/ColumnMapperTypes';
-import { parseCents } from '../../utils/currency';
+import { parseCents } from "../../utils/currency";
+import type { ImportMapping } from "./components/ColumnMapperTypes";
 
 export function parseDateLoose(value: string): Date | null {
   const v = value.trim();
@@ -20,7 +20,7 @@ export function parseDateLoose(value: string): Date | null {
   }
 
   // Common bank formats: MM/DD/YYYY or DD/MM/YYYY
-  const slash = v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  const slash = v.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})$/);
   if (slash) {
     let a = Number(slash[1]);
     let b = Number(slash[2]);
@@ -48,7 +48,7 @@ export function parseDateLoose(value: string): Date | null {
 export function sampleUniqueRows<T>(
   rows: T[],
   max: number,
-  keyFn: (row: T) => string = (row) => JSON.stringify(row)
+  keyFn: (row: T) => string = (row) => JSON.stringify(row),
 ): T[] {
   if (max <= 0) return [];
 
@@ -72,37 +72,37 @@ export function createAmountParser(mapping: ImportMapping, headers: string[]) {
   const am = mapping.csv.amountMapping;
   const invert = am.invertSign ?? false;
 
-  if (am.type === 'single') {
+  if (am.type === "single") {
     const idx = colIdx(am.column);
     return (row: string[]) => {
-      const val = idx >= 0 ? parseFloat(row[idx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
+      const val = idx >= 0 ? parseFloat(row[idx]?.replace(/[^0-9.-]/g, "") || "0") || 0 : 0;
       const cents = parseCents(val);
       return invert ? -cents : cents;
     };
   }
 
-  if (am.type === 'debitCredit') {
+  if (am.type === "debitCredit") {
     const debitIdx = colIdx(am.debitColumn);
     const creditIdx = colIdx(am.creditColumn);
     return (row: string[]) => {
-      const debit = debitIdx >= 0 ? parseFloat(row[debitIdx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
-      const credit = creditIdx >= 0 ? parseFloat(row[creditIdx]?.replace(/[^0-9.-]/g, '') || '0') || 0 : 0;
+      const debit = debitIdx >= 0 ? parseFloat(row[debitIdx]?.replace(/[^0-9.-]/g, "") || "0") || 0 : 0;
+      const credit = creditIdx >= 0 ? parseFloat(row[creditIdx]?.replace(/[^0-9.-]/g, "") || "0") || 0 : 0;
       const amount = Math.abs(credit) - Math.abs(debit);
       const cents = parseCents(amount);
       return invert ? -cents : cents;
     };
   }
 
-  if (am.type === 'amountWithType') {
+  if (am.type === "amountWithType") {
     const amountIdx = colIdx(am.amountColumn);
     const typeIdx = colIdx(am.typeColumn);
-    const neg = (am.negativeValue ?? 'debit').trim().toLowerCase();
-    const pos = (am.positiveValue ?? 'credit').trim().toLowerCase();
+    const neg = (am.negativeValue ?? "debit").trim().toLowerCase();
+    const pos = (am.positiveValue ?? "credit").trim().toLowerCase();
 
     return (row: string[]) => {
-      const raw = amountIdx >= 0 ? row[amountIdx] : '';
-      const val = parseFloat(raw?.replace(/[^0-9.-]/g, '') || '0') || 0;
-      const typeVal = typeIdx >= 0 ? (row[typeIdx] ?? '').trim().toLowerCase() : '';
+      const raw = amountIdx >= 0 ? row[amountIdx] : "";
+      const val = parseFloat(raw?.replace(/[^0-9.-]/g, "") || "0") || 0;
+      const typeVal = typeIdx >= 0 ? (row[typeIdx] ?? "").trim().toLowerCase() : "";
       const abs = Math.abs(val);
 
       let amount = val;

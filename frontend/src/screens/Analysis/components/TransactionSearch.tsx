@@ -1,5 +1,5 @@
-import React from 'react';
-import { Search, X } from 'lucide-react';
+import { Search, X } from "lucide-react";
+import type React from "react";
 
 interface TransactionSearchProps {
   value: string;
@@ -14,7 +14,7 @@ const TransactionSearch: React.FC<TransactionSearchProps> = ({ value, onChange, 
       value={value}
       onChange={(event) => onChange(event.target.value)}
       onKeyDown={(event) => {
-        if (event.key === 'Escape') {
+        if (event.key === "Escape") {
           onClear();
         }
       }}

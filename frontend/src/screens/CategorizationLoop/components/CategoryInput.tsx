@@ -1,6 +1,6 @@
-import React, { RefObject } from 'react';
-import { Search, ArrowRight, CheckCircle2, FastForward } from 'lucide-react';
-import { Button } from '../../../components';
+import { ArrowRight, CheckCircle2, FastForward, Search } from "lucide-react";
+import type React from "react";
+import { Button } from "../../../components";
 
 interface Category {
   id: number;
@@ -40,7 +40,7 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
             value={categoryInput}
             onChange={(e) => setCategoryInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              if (e.key === "Enter") {
                 if (categoryInput) {
                   onCategorize(categoryInput);
                 } else {
@@ -48,10 +48,11 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
                 }
               }
             }}
-            placeholder={isRuleMode ? 'Set category for this rule...' : 'Type a category...'}
-            aria-label={isRuleMode ? 'Category for rule' : 'Category'}
-            className={`w-full bg-white border-2 rounded-2xl py-3 pl-12 pr-6 text-lg font-bold text-canvas-800 placeholder-canvas-300 focus:ring-0 transition-all shadow-sm ${isRuleMode ? 'border-brand ring-4 ring-brand/5' : 'border-canvas-200 focus:border-brand'
-              }`}
+            placeholder={isRuleMode ? "Set category for this rule..." : "Type a category..."}
+            aria-label={isRuleMode ? "Category for rule" : "Category"}
+            className={`w-full bg-white border-2 rounded-2xl py-3 pl-12 pr-6 text-lg font-bold text-canvas-800 placeholder-canvas-300 focus:ring-0 transition-all shadow-sm ${
+              isRuleMode ? "border-brand ring-4 ring-brand/5" : "border-canvas-200 focus:border-brand"
+            }`}
           />
 
           {suggestions.length > 0 && (
@@ -73,30 +74,26 @@ export const CategoryInput: React.FC<CategoryInputProps> = ({
         <Button
           size="md"
           variant="primary"
-          aria-label={categoryInput ? 'Categorize' : 'Skip'}
+          aria-label={categoryInput ? "Categorize" : "Skip"}
           data-testid="categorize-submit-button"
-          className={`px-8 rounded-2xl transition-all duration-300 ${isRuleMode ? 'shadow-brand-glow scale-105' : 'shadow-brand/20'
-            }`}
+          className={`px-8 rounded-2xl transition-all duration-300 ${
+            isRuleMode ? "shadow-brand-glow scale-105" : "shadow-brand/20"
+          }`}
           onClick={() => (categoryInput ? onCategorize(categoryInput) : onSkip())}
         >
-          {categoryInput ? (
-            <CheckCircle2 className="w-6 h-6" />
-          ) : (
-            <FastForward className="w-6 h-6" />
-          )}
+          {categoryInput ? <CheckCircle2 className="w-6 h-6" /> : <FastForward className="w-6 h-6" />}
         </Button>
       </div>
 
       <p className="mt-4 text-center text-canvas-500 text-sm select-none">
-        Press{' '}
-        <kbd className="px-2 py-1 bg-canvas-200 rounded text-xs font-mono text-canvas-800">
-          ENTER
-        </kbd>{' '}
-        {!categoryInput ? (
-          isRuleMode ? 'to skip rule & punch through' : 'to punch through'
-        ) : (
-          isRuleMode ? 'to save rule & categorize' : 'to categorize'
-        )}
+        Press <kbd className="px-2 py-1 bg-canvas-200 rounded text-xs font-mono text-canvas-800">ENTER</kbd>{" "}
+        {!categoryInput
+          ? isRuleMode
+            ? "to skip rule & punch through"
+            : "to punch through"
+          : isRuleMode
+            ? "to save rule & categorize"
+            : "to categorize"}
       </p>
     </div>
   );

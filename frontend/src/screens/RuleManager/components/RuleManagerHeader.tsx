@@ -1,6 +1,6 @@
-import React from 'react';
-import { Plus, Search, Wand2, X } from 'lucide-react';
-import { Button } from '../../../components';
+import { Plus, Search, Wand2, X } from "lucide-react";
+import type React from "react";
+import { Button } from "../../../components";
 
 interface RuleManagerHeaderProps {
   ruleSearch: string;
@@ -22,7 +22,9 @@ const RuleManagerHeader: React.FC<RuleManagerHeaderProps> = ({
       </div>
       <div>
         <h1 className="text-3xl font-black text-canvas-800 select-none">Rules</h1>
-        <p className="text-canvas-500 font-medium select-none">Manage categorization rules and keep your automation tidy</p>
+        <p className="text-canvas-500 font-medium select-none">
+          Manage categorization rules and keep your automation tidy
+        </p>
       </div>
     </div>
     <div className="flex items-center gap-3">
@@ -32,7 +34,7 @@ const RuleManagerHeader: React.FC<RuleManagerHeaderProps> = ({
           value={ruleSearch}
           onChange={(event) => onRuleSearchChange(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === 'Escape') {
+            if (event.key === "Escape") {
               onClearSearch();
             }
           }}
