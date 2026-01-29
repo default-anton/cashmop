@@ -8,6 +8,7 @@ export class ImportFlowPage {
   readonly accountInput: Locator;
   readonly mappingTable: Locator;
   readonly headerToggle: Locator;
+  readonly autoMappingBanner: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -17,6 +18,7 @@ export class ImportFlowPage {
     this.accountInput = page.getByPlaceholder('e.g. RBC Checking');
     this.mappingTable = page.getByTestId('mapping-table');
     this.headerToggle = page.getByTestId('header-row-toggle');
+    this.autoMappingBanner = page.getByTestId('auto-mapping-banner');
   }
 
   async goto() {
@@ -32,6 +34,10 @@ export class ImportFlowPage {
 
   async uploadFile(path: string) {
     await this.fileInput.setInputFiles(path);
+  }
+
+  async uploadFiles(paths: string[]) {
+    await this.fileInput.setInputFiles(paths);
   }
 
   async ensureHeaderRow(hasHeader: boolean) {
@@ -130,8 +136,27 @@ export class ImportFlowPage {
     await this.nextButton.click();
   }
 
+  async expectAutoMappingDetected() {
+    await expect(this.autoMappingBanner).toBeVisible({ timeout: 10000 });
+  }
+
+  async expectAutoMappingNotDetected() {
+    await expect(this.autoMappingBanner).toHaveCount(0);
+  }
+
+  async expectCanContinueWithoutRemapping() {
+    await expect(this.nextButton).toBeEnabled({ timeout: 10000 });
+  }
+
   async waitForMonthSelector() {
     await this.page.getByRole('heading', { name: 'Select Range', exact: true }).waitFor({ state: 'visible', timeout: 10000 });
+  }
+
+  async completeMonthSelection() {
+    await this.waitForMonthSelector();
+    const btn = this.page.getByRole('button', { name: /Map Next File|Start Import/ });
+    await expect(btn).toBeEnabled({ timeout: 10000 });
+    await btn.click();
   }
 
   monthOptionButton(label: string) {

@@ -14,12 +14,11 @@ export const defaultMapping = (defaultCurrency: string): ImportMapping => ({
 export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency: string = 'CAD') => {
   const [mapping, setMapping] = useState<ImportMapping>(initialMapping || defaultMapping(defaultCurrency));
 
-  // Update mapping if initialMapping changes (e.g. from auto-selection)
+  // Keep internal state in sync with the parent.
+  // When initialMapping is cleared (e.g. manual header override), we reset back to defaults.
   useEffect(() => {
-    if (initialMapping) {
-      setMapping(initialMapping);
-    }
-  }, [initialMapping]);
+    setMapping(initialMapping ?? defaultMapping(defaultCurrency));
+  }, [initialMapping, defaultCurrency]);
 
   const usedHeaders = useMemo(() => {
     const used = new Set<string>();

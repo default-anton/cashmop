@@ -21,6 +21,13 @@ export type ImportMapping = {
   account: string;
   defaultOwner?: string;
   currencyDefault: string; // Used when csv.currency is not set
+
+  // Optional metadata used only for auto-detection in the UI.
+  // Safe to persist because the backend stores mappings as opaque JSON.
+  meta?: {
+    headers?: string[]; // Normalized headers used to create the mapping
+    hasHeader?: boolean;
+  };
 };
 
 export type SavedMapping = {

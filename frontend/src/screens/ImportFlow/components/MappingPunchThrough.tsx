@@ -9,6 +9,7 @@ import {
   ArrowRight,
   ChevronLeft,
   ArrowUpDown,
+  Check,
 } from 'lucide-react';
 
 import { Button, Card, Input, AutocompleteInput } from '../../../components';
@@ -28,6 +29,10 @@ interface MappingPunchThroughProps {
   onHeaderChange: (hasHeader: boolean) => void;
   onComplete: (mapping: ImportMapping) => void;
   initialMapping?: ImportMapping | null;
+
+  detectedMappingName?: string;
+  suggestedSaveName?: string;
+  onSaveMapping?: (name: string, mapping: ImportMapping, source: { headers: string[]; hasHeader: boolean }) => Promise<void>;
 }
 
 type StepKey = 'date' | 'amount' | 'description' | 'account' | 'owner' | 'currency';
@@ -92,6 +97,9 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
   onHeaderChange,
   onComplete,
   initialMapping,
+  detectedMappingName,
+  suggestedSaveName,
+  onSaveMapping,
 }) => {
   const { currencyOptions, mainCurrency } = useCurrency();
   const {
@@ -143,10 +151,33 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [hoveredColIdx, setHoveredColIdx] = useState<number | null>(null);
 
+  const [rememberMapping, setRememberMapping] = useState(false);
+  const [mappingName, setMappingName] = useState('');
+  const [saveBusy, setSaveBusy] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   useEffect(() => {
-    if (!initialMapping) return;
+    if (!initialMapping) {
+      setCurrentStepIdx(0);
+      return;
+    }
     setCurrentStepIdx(getStartStepIdx(initialMapping));
   }, [initialMapping]);
+
+  useEffect(() => {
+    // Reset per file.
+    const detected = (detectedMappingName ?? '').trim();
+    if (detected) {
+      setRememberMapping(false);
+      setMappingName(detected);
+      setSaveError(null);
+      return;
+    }
+
+    setRememberMapping(true);
+    setMappingName((suggestedSaveName || 'Import mapping').trim());
+    setSaveError(null);
+  }, [fileIndex, detectedMappingName, suggestedSaveName]);
 
   const currentStep = STEPS[currentStepIdx];
 
@@ -283,6 +314,26 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     }
 
     if (currentStepIdx >= STEPS.length - 1) {
+      if (rememberMapping && onSaveMapping) {
+        const name = mappingName.trim();
+        if (!name) {
+          setSaveError('Please provide a mapping name.');
+          return;
+        }
+
+        setSaveBusy(true);
+        setSaveError(null);
+        try {
+          await onSaveMapping(name, mappingRef.current, { headers: csvHeaders, hasHeader });
+        } catch (e) {
+          console.error('Failed to save mapping', e);
+          setSaveError(e instanceof Error ? e.message : 'Failed to save mapping');
+          setSaveBusy(false);
+          return;
+        }
+        setSaveBusy(false);
+      }
+
       onComplete(mappingRef.current);
       return;
     }
@@ -434,9 +485,14 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
     if (currentStep.key === 'amount') return isAmountMappingValid;
     if (currentStep.key === 'description') return !isMissing('description');
     if (currentStep.key === 'account') return !isMissing('account');
-    if (currentStep.key === 'owner' || currentStep.key === 'currency') return canProceed;
+    if (currentStep.key === 'owner' || currentStep.key === 'currency') {
+      if (currentStepIdx === STEPS.length - 1 && rememberMapping && onSaveMapping) {
+        return canProceed && mappingName.trim().length > 0;
+      }
+      return canProceed;
+    }
     return true;
-  }, [currentStep.key, isAmountMappingValid, isMissing, canProceed]);
+  }, [currentStep.key, currentStepIdx, isAmountMappingValid, isMissing, canProceed, rememberMapping, mappingName, onSaveMapping]);
 
   const amountMappingType = mapping.csv.amountMapping.type;
   const invertSignEnabled = mapping.csv.amountMapping.invertSign ?? false;
@@ -469,9 +525,9 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
               variant="primary"
               size="sm"
               onClick={handleAdvance}
-              disabled={!canGoNext}
+              disabled={!canGoNext || saveBusy}
             >
-              {currentStepIdx === STEPS.length - 1 ? 'Continue' : 'Next'} <ArrowRight className="w-4 h-4" />
+              {saveBusy ? 'Saving…' : (currentStepIdx === STEPS.length - 1 ? 'Continue' : 'Next')} <ArrowRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -515,6 +571,70 @@ export const MappingPunchThrough: React.FC<MappingPunchThroughProps> = ({
             </button>
           </div>
         </div>
+
+        {detectedMappingName && (
+          <div
+            className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-canvas-200 bg-canvas-50 px-3 py-2"
+            data-testid="auto-mapping-banner"
+          >
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">Auto mapping</span>
+              <span className="text-xs text-canvas-500 select-none">
+                Using <span className="font-semibold text-canvas-700">{detectedMappingName}</span>. Want to change it? Hit Back.
+              </span>
+            </div>
+          </div>
+        )}
+
+        {currentStepIdx === STEPS.length - 1 && (
+          <div
+            className="mt-4 grid gap-3 rounded-xl border border-canvas-200 bg-canvas-50 px-4 py-3"
+            data-testid="remember-mapping"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">Remember</div>
+                <div className="text-sm text-canvas-700 select-none">
+                  {detectedMappingName ? 'Update this mapping for next time' : 'Save this mapping for next time'}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRememberMapping((prev) => !prev)}
+                className="inline-flex items-center gap-2 rounded-xl px-2 py-1 hover:bg-canvas-100 transition-colors"
+                role="checkbox"
+                aria-checked={rememberMapping}
+              >
+                <span className="text-sm font-semibold text-canvas-700 select-none">{rememberMapping ? 'On' : 'Off'}</span>
+                <div
+                  className={
+                    `w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all ` +
+                    (rememberMapping ? 'bg-brand border-brand text-white' : 'border-canvas-200 bg-white')
+                  }
+                >
+                  {rememberMapping && <Check className="w-3 h-3" strokeWidth={4} />}
+                </div>
+              </button>
+            </div>
+
+            {rememberMapping && (
+              <div className="max-w-sm">
+                <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1 select-none">Mapping name</div>
+                <Input
+                  value={mappingName}
+                  onChange={(e) => setMappingName(e.target.value)}
+                  placeholder="e.g. RBC Checking"
+                />
+              </div>
+            )}
+
+            {saveError && (
+              <div className="text-xs text-finance-expense" data-testid="remember-mapping-error">
+                {saveError}
+              </div>
+            )}
+          </div>
+        )}
 
         {currentStep.key === 'amount' && (
           <div className="mt-6 space-y-4">

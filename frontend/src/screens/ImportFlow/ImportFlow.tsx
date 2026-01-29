@@ -10,6 +10,7 @@ import { MappingPunchThrough } from './components/MappingPunchThrough';
 import { type ImportMapping, type SavedMapping } from './components/ColumnMapperTypes';
 import MonthSelector, { type MonthOption } from './components/MonthSelector';
 import { createAmountParser, parseDateLoose } from './utils';
+import { pickBestMapping, uniqueSortedNormalizedHeaders } from './mappingDetection';
 
 export type ParsedFile = {
   file: File;
@@ -21,6 +22,8 @@ export type ParsedFile = {
   detectedHasHeader: boolean;
   headerSource: 'auto' | 'manual';
   mapping?: ImportMapping;
+  autoMatchedMappingId?: number;
+  autoMatchedMappingName?: string;
   selectedMonths?: string[];
 };
 
@@ -392,43 +395,12 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     setStep(2);
   }, [parsedFiles.length, step]);
 
-  const pickBestMapping = (headers: string[], entries: SavedMapping[]) => {
-    let bestMapping: ImportMapping | null = null;
-    let maxScore = -1;
-
-    for (const sm of entries) {
-      let score = 0;
-      const m = sm.mapping;
-      const h = headers;
-
-      if (h.includes(m.csv.date)) score++;
-      for (const d of m.csv.description) if (h.includes(d)) score++;
-
-      if (m.csv.amountMapping.type === 'single' && h.includes(m.csv.amountMapping.column)) score++;
-      else if (m.csv.amountMapping.type === 'debitCredit') {
-        if (m.csv.amountMapping.debitColumn && h.includes(m.csv.amountMapping.debitColumn)) score++;
-        if (m.csv.amountMapping.creditColumn && h.includes(m.csv.amountMapping.creditColumn)) score++;
-      } else if (m.csv.amountMapping.type === 'amountWithType') {
-        if (h.includes(m.csv.amountMapping.amountColumn)) score++;
-        if (h.includes(m.csv.amountMapping.typeColumn)) score++;
-      }
-
-      if (score > maxScore) {
-        maxScore = score;
-        bestMapping = sm.mapping;
-      }
-    }
-
-    if (bestMapping && maxScore >= 3) return bestMapping;
-    return null;
-  };
 
   const resolveMappingForFile = (file: ParsedFile | null, entries: SavedMapping[]) => {
     if (!file) return null;
     if (file.mapping) return file.mapping;
-    if (!file.hasHeader) return null;
-    if (file.headerSource !== 'auto') return null;
-    return pickBestMapping(file.headers, entries);
+    const picked = pickBestMapping(file, entries);
+    return picked?.mapping ?? null;
   };
 
   useEffect(() => {
@@ -441,6 +413,78 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
     setMapping(nextMapping);
   }, [currentFileIdx, currentFile?.headers, currentFile?.hasHeader, currentFile?.headerSource, savedMappings]);
 
+
+  const loadMappings = async (): Promise<SavedMapping[]> => {
+    try {
+      const dbMappings: any[] = await (window as any).go.main.App.GetColumnMappings();
+
+      const loaded: SavedMapping[] = [];
+      for (const m of dbMappings) {
+        try {
+          const parsed = JSON.parse(m.mapping_json);
+          if (!parsed?.csv?.amountMapping) continue;
+          loaded.push({
+            id: m.id,
+            name: m.name,
+            mapping: parsed as ImportMapping,
+          });
+        } catch (e) {
+          console.warn(`Skipping invalid saved mapping: ${m?.name ?? m?.id ?? 'unknown'}`, e);
+        }
+      }
+
+      setSavedMappings(loaded);
+      return loaded;
+    } catch (e) {
+      console.error('Failed to load saved mappings', e);
+      return [];
+    }
+  };
+
+  const applyAutoMappings = (files: ParsedFile[], entries: SavedMapping[]) =>
+    files.map((pf) => {
+      if (pf.mapping) return pf;
+      const picked = pickBestMapping(pf, entries);
+      if (!picked) return pf;
+      return {
+        ...pf,
+        mapping: picked.mapping,
+        autoMatchedMappingId: picked.id,
+        autoMatchedMappingName: picked.name,
+      };
+    });
+
+  const suggestMappingName = (file: ParsedFile) => {
+    const base = file.file.name.replace(/\.[^.]+$/, '');
+    const cleaned = base
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\d{4}[-_]\d{2}([-_]\d{2})?\b/g, '')
+      .replace(/\b\d{1,2}[-_]\d{1,2}[-_]\d{2,4}\b/g, '')
+      .replace(/\b\d{4}\b/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return cleaned || base.trim() || 'Import mapping';
+  };
+
+  const saveMapping = async (name: string, m: ImportMapping, source: { headers: string[]; hasHeader: boolean }) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+
+    const mappingWithMeta: ImportMapping = {
+      ...m,
+      meta: {
+        ...(m.meta ?? {}),
+        headers: uniqueSortedNormalizedHeaders(source.headers),
+        hasHeader: source.hasHeader,
+      },
+    };
+
+    await (window as any).go.main.App.SaveColumnMapping(trimmed, mappingWithMeta);
+
+    const loaded = await loadMappings();
+    setParsedFiles((prev) => applyAutoMappings(prev, loaded));
+  };
 
   const handleFilesSelected = async (files: File[]) => {
     setParseError(null);
@@ -460,10 +504,10 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
         }
       }
 
-      setParsedFiles(parsedResults);
       setFileErrors(errors);
 
       if (parsedResults.length === 0) {
+        setParsedFiles([]);
         setParseError('No files could be parsed. Check errors above.');
         return [] as ParsedFile[];
       }
@@ -471,28 +515,11 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
       setCurrentFileIdx(0);
       setMonths([]);
 
-      const loadMappings = async () => {
-        try {
-          const dbMappings: any[] = await (window as any).go.main.App.GetColumnMappings();
-          const loaded = dbMappings
-            .map((m) => {
-              const parsed = JSON.parse(m.mapping_json);
-              if (!parsed?.csv?.amountMapping) return null;
-              return {
-                id: m.id,
-                name: m.name,
-                mapping: parsed as ImportMapping,
-              };
-            })
-            .filter((entry): entry is SavedMapping => entry !== null);
-          setSavedMappings(loaded);
-        } catch (e) {
-          console.error('Failed to load saved mappings', e);
-        }
-      };
+      const loadedMappings = await loadMappings();
+      const withAuto = applyAutoMappings(parsedResults, loadedMappings);
+      setParsedFiles(withAuto);
 
-      loadMappings();
-      return parsedResults;
+      return withAuto;
     } finally {
       setParseBusy(false);
     }
@@ -551,6 +578,8 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
       hasHeader,
       headerSource: source,
       mapping: undefined,
+      autoMatchedMappingId: undefined,
+      autoMatchedMappingName: undefined,
       selectedMonths: undefined,
     };
   };
@@ -717,6 +746,9 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
             headerSource={currentFile.headerSource}
             onHeaderChange={handleHeaderSettingChange}
             initialMapping={mapping}
+            detectedMappingName={currentFile.autoMatchedMappingName}
+            suggestedSaveName={suggestMappingName(currentFile)}
+            onSaveMapping={saveMapping}
             onComplete={handleMappingComplete}
           />
         )}

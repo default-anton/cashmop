@@ -4,6 +4,9 @@ import type { ImportFlowPage } from './lib/pom/ImportFlowPage';
 import { fileURLToPath } from 'url';
 
 const headerCsvPath = fileURLToPath(new URL('./fixtures/import_header_multi_currency.csv', import.meta.url));
+const headerCsvCopyPath = fileURLToPath(new URL('./fixtures/import_header_multi_currency_copy.csv', import.meta.url));
+const headerCsvExtraColumnPath = fileURLToPath(new URL('./fixtures/import_header_multi_currency_extra_column.csv', import.meta.url));
+const headerCsvDuplicateHeadersPath = fileURLToPath(new URL('./fixtures/import_header_multi_currency_duplicate_headers.csv', import.meta.url));
 const noHeaderCsvPath = fileURLToPath(new URL('./fixtures/import_no_header.csv', import.meta.url));
 
 type ImportFlowConfig = {
@@ -139,4 +142,141 @@ test('import flow supports csv without header row', async ({ page, importFlowPag
   const second = byDescription.get('Import No Header Two');
   expect(second?.currency).toBe('CAD');
   expect(second?.amount).toBe(12000);
+});
+
+test('import flow reuses saved mapping for same file format', async ({ page, importFlowPage }) => {
+  await importFlowPage.goto();
+  await importFlowPage.page.evaluate(async () => {
+    const app = (window as any).go.main.App;
+    const mappings = await app.GetColumnMappings();
+    await Promise.all(mappings.map((m: any) => app.DeleteColumnMapping(m.id)));
+  });
+
+  // First import: create and save mapping.
+  await importFlowPage.uploadFile(headerCsvPath);
+  await importFlowPage.mapDate('Date');
+  await importFlowPage.mapAmount('Amount');
+  await importFlowPage.mapDescription('Description');
+  await importFlowPage.setAccountStatic('Checking');
+  await importFlowPage.nextStep();
+  await importFlowPage.mapColumn('Currency');
+  await importFlowPage.nextStep();
+  await importFlowPage.startImport();
+  await importFlowPage.expectComplete();
+
+  // Second import: mapping should be auto-detected and we can continue without clicking headers.
+  await importFlowPage.goto();
+  await importFlowPage.uploadFile(headerCsvPath);
+  await importFlowPage.expectAutoMappingDetected();
+  await importFlowPage.expectCanContinueWithoutRemapping();
+});
+
+test('import flow auto-maps next dropped file after saving mapping in the same session', async ({ page, importFlowPage }) => {
+  await importFlowPage.goto();
+  await page.evaluate(async () => {
+    const app = (window as any).go.main.App;
+    const mappings = await app.GetColumnMappings();
+    await Promise.all(mappings.map((m: any) => app.DeleteColumnMapping(m.id)));
+  });
+
+  await importFlowPage.uploadFiles([headerCsvPath, headerCsvCopyPath]);
+
+  // File 1: create mapping (will be saved automatically on the last step).
+  await importFlowPage.mapDate('Date');
+  await importFlowPage.mapAmount('Amount');
+  await importFlowPage.mapDescription('Description');
+  await importFlowPage.setAccountStatic('Checking');
+  await importFlowPage.nextStep();
+  await importFlowPage.mapColumn('Currency');
+  await importFlowPage.nextStep();
+
+  // Month selector for file 1.
+  await importFlowPage.completeMonthSelection();
+
+  // File 2: mapping should already be applied.
+  await importFlowPage.expectAutoMappingDetected();
+  await importFlowPage.expectCanContinueWithoutRemapping();
+});
+
+test('import flow supports subset-match when bank adds a new column', async ({ page, importFlowPage }) => {
+  await importFlowPage.goto();
+  await page.evaluate(async () => {
+    const app = (window as any).go.main.App;
+    const mappings = await app.GetColumnMappings();
+    await Promise.all(mappings.map((m: any) => app.DeleteColumnMapping(m.id)));
+  });
+
+  // Create and save mapping from the baseline format.
+  await importFlowPage.uploadFile(headerCsvPath);
+  await importFlowPage.mapDate('Date');
+  await importFlowPage.mapAmount('Amount');
+  await importFlowPage.mapDescription('Description');
+  await importFlowPage.setAccountStatic('Checking');
+  await importFlowPage.nextStep();
+  await importFlowPage.mapColumn('Currency');
+  await importFlowPage.nextStep();
+
+  await importFlowPage.goto();
+
+  // Upload a file with an extra column.
+  await importFlowPage.uploadFile(headerCsvExtraColumnPath);
+  await importFlowPage.expectAutoMappingDetected();
+  await importFlowPage.expectCanContinueWithoutRemapping();
+});
+
+test('manual header override should prevent auto-matching', async ({ page, importFlowPage }) => {
+  await importFlowPage.goto();
+  await page.evaluate(async () => {
+    const app = (window as any).go.main.App;
+    const mappings = await app.GetColumnMappings();
+    await Promise.all(mappings.map((m: any) => app.DeleteColumnMapping(m.id)));
+  });
+
+  // Create and save mapping.
+  await importFlowPage.uploadFile(headerCsvPath);
+  await importFlowPage.mapDate('Date');
+  await importFlowPage.mapAmount('Amount');
+  await importFlowPage.mapDescription('Description');
+  await importFlowPage.setAccountStatic('Checking');
+  await importFlowPage.nextStep();
+  await importFlowPage.mapColumn('Currency');
+  await importFlowPage.nextStep();
+
+  await importFlowPage.goto();
+  await importFlowPage.uploadFile(headerCsvPath);
+  await importFlowPage.expectAutoMappingDetected();
+
+  // Force headerSource=manual by toggling.
+  await importFlowPage.ensureHeaderRow(false);
+  await importFlowPage.ensureHeaderRow(true);
+
+  await importFlowPage.expectAutoMappingNotDetected();
+  await expect(importFlowPage.nextButton).toBeDisabled();
+});
+
+test('ambiguous duplicate headers should not be auto-matched', async ({ page, importFlowPage }) => {
+  await importFlowPage.goto();
+  await page.evaluate(async () => {
+    const app = (window as any).go.main.App;
+    const mappings = await app.GetColumnMappings();
+    await Promise.all(mappings.map((m: any) => app.DeleteColumnMapping(m.id)));
+  });
+
+  // Create and save mapping.
+  await importFlowPage.uploadFile(headerCsvPath);
+  await importFlowPage.mapDate('Date');
+  await importFlowPage.mapAmount('Amount');
+  await importFlowPage.mapDescription('Description');
+  await importFlowPage.setAccountStatic('Checking');
+  await importFlowPage.nextStep();
+  await importFlowPage.mapColumn('Currency');
+  await importFlowPage.nextStep();
+
+  await importFlowPage.goto();
+
+  // This file has headers that collide after normalization ("Amount" and " amount ").
+  await importFlowPage.uploadFile(headerCsvDuplicateHeadersPath);
+
+  await importFlowPage.expectAutoMappingNotDetected();
+  await expect(importFlowPage.nextButton).toBeDisabled();
 });
