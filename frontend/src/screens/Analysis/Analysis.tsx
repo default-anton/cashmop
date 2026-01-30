@@ -38,8 +38,8 @@ const Analysis: React.FC = () => {
   const { warning, mainCurrency } = useCurrency();
   const [hasMissingRates, setHasMissingRates] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState("");
-  const [groupSortField, setGroupSortField] = useState<GroupSortField>("name");
-  const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>("asc");
+  const [groupSortField, setGroupSortField] = useState<GroupSortField>("amount");
+  const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>("desc");
   const [transactionSortField, setTransactionSortField] = useState<TransactionSortField>("date");
   const [transactionSortOrder, setTransactionSortOrder] = useState<SortOrder>("desc");
   const [selectedTxIds, setSelectedTxIds] = useState<Set<number>>(new Set());
@@ -365,33 +365,7 @@ const Analysis: React.FC = () => {
     return transactions.some((tx) => (tx.currency || mainCurrency).toUpperCase() !== main);
   }, [mainCurrency, transactions]);
 
-  const uniqueGroups = useMemo(() => {
-    if (transactions.length === 0) {
-      return { category: false, owner: false, account: false };
-    }
-    const categories = new Set(transactions.map((tx) => tx.category_name));
-    const owners = new Set(transactions.map((tx) => tx.owner_name));
-    const accounts = new Set(transactions.map((tx) => tx.account_name));
-    return {
-      category: categories.size > 1,
-      owner: owners.size > 1,
-      account: accounts.size > 1,
-    };
-  }, [transactions]);
-
-  const groupingOptions: GroupBy[] = useMemo(() => {
-    const options: GroupBy[] = ["All"];
-    if (uniqueGroups.category) options.push("Category");
-    if (uniqueGroups.owner) options.push("Owner");
-    if (uniqueGroups.account) options.push("Account");
-    return options;
-  }, [uniqueGroups]);
-
-  useEffect(() => {
-    if (!groupingOptions.includes(groupBy)) {
-      setGroupBy("All");
-    }
-  }, [groupingOptions, groupBy]);
+  const groupingOptions: GroupBy[] = ["All", "Category", "Owner", "Account"];
 
   return (
     <ScreenLayout size="wide">
@@ -471,55 +445,51 @@ const Analysis: React.FC = () => {
 
         <div className="flex items-center justify-between pb-2 border-b border-canvas-200">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
-              {groupingOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setGroupBy(option)}
-                  className={`
-                    px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none
-                    ${
-                      groupBy === option
-                        ? "bg-brand text-white shadow-brand-glow"
-                        : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
-                    }
-                  `}
-                >
-                  {option}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">
+                Group by
+              </div>
+              <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
+                {groupingOptions.map((option) => (
+                  <button
+                    key={option}
+                    onClick={() => setGroupBy(option)}
+                    className={`
+                      px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none
+                      ${
+                        groupBy === option
+                          ? "bg-brand text-white shadow-brand-glow"
+                          : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
+                      }
+                    `}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {groupBy !== "All" && (
-              <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
-                <button
-                  onClick={() => handleSortGroup("name")}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all select-none
-                    ${groupSortField === "name" ? "bg-brand text-white shadow-brand-glow" : "text-canvas-600 hover:bg-canvas-100"}
-                  `}
-                >
-                  Name
-                  {groupSortField === "name" && (
-                    <ArrowUpDown
-                      className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === "desc" ? "rotate-180" : ""}`}
-                    />
-                  )}
-                </button>
-                <button
-                  onClick={() => handleSortGroup("amount")}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all select-none
-                    ${groupSortField === "amount" ? "bg-brand text-white shadow-brand-glow" : "text-canvas-600 hover:bg-canvas-100"}
-                  `}
-                >
-                  Total
-                  {groupSortField === "amount" && (
-                    <ArrowUpDown
-                      className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === "desc" ? "rotate-180" : ""}`}
-                    />
-                  )}
-                </button>
+              <div className="flex items-center gap-2">
+                <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">
+                  Sort by
+                </div>
+                <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
+                  <button
+                    onClick={() => handleSortGroup("amount")}
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all select-none
+                      ${groupSortField === "amount" ? "bg-brand text-white shadow-brand-glow" : "text-canvas-600 hover:bg-canvas-100"}
+                    `}
+                  >
+                    Total
+                    {groupSortField === "amount" && (
+                      <ArrowUpDown
+                        className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === "desc" ? "rotate-180" : ""}`}
+                      />
+                    )}
+                  </button>
+                </div>
               </div>
             )}
           </div>

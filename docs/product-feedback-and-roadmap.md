@@ -2,10 +2,6 @@ General:
 1. Fonts are too small.
 2. UI is boring, and colors are dull.
 
-Analysis screen:
-1. Add "Group by" label before "All, Category, Owner, Account". Add "Order/Sort by" label before "Total" (remove order by Name)
-2. When the current transactions only have one category, we hide group by category. This is incorrect. We should always keep it visible. And the same thing applies to the group by owner and group by account.
-
 Import screen:
 1. Support importing xls files.
 2. Instead of having a multi-step import process where one step assigns one column, Simply render the table and above each column we have a select list so that the user can select which file column maps to which app column. Of course, all existing rules should be preserved, like the description can be mapped multiple times because we can have multiple description columns. And the amount column is tricky. Like we can have an inverted amount where we need to flip the sign. Or we might have two columns, one for debit, one for credit. Or we can have an amount column and amount type column. And amount type decides the sign of the amount. And other rules, if any.
