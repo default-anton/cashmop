@@ -122,6 +122,10 @@ const Analysis: React.FC = () => {
   }, [fetchAnalysisView]);
 
   useEffect(() => {
+    setSelectedTxIds(new Set());
+  }, [selectedMonth]);
+
+  useEffect(() => {
     if (transactions.length === 0) {
       setHasMissingRates(false);
       return;

@@ -26,6 +26,25 @@ interface TableHeaderFilterProps {
   ariaLabel?: string;
   titleLabel?: string;
   variant?: TableHeaderFilterVariant;
+
+  /**
+   * When false, renders an icon-only trigger (still includes chevron/clear).
+   * Useful for dense toolbars where the active state is shown elsewhere.
+   */
+  showLabel?: boolean;
+
+  /**
+   * Optional: provide a fully custom trigger (button) for this popover.
+   * You must attach `buttonRef` to your trigger element for positioning.
+   */
+  renderTrigger?: (args: {
+    buttonRef: React.RefObject<HTMLButtonElement | null>;
+    isOpen: boolean;
+    onToggle: () => void;
+    onClear?: (e: React.MouseEvent) => void;
+    showClear: boolean;
+    ariaLabel?: string;
+  }) => React.ReactNode;
 }
 
 export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
@@ -39,6 +58,8 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
   ariaLabel,
   titleLabel,
   variant = "header",
+  showLabel = true,
+  renderTrigger,
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const [position, setPosition] = useState({ top: 0, left: 0 });
@@ -189,36 +210,36 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
     </AnimatePresence>
   );
 
-  return (
-    <>
-      <button
-        ref={buttonRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleToggle();
-        }}
-        className={`
-          flex items-center gap-2 transition-all duration-200 group relative z-10 select-none
-          ${
-            variant === "bar"
-              ? `px-3 py-1.5 rounded-full border shadow-sm ${
-                  config.isActive
-                    ? "border-brand/20 bg-brand/[0.06] text-canvas-900"
-                    : "border-canvas-200 bg-canvas-50 text-canvas-800"
-                } hover:bg-canvas-100`
-              : `px-2 py-1 rounded-md ${
-                  config.isActive
-                    ? "bg-brand/10 text-brand hover:bg-brand/15"
-                    : "text-canvas-400 hover:text-canvas-600 hover:bg-canvas-100"
-                }`
-          }
-        `}
-        aria-label={ariaLabel}
-        title={config.isActive ? "Filter active - click to edit" : "Add filter"}
-      >
-        <Icon className="w-3.5 h-3.5 opacity-70" />
+  const defaultTrigger = (
+    <button
+      ref={buttonRef}
+      onClick={(e) => {
+        e.stopPropagation();
+        handleToggle();
+      }}
+      className={`
+        flex items-center gap-2 transition-all duration-200 group relative z-10 select-none
+        ${
+          variant === "bar"
+            ? `px-3 py-1.5 rounded-full border shadow-sm ${
+                config.isActive
+                  ? "border-brand/20 bg-brand/[0.06] text-canvas-900"
+                  : "border-canvas-200 bg-canvas-50 text-canvas-800"
+              } hover:bg-canvas-100`
+            : `px-2 py-1 rounded-md ${
+                config.isActive
+                  ? "bg-brand/10 text-brand hover:bg-brand/15"
+                  : "text-canvas-400 hover:text-canvas-600 hover:bg-canvas-100"
+              }`
+        }
+      `}
+      aria-label={ariaLabel}
+      title={config.isActive ? "Filter active - click to edit" : "Add filter"}
+    >
+      <Icon className="w-3.5 h-3.5 opacity-70" />
 
-        {variant === "bar" ? (
+      {showLabel &&
+        (variant === "bar" ? (
           <div className="flex items-baseline gap-1.5">
             {titleLabel && (
               <span className="text-[10px] font-bold uppercase tracking-widest text-canvas-600">{titleLabel}:</span>
@@ -230,14 +251,28 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
         ) : (
           config.isActive &&
           config.label && <span className="text-[10px] font-bold uppercase tracking-tight">{config.label}</span>
-        )}
+        ))}
 
-        <div className="flex items-center gap-1 ml-auto">
-          {onClear && config.isActive && <X className="w-3 h-3 hover:text-canvas-900" onClick={handleClear} />}
-          <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
-        </div>
-      </button>
+      <div className="flex items-center gap-1 ml-auto">
+        {onClear && config.isActive && <X className="w-3 h-3 hover:text-canvas-900" onClick={handleClear} />}
+        <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+      </div>
+    </button>
+  );
 
+  const trigger =
+    renderTrigger?.({
+      buttonRef,
+      isOpen,
+      onToggle: handleToggle,
+      onClear: onClear ? handleClear : undefined,
+      showClear: !!onClear && config.isActive,
+      ariaLabel,
+    }) ?? defaultTrigger;
+
+  return (
+    <>
+      {trigger}
       {createPortal(popover, document.body)}
     </>
   );

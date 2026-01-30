@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, Landmark, List, Tag, Trash2, User } from "lucide-react";
+import { Check, ChevronDown, Landmark, List, Tag, Trash2, User } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -368,6 +368,16 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     [monthOptions, selectedMonth],
   );
 
+  const monthTabs = useMemo(() => {
+    const recent = monthOptions.slice(0, 3);
+    const selected = monthOptions.find((option) => option.value === selectedMonth);
+
+    if (!selected) return recent;
+    if (recent.some((option) => option.value === selected.value)) return recent;
+
+    return [...recent, selected];
+  }, [monthOptions, selectedMonth]);
+
   const monthFilterConfig: FilterConfig = {
     type: "date",
     isActive: !!selectedMonth,
@@ -448,82 +458,123 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
       <div className="flex flex-wrap items-center gap-3 pb-2 border-b border-canvas-200">
         <div className="flex flex-wrap items-center gap-3">
           {monthOptions.length > 0 && (
-            <TableHeaderFilter
-              variant="bar"
-              titleLabel="Month"
-              config={monthFilterConfig}
-              ariaLabel="Month filter"
-              isOpen={activeFilter === "date"}
-              onOpenChange={(open) => setActiveFilter(open ? "date" : null)}
-              positionKey={`analysis-filter-month-${groupBy}`}
-            >
-              <div className="p-3 space-y-3">
-                <div className="flex items-center justify-between px-1">
-                  <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
-                    Filter by Month
-                  </span>
-                </div>
-                <Input
-                  value={monthFilterSearch}
-                  onChange={(e) => setMonthFilterSearch(e.target.value)}
-                  placeholder="Search months..."
-                  className="w-full"
-                  autoFocus
-                  onKeyDown={(event) => {
-                    if (filteredMonthOptions.length === 0) return;
-                    if (event.key === "ArrowDown") {
-                      event.preventDefault();
-                      setMonthHighlightedIndex((prev) => Math.min(prev + 1, filteredMonthOptions.length - 1));
-                    }
-                    if (event.key === "ArrowUp") {
-                      event.preventDefault();
-                      setMonthHighlightedIndex((prev) => Math.max(prev - 1, 0));
-                    }
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      const selected = filteredMonthOptions[monthHighlightedIndex];
-                      if (!selected) return;
-                      onMonthChange(selected.value);
-                      setActiveFilter(null);
-                      setMonthFilterSearch("");
-                    }
+            <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
+              {monthTabs.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    onMonthChange(option.value);
+                    setActiveFilter(null);
+                    setMonthFilterSearch("");
                   }}
-                />
-                <div className="max-h-56 overflow-y-auto -mx-1 px-1">
-                  {filteredMonthOptions.length === 0 ? (
-                    <div className="px-3 py-6 text-center text-xs text-canvas-500 select-none">No months found.</div>
-                  ) : (
-                    filteredMonthOptions.map((option, index) => {
-                      const isSelected = option.value === selectedMonth;
-                      const isHighlighted = index === monthHighlightedIndex;
-                      return (
-                        <button
-                          key={option.value}
-                          onClick={() => {
-                            onMonthChange(option.value);
-                            setActiveFilter(null);
-                            setMonthFilterSearch("");
-                          }}
-                          className={`
-                              w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none
-                              ${
-                                isSelected
-                                  ? "bg-brand/10 text-brand font-semibold"
-                                  : isHighlighted
-                                    ? "bg-canvas-100 text-canvas-800"
-                                    : "text-canvas-700 hover:bg-canvas-100"
-                              }
-                            `}
-                        >
-                          <span>{option.label}</span>
-                          {isSelected && <Check className="w-4 h-4" />}
-                        </button>
-                      );
-                    })
-                  )}
+                  className={
+                    option.value === selectedMonth
+                      ? "px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none bg-brand text-white shadow-brand-glow"
+                      : "px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
+
+              <TableHeaderFilter
+                config={monthFilterConfig}
+                ariaLabel="Month filter"
+                isOpen={activeFilter === "date"}
+                onOpenChange={(open) => setActiveFilter(open ? "date" : null)}
+                positionKey={`analysis-filter-month-${groupBy}`}
+                renderTrigger={({ buttonRef, isOpen, onToggle, ariaLabel }) => (
+                  <button
+                    ref={buttonRef}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggle();
+                    }}
+                    className={
+                      isOpen
+                        ? "px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none bg-canvas-100 text-canvas-900"
+                        : "px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
+                    }
+                    aria-label={ariaLabel}
+                    title="Choose month"
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      All months
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                    </span>
+                  </button>
+                )}
+              >
+                <div className="p-3 space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
+                      Filter by Month
+                    </span>
+                    {selectedMonthLabel && (
+                      <span className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">
+                        {selectedMonthLabel}
+                      </span>
+                    )}
+                  </div>
+                  <Input
+                    value={monthFilterSearch}
+                    onChange={(e) => setMonthFilterSearch(e.target.value)}
+                    placeholder="Search months..."
+                    className="w-full"
+                    autoFocus
+                    onKeyDown={(event) => {
+                      if (filteredMonthOptions.length === 0) return;
+                      if (event.key === "ArrowDown") {
+                        event.preventDefault();
+                        setMonthHighlightedIndex((prev) => Math.min(prev + 1, filteredMonthOptions.length - 1));
+                      }
+                      if (event.key === "ArrowUp") {
+                        event.preventDefault();
+                        setMonthHighlightedIndex((prev) => Math.max(prev - 1, 0));
+                      }
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        const selected = filteredMonthOptions[monthHighlightedIndex];
+                        if (!selected) return;
+                        onMonthChange(selected.value);
+                        setActiveFilter(null);
+                        setMonthFilterSearch("");
+                      }
+                    }}
+                  />
+                  <div className="max-h-56 overflow-y-auto -mx-1 px-1">
+                    {filteredMonthOptions.length === 0 ? (
+                      <div className="px-3 py-6 text-center text-xs text-canvas-500 select-none">No months found.</div>
+                    ) : (
+                      filteredMonthOptions.map((option, index) => {
+                        const isSelected = option.value === selectedMonth;
+                        const isHighlighted = index === monthHighlightedIndex;
+                        return (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              onMonthChange(option.value);
+                              setActiveFilter(null);
+                              setMonthFilterSearch("");
+                            }}
+                            className={
+                              isSelected
+                                ? "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none bg-brand/10 text-brand font-semibold"
+                                : isHighlighted
+                                  ? "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none bg-canvas-100 text-canvas-800"
+                                  : "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors select-none text-canvas-700 hover:bg-canvas-100"
+                            }
+                          >
+                            <span>{option.label}</span>
+                            {isSelected && <Check className="w-4 h-4" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
-              </div>
-            </TableHeaderFilter>
+              </TableHeaderFilter>
+            </div>
           )}
 
           {onCategoryFilterChange && (
