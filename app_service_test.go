@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/base64"
 	"os"
 	"strings"
 	"testing"
@@ -1079,12 +1080,12 @@ func TestGetAnalysisTransactions(t *testing.T) {
 func TestParseExcel(t *testing.T) {
 	app := NewApp()
 
-	t.Run("parse valid Excel file with transactions", func(t *testing.T) {
+	t.Run("parse valid XLSX file with transactions", func(t *testing.T) {
 		xlsxData := readExcelFile(t, "transactions.xlsx")
 
 		result, err := app.ParseExcel(xlsxData)
 		if err != nil {
-			t.Fatalf("Failed to parse Excel: %v", err)
+			t.Fatalf("Failed to parse XLSX: %v", err)
 		}
 
 		if result == nil {
@@ -1120,6 +1121,61 @@ func TestParseExcel(t *testing.T) {
 		}
 	})
 
+	t.Run("parse valid XLS file with transactions", func(t *testing.T) {
+		xlsData := readExcelFile(t, "transactions.xls")
+
+		result, err := app.ParseExcel(xlsData)
+		if err != nil {
+			t.Fatalf("Failed to parse XLS: %v", err)
+		}
+
+		if result == nil {
+			t.Fatal("Expected non-nil result")
+		}
+
+		expectedHeaders := []string{"Date", "Description", "Amount", "Account"}
+		if len(result.Headers) != len(expectedHeaders) {
+			t.Errorf("Expected %d headers, got %d", len(expectedHeaders), len(result.Headers))
+		}
+		for i, h := range expectedHeaders {
+			if i < len(result.Headers) && result.Headers[i] != h {
+				t.Errorf("Header %d: expected '%s', got '%s'", i, h, result.Headers[i])
+			}
+		}
+
+		if len(result.Rows) == 0 {
+			t.Error("Expected at least one data row")
+		}
+
+		if len(result.Rows) > 0 {
+			firstRow := result.Rows[0]
+			expected := []string{"2025-01-15", "Coffee Shop", "4.5", "Checking"}
+			for i, exp := range expected {
+				if i >= len(firstRow) {
+					t.Errorf("Row 0: missing column %d", i)
+					continue
+				}
+				if firstRow[i] != exp {
+					t.Errorf("Row 0, col %d: expected '%s', got '%s'", i, exp, firstRow[i])
+				}
+			}
+		}
+
+		// Verify XLS produces same results as XLSX
+		xlsxData := readExcelFile(t, "transactions.xlsx")
+		xlsxResult, err := app.ParseExcel(xlsxData)
+		if err != nil {
+			t.Fatalf("Failed to parse XLSX for comparison: %v", err)
+		}
+
+		if len(result.Headers) != len(xlsxResult.Headers) {
+			t.Errorf("XLS and XLSX header count mismatch: %d vs %d", len(result.Headers), len(xlsxResult.Headers))
+		}
+		if len(result.Rows) != len(xlsxResult.Rows) {
+			t.Errorf("XLS and XLSX row count mismatch: %d vs %d", len(result.Rows), len(xlsxResult.Rows))
+		}
+	})
+
 	t.Run("invalid base64 data", func(t *testing.T) {
 		invalidData := "not-valid-base64!!!"
 
@@ -1133,6 +1189,16 @@ func TestParseExcel(t *testing.T) {
 		_, err := app.ParseExcel("")
 		if err == nil {
 			t.Error("Expected error for empty string")
+		}
+	})
+
+	t.Run("unsupported file format", func(t *testing.T) {
+		// Create data that looks like a PDF (starts with %PDF)
+		pdfData := base64.StdEncoding.EncodeToString([]byte("%PDF-1.4"))
+
+		_, err := app.ParseExcel(pdfData)
+		if err == nil {
+			t.Error("Expected error for unsupported file format")
 		}
 	})
 }

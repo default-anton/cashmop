@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Button, ScreenLayout } from "@/components";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -244,8 +244,10 @@ const readFileText = async (file: File) => {
   return await withTimeout(file.text(), 5000, "file.text");
 };
 
-// Validates file signature to detect file type mismatches
-async function validateFileSignature(file: File, expectedExtension: string): Promise<void> {
+// File type detection by content signature
+type FileTypeByContent = "csv" | "xlsx" | "xls" | "binary" | "unknown";
+
+async function detectFileTypeByContent(file: File): Promise<FileTypeByContent> {
   const reader = new FileReader();
   const signaturePromise = new Promise<Uint8Array>((resolve, reject) => {
     reader.onload = () => resolve(new Uint8Array(reader.result as ArrayBuffer));
@@ -255,19 +257,69 @@ async function validateFileSignature(file: File, expectedExtension: string): Pro
 
   const bytes = await signaturePromise;
 
-  if (expectedExtension === ".xlsx") {
-    // XLSX files are ZIP archives: signature is "PK\x03\x04"
-    if (bytes[0] !== 0x50 || bytes[1] !== 0x4b || bytes[2] !== 0x03 || bytes[3] !== 0x04) {
-      throw new Error("This doesn't look like a valid Excel file. Please check the file format.");
+  // XLSX: ZIP signature "PK\x03\x04"
+  if (bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04) {
+    return "xlsx";
+  }
+
+  // XLS: OLE2 signature D0 CF 11 E0
+  if (bytes[0] === 0xd0 && bytes[1] === 0xcf && bytes[2] === 0x11 && bytes[3] === 0xe0) {
+    return "xls";
+  }
+
+  // Check if it's text (printable ASCII/UTF-8) - likely CSV
+  let printableCount = 0;
+  for (let i = 0; i < Math.min(bytes.length, 8); i++) {
+    const b = bytes[i];
+    // printable ASCII, tab, newline, carriage return, or UTF-8 continuation byte
+    if ((b >= 0x20 && b < 0x7f) || b === 0x09 || b === 0x0a || b === 0x0d || b >= 0x80) {
+      printableCount++;
     }
-  } else if (expectedExtension === ".xls") {
-    // XLS files use OLE2 compound document storage: signature is D0 CF 11 E0 A0 B1 1A E1
-    const ole2Signature = [0xd0, 0xcf, 0x11, 0xe0, 0xa0, 0xb1, 0x1a, 0xe1];
-    for (let i = 0; i < 8; i++) {
-      if (bytes[i] !== ole2Signature[i]) {
-        throw new Error("This doesn't look like a valid .xls file. Try saving it as .xlsx instead.");
-      }
+  }
+
+  // If mostly printable, likely CSV/TXT
+  if (printableCount >= 6) {
+    return "csv";
+  }
+
+  return "binary";
+}
+
+// Parses Excel file (XLSX or XLS) by reading as base64 and calling backend parser
+async function parseExcelFile(file: File): Promise<ParsedFile> {
+  const reader = new FileReader();
+  const base64Promise = new Promise<string>((resolve, reject) => {
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  try {
+    const base64Data = await base64Promise;
+    const result = await (window as any).go.main.App.ParseExcel(base64Data);
+    const rawRows: string[][] = Array.isArray(result?.allRows)
+      ? result.allRows
+      : [result?.headers ?? [], ...(result?.rows ?? [])];
+    if (rawRows.length === 0) {
+      throw new Error("The Excel file is empty. Please choose a file with data.");
     }
+
+    const detectedHasHeader = detectHeaderRow(rawRows);
+    const hasHeader = detectedHasHeader;
+    const { headers, rows } = buildParsedRows(rawRows, hasHeader);
+
+    return {
+      file,
+      kind: "excel",
+      headers,
+      rows,
+      rawRows,
+      hasHeader,
+      detectedHasHeader,
+      headerSource: "auto",
+    };
+  } catch {
+    throw new Error("Unable to read the Excel file. Please check if it's corrupted or password-protected.");
   }
 }
 
@@ -279,7 +331,12 @@ async function parseFile(file: File): Promise<ParsedFile> {
   if (file.size > 10 * 1024 * 1024) {
     throw new Error("File exceeds 10 MB limit. Please split large exports into smaller files.");
   }
-  if (name.endsWith(".csv")) {
+
+  const contentType = await detectFileTypeByContent(file);
+  const ext = name.endsWith(".csv") ? ".csv" : name.endsWith(".xlsx") ? ".xlsx" : name.endsWith(".xls") ? ".xls" : null;
+
+  // CSV path - by extension OR by content
+  if (ext === ".csv" || contentType === "csv") {
     const text = await readFileText(file);
     if (text.trim().length === 0) {
       throw new Error("File contains no readable text. Ensure it is a valid CSV file.");
@@ -296,81 +353,24 @@ async function parseFile(file: File): Promise<ParsedFile> {
       headerSource: "auto",
     };
   }
-  if (name.endsWith(".xlsx")) {
-    await validateFileSignature(file, ".xlsx");
-    const reader = new FileReader();
-    const base64Promise = new Promise<string>((resolve, reject) => {
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
 
-    try {
-      const base64Data = await base64Promise;
-      const result = await (window as any).go.main.App.ParseExcel(base64Data);
-      const rawRows: string[][] = Array.isArray(result?.allRows)
-        ? result.allRows
-        : [result?.headers ?? [], ...(result?.rows ?? [])];
-      if (rawRows.length === 0) {
-        throw new Error("The Excel file is empty. Please choose a file with data.");
-      }
-
-      const detectedHasHeader = detectHeaderRow(rawRows);
-      const hasHeader = detectedHasHeader;
-      const { headers, rows } = buildParsedRows(rawRows, hasHeader);
-
-      return {
-        file,
-        kind: "excel",
-        headers,
-        rows,
-        rawRows,
-        hasHeader,
-        detectedHasHeader,
-        headerSource: "auto",
-      };
-    } catch (e) {
-      throw new Error("Unable to read the Excel file. Please check if it's corrupted or password-protected.");
+  // XLSX path - only if content matches
+  if (ext === ".xlsx" || contentType === "xlsx") {
+    if (contentType !== "xlsx") {
+      throw new Error("This doesn't look like a valid Excel file. Please check the file format.");
     }
+    return parseExcelFile(file);
   }
-  if (name.endsWith(".xls")) {
-    await validateFileSignature(file, ".xls");
-    const reader = new FileReader();
-    const base64Promise = new Promise<string>((resolve, reject) => {
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
 
-    try {
-      const base64Data = await base64Promise;
-      const result = await (window as any).go.main.App.ParseExcel(base64Data);
-      const rawRows: string[][] = Array.isArray(result?.allRows)
-        ? result.allRows
-        : [result?.headers ?? [], ...(result?.rows ?? [])];
-      if (rawRows.length === 0) {
-        throw new Error("The Excel file is empty. Please choose a file with data.");
-      }
-
-      const detectedHasHeader = detectHeaderRow(rawRows);
-      const hasHeader = detectedHasHeader;
-      const { headers, rows } = buildParsedRows(rawRows, hasHeader);
-
-      return {
-        file,
-        kind: "excel",
-        headers,
-        rows,
-        rawRows,
-        hasHeader,
-        detectedHasHeader,
-        headerSource: "auto",
-      };
-    } catch (e) {
-      throw new Error("Unable to read the Excel file. Please check if it's corrupted or password-protected.");
+  // XLS path - only if content matches
+  if (ext === ".xls" || contentType === "xls") {
+    if (contentType !== "xls") {
+      throw new Error("This doesn't look like a valid .xls file. Try saving it as .xlsx instead.");
     }
+    return parseExcelFile(file);
   }
-  throw new Error("Unsupported file type. Please upload a .csv or .xlsx file.");
+
+  throw new Error("Unsupported file type. Please upload a .csv, .xlsx, or .xls file.");
 }
 
 interface ImportFlowProps {

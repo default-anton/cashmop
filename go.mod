@@ -6,6 +6,7 @@ toolchain go1.25.6
 
 require (
 	github.com/PuerkitoBio/goquery v1.11.0
+	github.com/extrame/xls v0.0.1
 	github.com/junegunn/fzf v0.67.0
 	github.com/wailsapp/wails/v2 v2.11.0
 	github.com/xuri/excelize/v2 v2.10.0
@@ -17,6 +18,7 @@ require (
 	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
+	github.com/extrame/ole2 v0.0.0-20160812065207-d69429661ad7 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect

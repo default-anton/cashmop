@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/extrame/xls"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -23,7 +24,10 @@ func parseFileForImport(path string) (*parsedFile, error) {
 	if strings.HasSuffix(lower, ".xlsx") {
 		return parseXLSXFile(path)
 	}
-	return nil, fmt.Errorf("Unsupported file type. Please upload a .csv or .xlsx file.")
+	if strings.HasSuffix(lower, ".xls") {
+		return parseXLSFile(path)
+	}
+	return nil, fmt.Errorf("Unsupported file type. Please upload a .csv, .xlsx, or .xls file.")
 }
 
 func parseCSVFile(path string) (*parsedFile, error) {
@@ -76,6 +80,44 @@ func parseXLSXFile(path string) (*parsedFile, error) {
 
 	if len(rows) == 0 {
 		return nil, fmt.Errorf("Excel file is empty.")
+	}
+
+	// Trim cells
+	for i := range rows {
+		for j := range rows[i] {
+			rows[i][j] = strings.TrimSpace(rows[i][j])
+		}
+	}
+
+	hasHeader := detectHeaderRow(rows)
+	headers, dataRows := buildParsedRows(rows, hasHeader)
+
+	return &parsedFile{headers: headers, rows: dataRows}, nil
+}
+
+func parseXLSFile(path string) (*parsedFile, error) {
+	wb, err := xls.Open(path, "utf-8")
+	if err != nil {
+		return nil, fmt.Errorf("Unable to open .xls file: %w", err)
+	}
+
+	sheet := wb.GetSheet(0)
+	if sheet == nil {
+		return nil, fmt.Errorf(".xls file has no sheets.")
+	}
+
+	var rows [][]string
+	for i := 0; i <= int(sheet.MaxRow); i++ {
+		row := sheet.Row(i)
+		var cells []string
+		for j := 0; j < row.LastCol(); j++ {
+			cells = append(cells, row.Col(j))
+		}
+		rows = append(rows, cells)
+	}
+
+	if len(rows) == 0 {
+		return nil, fmt.Errorf(".xls file is empty.")
 	}
 
 	// Trim cells
