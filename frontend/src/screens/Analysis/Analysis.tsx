@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowUpDown, BarChart3, Download } from "lucide-react";
+import { AlertTriangle, BarChart3, Download } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCurrency } from "@/contexts/CurrencyContext";
@@ -38,8 +38,8 @@ const Analysis: React.FC = () => {
   const { warning, mainCurrency } = useCurrency();
   const [hasMissingRates, setHasMissingRates] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState("");
-  const [groupSortField, setGroupSortField] = useState<GroupSortField>("amount");
-  const [groupSortOrder, setGroupSortOrder] = useState<SortOrder>("desc");
+  const groupSortField: GroupSortField = "amount";
+  const groupSortOrder: SortOrder = "desc";
   const [transactionSortField, setTransactionSortField] = useState<TransactionSortField>("date");
   const [transactionSortOrder, setTransactionSortOrder] = useState<SortOrder>("desc");
   const [selectedTxIds, setSelectedTxIds] = useState<Set<number>>(new Set());
@@ -180,14 +180,6 @@ const Analysis: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  const handleSortGroup = (field: GroupSortField) => {
-    if (groupSortField === field) {
-      setGroupSortOrder(groupSortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setGroupSortField(field);
-      setGroupSortOrder(field === "amount" ? "desc" : "asc");
-    }
-  };
   const handleSortTransaction = (field: TransactionSortField) => {
     if (transactionSortField === field) {
       setTransactionSortOrder(transactionSortOrder === "asc" ? "desc" : "asc");
@@ -360,16 +352,11 @@ const Analysis: React.FC = () => {
     }
   }, [analysisFacets, filterOwners, includeNoOwnerInFilter, selectedOwnerIds]);
 
-  const hasForeignCurrency = useMemo(() => {
-    const main = mainCurrency.toUpperCase();
-    return transactions.some((tx) => (tx.currency || mainCurrency).toUpperCase() !== main);
-  }, [mainCurrency, transactions]);
-
   const groupingOptions: GroupBy[] = ["All", "Category", "Owner", "Account"];
 
   return (
     <ScreenLayout size="wide">
-      <div className="space-y-8">
+      <div className="space-y-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-brand/10 text-brand rounded-2xl shadow-brand/5 shadow-inner">
@@ -443,55 +430,29 @@ const Analysis: React.FC = () => {
           </div>
         )}
 
-        <div className="flex items-center justify-between pb-2 border-b border-canvas-200">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
+              <span className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest pl-2 select-none">
                 Group by
-              </div>
-              <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
-                {groupingOptions.map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setGroupBy(option)}
-                    className={`
-                      px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none
-                      ${
-                        groupBy === option
-                          ? "bg-brand text-white shadow-brand-glow"
-                          : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
-                      }
-                    `}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
+              </span>
+              {groupingOptions.map((option) => (
+                <button
+                  key={option}
+                  onClick={() => setGroupBy(option)}
+                  className={`
+                    px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none
+                    ${
+                      groupBy === option
+                        ? "bg-brand text-white shadow-brand-glow"
+                        : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
+                    }
+                  `}
+                >
+                  {option}
+                </button>
+              ))}
             </div>
-
-            {groupBy !== "All" && (
-              <div className="flex items-center gap-2">
-                <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">
-                  Sort by
-                </div>
-                <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
-                  <button
-                    onClick={() => handleSortGroup("amount")}
-                    className={`
-                      flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all select-none
-                      ${groupSortField === "amount" ? "bg-brand text-white shadow-brand-glow" : "text-canvas-600 hover:bg-canvas-100"}
-                    `}
-                  >
-                    Total
-                    {groupSortField === "amount" && (
-                      <ArrowUpDown
-                        className={`w-3.5 h-3.5 transition-transform ${groupSortOrder === "desc" ? "rotate-180" : ""}`}
-                      />
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className="flex items-center gap-3">
