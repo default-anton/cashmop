@@ -147,7 +147,7 @@ test("import flow supports csv without header row", async ({ page, importFlowPag
   expect(second?.amount).toBe(12000);
 });
 
-test("import flow reuses saved mapping for same file format", async ({ page, importFlowPage }) => {
+test("import flow reuses saved mapping for same file format", async ({ page: _, importFlowPage }) => {
   await importFlowPage.goto();
   await importFlowPage.page.evaluate(async () => {
     const app = (window as any).go.main.App;

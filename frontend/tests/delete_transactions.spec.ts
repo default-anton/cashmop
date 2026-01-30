@@ -1,4 +1,4 @@
-import { expect, test } from "./lib/fixtures";
+import { test } from "./lib/fixtures";
 
 test("should allow selecting and deleting single transaction", async ({ page, analysisPage }) => {
   await page.goto("/");

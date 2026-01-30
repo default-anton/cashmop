@@ -2,7 +2,7 @@ import { test } from "./lib/fixtures";
 
 test("should show uncategorized transactions and allow categorization", async ({
   categorizationPage,
-  analysisPage,
+  analysisPage: _,
 }) => {
   await categorizationPage.goto();
 

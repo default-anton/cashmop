@@ -36,7 +36,7 @@ const Settings: React.FC = () => {
   const [selectedBackup, setSelectedBackup] = useState<BackupMetadata | null>(null);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
   const [showRestartNotice, setShowRestartNotice] = useState(false);
-  const [currencySaving, setCurrencySaving] = useState(false);
+  const [, setCurrencySaving] = useState(false);
   const [fxSyncing, setFxSyncing] = useState(false);
 
   const { settings, currencyOptions, updateSettings, refresh, latestRateDate, isStale, staleDays, isBaseSupported } =

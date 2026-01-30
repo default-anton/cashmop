@@ -8,6 +8,7 @@
         "recommended": false
       },
       "correctness": {
+        "recommended": true,
         "noEmptyPattern": "off",
         "useExhaustiveDependencies": "off"
       },
