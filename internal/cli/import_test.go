@@ -47,7 +47,7 @@ func TestNormalizeTransactionsBatching(t *testing.T) {
 	m.CSV.AmountMapping.Type = "single"
 	m.CSV.AmountMapping.Column = "Amount"
 	m.Account = "TestAccount"
-	m.DefaultOwner = "TestUser"
+	m.Owner = "TestUser"
 	m.CurrencyDefault = "CAD"
 
 	parsed := &parsedFile{
@@ -78,16 +78,16 @@ func TestNormalizeTransactionsBatching(t *testing.T) {
 		}
 	}
 
+	// Test account column mapping (owner is no longer mappable from CSV)
 	parsed2 := &parsedFile{
-		headers: []string{"Date", "Desc", "Amount", "Account", "Owner"},
+		headers: []string{"Date", "Desc", "Amount", "Account"},
 		rows: [][]string{
-			{"2025-01-03", "Tx 3", "300.00", "NewAccount", "NewUser"},
-			{"2025-01-04", "Tx 4", "400.00", "NewAccount", "NewUser"},
+			{"2025-01-03", "Tx 3", "300.00", "NewAccount"},
+			{"2025-01-04", "Tx 4", "400.00", "NewAccount"},
 		},
 	}
 	m2 := m
 	m2.CSV.Account = "Account"
-	m2.CSV.Owner = "Owner"
 
 	txs2, err := normalizeTransactions(svc, parsed2, m2, []string{"2025-01"})
 	if err != nil {
@@ -99,24 +99,18 @@ func TestNormalizeTransactionsBatching(t *testing.T) {
 	}
 
 	newAccID := txs2[0].AccountID
-	if txs2[0].OwnerID == nil {
-		t.Fatal("expected non-nil OwnerID for NewUser")
-	}
-	newUserID := *txs2[0].OwnerID
-
 	if newAccID == accID {
 		t.Errorf("expected new AccountID, got same as old")
 	}
-	if newUserID == userID {
-		t.Errorf("expected new OwnerID, got same as old")
+
+	// Owner should still be TestUser from m.Owner
+	if txs2[0].OwnerID == nil {
+		t.Errorf("tx[0]: expected non-nil OwnerID")
+	} else if *txs2[0].OwnerID != userID {
+		t.Errorf("tx[0]: expected OwnerID %d, got %d", userID, *txs2[0].OwnerID)
 	}
 
 	if txs2[1].AccountID != newAccID {
 		t.Errorf("tx[1]: expected AccountID %d, got %d", newAccID, txs2[1].AccountID)
-	}
-	if txs2[1].OwnerID == nil {
-		t.Errorf("tx[1]: expected non-nil OwnerID")
-	} else if *txs2[1].OwnerID != newUserID {
-		t.Errorf("tx[1]: expected OwnerID %d, got %d", newUserID, *txs2[1].OwnerID)
 	}
 }

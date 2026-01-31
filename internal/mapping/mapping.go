@@ -17,11 +17,10 @@ type ImportMapping struct {
 		Date          string        `json:"date"`
 		Description   []string      `json:"description"`
 		AmountMapping AmountMapping `json:"amountMapping"`
-		Owner         string        `json:"owner,omitempty"`
 		Account       string        `json:"account,omitempty"`
 		Currency      string        `json:"currency,omitempty"`
 	} `json:"csv"`
 	Account         string `json:"account"`
-	DefaultOwner    string `json:"defaultOwner,omitempty"`
+	Owner           string `json:"owner,omitempty"`
 	CurrencyDefault string `json:"currencyDefault"`
 }

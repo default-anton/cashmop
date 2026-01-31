@@ -207,7 +207,6 @@ func normalizeTransactions(svc *cashmop.Service, parsed *parsedFile, mapping map
 
 	amountParser := createAmountParser(mapping, headers)
 
-	ownerIdx := findHeader(headers, mapping.CSV.Owner)
 	accountIdx := findHeader(headers, mapping.CSV.Account)
 	currencyIdx := findHeader(headers, mapping.CSV.Currency)
 
@@ -282,12 +281,7 @@ func normalizeTransactions(svc *cashmop.Service, parsed *parsedFile, mapping map
 		}
 
 		var ownerID *int64
-		owner := strings.TrimSpace(mapping.DefaultOwner)
-		if ownerIdx != -1 && ownerIdx < len(row) {
-			if v := strings.TrimSpace(row[ownerIdx]); v != "" {
-				owner = v
-			}
-		}
+		owner := strings.TrimSpace(mapping.Owner)
 		if owner != "" {
 			if id, ok := userMap[owner]; ok {
 				v := id
