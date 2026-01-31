@@ -161,7 +161,7 @@ test.describe("Categorization Rules", () => {
 
     await dragSelectDescription(page, 0, 4);
     await page.getByRole("button", { name: /More/ }).click();
-    const valueInput = page.getByPlaceholder("Value");
+    const valueInput = page.getByLabel("Amount value", { exact: true });
     await valueInput.fill("10");
 
     await categorizationPage.categorize("Coffee");
@@ -178,7 +178,7 @@ test.describe("Categorization Rules", () => {
 
     await dragSelectDescription(page, 0, 4);
     await page.getByRole("button", { name: /Less/ }).click();
-    const valueInput = page.getByPlaceholder("Value");
+    const valueInput = page.getByLabel("Amount value", { exact: true });
     await valueInput.fill("5");
 
     await categorizationPage.categorize("Coffee");
@@ -195,8 +195,8 @@ test.describe("Categorization Rules", () => {
 
     await dragSelectDescription(page, 0, 4);
     await page.getByRole("button", { name: "Between" }).click();
-    await page.getByPlaceholder("Min").fill("5");
-    await page.getByPlaceholder("Max").fill("15");
+    await page.getByLabel("Minimum amount", { exact: true }).fill("5");
+    await page.getByLabel("Maximum amount", { exact: true }).fill("15");
 
     await categorizationPage.categorize("Coffee");
 
@@ -215,7 +215,7 @@ test.describe("Categorization Rules", () => {
     await dragSelectDescription(page, 0, 8);
 
     await page.getByRole("button", { name: /More/ }).click();
-    const valueInput = page.getByPlaceholder("Value");
+    const valueInput = page.getByLabel("Amount value", { exact: true });
     const defaultValue = await page.evaluate(async () => {
       const rate = await (window as any).go.main.App.GetFxRate("CAD", "USD", "2023-10-03");
       if (!rate) return null;
@@ -243,7 +243,7 @@ test.describe("Categorization Rules", () => {
     await dragSelectDescription(page, 0, 8);
 
     await page.getByRole("button", { name: /Less/ }).click();
-    await page.getByPlaceholder("Value").fill("12");
+    await page.getByLabel("Amount value", { exact: true }).fill("12");
 
     await categorizationPage.categorize("Travel");
 
@@ -262,8 +262,8 @@ test.describe("Categorization Rules", () => {
     await dragSelectDescription(page, 0, 8);
 
     await page.getByRole("button", { name: "Between" }).click();
-    await page.getByPlaceholder("Min").fill("8");
-    await page.getByPlaceholder("Max").fill("22");
+    await page.getByLabel("Minimum amount", { exact: true }).fill("8");
+    await page.getByLabel("Maximum amount", { exact: true }).fill("22");
 
     await categorizationPage.categorize("Travel");
 

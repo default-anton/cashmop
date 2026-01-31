@@ -28,7 +28,7 @@ make integration-test NAME="pattern"       # Pattern match
 
 - POM: page objects in `frontend/tests/lib/pom/`
 - Playwright fixtures (`frontend/tests/lib/fixtures.ts`): if you don’t need the first arg, keep it as object destructuring (`async ({}, use, testInfo) => { ... }`). Playwright requires an object pattern here.
-- Selectors: prefer `aria-label`; always `{ exact: true }` to avoid substring clashes
+- Selectors: **always use `aria-label`**; never use placeholder text (unreliable, may change). Always `{ exact: true }` to avoid substring clashes
 - Categorization rules: category input label is `Category for rule` (normal `Category`); POM should match both
 - Fixtures: use custom fixtures `frontend/tests/lib/fixtures.ts` (auto DB reset)
 - Timing: `await page.goto('/')` each test for fresh React mount + status check

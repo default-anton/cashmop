@@ -17,7 +17,7 @@ test.describe("Owner Filter in Analysis", () => {
 
     // Should show filter content
     await expect(page.getByText("Filter by Owner", { exact: true })).toBeVisible();
-    await expect(page.getByPlaceholder("Search owners...")).toBeVisible();
+    await expect(page.getByLabel("Search owners", { exact: true })).toBeVisible();
   });
 
   test("should show all owners and No Owner option in filter", async ({ page }) => {

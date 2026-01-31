@@ -53,6 +53,7 @@ const fetchImportedTransactions = async (page: Page, descriptions: string[]) =>
         description: tx.description,
         currency: tx.currency,
         amount: tx.amount,
+        owner: tx.owner_name || "",
       }));
   }, descriptions);
 
@@ -145,6 +146,66 @@ test("import flow supports csv without header row", async ({ page, importFlowPag
   const second = byDescription.get("Import No Header Two");
   expect(second?.currency).toBe("CAD");
   expect(second?.amount).toBe(12000);
+});
+
+test("import flow sets owner correctly", async ({ page, importFlowPage }) => {
+  const descriptions = ["Import CAD Coffee", "Import USD Lunch"];
+
+  await importFlowPage.goto();
+  await page.evaluate(async () => {
+    const app = (window as any).go.main.App;
+    const mappings = await app.GetColumnMappings();
+    await Promise.all(mappings.map((m: any) => app.DeleteColumnMapping(m.id)));
+  });
+
+  await importFlowPage.uploadFile(headerCsvPath);
+  await importFlowPage.mapDate("Date");
+  await importFlowPage.mapAmount("Amount");
+  await importFlowPage.mapDescription("Description");
+  await importFlowPage.setAccountStatic("Checking");
+  // Owner step: set a custom owner
+  await importFlowPage.setOwnerStatic("Alex");
+  await importFlowPage.mapColumn("Currency");
+  await importFlowPage.nextStep();
+  await importFlowPage.startImport();
+  await importFlowPage.expectComplete();
+
+  const imported = await fetchImportedTransactions(page, descriptions);
+  expect(imported).toHaveLength(2);
+
+  for (const tx of imported) {
+    expect(tx.owner).toBe("Alex");
+  }
+});
+
+test("import flow defaults to Unassigned when no owner specified", async ({ page, importFlowPage }) => {
+  const descriptions = ["Import CAD Coffee", "Import USD Lunch"];
+
+  await importFlowPage.goto();
+  await page.evaluate(async () => {
+    const app = (window as any).go.main.App;
+    const mappings = await app.GetColumnMappings();
+    await Promise.all(mappings.map((m: any) => app.DeleteColumnMapping(m.id)));
+  });
+
+  await importFlowPage.uploadFile(headerCsvPath);
+  await importFlowPage.mapDate("Date");
+  await importFlowPage.mapAmount("Amount");
+  await importFlowPage.mapDescription("Description");
+  await importFlowPage.setAccountStatic("Checking");
+  // Skip owner step (no owner specified)
+  await importFlowPage.nextStep();
+  await importFlowPage.mapColumn("Currency");
+  await importFlowPage.nextStep();
+  await importFlowPage.startImport();
+  await importFlowPage.expectComplete();
+
+  const imported = await fetchImportedTransactions(page, descriptions);
+  expect(imported).toHaveLength(2);
+
+  for (const tx of imported) {
+    expect(tx.owner).toBe("Unassigned");
+  }
 });
 
 test("import flow reuses saved mapping for same file format", async ({ page: _, importFlowPage }) => {

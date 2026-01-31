@@ -156,6 +156,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                     ref={amountInputRef}
                     type="number"
                     placeholder={amountFilter.operator === "between" ? "Min" : "Value"}
+                    aria-label={amountFilter.operator === "between" ? "Minimum amount" : "Amount value"}
                     value={amountFilter.value1}
                     onChange={(e) => setAmountFilter({ ...amountFilter, value1: e.target.value })}
                     className="w-28 px-3 py-1.5 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
@@ -166,6 +167,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                       <input
                         type="number"
                         placeholder="Max"
+                        aria-label="Maximum amount"
                         value={amountFilter.value2}
                         onChange={(e) => setAmountFilter({ ...amountFilter, value2: e.target.value })}
                         className="w-28 px-3 py-1.5 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"

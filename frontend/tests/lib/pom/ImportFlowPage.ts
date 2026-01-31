@@ -6,6 +6,7 @@ export class ImportFlowPage {
   readonly nextButton: Locator;
   readonly startImportButton: Locator;
   readonly accountInput: Locator;
+  readonly ownerInput: Locator;
   readonly mappingTable: Locator;
   readonly headerToggle: Locator;
   readonly autoMappingBanner: Locator;
@@ -15,7 +16,8 @@ export class ImportFlowPage {
     this.fileInput = page.locator('input[type="file"]');
     this.nextButton = page.getByRole("button", { name: /Next|Continue/ });
     this.startImportButton = page.getByRole("button", { name: "Start Import" });
-    this.accountInput = page.getByPlaceholder("e.g. RBC Checking");
+    this.accountInput = page.getByLabel("Account", { exact: true });
+    this.ownerInput = page.getByLabel("Owner", { exact: true });
     this.mappingTable = page.getByTestId("mapping-table");
     this.headerToggle = page.getByTestId("header-row-toggle");
     this.autoMappingBanner = page.getByTestId("auto-mapping-banner");
@@ -134,6 +136,11 @@ export class ImportFlowPage {
 
   async setAccountStatic(name: string) {
     await this.accountInput.fill(name);
+    await this.nextStep();
+  }
+
+  async setOwnerStatic(name: string) {
+    await this.ownerInput.fill(name);
     await this.nextStep();
   }
 

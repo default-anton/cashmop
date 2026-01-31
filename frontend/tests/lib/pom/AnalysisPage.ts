@@ -188,7 +188,7 @@ export class AnalysisPage {
 
   async searchOwners(searchTerm: string) {
     const popover = this.getFilterPopover("Filter by Owner");
-    await popover.locator('input[placeholder="Search owners..."]').fill(searchTerm);
+    await popover.getByLabel("Search owners", { exact: true }).fill(searchTerm);
   }
 
   async clearOwnerFilter() {

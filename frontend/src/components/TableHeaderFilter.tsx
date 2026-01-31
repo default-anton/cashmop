@@ -505,6 +505,7 @@ export const OwnerFilterContent: React.FC<{
             ref={inputRef}
             type="text"
             placeholder="Search owners..."
+            aria-label="Search owners"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full bg-canvas-100 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-brand/20 placeholder:text-canvas-500 outline-none"

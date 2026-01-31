@@ -12,6 +12,7 @@ interface AutocompleteInputProps {
   onSubmit?: (value: string) => void;
   options: AutocompleteOption[];
   placeholder?: string;
+  "aria-label"?: string;
   className?: string;
   autoFocus?: boolean;
   filterMode?: "includes" | "none";
@@ -25,6 +26,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   onSubmit,
   options,
   placeholder,
+  "aria-label": ariaLabel,
   className,
   autoFocus,
   filterMode = "includes",
@@ -143,6 +145,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         onFocus={() => setIsOpen(true)}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
+        aria-label={ariaLabel}
         autoFocus={autoFocus}
         className="w-full"
       />
