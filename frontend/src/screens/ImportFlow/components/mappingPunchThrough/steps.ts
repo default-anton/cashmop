@@ -30,7 +30,7 @@ export const STEPS: Step[] = [
   {
     key: "owner",
     label: "Owner",
-    instruction: "Optional: pick a default owner or map an Owner column.",
+    instruction: "Optional: specify an owner for these transactions.",
     icon: User,
     optional: true,
   },

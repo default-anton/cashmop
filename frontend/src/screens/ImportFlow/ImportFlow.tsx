@@ -615,7 +615,6 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
 
       const amountFn = createAmountParser(activeMapping, headers);
 
-      const ownerIdx = activeMapping.csv.owner ? headers.indexOf(activeMapping.csv.owner) : -1;
       const accountIdx = activeMapping.csv.account ? headers.indexOf(activeMapping.csv.account) : -1;
       const currencyIdx = activeMapping.csv.currency ? headers.indexOf(activeMapping.csv.currency) : -1;
 
@@ -649,7 +648,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
           amount: amount,
           category: "",
           account: accountIdx !== -1 ? row[accountIdx] : activeMapping.account,
-          owner: ownerIdx !== -1 ? row[ownerIdx] : activeMapping.defaultOwner || "Unassigned",
+          owner: activeMapping.owner || "Unassigned",
           currency: currency || activeMapping.currencyDefault,
         });
       }

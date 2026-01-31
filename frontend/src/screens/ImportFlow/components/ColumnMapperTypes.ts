@@ -30,12 +30,11 @@ export type ImportMapping = {
     date: string;
     description: string[];
     amountMapping: AmountMapping;
-    owner?: string;
     account?: string;
     currency?: string;
   };
   account: string;
-  defaultOwner?: string;
+  owner?: string;
   currencyDefault: string; // Used when csv.currency is not set
 
   // Optional metadata used only for auto-detection in the UI.

@@ -99,7 +99,6 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
     const colIdx = (col: string | undefined) => (col ? headers.indexOf(col) : -1);
 
     const dateIdx = colIdx(mapping.csv.date);
-    const ownerIdx = colIdx(mapping.csv.owner);
     const accountIdx = colIdx(mapping.csv.account);
     const currencyIdx = colIdx(mapping.csv.currency);
     const descIdxs = mapping.csv.description.map((h: string) => headers.indexOf(h)).filter((i: number) => i !== -1);
@@ -113,7 +112,7 @@ const MonthSelector: React.FC<MonthSelectorProps> = ({
         .filter(Boolean)
         .join(" "),
       amount: amountFn(row),
-      owner: ownerIdx >= 0 ? row[ownerIdx] : mapping.defaultOwner || "",
+      owner: mapping.owner || "",
       account: accountIdx >= 0 ? row[accountIdx] : mapping.account || "",
       currency: currencyIdx >= 0 ? row[currencyIdx] : mapping.currencyDefault,
     }));

@@ -23,7 +23,6 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
   const usedHeaders = useMemo(() => {
     const used = new Set<string>();
     if (mapping.csv.date) used.add(mapping.csv.date);
-    if (mapping.csv.owner) used.add(mapping.csv.owner);
     if (mapping.csv.account) used.add(mapping.csv.account);
     if (mapping.csv.currency) used.add(mapping.csv.currency);
     mapping.csv.description.forEach((h) => {
@@ -84,7 +83,6 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
       };
 
       if (next.csv.date === header) next.csv.date = "";
-      if (next.csv.owner === header) delete next.csv.owner;
       if (next.csv.account === header) delete next.csv.account;
       if (next.csv.currency === header) delete next.csv.currency;
 
@@ -130,7 +128,6 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
       // Ensure one-to-one mapping across fields (Description can be multi)
       const clearHeader = (h: string) => {
         if (next.csv.date === h) next.csv.date = "";
-        if (next.csv.owner === h) delete next.csv.owner;
         if (next.csv.account === h) delete next.csv.account;
         if (next.csv.currency === h) delete next.csv.currency;
         next.csv.description = next.csv.description.filter((x: string) => x !== h);
@@ -164,25 +161,19 @@ export const useColumnMapping = (initialMapping?: ImportMapping, defaultCurrency
 
       clearHeader(header);
 
-      if (field === "description") {
-        next.csv.description = [...next.csv.description, header];
+      if (field === "date") {
+        next.csv.date = header;
         return next;
       }
 
-      if (field === "date") {
-        next.csv.date = header;
+      if (field === "description") {
+        next.csv.description = [...next.csv.description, header];
         return next;
       }
 
       if (field === "amount") {
         const invertSign = prev.csv.amountMapping.invertSign ?? false;
         next.csv.amountMapping = { type: "single", column: header, invertSign };
-        return next;
-      }
-
-      if (field === "owner") {
-        next.csv.owner = header;
-        next.defaultOwner = "";
         return next;
       }
 

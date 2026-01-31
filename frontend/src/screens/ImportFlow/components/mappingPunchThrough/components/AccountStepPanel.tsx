@@ -23,6 +23,7 @@ export const AccountStepPanel: React.FC<{ model: MappingPunchThroughModel }> = (
               }}
               options={model.availableAccounts}
               placeholder="e.g. RBC Checking"
+              aria-label="Account"
               className="w-full"
             />
           </div>

@@ -115,7 +115,6 @@ export const useMappingPunchThroughModel = ({
     const { csv } = mapping;
     if (csv.date) set.add(csv.date);
     if (csv.account) set.add(csv.account);
-    if (csv.owner) set.add(csv.owner);
     if (csv.currency) set.add(csv.currency);
     csv.description.forEach((h) => {
       set.add(h);
@@ -213,9 +212,9 @@ export const useMappingPunchThroughModel = ({
       setAccountInput(mapping.account || "");
     }
     if (currentStep.key === "owner") {
-      setOwnerInput(mapping.defaultOwner || "");
+      setOwnerInput(mapping.owner || "");
     }
-  }, [currentStep.key, mapping.account, mapping.defaultOwner]);
+  }, [currentStep.key, mapping.account, mapping.owner]);
 
   const handleAdvance = async () => {
     if (currentStep.key === "account") {
@@ -282,7 +281,6 @@ export const useMappingPunchThroughModel = ({
       if (step === "date") return csv.date === header;
       if (step === "description") return csv.description.includes(header);
       if (step === "account") return csv.account === header;
-      if (step === "owner") return csv.owner === header;
       if (step === "currency") return csv.currency === header;
       if (step === "amount") {
         const am = csv.amountMapping;
@@ -329,7 +327,6 @@ export const useMappingPunchThroughModel = ({
 
     if (mapping.csv.description.includes(header)) return "Desc";
     if (mapping.csv.account === header) return "Account";
-    if (mapping.csv.owner === header) return "Owner";
     if (mapping.csv.currency === header) return "Currency";
 
     return null;
@@ -381,11 +378,6 @@ export const useMappingPunchThroughModel = ({
 
     if (currentStep.key === "account") {
       assignHeaderToField("account", header);
-      return;
-    }
-
-    if (currentStep.key === "owner") {
-      assignHeaderToField("owner", header);
       return;
     }
 

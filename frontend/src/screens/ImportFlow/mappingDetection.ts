@@ -67,7 +67,6 @@ export const rebindMappingToHeaders = (m: ImportMapping, fileHeaders: string[]) 
       date: resolve(csv.date) || csv.date,
       description: (csv.description || []).map((d) => resolve(d) || d),
       account: csv.account ? resolve(csv.account) : undefined,
-      owner: csv.owner ? resolve(csv.owner) : undefined,
       currency: csv.currency ? resolve(csv.currency) : undefined,
       amountMapping,
     },
@@ -166,7 +165,7 @@ export const pickBestMapping = (file: FileForMappingDetection, entries: SavedMap
       if (typeOk) score += 1;
     }
 
-    for (const extra of [m.csv.account, m.csv.owner, m.csv.currency]) {
+    for (const extra of [m.csv.account, m.csv.currency]) {
       const need = wants(extra);
       if (!need) continue;
       possible += 1;
