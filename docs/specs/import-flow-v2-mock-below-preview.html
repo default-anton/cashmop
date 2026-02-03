@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cashmop — Import Flow v2 Mock</title>
+    <title>Cashmop — Import Flow v2 Mock (Below Preview Controls)</title>
     <style>
       :root {
         --bg: #f9f8f6;
@@ -48,10 +48,10 @@
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 16px;
-        padding: 14px 14px;
+        padding: 12px 12px;
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 8px;
         align-items: center;
         justify-content: space-between;
       }
@@ -93,11 +93,36 @@
         background: var(--brand);
       }
 
+      .auto-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 700;
+        user-select: none;
+        white-space: nowrap;
+      }
+
+      .auto-indicator .auto-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--brand);
+        opacity: 0.55;
+      }
+
       .layout {
         margin-top: 14px;
         display: grid;
         grid-template-columns: 420px 1fr;
-        gap: 14px;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .right-stack {
+        display: grid;
+        gap: 12px;
         align-items: start;
       }
 
@@ -105,7 +130,7 @@
         background: var(--card);
         border: 1px solid var(--border);
         border-radius: 16px;
-        padding: 14px;
+        padding: 12px;
       }
 
       .card h2 {
@@ -117,10 +142,10 @@
       }
 
       .section {
-        margin-top: 12px;
+        margin-top: 10px;
         border: 1px solid var(--border);
         border-radius: 14px;
-        padding: 12px;
+        padding: 10px;
         background: #fff;
       }
 
@@ -137,7 +162,7 @@
 
       .row {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
         align-items: center;
       }
@@ -186,14 +211,14 @@
       .months {
         display: flex;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
         margin-top: 8px;
       }
 
       .chip {
         border: 1px solid var(--border);
         background: var(--bg);
-        padding: 8px 10px;
+        padding: 7px 9px;
         border-radius: 999px;
         font-size: 12px;
         cursor: pointer;
@@ -212,7 +237,7 @@
         padding: 0;
         margin: 8px 0 0;
         display: grid;
-        gap: 8px;
+        gap: 6px;
       }
 
       .desc-item {
@@ -220,7 +245,7 @@
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        padding: 10px 10px;
+        padding: 8px 10px;
         border: 1px solid var(--border);
         border-radius: 12px;
         background: var(--bg);
@@ -254,7 +279,7 @@
         gap: 8px;
         align-items: center;
         justify-content: space-between;
-        margin-top: 12px;
+        margin-top: 10px;
       }
 
       .primary {
@@ -297,7 +322,7 @@
         top: 0;
         background: var(--bg);
         border-bottom: 1px solid var(--border);
-        padding: 10px;
+        padding: 8px 10px;
         text-align: left;
         vertical-align: top;
         min-width: 160px;
@@ -305,7 +330,7 @@
 
       tbody td {
         border-bottom: 1px solid var(--border);
-        padding: 10px;
+        padding: 8px 10px;
         color: #4a4743;
         font-size: 13px;
         white-space: nowrap;
@@ -336,7 +361,7 @@
       .col-title {
         font-weight: 800;
         font-size: 12px;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
       }
 
       .col-controls {
@@ -436,6 +461,9 @@
       - Single-amount flip toggle near its dropdown (compact "±" control)
       - Description order drag/drop list (not table column DnD)
       - Multi-file is sequential punch-through: import current file -> next file (no back button)
+
+      Variant idea:
+      - Preview shows up to 5 rows, so we move Months + Remember mapping + Import CTA under the preview to reclaim sidebar height.
     -->
     <div class="app">
       <div class="topbar">
@@ -448,7 +476,7 @@
 
       <div class="layout">
         <div class="card">
-          <h2>Mapping & Import</h2>
+          <h2>Mapping</h2>
 
           <div class="section">
             <h3>Mapping preset</h3>
@@ -465,9 +493,10 @@
                 </datalist>
               </div>
               <div style="display: flex; align-items: end">
-                <span class="pill" title="This mapping was auto-detected from saved mappings."
-                  ><span class="dot"></span> Auto</span
-                >
+                <span class="auto-indicator" title="Auto-matched from saved mappings">
+                  <span class="auto-dot"></span>
+                  <span>Auto-matched</span>
+                </span>
               </div>
             </div>
             <!--
@@ -485,7 +514,14 @@
           </div>
 
           <div class="section">
-            <h3>Description order</h3>
+            <div class="row" style="justify-content: space-between; margin-bottom: 8px">
+              <h3 style="margin: 0">Description order</h3>
+              <span
+                class="hint"
+                title="Select description columns in the table (merchant, address, memo...). Reorder them here to control how Cashmop combines them."
+                >?</span
+              >
+            </div>
             <ul class="desc-list" id="descList">
               <li class="desc-item" draggable="true" data-key="Payee">
                 <span>Payee</span>
@@ -496,192 +532,193 @@
                 <button class="mini-btn" type="button">Remove</button>
               </li>
             </ul>
-            <div class="small" style="margin-top: 8px">
-              Tip: select multiple description columns (merchant, address, memo...) and order them here.
-            </div>
           </div>
 
           <div class="section">
             <h3>Owner (optional, static)</h3>
-            <label>Owner</label>
             <input type="text" value="Alex" />
           </div>
 
           <div class="section">
-            <h3>Amounts (quick help)</h3>
-            <div class="muted">
-              Most files have one amount column. Map it to <strong>Money (signed)</strong> (spending is usually negative).
-              If you also map <strong>Direction (in/out)</strong>, we’ll ignore the sign in the money column.
-              <br />
-              If your file has separate <em>withdrawal</em>/<em>deposit</em> columns, map them to <strong>Money out</strong>
-              and <strong>Money in</strong>.
-              <br />
-              If your file has an amount plus a column that says <em>debit/credit</em> (or <em>DR/CR</em>), map that
-              second column to <strong>Direction (in/out)</strong>.
-            </div>
-          </div>
-
-          <div class="section">
-            <h3>Default currency</h3>
-            <label>Default currency (required)</label>
+            <h3>Default currency (required)</h3>
             <input type="text" value="CAD" />
-          </div>
-
-          <div class="section">
-            <h3>Months (per file)</h3>
-            <div class="months" id="months">
-              <div class="chip" data-selected="false">Dec 2025</div>
-              <div class="chip" data-selected="true">Jan 2026</div>
-              <div class="chip" data-selected="false">Feb 2026</div>
-            </div>
-          </div>
-
-          <div class="section">
-            <h3>Remember mapping</h3>
-            <div class="row" style="margin-top: 10px">
-              <label style="margin: 0"><input type="radio" name="remember" /> Off</label>
-              <label style="margin: 0"><input type="radio" name="remember" checked /> Save as new</label>
-              <label style="margin: 0"><input type="radio" name="remember" /> Update selected</label>
-            </div>
-            <div style="margin-top: 10px">
-              <label>Mapping name</label>
-              <input type="text" value="RBC Checking (new)" />
-            </div>
-          </div>
-
-          <div class="cta">
-            <button class="primary" type="button" id="importBtn">Import this file → Next file</button>
           </div>
         </div>
 
-        <div class="card">
-          <h2>File preview</h2>
+        <div class="right-stack">
+          <div class="card">
+            <h2>File preview (5 rows)</h2>
 
-          <div style="margin-top: 12px; overflow: auto; border: 1px solid var(--border); border-radius: 14px">
-            <table>
-              <thead>
-                <tr>
-                  <th>
-                    <div class="col-title">Date</div>
-                    <div class="col-controls">
-                      <select class="roleSelect" data-col="Date">
-                        <option>Ignore</option>
-                        <option selected>Date</option>
-                        <option>Description</option>
-                        <option>Money (signed)</option>
-                        <option>Money out</option>
-                        <option>Money in</option>
-                        <option>Direction (in/out)</option>
-                        <option>Account</option>
-                        <option>Currency</option>
-                      </select>
-                    </div>
-                  </th>
-                  <th>
-                    <div class="col-title">Payee</div>
-                    <div class="col-controls">
-                      <select class="roleSelect" data-col="Payee">
-                        <option>Ignore</option>
-                        <option>Date</option>
-                        <option selected>Description</option>
-                        <option>Money (signed)</option>
-                        <option>Money out</option>
-                        <option>Money in</option>
-                        <option>Direction (in/out)</option>
-                        <option>Account</option>
-                        <option>Currency</option>
-                      </select>
-                    </div>
-                  </th>
-                  <th>
-                    <div class="col-title">Memo</div>
-                    <div class="col-controls">
-                      <select class="roleSelect" data-col="Memo">
-                        <option>Ignore</option>
-                        <option>Date</option>
-                        <option selected>Description</option>
-                        <option>Money (signed)</option>
-                        <option>Money out</option>
-                        <option>Money in</option>
-                        <option>Direction (in/out)</option>
-                        <option>Account</option>
-                        <option>Currency</option>
-                      </select>
-                    </div>
-                  </th>
-                  <th>
-                    <div class="col-title">Amount</div>
-                    <div class="col-controls">
-                      <div class="inline">
-                        <select class="roleSelect" data-col="Amount">
+            <div style="margin-top: 12px; overflow: auto; border: 1px solid var(--border); border-radius: 14px">
+              <table>
+                <thead>
+                  <tr>
+                    <th>
+                      <div class="col-title">Date</div>
+                      <div class="col-controls">
+                        <select class="roleSelect" data-col="Date">
                           <option>Ignore</option>
-                          <option>Date</option>
+                          <option selected>Date</option>
                           <option>Description</option>
-                          <option selected>Money (signed)</option>
+                          <option>Money (signed)</option>
                           <option>Money out</option>
                           <option>Money in</option>
                           <option>Direction (in/out)</option>
                           <option>Account</option>
                           <option>Currency</option>
                         </select>
-                        <div
-                          class="tiny-toggle"
-                          data-kind="amountFlip"
-                          data-on="false"
-                          title="Flip sign. Use this if your file shows spending as positive numbers."
-                        >
-                          ±
-                        </div>
-                        <span
-                          class="hint"
-                          title="Tip: Preview amounts show the sign via color (green = income, red = spending). Use ± to flip if your file uses + for spending. If you map Direction (in/out), Cashmop ignores the sign and uses Direction to choose +/-."
-                          >?</span
-                        >
                       </div>
-                    </div>
-                  </th>
-                  <th>
-                    <div class="col-title">Currency</div>
-                    <div class="col-controls">
-                      <select class="roleSelect" data-col="Currency">
-                        <option>Ignore</option>
-                        <option>Date</option>
-                        <option>Description</option>
-                        <option>Money (signed)</option>
-                        <option>Money out</option>
-                        <option>Money in</option>
-                        <option>Direction (in/out)</option>
-                        <option>Account</option>
-                        <option selected>Currency</option>
-                      </select>
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>2026-01-14</td>
-                  <td>STARBUCKS</td>
-                  <td>VANCOUVER</td>
-                  <td><span class="amt expense">5.25</span></td>
-                  <td>CAD</td>
-                </tr>
-                <tr>
-                  <td>2026-01-16</td>
-                  <td>PAYROLL</td>
-                  <td>ACME INC</td>
-                  <td><span class="amt income">3000.00</span></td>
-                  <td>CAD</td>
-                </tr>
-                <tr>
-                  <td>2026-01-18</td>
-                  <td>UBER</td>
-                  <td>TRIP</td>
-                  <td><span class="amt expense">18.40</span></td>
-                  <td>CAD</td>
-                </tr>
-              </tbody>
-            </table>
+                    </th>
+                    <th>
+                      <div class="col-title">Payee</div>
+                      <div class="col-controls">
+                        <select class="roleSelect" data-col="Payee">
+                          <option>Ignore</option>
+                          <option>Date</option>
+                          <option selected>Description</option>
+                          <option>Money (signed)</option>
+                          <option>Money out</option>
+                          <option>Money in</option>
+                          <option>Direction (in/out)</option>
+                          <option>Account</option>
+                          <option>Currency</option>
+                        </select>
+                      </div>
+                    </th>
+                    <th>
+                      <div class="col-title">Memo</div>
+                      <div class="col-controls">
+                        <select class="roleSelect" data-col="Memo">
+                          <option>Ignore</option>
+                          <option>Date</option>
+                          <option selected>Description</option>
+                          <option>Money (signed)</option>
+                          <option>Money out</option>
+                          <option>Money in</option>
+                          <option>Direction (in/out)</option>
+                          <option>Account</option>
+                          <option>Currency</option>
+                        </select>
+                      </div>
+                    </th>
+                    <th>
+                      <div class="col-title">Amount</div>
+                      <div class="col-controls">
+                        <div class="inline">
+                          <select class="roleSelect" data-col="Amount">
+                            <option>Ignore</option>
+                            <option>Date</option>
+                            <option>Description</option>
+                            <option selected>Money (signed)</option>
+                            <option>Money out</option>
+                            <option>Money in</option>
+                            <option>Direction (in/out)</option>
+                            <option>Account</option>
+                            <option>Currency</option>
+                          </select>
+                          <div
+                            class="tiny-toggle"
+                            data-kind="amountFlip"
+                            data-on="false"
+                            title="Flip sign. Use this if your file shows spending as positive numbers."
+                          >
+                            ±
+                          </div>
+                          <span
+                            class="hint"
+                            title="Tip: Preview amounts show the sign via color (green = income, red = spending). Use ± to flip if your file uses + for spending. If you map Direction (in/out), Cashmop ignores the sign and uses Direction to choose +/-."
+                            >?</span
+                          >
+                        </div>
+                      </div>
+                    </th>
+                    <th>
+                      <div class="col-title">Currency</div>
+                      <div class="col-controls">
+                        <select class="roleSelect" data-col="Currency">
+                          <option>Ignore</option>
+                          <option>Date</option>
+                          <option>Description</option>
+                          <option>Money (signed)</option>
+                          <option>Money out</option>
+                          <option>Money in</option>
+                          <option>Direction (in/out)</option>
+                          <option>Account</option>
+                          <option selected>Currency</option>
+                        </select>
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>2026-01-02</td>
+                    <td>GROCERY</td>
+                    <td>SAFEWAY #112</td>
+                    <td><span class="amt expense">86.12</span></td>
+                    <td>CAD</td>
+                  </tr>
+                  <tr>
+                    <td>2026-01-06</td>
+                    <td>PAYROLL</td>
+                    <td>ACME INC</td>
+                    <td><span class="amt income">3000.00</span></td>
+                    <td>CAD</td>
+                  </tr>
+                  <tr>
+                    <td>2026-01-10</td>
+                    <td>STARBUCKS</td>
+                    <td>VANCOUVER</td>
+                    <td><span class="amt expense">5.25</span></td>
+                    <td>CAD</td>
+                  </tr>
+                  <tr>
+                    <td>2026-01-14</td>
+                    <td>REFUND</td>
+                    <td>UBER</td>
+                    <td><span class="amt income">18.40</span></td>
+                    <td>CAD</td>
+                  </tr>
+                  <tr>
+                    <td>2026-01-18</td>
+                    <td>UBER</td>
+                    <td>TRIP</td>
+                    <td><span class="amt expense">18.40</span></td>
+                    <td>CAD</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Import</h2>
+
+            <div class="section">
+              <h3>Months (per file)</h3>
+              <div class="months" id="months">
+                <div class="chip" data-selected="false">Dec 2025</div>
+                <div class="chip" data-selected="true">Jan 2026</div>
+                <div class="chip" data-selected="false">Feb 2026</div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>Remember mapping</h3>
+              <div class="row" style="margin-top: 10px">
+                <label style="margin: 0"><input type="radio" name="remember" /> Off</label>
+                <label style="margin: 0"><input type="radio" name="remember" checked /> Save as new</label>
+                <label style="margin: 0"><input type="radio" name="remember" /> Update selected</label>
+              </div>
+              <div style="margin-top: 10px">
+                <label>Mapping name</label>
+                <input type="text" value="RBC Checking (new)" />
+              </div>
+            </div>
+
+            <div class="cta">
+              <button class="primary" type="button" id="importBtn">Import this file → Next file</button>
+            </div>
           </div>
         </div>
       </div>

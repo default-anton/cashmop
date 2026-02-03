@@ -3,7 +3,7 @@
 UI Location: `frontend/src/screens/ImportFlow/`
 
 > Note: this spec describes the **v1 punch-through mapping** flow. The planned single-screen flow lives in
-> `docs/specs/import-flow-v2.md` (see also `docs/specs/import-flow-v2-mock.html`).
+> `docs/specs/import-flow-v2.md` (see also `docs/specs/import-flow-v2-mock-below-preview.html`).
 
 ## Core Experience
 - Vertical, "punch-through" flow (same philosophy as the Categorization Loop).

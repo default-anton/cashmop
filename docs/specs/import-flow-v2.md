@@ -32,6 +32,9 @@ Replace the v1 “punch-through” multi-step mapping with a single-screen impor
 - Amount parsing: `frontend/src/screens/ImportFlow/utils.ts` (`createAmountParser`)
 - Month bucketing: `frontend/src/screens/ImportFlow/ImportFlow.tsx` (`computeMonthsFromMapping`)
 
+Mock (discussion artifact):
+- `docs/specs/import-flow-v2-mock-below-preview.html`
+
 ---
 
 ## One-screen layout (high-level)
@@ -39,13 +42,14 @@ Single screen contains:
 1. File picker + file list (supports multiple files)
 2. Mapping preset controls (auto-detected mapping + searchable override)
 3. Mapping panel (Account/Owner/Default currency, description order, amount settings)
-4. Embedded month selector (per file)
-5. Preview table with per-column mapping dropdowns
-6. Import CTA (enabled only when mapping + months selection are valid)
+4. Preview table with per-column mapping dropdowns (sample up to 5 rows)
+5. Embedded month selector (per file)
+6. “Remember mapping” controls (optional)
+7. Import CTA (enabled only when mapping + months selection are valid)
 
 Recommended structure:
-- Left panel: “Mapping & Import”
-- Right panel: “File Preview” (table)
+- Left panel: “Mapping”
+- Right panel: “File Preview” (table) + “Import” (months, remember mapping, import CTA)
 
 Multi-file behavior remains “punch-through”:
 - You work on **one file at a time** on this same screen.
@@ -89,7 +93,6 @@ When the user picks a mapping preset:
 Meaning: the user wants to create a new mapping from scratch for this file, but we still help with heuristic prefill.
 
 Behavior when selected:
-- Reset the file’s mapping to defaults (no assigned columns; amount mode defaults to Single).
 - Reset the file’s mapping to defaults (no assigned columns; amount strategy defaults to a signed money column but with no header assigned yet).
 - If the file has a header row **and** no auto-match existed for this file, run heuristic prefill once (same as fallback behavior).
 - If the file has **no** header row, do **not** run heuristic prefill (see below).
@@ -158,7 +161,7 @@ Suggested dropdown labels + help text:
 
 Suggested contextual hint states (small inline text under the dropdown or a tiny helper row in the table header):
 - No money columns mapped yet: “Pick the column(s) that contain money.”
-- Money (signed) selected (no Direction): “Spending: - · Income: +. Use the ± button if your file uses + for spending.”
+- Money (signed) selected (no Direction): “Use the ± button if the preview colors look flipped.”
 - Money out / Money in selected: “We ignore the sign in the file. Out becomes -, in becomes +.”
 - Money (signed/unsigned) + Direction selected: “Signed or unsigned is fine — we ignore the sign and use Direction to choose +/-.”
 
