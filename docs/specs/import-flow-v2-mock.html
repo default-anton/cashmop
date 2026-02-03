@@ -14,6 +14,8 @@
         --brand: #0d9488;
         --brand-weak: rgba(13, 148, 136, 0.12);
         --danger: #dc2626;
+        --income: #16a34a;
+        --expense: #dc2626;
       }
 
       * {
@@ -309,6 +311,28 @@
         white-space: nowrap;
       }
 
+      .amt {
+        font-family:
+          ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Monaco,
+          Consolas,
+          "Liberation Mono",
+          "Courier New",
+          monospace;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+
+      .amt.income {
+        color: var(--income);
+      }
+
+      .amt.expense {
+        color: var(--expense);
+      }
+
       .col-title {
         font-weight: 800;
         font-size: 12px;
@@ -375,6 +399,23 @@
         color: var(--muted);
       }
 
+      .hint {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: #fff;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 800;
+        cursor: help;
+        user-select: none;
+        flex: 0 0 auto;
+      }
+
       @media (max-width: 1100px) {
         .layout {
           grid-template-columns: 1fr;
@@ -390,9 +431,11 @@
       - One screen does mapping + month selection + import
       - Mapping preset picker + auto-matched banner + "None (start fresh)"
       - Column role dropdowns above each preview column
-      - Debit/Credit have separate flip toggles near the dropdown
+      - Amount mapping is inferred from column roles (no explicit “mode”)
+      - Plain-language roles: Money (signed) (dynamic when Direction is mapped) / Money out / Money in / Direction (in/out)
+      - Single-amount flip toggle near its dropdown (compact "±" control)
       - Description order drag/drop list (not table column DnD)
-      - Multi-file is sequential punch-through: import current file -> next file
+      - Multi-file is sequential punch-through: import current file -> next file (no back button)
     -->
     <div class="app">
       <div class="topbar">
@@ -427,16 +470,12 @@
                 >
               </div>
             </div>
-
-            <div class="row" style="margin-top: 10px">
-              <div style="flex: 1; min-width: 220px">
-                <label>Header row</label>
-                <div class="seg">
-                  <button type="button" class="headerBtn" data-header="yes" aria-pressed="true">Yes</button>
-                  <button type="button" class="headerBtn" data-header="no" aria-pressed="false">No</button>
-                </div>
+            <!--
+              Optional banner shown only when heuristic prefill runs (no auto-match).
+              <div class="banner">
+                Pre-filled from headers — review quickly.
               </div>
-            </div>
+            -->
           </div>
 
           <div class="section">
@@ -457,12 +496,35 @@
                 <button class="mini-btn" type="button">Remove</button>
               </li>
             </ul>
+            <div class="small" style="margin-top: 8px">
+              Tip: select multiple description columns (merchant, address, memo...) and order them here.
+            </div>
           </div>
 
           <div class="section">
             <h3>Owner (optional, static)</h3>
             <label>Owner</label>
             <input type="text" value="Alex" />
+          </div>
+
+          <div class="section">
+            <h3>Amounts (quick help)</h3>
+            <div class="muted">
+              Most files have one amount column. Map it to <strong>Money (signed)</strong> (spending is usually negative).
+              If you also map <strong>Direction (in/out)</strong>, we’ll ignore the sign in the money column.
+              <br />
+              If your file has separate <em>withdrawal</em>/<em>deposit</em> columns, map them to <strong>Money out</strong>
+              and <strong>Money in</strong>.
+              <br />
+              If your file has an amount plus a column that says <em>debit/credit</em> (or <em>DR/CR</em>), map that
+              second column to <strong>Direction (in/out)</strong>.
+            </div>
+          </div>
+
+          <div class="section">
+            <h3>Default currency</h3>
+            <label>Default currency (required)</label>
+            <input type="text" value="CAD" />
           </div>
 
           <div class="section">
@@ -488,7 +550,6 @@
           </div>
 
           <div class="cta">
-            <button class="secondary" type="button" id="backFile" disabled>Back</button>
             <button class="primary" type="button" id="importBtn">Import this file → Next file</button>
           </div>
         </div>
@@ -507,10 +568,10 @@
                         <option>Ignore</option>
                         <option selected>Date</option>
                         <option>Description</option>
-                        <option>Amount</option>
-                        <option>Debit</option>
-                        <option>Credit</option>
-                        <option>Type</option>
+                        <option>Money (signed)</option>
+                        <option>Money out</option>
+                        <option>Money in</option>
+                        <option>Direction (in/out)</option>
                         <option>Account</option>
                         <option>Currency</option>
                       </select>
@@ -523,10 +584,10 @@
                         <option>Ignore</option>
                         <option>Date</option>
                         <option selected>Description</option>
-                        <option>Amount</option>
-                        <option>Debit</option>
-                        <option>Credit</option>
-                        <option>Type</option>
+                        <option>Money (signed)</option>
+                        <option>Money out</option>
+                        <option>Money in</option>
+                        <option>Direction (in/out)</option>
                         <option>Account</option>
                         <option>Currency</option>
                       </select>
@@ -539,50 +600,43 @@
                         <option>Ignore</option>
                         <option>Date</option>
                         <option selected>Description</option>
-                        <option>Amount</option>
-                        <option>Debit</option>
-                        <option>Credit</option>
-                        <option>Type</option>
+                        <option>Money (signed)</option>
+                        <option>Money out</option>
+                        <option>Money in</option>
+                        <option>Direction (in/out)</option>
                         <option>Account</option>
                         <option>Currency</option>
                       </select>
                     </div>
                   </th>
                   <th>
-                    <div class="col-title">Debit</div>
+                    <div class="col-title">Amount</div>
                     <div class="col-controls">
                       <div class="inline">
-                        <select class="roleSelect" data-col="Debit">
+                        <select class="roleSelect" data-col="Amount">
                           <option>Ignore</option>
                           <option>Date</option>
                           <option>Description</option>
-                          <option>Amount</option>
-                          <option selected>Debit</option>
-                          <option>Credit</option>
-                          <option>Type</option>
+                          <option selected>Money (signed)</option>
+                          <option>Money out</option>
+                          <option>Money in</option>
+                          <option>Direction (in/out)</option>
                           <option>Account</option>
                           <option>Currency</option>
                         </select>
-                        <div class="tiny-toggle" data-kind="debitFlip" data-on="false">Flip</div>
-                      </div>
-                    </div>
-                  </th>
-                  <th>
-                    <div class="col-title">Credit</div>
-                    <div class="col-controls">
-                      <div class="inline">
-                        <select class="roleSelect" data-col="Credit">
-                          <option>Ignore</option>
-                          <option>Date</option>
-                          <option>Description</option>
-                          <option>Amount</option>
-                          <option>Debit</option>
-                          <option selected>Credit</option>
-                          <option>Type</option>
-                          <option>Account</option>
-                          <option>Currency</option>
-                        </select>
-                        <div class="tiny-toggle" data-kind="creditFlip" data-on="false">Flip</div>
+                        <div
+                          class="tiny-toggle"
+                          data-kind="amountFlip"
+                          data-on="false"
+                          title="Flip sign. Use this if your file shows spending as positive numbers."
+                        >
+                          ±
+                        </div>
+                        <span
+                          class="hint"
+                          title="Tip: Preview amounts show the sign via color (green = income, red = spending). Use ± to flip if your file uses + for spending. If you map Direction (in/out), Cashmop ignores the sign and uses Direction to choose +/-."
+                          >?</span
+                        >
                       </div>
                     </div>
                   </th>
@@ -593,10 +647,10 @@
                         <option>Ignore</option>
                         <option>Date</option>
                         <option>Description</option>
-                        <option>Amount</option>
-                        <option>Debit</option>
-                        <option>Credit</option>
-                        <option>Type</option>
+                        <option>Money (signed)</option>
+                        <option>Money out</option>
+                        <option>Money in</option>
+                        <option>Direction (in/out)</option>
                         <option>Account</option>
                         <option selected>Currency</option>
                       </select>
@@ -609,24 +663,21 @@
                   <td>2026-01-14</td>
                   <td>STARBUCKS</td>
                   <td>VANCOUVER</td>
-                  <td>5.25</td>
-                  <td></td>
+                  <td><span class="amt expense">5.25</span></td>
                   <td>CAD</td>
                 </tr>
                 <tr>
                   <td>2026-01-16</td>
                   <td>PAYROLL</td>
                   <td>ACME INC</td>
-                  <td></td>
-                  <td>3000.00</td>
+                  <td><span class="amt income">3000.00</span></td>
                   <td>CAD</td>
                 </tr>
                 <tr>
                   <td>2026-01-18</td>
                   <td>UBER</td>
                   <td>TRIP</td>
-                  <td>18.40</td>
-                  <td></td>
+                  <td><span class="amt expense">18.40</span></td>
                   <td>CAD</td>
                 </tr>
               </tbody>
@@ -649,15 +700,6 @@
       for (const t of document.querySelectorAll(".tiny-toggle")) {
         t.addEventListener("click", () => {
           t.dataset.on = t.dataset.on === "true" ? "false" : "true";
-        });
-      }
-
-      // Header row buttons
-      const headerButtons = Array.from(document.querySelectorAll(".headerBtn"));
-      for (const b of headerButtons) {
-        b.addEventListener("click", () => {
-          for (const other of headerButtons) other.setAttribute("aria-pressed", "false");
-          b.setAttribute("aria-pressed", "true");
         });
       }
 
@@ -688,17 +730,11 @@
       const renderFile = () => {
         document.getElementById("fileName").textContent = fileNames[idx];
         document.getElementById("fileProgress").textContent = `File ${idx + 1} of ${fileNames.length}`;
-        document.getElementById("backFile").disabled = idx === 0;
         const btn = document.getElementById("importBtn");
         btn.textContent =
           idx < fileNames.length - 1 ? "Import this file → Next file" : "Import this file (last one)";
       };
       renderFile();
-      document.getElementById("backFile").addEventListener("click", () => {
-        if (idx === 0) return;
-        idx -= 1;
-        renderFile();
-      });
       document.getElementById("importBtn").addEventListener("click", () => {
         if (idx >= fileNames.length - 1) {
           alert("Imported last file (mock). Next: show Import complete state.");

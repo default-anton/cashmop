@@ -13,7 +13,7 @@ Replace the v1 “punch-through” multi-step mapping with a single-screen impor
 ## Goals
 - Zero “wizard steps” for mapping; the user can map everything in-place.
 - Make the “right” mapping obvious and editable: dropdowns + nearby micro-controls.
-- Preserve and extend saved mappings (order, flips, amount mode) as opaque JSON.
+- Preserve and extend saved mappings (order, flips, inferred amount strategy) as opaque JSON.
 - Keep the workflow fast for power users:
   - Auto-match when confident.
   - Heuristic prefill when no match.
@@ -38,11 +38,10 @@ Replace the v1 “punch-through” multi-step mapping with a single-screen impor
 Single screen contains:
 1. File picker + file list (supports multiple files)
 2. Mapping preset controls (auto-detected mapping + searchable override)
-3. Embedded header-row toggle (Yes/No)
-4. Mapping panel (Account/Owner/Default currency, description order, amount mode settings)
-5. Embedded month selector (per file)
-6. Preview table with per-column mapping dropdowns
-7. Import CTA (enabled only when mapping + months selection are valid)
+3. Mapping panel (Account/Owner/Default currency, description order, amount settings)
+4. Embedded month selector (per file)
+5. Preview table with per-column mapping dropdowns
+6. Import CTA (enabled only when mapping + months selection are valid)
 
 Recommended structure:
 - Left panel: “Mapping & Import”
@@ -64,10 +63,10 @@ Multi-file behavior remains “punch-through”:
 
 ## Mapping selection & override behavior
 ### Priority order (per file)
-When a file is parsed / header-row setting changes:
+When a file is parsed:
 1. If the user has explicitly selected a mapping preset for this file, apply that mapping (rebound to this file’s header casing).
-2. Else attempt saved mapping auto-match via existing rules (`pickBestMapping`).
-3. Else apply heuristic prefill mapping (best-effort), leaving ambiguities unassigned.
+2. Else attempt saved mapping auto-match via existing rules (`pickBestMapping`) **only if** the file has a detected header row.
+3. Else apply heuristic prefill mapping (best-effort), leaving ambiguities unassigned (only when the file has a header row).
 
 ### User controls
 At the top of the screen for the current file:
@@ -91,7 +90,8 @@ Meaning: the user wants to create a new mapping from scratch for this file, but 
 
 Behavior when selected:
 - Reset the file’s mapping to defaults (no assigned columns; amount mode defaults to Single).
-- If the file has a header row, run heuristic prefill (same as fallback behavior).
+- Reset the file’s mapping to defaults (no assigned columns; amount strategy defaults to a signed money column but with no header assigned yet).
+- If the file has a header row **and** no auto-match existed for this file, run heuristic prefill once (same as fallback behavior).
 - If the file has **no** header row, do **not** run heuristic prefill (see below).
 
 ### Switching presets when “dirty”
@@ -106,13 +106,12 @@ Subset matching can select a mapping that’s plausible but wrong. The UX must m
 
 ---
 
-## Header row toggle & auto-match
-The header-row toggle changes how the file is interpreted (real headers vs `Column A/B/...` generated headers).
+## Header detection & auto-match
+Header detection is fully automatic in v2 (no manual toggle).
 
-To avoid applying a saved mapping against a potentially incorrect header interpretation:
-- Auto-matching (`pickBestMapping`) runs only when the header row setting is **auto-detected**.
-- If the user manually overrides the header row setting, auto-matching is disabled for that file until re-parsed.
-  - The user can still apply a mapping preset manually via the preset picker.
+Rules:
+- If the file has a detected header row, attempt auto-match via `pickBestMapping`.
+- If the file has **no** detected header row, skip auto-match (user selects a preset or maps manually).
 
 ---
 
@@ -122,10 +121,10 @@ Each visible column header renders a compact role control:
 - `Ignore`
 - `Date`
 - `Description`
-- `Amount`
-- `Debit`
-- `Credit`
-- `Type`
+- `Money (signed)` (dynamic; see below)
+- `Money out`
+- `Money in`
+- `Direction (in/out)`
 - `Account`
 - `Currency`
 
@@ -133,53 +132,78 @@ Rules:
 - Single-use fields (`Date`, `Account`, `Currency`, amount-related fields) are one-to-one: assigning a header to one clears it from everywhere else.
 - `Description` is multi-select: multiple columns can be set to `Description`.
 - Choosing `Ignore` clears the header from everywhere.
+- Amount-related roles are mutually exclusive in practice (the UI will auto-switch the internal strategy as the user assigns Money/Direction columns). Prefer guiding copy over error states.
 
 Implementation note:
 - `useColumnMapping` already enforces one-to-one via `removeHeaderEverywhere` + assignment helpers.
 
-### Amount mode
-The mapping must support the same 3 amount modes as v1:
-- **Single**: one column provides signed amount.
-- **Debit/Credit**: separate debit and/or credit columns.
-- **Amount + Type**: amount column plus a “Type” column whose values indicate debit vs credit.
+### Amount mapping UX (no explicit “mode”)
+Users should not need to understand “amount modes”.
 
-UX:
-- An “Amount mode” segmented control lives in the left panel, but can also be auto-switched:
-  - assigning any column as `Debit` or `Credit` switches to Debit/Credit mode
-  - assigning any column as `Type` switches to Amount+Type mode
-  - otherwise default to Single
-- The per-column dropdown always shows all options, but incompatible selections should auto-switch modes rather than error.
+Instead:
+- The UI uses plain language column roles (Money signed / Money out / Money in / Direction) and infers the internal amount mapping type automatically.
+- When the user selects an amount-related role, show a short, contextual hint near the control explaining what Cashmop will do with those numbers (see semantics below).
+- If the user makes a selection that implies a different internal amount mapping type, switch automatically. Do not error.
+
+Dynamic labeling (reduce confusion):
+- When `Direction (in/out)` is **not** mapped, label the role as `Money (signed)` (sign matters).
+- When `Direction (in/out)` **is** mapped, relabel it to `Money (signed/unsigned)` (sign is ignored; Direction chooses +/-).
+
+Suggested dropdown labels + help text:
+- `Money (signed)`: “One column with positives/negatives (spending usually negative).”
+- `Money (signed/unsigned)` (shown only when Direction is mapped): “Signed or unsigned is fine — Direction decides +/-.”
+- `Money out`: “Spending / withdrawals / payments (we always import as negative).”
+- `Money in`: “Income / deposits (we always import as positive).”
+- `Direction (in/out)`: “A column that says debit/credit (or DR/CR) — used to choose +/-.”
+
+Suggested contextual hint states (small inline text under the dropdown or a tiny helper row in the table header):
+- No money columns mapped yet: “Pick the column(s) that contain money.”
+- Money (signed) selected (no Direction): “Spending: - · Income: +. Use the ± button if your file uses + for spending.”
+- Money out / Money in selected: “We ignore the sign in the file. Out becomes -, in becomes +.”
+- Money (signed/unsigned) + Direction selected: “Signed or unsigned is fine — we ignore the sign and use Direction to choose +/-.”
+
+Implementation note:
+- Keep the persisted schema keys as-is (`Amount`, `Debit`, `Credit`, `Type` via `amountMapping`) for compatibility with saved mappings + CLI.
+- Only the UI labels/copy change; internally they map to the same fields:
+  - Money (signed) / Money (signed/unsigned) → `csv.amountMapping.column` (Single) **or** `csv.amountMapping.amountColumn` (Amount + Direction)
+  - Money out/in → `csv.amountMapping.debitColumn` / `creditColumn`
+  - Direction (in/out) → `csv.amountMapping.typeColumn`
+
+Internal mapping types (kept for schema/back-compat; not shown to the user):
+- **Single**: Money (signed) → `amountMapping.type = "single"`
+- **Debit/Credit**: Money out / Money in → `amountMapping.type = "debitCredit"`
+- **Amount + Type**: Money (signed/unsigned) + Direction (in/out) → `amountMapping.type = "amountWithType"`
 
 ### Amount micro-settings (near the dropdown)
 Goal: keep amount semantics obvious and testable via the preview.
 
-Single amount:
-- When a column is `Amount`, show a small inline toggle:
-  - “Flip sign (swap debit/credit)”
+Money (signed):
+- When a column is `Money (signed)` **and Direction is not mapped**, show a small inline toggle:
+  - “±” (Flip sign)
   - Backed by `amountMapping.invertSign`
 - Semantics:
   - The file’s single Amount column is expected to be signed: debit negative, credit positive.
   - Import uses the value as-is (parsed to cents).
   - `invertSign` multiplies the parsed amount by `-1`.
 
-Debit/Credit:
+Money out / Money in:
 - No sign flip controls for this mode.
 - Semantics:
-  - Debit and credit values may be positive or negative in the file; we ignore file sign.
-  - Import treats debit as always negative and credit as always positive:
-    - `amount = abs(credit) - abs(debit)`
-  - `invertSign` is ignored for Debit/Credit (not needed).
+  - Values may be positive or negative in the file; we ignore file sign.
+  - Import treats “Money out” as always negative and “Money in” as always positive:
+    - `amount = abs(moneyIn) - abs(moneyOut)`
+  - `invertSign` is ignored for this strategy.
 
-Amount + Type:
-- When a column is `Type`, show a “Type values” control (popover) with:
-  - Debit value (default `debit`)
-  - Credit value (default `credit`)
+Direction (in/out):
+- When a column is `Direction (in/out)`, show a “Direction values” control (popover) with:
+  - Out value (default `debit`)
+  - In value (default `credit`)
 - Semantics:
   - Amount may be positive or negative in the file; we ignore file sign.
-  - Import uses `abs(amount)` and applies sign based on the Type column:
-    - if `type == debitValue` → amount is negative
-    - if `type == creditValue` → amount is positive
-  - `invertSign` is ignored for Amount + Type (not needed).
+  - Import uses `abs(amount)` and applies sign based on the Direction column:
+    - if `direction == outValue` → amount is negative
+    - if `direction == inValue` → amount is positive
+  - `invertSign` is ignored for this strategy.
 
 ---
 
@@ -237,7 +261,7 @@ Implementation note:
 ### Import enablement
 Import (for the **current file**) is enabled when:
 - Date is mapped
-- Amount mapping is valid (based on selected mode)
+- Amount mapping is valid (based on the inferred amount strategy)
 - Description has at least 1 column
 - Account is set (static or mapped column)
 - At least 1 month is selected
@@ -247,8 +271,12 @@ No backend changes required:
 - Continue producing normalized transactions and calling `go.main.App.ImportTransactions(txs)`.
 
 ### Preview updates (live)
-As the user edits the mapping (including amount settings like amount mode, invert sign, or type values):
+As the user edits the mapping (including amount settings like flip sign or direction values):
 - Update the preview amounts immediately so it’s obvious what will be imported.
+- Render preview amounts using the same sign-display rules as the app:
+  - show absolute value (no `-` sign)
+  - use color to indicate sign (income green, spending red)
+  - if amount strategy changes (Money out/in, Direction, flip sign), the preview should update colors/values live
 
 ### Advancing between files
 After successful import of the current file:
@@ -263,14 +291,15 @@ Current schema can stay as-is:
 
 v2 semantics:
 - **Single**: `invertSign` is respected (flip the parsed signed amount).
-- **Debit/Credit**: ignore `invertSign`; compute `abs(credit) - abs(debit)`.
-- **Amount + Type**: ignore `invertSign`; use `abs(amount)` and apply sign based on the configured type values.
+- **Debit/Credit**: ignore `invertSign`; compute `abs(moneyIn) - abs(moneyOut)`.
+- **Amount + Type**: ignore `invertSign`; use `abs(amount)` and apply sign based on the configured direction values.
 
 ---
 
 ## Heuristic prefill mapping (fallback only)
 Trigger:
-- Only run when no saved mapping matched AND no mapping preset has been selected by the user.
+- Only run when no saved mapping matched AND no mapping preset has been selected by the user AND the file has a header row.
+- Run at most once per file (on initial parse). Do not re-run on later edits or preset switches.
 
 Inputs:
 - Primarily header text (normalized).
@@ -284,11 +313,11 @@ Heuristics (suggested, simple):
   - allow multiple picks (prefer left-to-right order)
 - Amount:
   - header contains: `amount`, `amt`, `value`
-- Debit/Credit:
+- Money out / Money in:
   - header contains `debit` / `withdrawal` / `out`
   - header contains `credit` / `deposit` / `in`
-- Type:
-  - header contains: `type`, `dr/cr`, `debit/credit`
+- Direction (in/out):
+  - header contains: `type`, `dr/cr`, `debit/credit`, `direction`
 - Currency:
   - header contains: `currency`, `ccy`
 - Account:
@@ -298,7 +327,7 @@ Ambiguity handling:
 - If multiple candidates tie, leave unmapped (don’t guess).
 
 UX:
-- Show a small banner: “Pre-filled from headers — review quickly.”
+- Show a small banner: “Pre-filled from headers — review quickly.” (Only when heuristic prefill ran.)
 
 ---
 
@@ -325,6 +354,14 @@ Save semantics:
 - Save stores:
   - the full current mapping JSON (including description order and flips)
   - `meta.headers` (normalized, unique sorted) + `meta.hasHeader` for future matching (same as v1)
+
+Default state:
+- Start in **Off**.
+- If the user edits the mapping and a preset is selected:
+  - For auto-matched presets: default to “Save as new…” (safer; avoids overwriting).
+  - For user-selected presets: default to “Update selected mapping” (user explicitly chose it).
+- If the user edits the mapping and **no** preset is selected (e.g., “None (start fresh)”), default to “Save as new…”.
+- The default selection is per-file and resets when moving to the next file.
 
 ---
 
