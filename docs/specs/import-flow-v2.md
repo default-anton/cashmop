@@ -8,7 +8,7 @@ Replace the v1 “punch-through” multi-step mapping with a single-screen impor
 - Column mapping happens via **dropdowns above each preview column**.
 - Saved mapping auto-detect stays first-class, but users can override by choosing a different mapping preset or starting fresh.
 - If no saved mapping matches, the UI falls back to a simple heuristic header-based prefill.
-- Debit/Credit mode supports **separate sign flips** for Debit and Credit columns.
+- Amount settings update the preview immediately (live feedback).
 
 ## Goals
 - Zero “wizard steps” for mapping; the user can map everything in-place.
@@ -83,13 +83,36 @@ When the user picks a mapping preset:
 - Apply mapping to the current file by:
   - rebinding column names by normalized header match (existing `rebindMappingToHeaders` covers casing),
   - then clearing any references to headers not present in the file (treat as unmapped),
-  - leaving static values (`account`, `owner`, `currencyDefault`) intact.
+  - applying the selected preset’s full mapping, including static values (`account`, `owner`, `currencyDefault`).
 - Do **not** run heuristic prefill after a user selects a preset (the preset is the baseline).
+
+### “None (start fresh)”
+Meaning: the user wants to create a new mapping from scratch for this file, but we still help with heuristic prefill.
+
+Behavior when selected:
+- Reset the file’s mapping to defaults (no assigned columns; amount mode defaults to Single).
+- If the file has a header row, run heuristic prefill (same as fallback behavior).
+- If the file has **no** header row, do **not** run heuristic prefill (see below).
+
+### Switching presets when “dirty”
+If the user has made edits to the current file’s mapping and then picks a different preset (including “None”):
+- Apply the newly selected preset immediately, replacing the current per-file mapping state.
+- Do not prompt; assume the user intent is to switch baselines quickly.
 
 ### “Similar but wrong” auto-match
 Subset matching can select a mapping that’s plausible but wrong. The UX must make it easy to:
 - switch to a different mapping preset, or
 - choose “None (start fresh)” and map via dropdowns.
+
+---
+
+## Header row toggle & auto-match
+The header-row toggle changes how the file is interpreted (real headers vs `Column A/B/...` generated headers).
+
+To avoid applying a saved mapping against a potentially incorrect header interpretation:
+- Auto-matching (`pickBestMapping`) runs only when the header row setting is **auto-detected**.
+- If the user manually overrides the header row setting, auto-matching is disabled for that file until re-parsed.
+  - The user can still apply a mapping preset manually via the preset picker.
 
 ---
 
@@ -128,23 +151,35 @@ UX:
 - The per-column dropdown always shows all options, but incompatible selections should auto-switch modes rather than error.
 
 ### Amount micro-settings (near the dropdown)
-Goal: sign flips must be close to the mapped column.
+Goal: keep amount semantics obvious and testable via the preview.
 
 Single amount:
-- When a column is `Amount`, show a small inline toggle next to the dropdown:
-  - “Flip sign”
+- When a column is `Amount`, show a small inline toggle:
+  - “Flip sign (swap debit/credit)”
   - Backed by `amountMapping.invertSign`
+- Semantics:
+  - The file’s single Amount column is expected to be signed: debit negative, credit positive.
+  - Import uses the value as-is (parsed to cents).
+  - `invertSign` multiplies the parsed amount by `-1`.
 
 Debit/Credit:
-- When a column is `Debit`, show “Flip debit sign” toggle for that column.
-- When a column is `Credit`, show “Flip credit sign” toggle for that column.
-- Backed by new fields on the mapping (see schema changes below).
+- No sign flip controls for this mode.
+- Semantics:
+  - Debit and credit values may be positive or negative in the file; we ignore file sign.
+  - Import treats debit as always negative and credit as always positive:
+    - `amount = abs(credit) - abs(debit)`
+  - `invertSign` is ignored for Debit/Credit (not needed).
 
 Amount + Type:
-- When a column is `Amount`, show “Flip sign” toggle (`invertSign`).
-- When a column is `Type`, show a small “Type values” control (popover) with:
-  - Negative value (default `debit`)
-  - Positive value (default `credit`)
+- When a column is `Type`, show a “Type values” control (popover) with:
+  - Debit value (default `debit`)
+  - Credit value (default `credit`)
+- Semantics:
+  - Amount may be positive or negative in the file; we ignore file sign.
+  - Import uses `abs(amount)` and applies sign based on the Type column:
+    - if `type == debitValue` → amount is negative
+    - if `type == creditValue` → amount is positive
+  - `invertSign` is ignored for Amount + Type (not needed).
 
 ---
 
@@ -211,6 +246,10 @@ Import (for the **current file**) is enabled when:
 No backend changes required:
 - Continue producing normalized transactions and calling `go.main.App.ImportTransactions(txs)`.
 
+### Preview updates (live)
+As the user edits the mapping (including amount settings like amount mode, invert sign, or type values):
+- Update the preview amounts immediately so it’s obvious what will be imported.
+
 ### Advancing between files
 After successful import of the current file:
 - Advance to the next file (same screen), keeping the user in the mapping+months+import layout.
@@ -218,26 +257,14 @@ After successful import of the current file:
 
 ---
 
-## Saved mapping schema changes (needed for per-column debit/credit flips)
-Current:
-- `AmountMappingBase` has `invertSign?: boolean`, used for all amount modes.
+## Saved mapping schema (amount semantics)
+Current schema can stay as-is:
+- `AmountMappingBase` has `invertSign?: boolean`.
 
-v2 additions:
-- Extend the `debitCredit` mapping with separate flips:
-  - `invertDebitSign?: boolean`
-  - `invertCreditSign?: boolean`
-
-Back-compat rules:
-- Existing mappings without the new fields behave as today.
-- `invertSign` is **not legacy**:
-  - For **Single amount**, it remains the standard “Flip sign” setting (some exports show expenses as positive; others as negative).
-  - For **Amount + Type**, it remains a “Flip sign” setting applied after the type-derived sign.
-- For **Debit/Credit**, v2 introduces `invertDebitSign` / `invertCreditSign` as the primary user-facing flips.
-  - Keep supporting `invertSign` on Debit/Credit mappings for backward compatibility with older saved mappings that relied on an overall flip.
-  - UX recommendation: don’t surface an overall “Flip sign” toggle in Debit/Credit mode by default; only reflect it if it exists on a loaded mapping (e.g. advanced/secondary control) to avoid confusion.
-
-Parser update requirement:
-- Update `createAmountParser` Debit/Credit branch to stop using `Math.abs(...)` for both sides (it prevents correct per-column flipping).
+v2 semantics:
+- **Single**: `invertSign` is respected (flip the parsed signed amount).
+- **Debit/Credit**: ignore `invertSign`; compute `abs(credit) - abs(debit)`.
+- **Amount + Type**: ignore `invertSign`; use `abs(amount)` and apply sign based on the configured type values.
 
 ---
 
@@ -247,7 +274,7 @@ Trigger:
 
 Inputs:
 - Primarily header text (normalized).
-- Secondary (optional): sample row value patterns for no-header files.
+- No-header files: no prefill (header-based heuristics are not applicable to generated `Column A/B/...` headers).
 
 Heuristics (suggested, simple):
 - Date:
@@ -288,6 +315,9 @@ UX in the left panel:
 - If “Save as new…”, show a mapping name input (default suggestion from filename).
 - If “Update selected mapping”, show the selected name (disabled name field) + a clear warning.
 - Disable “Update selected mapping” if no preset is selected.
+- Name collisions:
+  - “Save as new…” requires a unique name (show inline error and skip saving if it already exists).
+  - “Update selected mapping” overwrites by name (existing behavior).
 
 Save semantics:
 - Saving is optional and must **not block import**:
@@ -303,7 +333,7 @@ The screen supports importing multiple files in one session, **one file at a tim
 
 UX:
 - Show progress: “File N of M” + current file name.
-- No file switcher: users don’t jump between files mid-session; the flow is sequential.
+- No file switcher and no “Back”: users don’t jump between files mid-session; the flow is sequential.
 - Each file has independent:
   - mapping preset selection
   - mapping edits
@@ -324,3 +354,12 @@ These will need updates to:
 - map via dropdowns (and description order panel)
 - select months on the same screen
 - validate the auto-mapping banner + mapping preset picker behavior
+
+---
+
+## CLI parity
+Saved mappings are used by the CLI import path as well.
+
+If import mapping semantics or schema change (e.g. amount parsing rules), update:
+- Go mapping types (`internal/mapping`)
+- CLI normalization/parsing (`internal/cli`)
