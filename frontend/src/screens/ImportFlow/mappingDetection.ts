@@ -73,6 +73,130 @@ export const rebindMappingToHeaders = (m: ImportMapping, fileHeaders: string[]) 
   };
 };
 
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const normalizeForMatch = (value: string) =>
+  normalizeHeader(value)
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const keywordMatches = (normalized: string, plain: string, keyword: string) => {
+  const needle = keyword.trim().toLowerCase();
+  if (!needle) return false;
+
+  if (/^[a-z0-9]+$/.test(needle) && needle.length <= 3) {
+    const regex = new RegExp(`\\b${escapeRegExp(needle)}\\b`);
+    return regex.test(` ${plain} `);
+  }
+
+  if (normalized.includes(needle)) return true;
+  return plain.includes(needle);
+};
+
+const findHeadersByKeywords = (headers: string[], keywords: string[]) => {
+  const indexed = headers.map((header, index) => ({
+    header,
+    index,
+    normalized: normalizeHeader(header),
+    plain: normalizeForMatch(header),
+  }));
+
+  return indexed.filter((entry) => keywords.some((keyword) => keywordMatches(entry.normalized, entry.plain, keyword)));
+};
+
+const takeUniqueHeader = (candidates: Array<{ header: string }>, used: Set<string>) => {
+  const unique = candidates.map((c) => c.header).filter((header) => !used.has(header));
+  if (unique.length !== 1) return "";
+  const header = unique[0];
+  used.add(header);
+  return header;
+};
+
+export const heuristicPrefillMapping = (headers: string[], baseMapping: ImportMapping): ImportMapping => {
+  const next: ImportMapping = JSON.parse(JSON.stringify(baseMapping));
+  next.csv.date = "";
+  next.csv.description = [];
+  next.csv.account = undefined;
+  next.csv.currency = undefined;
+  next.csv.amountMapping = { type: "single", column: "", invertSign: next.csv.amountMapping.invertSign ?? false };
+
+  const used = new Set<string>();
+
+  const dateHeader = takeUniqueHeader(findHeadersByKeywords(headers, ["date", "posted", "transaction date"]), used);
+  if (dateHeader) {
+    next.csv.date = dateHeader;
+  }
+
+  const descriptionCandidates = findHeadersByKeywords(headers, [
+    "description",
+    "desc",
+    "memo",
+    "payee",
+    "merchant",
+    "name",
+  ])
+    .filter((entry) => !used.has(entry.header))
+    .sort((a, b) => a.index - b.index);
+
+  next.csv.description = descriptionCandidates.map((entry) => entry.header);
+  for (const header of next.csv.description) {
+    used.add(header);
+  }
+
+  const debitCandidates = findHeadersByKeywords(headers, ["debit", "withdrawal", "out"]);
+  const creditCandidates = findHeadersByKeywords(headers, ["credit", "deposit", "in"]);
+  const typeCandidates = findHeadersByKeywords(headers, ["type", "dr/cr", "debit/credit", "direction"]);
+  const amountCandidates = findHeadersByKeywords(headers, ["amount", "amt", "value"]);
+
+  const debitHeader = takeUniqueHeader(debitCandidates, used);
+  const creditHeader = takeUniqueHeader(creditCandidates, used);
+
+  if (debitHeader || creditHeader) {
+    next.csv.amountMapping = {
+      type: "debitCredit",
+      debitColumn: debitHeader || undefined,
+      creditColumn: creditHeader || undefined,
+      invertSign: next.csv.amountMapping.invertSign ?? false,
+    };
+  } else {
+    const typeHeader = takeUniqueHeader(typeCandidates, used);
+    const amountHeader = takeUniqueHeader(amountCandidates, used);
+
+    if (typeHeader || amountHeader) {
+      next.csv.amountMapping = {
+        type: "amountWithType",
+        amountColumn: amountHeader || "",
+        typeColumn: typeHeader || "",
+        negativeValue: "debit",
+        positiveValue: "credit",
+        invertSign: next.csv.amountMapping.invertSign ?? false,
+      };
+    } else {
+      const singleAmount = takeUniqueHeader(amountCandidates, used);
+      if (singleAmount) {
+        next.csv.amountMapping = {
+          type: "single",
+          column: singleAmount,
+          invertSign: next.csv.amountMapping.invertSign ?? false,
+        };
+      }
+    }
+  }
+
+  const accountHeader = takeUniqueHeader(findHeadersByKeywords(headers, ["account"]), used);
+  if (accountHeader) {
+    next.csv.account = accountHeader;
+    next.account = "";
+  }
+
+  const currencyHeader = takeUniqueHeader(findHeadersByKeywords(headers, ["currency", "ccy"]), used);
+  if (currencyHeader) {
+    next.csv.currency = currencyHeader;
+  }
+
+  return next;
+};
+
 const MIN_HEADERS_FOR_SUBSET_MATCH = 4;
 
 export const pickBestMapping = (file: FileForMappingDetection, entries: SavedMapping[]): PickedMapping | null => {

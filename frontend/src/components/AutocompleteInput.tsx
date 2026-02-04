@@ -17,6 +17,7 @@ interface AutocompleteInputProps {
   autoFocus?: boolean;
   filterMode?: "includes" | "none";
   dropdownClassName?: string;
+  disabled?: boolean;
 }
 
 const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
@@ -31,12 +32,19 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   autoFocus,
   filterMode = "includes",
   dropdownClassName = "z-20",
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (disabled) {
+      setIsOpen(false);
+    }
+  }, [disabled]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,7 +74,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
     );
   }, [filterMode, normalizedOptions, value]);
 
-  const showDropdown = isOpen && filteredOptions.length > 0;
+  const showDropdown = !disabled && isOpen && filteredOptions.length > 0;
 
   useEffect(() => {
     if (!isOpen || !inputRef.current) return;
@@ -89,6 +97,7 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   }, [isOpen, value]);
 
   const handleSelect = (option: { value: string; label: string }) => {
+    if (disabled) return;
     onChange(option.label);
     if (onSelect) {
       onSelect(option.value);
@@ -139,14 +148,19 @@ const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
         ref={inputRef}
         value={value}
         onChange={(e) => {
+          if (disabled) return;
           onChange(e.target.value);
           setIsOpen(true);
         }}
-        onFocus={() => setIsOpen(true)}
+        onFocus={() => {
+          if (disabled) return;
+          setIsOpen(true);
+        }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         aria-label={ariaLabel}
         autoFocus={autoFocus}
+        disabled={disabled}
         className="w-full"
       />
       {dropdown ? createPortal(dropdown, document.body) : null}

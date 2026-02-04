@@ -28,13 +28,8 @@ test.describe("import month detection", () => {
     await importFlowPage.mapAmount("Amount");
     await importFlowPage.mapDescription("Description");
     await importFlowPage.setAccountStatic("Checking");
-    // Skip optional Owner + Currency steps.
-    await importFlowPage.nextStep();
-    await importFlowPage.nextStep();
 
-    await importFlowPage.waitForMonthSelector();
-
-    await expect(importFlowPage.monthOptionButton("Dec 2025")).toBeVisible();
-    await expect(importFlowPage.monthOptionButton("Nov 2025")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Dec 2025" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Nov 2025" })).toHaveCount(0);
   });
 });

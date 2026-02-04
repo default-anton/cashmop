@@ -9,6 +9,7 @@ interface DragReorderableListProps<T> {
   onRemove: (index: number) => void;
   emptyPlaceholder?: React.ReactNode;
   className?: string;
+  itemClassName?: string;
 }
 
 const DragReorderableList = <T,>({
@@ -18,6 +19,7 @@ const DragReorderableList = <T,>({
   onRemove,
   emptyPlaceholder,
   className = "",
+  itemClassName = "",
 }: DragReorderableListProps<T>) => {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -58,7 +60,7 @@ const DragReorderableList = <T,>({
   }
 
   return (
-    <div className={`flex flex-wrap gap-2 justify-end ${className}`}>
+    <div className={`flex flex-col gap-2 items-stretch ${className}`}>
       {items.map((item, index) => (
         <Pill
           key={index}
@@ -71,6 +73,7 @@ const DragReorderableList = <T,>({
           onDrop={handleDrop(index)}
           onDragEnd={handleDragEnd}
           onRemove={() => onRemove(index)}
+          className={itemClassName}
         >
           {renderItem(item, index)}
         </Pill>

@@ -58,9 +58,6 @@ func createAmountParser(mapping mapping.ImportMapping, headers []string) func([]
 			absDebit := int64(math.Abs(float64(debit)))
 			absCredit := int64(math.Abs(float64(credit)))
 			cents := absCredit - absDebit
-			if invert {
-				return -cents
-			}
 			return cents
 		}
 	}
@@ -89,17 +86,13 @@ func createAmountParser(mapping mapping.ImportMapping, headers []string) func([]
 			}
 
 			abs := int64(math.Abs(float64(valCents)))
-			cents := valCents
+			cents := abs
 			if typeVal != "" {
 				if typeVal == neg {
 					cents = -abs
 				} else if typeVal == pos {
 					cents = abs
 				}
-			}
-
-			if invert {
-				return -cents
 			}
 			return cents
 		}

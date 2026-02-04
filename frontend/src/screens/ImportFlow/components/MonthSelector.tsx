@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight, Calendar, Check, Table as TableIcon } from "luci
 import React, { useMemo, useState } from "react";
 import { Button, Card } from "../../../components";
 import { formatCentsDecimal } from "../../../utils/currency";
-import type { ParsedFile } from "../ImportFlow";
+import type { ParsedFile } from "../types";
 import { createAmountParser, parseDateLoose, sampleUniqueRows } from "../utils";
 import type { ImportMapping } from "./ColumnMapperTypes";
 
