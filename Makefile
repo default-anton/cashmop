@@ -1,7 +1,7 @@
 # All targets: show output only on failure (silent success)
 # Unless V=1 is passed.
 
-.PHONY: check dev test vet tidy goimports frontend-check fmt fmt-go fmt-frontend vulncheck typescript build integration integration-file integration-test
+.PHONY: check dev test vet tidy goimports frontend-check fmt fmt-go fmt-frontend vulncheck typescript build integration integration-file integration-test ui-loop-start ui-loop-stop ui-loop-status ui-loop-url
 
 # Macro to run a command with optional verbosity
 # Usage: $(call run,Label,Command)
@@ -24,6 +24,18 @@ check: tidy goimports vet test frontend-check typescript vulncheck integration
 
 dev:
 	@wails dev
+
+ui-loop-start:
+	@./scripts/ui-feedback-loop.sh start
+
+ui-loop-stop:
+	@./scripts/ui-feedback-loop.sh stop
+
+ui-loop-status:
+	@./scripts/ui-feedback-loop.sh status
+
+ui-loop-url:
+	@./scripts/ui-feedback-loop.sh url
 
 test:
 	$(call run,go test ./...,go test -p 1 ./...)
