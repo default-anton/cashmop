@@ -268,7 +268,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
       <div className="space-y-6">
         <RuleManagerHeader />
 
-        <Card variant="glass" className="overflow-hidden">
+        <Card variant="elevated" className="overflow-hidden">
           {loading ? (
             <div className="flex flex-col items-center justify-center gap-3 py-20">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand/25 border-t-brand" />

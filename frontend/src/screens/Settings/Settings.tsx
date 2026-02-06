@@ -200,7 +200,7 @@ const Settings: React.FC = () => {
         </div>
       )}
 
-      <Card variant="glass" className="p-6 mb-6">
+      <Card variant="elevated" className="p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
           <Globe className="w-6 h-6 text-brand" />
           <h2 className="text-xl font-bold text-canvas-800 select-none">Currency</h2>
@@ -270,7 +270,7 @@ const Settings: React.FC = () => {
         </div>
       </Card>
 
-      <Card variant="glass" className="p-6 mb-6">
+      <Card variant="elevated" className="p-6 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-canvas-100 rounded-xl">
@@ -299,7 +299,7 @@ const Settings: React.FC = () => {
         </div>
       </Card>
 
-      <Card variant="glass" className="p-6 mb-6">
+      <Card variant="elevated" className="p-6 mb-6">
         <div className="flex items-center gap-3 mb-4">
           <Download className="w-6 h-6 text-brand" />
           <h2 className="text-xl font-bold text-canvas-800 select-none">Manual Backup</h2>
@@ -318,7 +318,7 @@ const Settings: React.FC = () => {
         </div>
       </Card>
 
-      <Card variant="glass" className="p-6">
+      <Card variant="elevated" className="p-6">
         <div className="flex items-center gap-3 mb-4">
           <Upload className="w-6 h-6 text-finance-expense" />
           <h2 className="text-xl font-bold text-canvas-800 select-none">Restore from Backup</h2>
@@ -389,7 +389,7 @@ const Settings: React.FC = () => {
         )}
       </Card>
 
-      <Card variant="glass" className="p-6 mt-6">
+      <Card variant="elevated" className="p-6 mt-6">
         <div className="flex items-center gap-3 mb-3">
           <Clock className="w-5 h-5 text-canvas-500" />
           <h3 className="font-semibold text-canvas-800 select-none">Automatic Backups</h3>

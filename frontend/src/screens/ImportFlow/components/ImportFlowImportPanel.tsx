@@ -55,7 +55,7 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
   ];
 
   return (
-    <Card variant="glass" className="p-5">
+    <Card variant="elevated" className="p-5">
       <div className="text-xs font-bold uppercase tracking-[0.12em] text-canvas-500 select-none">Import</div>
 
       <div className="mt-4 rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-colors duration-200 hover:border-canvas-300">

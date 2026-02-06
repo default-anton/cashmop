@@ -78,7 +78,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
         ) : (
           <div className="flex flex-col gap-6">
             {showFilePicker && (
-              <Card variant="glass" className="p-6 md:p-7">
+              <Card variant="elevated" className="p-6 md:p-7">
                 <FileDropZone
                   busy={model.parseBusy}
                   error={model.parseError}

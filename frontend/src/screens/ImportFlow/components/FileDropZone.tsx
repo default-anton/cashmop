@@ -60,12 +60,12 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({
     <div className="animate-snap-in">
       <div
         className={
-          `group relative flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed transition-all duration-200 ease-out ` +
+          `group relative flex cursor-pointer flex-col items-center justify-center rounded-3xl border-2 border-dashed shadow-card transition-[border-color,background-color,box-shadow] duration-200 ease-out ` +
           `${selectedFiles.length > 0 ? "h-auto py-8" : "h-[21rem]"} ` +
           `${
             isDragging
               ? "border-brand bg-brand/[0.09] shadow-brand-glow"
-              : "border-canvas-300 bg-canvas-50/80 hover:border-brand/45 hover:bg-canvas-100/80 hover:shadow-card"
+              : "border-canvas-300 bg-canvas-50/80 hover:border-brand/45 hover:bg-canvas-100/80 hover:shadow-card-hover"
           }`
         }
         onClick={() => inputRef.current?.click()}
