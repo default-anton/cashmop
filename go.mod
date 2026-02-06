@@ -2,7 +2,7 @@ module github.com/default-anton/cashmop
 
 go 1.25
 
-toolchain go1.25.6
+toolchain go1.25.7
 
 require (
 	github.com/PuerkitoBio/goquery v1.11.0
