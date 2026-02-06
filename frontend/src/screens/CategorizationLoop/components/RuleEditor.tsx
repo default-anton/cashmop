@@ -131,67 +131,69 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
           </button>
         </div>
 
-        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
-          <span className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">
-            Amount filter
-          </span>
+        <div className="custom-scrollbar overflow-x-auto pb-1">
+          <div className="inline-flex min-w-max items-center gap-2">
+            <span className="shrink-0 text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">
+              Amount filter
+            </span>
 
-          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-canvas-200 bg-white p-1">
-            {(["none", "gt", "lt", "between"] as const).map((op) => (
-              <button
-                key={op}
-                onClick={() => {
-                  const defaults = op === "none" ? { value1: "", value2: "" } : buildDefaultAmountValues(op);
-                  setAmountFilter({
-                    operator: op,
-                    value1: defaults.value1,
-                    value2: defaults.value2,
-                  });
-                  if (op !== "none") {
-                    setTimeout(() => amountInputRef.current?.focus(), 0);
-                  }
-                }}
-                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors select-none ${
-                  amountFilter.operator === op
-                    ? "bg-brand text-white"
-                    : "text-canvas-600 hover:bg-canvas-100 hover:text-canvas-900"
-                }`}
-              >
-                {op === "none" && "Any"}
-                {op === "gt" && "≥ More"}
-                {op === "lt" && "≤ Less"}
-                {op === "between" && "Between"}
-              </button>
-            ))}
-          </div>
-
-          {amountFilter.operator !== "none" && (
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                ref={amountInputRef}
-                type="number"
-                placeholder={amountFilter.operator === "between" ? "Min" : "Value"}
-                aria-label={amountFilter.operator === "between" ? "Minimum amount" : "Amount value"}
-                value={amountFilter.value1}
-                onChange={(e) => setAmountFilter({ ...amountFilter, value1: e.target.value })}
-                className="w-28 rounded-lg border border-brand/20 px-3 py-1.5 text-sm text-canvas-700 outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
-              />
-
-              {amountFilter.operator === "between" && (
-                <>
-                  <span className="text-xs font-semibold text-canvas-500 select-none">to</span>
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    aria-label="Maximum amount"
-                    value={amountFilter.value2}
-                    onChange={(e) => setAmountFilter({ ...amountFilter, value2: e.target.value })}
-                    className="w-28 rounded-lg border border-brand/20 px-3 py-1.5 text-sm text-canvas-700 outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
-                  />
-                </>
-              )}
+            <div className="inline-flex items-center gap-1 rounded-xl border border-canvas-200 bg-white p-1">
+              {(["none", "gt", "lt", "between"] as const).map((op) => (
+                <button
+                  key={op}
+                  onClick={() => {
+                    const defaults = op === "none" ? { value1: "", value2: "" } : buildDefaultAmountValues(op);
+                    setAmountFilter({
+                      operator: op,
+                      value1: defaults.value1,
+                      value2: defaults.value2,
+                    });
+                    if (op !== "none") {
+                      setTimeout(() => amountInputRef.current?.focus(), 0);
+                    }
+                  }}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors select-none ${
+                    amountFilter.operator === op
+                      ? "bg-brand text-white"
+                      : "text-canvas-600 hover:bg-canvas-100 hover:text-canvas-900"
+                  }`}
+                >
+                  {op === "none" && "Any"}
+                  {op === "gt" && "≥ More"}
+                  {op === "lt" && "≤ Less"}
+                  {op === "between" && "Between"}
+                </button>
+              ))}
             </div>
-          )}
+
+            {amountFilter.operator !== "none" && (
+              <div className="inline-flex items-center gap-2">
+                <input
+                  ref={amountInputRef}
+                  type="number"
+                  placeholder={amountFilter.operator === "between" ? "Min" : "Value"}
+                  aria-label={amountFilter.operator === "between" ? "Minimum amount" : "Amount value"}
+                  value={amountFilter.value1}
+                  onChange={(e) => setAmountFilter({ ...amountFilter, value1: e.target.value })}
+                  className="w-24 rounded-lg border border-brand/20 px-3 py-1.5 text-sm text-canvas-700 outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+                />
+
+                {amountFilter.operator === "between" && (
+                  <>
+                    <span className="text-xs font-semibold text-canvas-500 select-none">to</span>
+                    <input
+                      type="number"
+                      placeholder="Max"
+                      aria-label="Maximum amount"
+                      value={amountFilter.value2}
+                      onChange={(e) => setAmountFilter({ ...amountFilter, value2: e.target.value })}
+                      className="w-24 rounded-lg border border-brand/20 px-3 py-1.5 text-sm text-canvas-700 outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+                    />
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {previewVisible && (
