@@ -72,18 +72,18 @@ test.describe("Settings Backup Flow", () => {
     await expect(page.getByRole("heading", { name: /Manual Backup/i })).toBeVisible();
 
     // Check for descriptive text
-    await expect(page.getByText(/Create a backup of your entire database/i)).toBeVisible();
+    await expect(page.getByText(/Create a full snapshot of your database/i)).toBeVisible();
   });
 
   test("should have restore section with warning", async ({ page, settingsPage }) => {
     await page.goto("/");
     await settingsPage.navigateTo();
 
-    // Check for Restore from Backup heading
-    await expect(page.getByRole("heading", { name: /Restore from Backup/i })).toBeVisible();
+    // Check for Restore backup heading
+    await expect(page.getByRole("heading", { name: /Restore backup/i })).toBeVisible();
 
     // Check for warning message
-    await expect(page.getByText(/Warning: This will replace your current data/i)).toBeVisible();
+    await expect(page.getByText(/This replaces current data\. A safety backup is created first\./i)).toBeVisible();
   });
 
   test("should have automatic backups info section", async ({ page, settingsPage }) => {

@@ -280,11 +280,17 @@ const Settings: React.FC = () => {
                   Last auto backup
                 </p>
                 {loading ? (
-                  <p className="text-sm font-semibold text-canvas-700">Loading…</p>
+                  <p data-testid="settings-last-auto-backup-value" className="text-sm font-semibold text-canvas-700">
+                    Loading…
+                  </p>
                 ) : backupInfo?.hasBackup ? (
-                  <p className="text-sm font-semibold text-canvas-900">{formatDate(backupInfo.lastBackupTime)}</p>
+                  <p data-testid="settings-last-auto-backup-value" className="text-sm font-semibold text-canvas-900">
+                    {formatDate(backupInfo.lastBackupTime)}
+                  </p>
                 ) : (
-                  <p className="text-sm font-semibold text-canvas-600">Never</p>
+                  <p data-testid="settings-last-auto-backup-value" className="text-sm font-semibold text-canvas-600">
+                    Never
+                  </p>
                 )}
               </div>
             </div>

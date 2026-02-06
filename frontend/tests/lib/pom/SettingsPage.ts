@@ -20,12 +20,7 @@ export class SettingsPage {
     this.page = page;
     this.heading = page.getByRole("heading", { name: "Settings" });
     this.settingsButton = page.getByLabel("Navigate to Settings", { exact: true });
-    this.lastBackupLabel = page
-      .getByRole("paragraph")
-      .filter({ hasText: /Last Auto Backup/ })
-      .locator("..")
-      .getByRole("paragraph")
-      .nth(1);
+    this.lastBackupLabel = page.getByTestId("settings-last-auto-backup-value");
     this.refreshButton = page.getByRole("button", { name: /Refresh/i });
     this.createBackupButton = page.getByRole("button", { name: /Create Backup/i });
     this.openBackupFolderButton = page.getByRole("button", { name: /Open Backup Folder/i });
