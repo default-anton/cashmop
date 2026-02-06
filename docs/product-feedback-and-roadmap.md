@@ -1,7 +1,3 @@
-General:
-1. Fonts are too small.
-2. UI is boring, and colors are dull.
-
 Import screen:
 1. Right now, if I import the same file twice, the transactions will be duplicated. This is bad. If the user imports the same file twice, we should ask the user whether they want to proceed and overwrite the transactions or cancel the input. But we need to be careful because in a single file, the user can have transactions from multiple months the first time. If the first time they import the first months and the second time they import the second month, we shouldn't warn because there is no duplication. So only in the case where they import the same months on the same file second time, we should ask whether to overwrite or cancel.
 2. I should be able to select the mapping for the file. I like that we automatically try to match the file to existing mapping. But if it's wrong, I want to be able to select it manually and at the same time I want to be able to edit the name of the mapping on the same screen. It's annoying that I cannot do so.
