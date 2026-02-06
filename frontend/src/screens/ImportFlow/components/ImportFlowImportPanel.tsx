@@ -1,3 +1,4 @@
+import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import type React from "react";
 
 import { Button, Card, Input } from "@/components";
@@ -25,6 +26,8 @@ interface ImportPanelProps {
   onImport: () => void;
 }
 
+const labelClass = "text-xs font-bold uppercase tracking-[0.1em] text-canvas-600 select-none";
+
 const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
   mapping,
   monthOptions,
@@ -45,17 +48,23 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
   missingFields,
   onImport,
 }) => {
-  return (
-    <Card variant="glass" className="p-6">
-      <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">Import</div>
+  const rememberChoices: Array<{ key: "off" | "save" | "update"; label: string; disabled?: boolean }> = [
+    { key: "off", label: "Off" },
+    { key: "save", label: "Save as new" },
+    { key: "update", label: "Update selected", disabled: !canUpdatePreset },
+  ];
 
-      <div className="mt-4 rounded-xl border border-canvas-200 bg-canvas-50 p-4">
-        <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider select-none">
-          Months (per file)
-        </div>
+  return (
+    <Card variant="glass" className="p-5 transition-all duration-200 hover:-translate-y-px hover:shadow-card-hover">
+      <div className="text-xs font-bold uppercase tracking-[0.12em] text-canvas-500 select-none">Import</div>
+
+      <div className="mt-4 rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-all duration-200 hover:-translate-y-px hover:border-canvas-300">
+        <div className={labelClass}>Months (per file)</div>
+
         {!mapping.csv.date && (
-          <div className="mt-2 text-xs text-canvas-500 select-none">Map a Date column to see month options.</div>
+          <div className="mt-2 text-xs text-canvas-500 select-none">Map a Date column to unlock month selection.</div>
         )}
+
         {mapping.csv.date && (
           <div className="mt-3">
             <div className="flex flex-wrap gap-2">
@@ -64,17 +73,19 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
                   key={month.key}
                   type="button"
                   onClick={() => onToggleMonth(month.key)}
-                  className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                  className={`rounded-full border px-3 py-1.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:translate-y-0 ${
                     selectedMonthKeys.has(month.key)
-                      ? "bg-brand/10 text-brand border-brand/30"
-                      : "bg-canvas-50 text-canvas-600 border-canvas-200"
+                      ? "border-brand/30 bg-brand/10 text-brand shadow-sm"
+                      : "border-canvas-200 bg-canvas-50 text-canvas-600 hover:border-canvas-300 hover:bg-canvas-100"
                   }`}
                 >
                   {month.label}
+                  <span className="ml-1.5 font-mono text-xs opacity-80">{month.count}</span>
                 </button>
               ))}
             </div>
-            <div className="mt-3 flex items-center gap-3 text-[11px] text-canvas-500">
+
+            <div className="mt-3 flex items-center gap-3 text-xs">
               <button type="button" className="font-semibold text-brand hover:underline" onClick={onSelectAllMonths}>
                 Select all
               </button>
@@ -87,46 +98,36 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
         )}
       </div>
 
-      <div className="mt-4 rounded-xl border border-canvas-200 bg-canvas-50 p-4">
-        <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider select-none">
-          Remember mapping
-        </div>
-        <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="remember-mapping"
-              checked={rememberChoice === "off"}
-              onChange={() => onRememberChoiceChange("off")}
-            />
-            Off
-          </label>
-          <label className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="remember-mapping"
-              checked={rememberChoice === "save"}
-              onChange={() => onRememberChoiceChange("save")}
-            />
-            Save as new
-          </label>
-          <label className={`flex items-center gap-2 ${canUpdatePreset ? "" : "opacity-40"}`}>
-            <input
-              type="radio"
-              name="remember-mapping"
-              checked={rememberChoice === "update"}
-              onChange={() => onRememberChoiceChange("update")}
-              disabled={!canUpdatePreset}
-            />
-            Update selected
-          </label>
+      <div className="mt-4 rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-all duration-200 hover:-translate-y-px hover:border-canvas-300">
+        <div className={labelClass}>Remember mapping</div>
+        <div className="mt-3 grid gap-2">
+          {rememberChoices.map((choice) => (
+            <label
+              key={choice.key}
+              className={`flex cursor-pointer items-center justify-between rounded-xl border px-3 py-2.5 transition-all duration-200 ${
+                choice.disabled
+                  ? "cursor-not-allowed border-canvas-200 bg-canvas-100/80 text-canvas-400"
+                  : rememberChoice === choice.key
+                    ? "border-brand/30 bg-brand/[0.07] text-canvas-800 shadow-sm"
+                    : "border-canvas-200 bg-canvas-50 text-canvas-600 hover:-translate-y-px hover:border-canvas-300"
+              }`}
+            >
+              <span className="text-sm font-medium select-none">{choice.label}</span>
+              <input
+                type="radio"
+                name="remember-mapping"
+                checked={rememberChoice === choice.key}
+                onChange={() => onRememberChoiceChange(choice.key)}
+                disabled={choice.disabled}
+                className="h-4 w-4 accent-brand"
+              />
+            </label>
+          ))}
         </div>
 
         {rememberChoice === "save" && (
           <div className="mt-3">
-            <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1 select-none">
-              Mapping name
-            </div>
+            <div className={`${labelClass} mb-1`}>Mapping name</div>
             <Input value={rememberName} onChange={(e) => onRememberNameChange(e.target.value)} />
             {rememberError && <div className="mt-2 text-xs text-finance-expense">{rememberError}</div>}
           </div>
@@ -134,9 +135,7 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
 
         {rememberChoice === "update" && (
           <div className="mt-3">
-            <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-1 select-none">
-              Updating
-            </div>
+            <div className={`${labelClass} mb-1`}>Updating</div>
             <Input value={presetInfoName} disabled />
             <div className="mt-2 text-[11px] text-finance-expense">This will overwrite the saved mapping.</div>
           </div>
@@ -153,8 +152,28 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
         >
           {importBusy ? "Importing..." : isLastFile ? "Import" : "Import this file"}
         </Button>
-        {!canImport && missingFields.length > 0 && (
-          <div className="text-xs text-canvas-500 select-none">Missing: {missingFields.join(", ")}</div>
+
+        {canImport ? (
+          <div className="flex items-center gap-1.5 text-xs text-finance-income">
+            <CheckCircle2 className="h-4 w-4" />
+            <span className="font-semibold select-none">Ready to import</span>
+          </div>
+        ) : (
+          missingFields.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-canvas-500">
+              <AlertTriangle className="h-4 w-4 text-canvas-400" />
+              <div className="flex flex-wrap gap-1.5">
+                {missingFields.map((field) => (
+                  <span
+                    key={field}
+                    className="rounded-full border border-canvas-200 bg-canvas-100 px-2 py-0.5 font-medium select-none"
+                  >
+                    {field}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )
         )}
       </div>
     </Card>

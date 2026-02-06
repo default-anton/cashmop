@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Landmark, Sparkles, UserRound, Wallet2, X } from "lucide-react";
 import type React from "react";
 import { AutocompleteInput, Card, DragReorderableList } from "@/components";
 import type { ImportMapping } from "../components/ColumnMapperTypes";
@@ -34,6 +34,10 @@ type MappingPanelProps = {
   onDescriptionReorder: (fromIndex: number, toIndex: number) => void;
 };
 
+const sectionClass =
+  "rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-all duration-200 hover:-translate-y-px hover:border-canvas-300";
+const labelClass = "text-xs font-bold uppercase tracking-[0.1em] text-canvas-600 select-none";
+
 const ImportFlowMappingPanel: React.FC<MappingPanelProps> = ({
   mapping,
   presetInput,
@@ -63,13 +67,17 @@ const ImportFlowMappingPanel: React.FC<MappingPanelProps> = ({
   const sortedCurrencyOptions = sortOptions(currencyOptions);
 
   return (
-    <Card variant="glass" className="p-6">
-      <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest mb-4 select-none">Mapping</div>
+    <Card variant="glass" className="p-5 transition-all duration-200 hover:-translate-y-px hover:shadow-card-hover">
+      <div className="mb-4">
+        <div className="text-xs font-bold uppercase tracking-[0.12em] text-canvas-500 select-none">Mapping</div>
+        <p className="mt-1 text-sm text-canvas-600 select-none">Required: Date, Amount, Description, Account.</p>
+      </div>
 
       <div className="space-y-4">
-        <div className="rounded-xl border border-canvas-200 bg-canvas-50 p-4">
-          <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2 select-none">
-            Mapping preset
+        <div className={sectionClass}>
+          <div className="mb-2 flex items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5 text-brand" />
+            <div className={labelClass}>Mapping preset</div>
           </div>
           <AutocompleteInput
             value={presetInput}
@@ -80,49 +88,55 @@ const ImportFlowMappingPanel: React.FC<MappingPanelProps> = ({
             placeholder="Search saved mappings"
             aria-label="Mapping preset"
           />
+
           {showAutoMatchBanner && (
             <div
-              className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-xs text-brand"
+              className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-brand/30 bg-brand/[0.08] px-3 py-2 text-xs text-brand"
               data-testid="auto-mapping-banner"
             >
               <span className="font-semibold select-none">Auto matched: {presetInfoName}</span>
               <button
                 type="button"
-                className="text-[11px] font-bold uppercase tracking-widest text-brand hover:underline"
+                className="text-[11px] font-bold uppercase tracking-[0.08em] hover:underline"
                 onClick={onFocusPreset}
               >
                 Change
               </button>
             </div>
           )}
+
           {showPrefillBanner && (
-            <div className="mt-3 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-xs text-brand">
-              Pre-filled from headers — review quickly.
+            <div className="mt-3 rounded-xl border border-brand/25 bg-brand/[0.06] px-3 py-2 text-xs text-brand">
+              Pre-filled from headers — quick check recommended.
             </div>
           )}
         </div>
 
-        <div className="rounded-xl border border-canvas-200 bg-canvas-50 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider select-none">
-              Account (required)
-            </div>
-            {mapping.csv.account && (
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-canvas-500 px-2 py-1 rounded-full border border-canvas-200 bg-canvas-50">
-                  {mapping.csv.account}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onClearHeader(mapping.csv.account || "")}
-                  className="p-1 rounded-full text-canvas-400 hover:text-brand hover:bg-brand/10 transition-colors"
-                  aria-label="Clear account column"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            )}
+        <div className={sectionClass}>
+          <div className="mb-2 flex items-center gap-2">
+            <Landmark className="h-3.5 w-3.5 text-canvas-500" />
+            <div className={labelClass}>Account (required)</div>
           </div>
+
+          {mapping.csv.account && (
+            <div className="mb-2.5 flex items-center gap-2 rounded-xl border border-canvas-200 bg-canvas-100/80 px-2.5 py-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-canvas-500 select-none">
+                Column
+              </span>
+              <span className="min-w-0 flex-1 truncate font-mono text-xs text-canvas-600" title={mapping.csv.account}>
+                {mapping.csv.account}
+              </span>
+              <button
+                type="button"
+                onClick={() => onClearHeader(mapping.csv.account || "")}
+                className="rounded-full p-1 text-canvas-400 transition-colors hover:bg-brand/10 hover:text-brand"
+                aria-label="Clear account column"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+
           <AutocompleteInput
             value={mapping.account || ""}
             onChange={onAccountChange}
@@ -134,29 +148,28 @@ const ImportFlowMappingPanel: React.FC<MappingPanelProps> = ({
         </div>
 
         {mapping.csv.description.length > 1 && (
-          <div className="rounded-xl border border-canvas-200 bg-canvas-50 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider select-none">
-                Description order
-              </div>
-              <span className="text-[10px] text-canvas-500 select-none">Drag to reorder</span>
+          <div className={sectionClass}>
+            <div className="mb-2 flex items-center justify-between">
+              <div className={labelClass}>Description order</div>
+              <span className="text-xs text-canvas-500 select-none">Drag to reorder</span>
             </div>
             <DragReorderableList
               items={mapping.csv.description}
-              renderItem={(item) => <span className="truncate flex-1 min-w-0">{item}</span>}
+              renderItem={(item) => <span className="min-w-0 flex-1 truncate text-xs text-canvas-700">{item}</span>}
               onReorder={onDescriptionReorder}
               onRemove={(index) => onDescriptionRemove(mapping.csv.description[index])}
               emptyPlaceholder={
-                <span className="text-xs text-canvas-400 italic select-none">No descriptions yet.</span>
+                <span className="text-xs italic text-canvas-400 select-none">No descriptions yet.</span>
               }
               itemClassName="w-full justify-between"
             />
           </div>
         )}
 
-        <div className="rounded-xl border border-canvas-200 bg-canvas-50 p-4">
-          <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider mb-2 select-none">
-            Owner (optional, static)
+        <div className={sectionClass}>
+          <div className="mb-2 flex items-center gap-2">
+            <UserRound className="h-3.5 w-3.5 text-canvas-500" />
+            <div className={labelClass}>Owner (optional, static)</div>
           </div>
           <AutocompleteInput
             value={mapping.owner || ""}
@@ -167,27 +180,31 @@ const ImportFlowMappingPanel: React.FC<MappingPanelProps> = ({
           />
         </div>
 
-        <div className="rounded-xl border border-canvas-200 bg-canvas-50 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-wider select-none">
-              Default currency (required)
-            </div>
-            {mapping.csv.currency && (
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-canvas-500 px-2 py-1 rounded-full border border-canvas-200 bg-canvas-50">
-                  {mapping.csv.currency}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onClearHeader(mapping.csv.currency || "")}
-                  className="p-1 rounded-full text-canvas-400 hover:text-brand hover:bg-brand/10 transition-colors"
-                  aria-label="Clear currency column"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </div>
-            )}
+        <div className={sectionClass}>
+          <div className="mb-2 flex items-center gap-2">
+            <Wallet2 className="h-3.5 w-3.5 text-canvas-500" />
+            <div className={labelClass}>Default currency (required)</div>
           </div>
+
+          {mapping.csv.currency && (
+            <div className="mb-2.5 flex items-center gap-2 rounded-xl border border-canvas-200 bg-canvas-100/80 px-2.5 py-2">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-canvas-500 select-none">
+                Column
+              </span>
+              <span className="min-w-0 flex-1 truncate font-mono text-xs text-canvas-600" title={mapping.csv.currency}>
+                {mapping.csv.currency}
+              </span>
+              <button
+                type="button"
+                onClick={() => onClearHeader(mapping.csv.currency || "")}
+                className="rounded-full p-1 text-canvas-400 transition-colors hover:bg-brand/10 hover:text-brand"
+                aria-label="Clear currency column"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+
           <AutocompleteInput
             value={currencyInput}
             onChange={onCurrencyInputChange}
