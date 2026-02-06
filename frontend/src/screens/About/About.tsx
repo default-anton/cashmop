@@ -153,7 +153,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
           </header>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.1fr_1fr]">
-            <Card variant="elevated" className="p-4">
+            <Card variant="default" className="p-4 shadow-card">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-[0.1em] text-canvas-500 select-none">Build</p>
@@ -213,7 +213,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
               </div>
             </Card>
 
-            <Card variant="default" className="p-4">
+            <Card variant="default" className="p-4 shadow-card">
               <div className="mb-2 flex items-center gap-2">
                 <Keyboard className="h-4 w-4 text-brand" />
                 <h2 className="text-sm font-bold text-canvas-900 select-none">Keyboard shortcuts</h2>
@@ -242,7 +242,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
             </Card>
           </div>
 
-          <Card variant="default" className="overflow-hidden p-0">
+          <Card variant="default" className="overflow-hidden p-0 shadow-card">
             <div className="divide-y divide-canvas-200/80">
               <div className="flex items-center justify-between gap-3 px-4 py-3">
                 <div>

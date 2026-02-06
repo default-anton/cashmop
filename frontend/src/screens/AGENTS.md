@@ -34,7 +34,7 @@
   - `frontend/src/screens/ImportFlow/`
   - `frontend/src/screens/RuleManager/`
   - `frontend/src/screens/About/`
+  - `frontend/src/screens/Settings/`
 - TODO (use Analysis as the implementation + styling reference):
   - [ ] `frontend/src/screens/CategorizationLoop/`
   - [ ] `frontend/src/screens/CategoryManager/`
-  - [ ] `frontend/src/screens/Settings/`
