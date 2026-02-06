@@ -4,12 +4,43 @@ import type React from "react";
 interface ProgressHeaderProps {
   currentIndex: number;
   totalTransactions: number;
+  variant?: "full" | "compact";
 }
 
-export const ProgressHeader: React.FC<ProgressHeaderProps> = ({ currentIndex, totalTransactions }) => {
+export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
+  currentIndex,
+  totalTransactions,
+  variant = "full",
+}) => {
   const safeTotal = Math.max(totalTransactions, 1);
   const current = Math.min(currentIndex + 1, safeTotal);
   const progressPercent = Math.round((current / safeTotal) * 100);
+
+  const progressMeter = (
+    <div className="space-y-1.5">
+      <div className="h-2 overflow-hidden rounded-full bg-canvas-200/80">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-brand to-indigo-500 transition-[width] duration-300 ease-out"
+          style={{ width: `${progressPercent}%` }}
+        />
+      </div>
+      <p className="text-xs font-semibold text-canvas-500 select-none">{progressPercent}% complete</p>
+    </div>
+  );
+
+  if (variant === "compact") {
+    return (
+      <div className="rounded-2xl border border-canvas-200 bg-canvas-50/90 px-4 py-3.5 shadow-sm">
+        <div className="mb-2.5 flex items-center justify-between gap-3">
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">Progress</p>
+          <p className="text-sm font-semibold text-canvas-800 select-none">
+            {current} of {safeTotal}
+          </p>
+        </div>
+        {progressMeter}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -34,15 +65,7 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({ currentIndex, to
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <div className="h-2 overflow-hidden rounded-full bg-canvas-200/80">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-brand to-indigo-500 transition-[width] duration-300 ease-out"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-        <p className="text-xs font-semibold text-canvas-500 select-none">{progressPercent}% complete</p>
-      </div>
+      {progressMeter}
     </div>
   );
 };

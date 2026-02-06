@@ -1,7 +1,7 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Layers, RotateCcw, RotateCw } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScreenLayout } from "@/components";
+import { Button, ScreenLayout } from "@/components";
 import { useCurrency } from "@/contexts/CurrencyContext";
 import { useToast } from "@/contexts/ToastContext";
 import { parseCents } from "@/utils/currency";
@@ -665,9 +665,29 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
       }
     : warning;
 
+  const historyMessage = getUndoMessage();
+
   return (
-    <ScreenLayout size="medium" centerContent>
-      <div className="w-full max-w-3xl space-y-5">
+    <ScreenLayout size="wide">
+      <div className="w-full space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-indigo-400/20 p-3.5 text-brand shadow-brand-glow">
+              <Layers className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-black tracking-tight text-canvas-900 select-none">Review Inbox</h1>
+              <p className="mt-1 text-base font-semibold text-canvas-600 select-none">
+                One transaction at a time. Build clean categories at speed.
+              </p>
+            </div>
+          </div>
+
+          <div className="md:min-w-[220px]">
+            <ProgressHeader currentIndex={currentIndex} totalTransactions={transactions.length} variant="compact" />
+          </div>
+        </div>
+
         {displayWarning && (
           <div
             className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${
@@ -676,7 +696,7 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
                 : "border-yellow-300 bg-yellow-100 text-yellow-800"
             }`}
           >
-            <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <div>
               <p className="text-sm font-semibold select-none">{displayWarning.title}</p>
               <p className="text-sm select-none">{displayWarning.detail}</p>
@@ -684,55 +704,100 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
           </div>
         )}
 
-        <ProgressHeader currentIndex={currentIndex} totalTransactions={transactions.length} />
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(380px,430px)]">
+          <aside className="order-1 space-y-4 self-start xl:order-2 xl:sticky xl:top-28">
+            <CategoryInput
+              inputRef={inputRef}
+              categoryInput={categoryInput}
+              setCategoryInput={setCategoryInput}
+              onCategorize={handleCategorize}
+              onSkip={handleSkip}
+              suggestions={suggestions}
+              isRuleMode={!!selectionRule}
+            />
 
-        <TransactionCard
-          transaction={currentTx}
-          mainAmount={currentTx?.amount_in_main_currency ?? null}
-          mainCurrency={mainCurrency}
-          onMouseUp={handleSelectionMouseUp}
-          onSelectionChange={handleManualSelection}
-          selectionRule={selectionRule}
-          showOnboardingHint={hasRules === false}
-        />
+            <div className="hidden rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 shadow-sm xl:block">
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">Quick actions</p>
+              <p className="mt-1 text-sm text-canvas-600 select-none">
+                {historyMessage || "No recent actions yet. Categorize or skip to enable undo."}
+              </p>
 
-        <WebSearchResults
-          query={currentTx.description}
-          results={webSearchResults}
-          loading={webSearchLoading}
-          error={webSearchError}
-          onSearch={handleWebSearch}
-          onDismiss={handleDismissWebSearch}
-        />
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    void handleUndo();
+                  }}
+                  disabled={undoStack.length === 0}
+                  aria-label="Undo last action"
+                  data-testid="categorization-undo-button"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Undo
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    void handleRedo();
+                  }}
+                  disabled={redoStack.length === 0}
+                  aria-label="Redo last action"
+                  data-testid="categorization-redo-button"
+                >
+                  <RotateCw className="h-4 w-4" />
+                  Redo
+                </Button>
+              </div>
 
-        <RuleEditor
-          selectionRule={selectionRule}
-          onClearRule={() => {
-            setSelectionRule(null);
-            setAmountFilter({ operator: "none", value1: "", value2: "" });
-          }}
-          amountFilter={amountFilter}
-          setAmountFilter={setAmountFilter}
-          amountInputRef={amountInputRef}
-          currentAmount={currentMainAmount}
-          matchingTransactions={matchingTransactions.map((tx) => ({
-            ...tx,
-            main_amount: tx.amount_in_main_currency,
-          }))}
-          matchingCount={matchingCount}
-          amountDefaults={matchingAmountRange}
-          mainCurrency={mainCurrency}
-        />
+              <p className="mt-2 text-xs text-canvas-500 select-none">
+                Shortcuts: <kbd className="rounded border border-canvas-300 bg-canvas-100 px-1 py-0.5">Ctrl/⌘Z</kbd>{" "}
+                undo · <kbd className="rounded border border-canvas-300 bg-canvas-100 px-1 py-0.5">Ctrl/⌘⇧Z</kbd> redo
+              </p>
+            </div>
+          </aside>
 
-        <CategoryInput
-          inputRef={inputRef}
-          categoryInput={categoryInput}
-          setCategoryInput={setCategoryInput}
-          onCategorize={handleCategorize}
-          onSkip={handleSkip}
-          suggestions={suggestions}
-          isRuleMode={!!selectionRule}
-        />
+          <div className="order-2 min-w-0 space-y-5 xl:order-1">
+            <TransactionCard
+              transaction={currentTx}
+              mainAmount={currentTx?.amount_in_main_currency ?? null}
+              mainCurrency={mainCurrency}
+              onMouseUp={handleSelectionMouseUp}
+              onSelectionChange={handleManualSelection}
+              selectionRule={selectionRule}
+              showOnboardingHint={hasRules === false}
+            />
+
+            <RuleEditor
+              selectionRule={selectionRule}
+              onClearRule={() => {
+                setSelectionRule(null);
+                setAmountFilter({ operator: "none", value1: "", value2: "" });
+              }}
+              amountFilter={amountFilter}
+              setAmountFilter={setAmountFilter}
+              amountInputRef={amountInputRef}
+              currentAmount={currentMainAmount}
+              matchingTransactions={matchingTransactions.map((tx) => ({
+                ...tx,
+                main_amount: tx.amount_in_main_currency,
+              }))}
+              matchingCount={matchingCount}
+              amountDefaults={matchingAmountRange}
+              mainCurrency={mainCurrency}
+            />
+
+            <WebSearchResults
+              query={currentTx.description}
+              results={webSearchResults}
+              loading={webSearchLoading}
+              error={webSearchError}
+              onSearch={handleWebSearch}
+              onDismiss={handleDismissWebSearch}
+            />
+          </div>
+        </div>
       </div>
 
       <UndoToast
