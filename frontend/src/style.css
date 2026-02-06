@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --ui-scale: 1;
+  --ui-scale: 1.04;
 }
 
 html {
@@ -17,27 +17,39 @@ body {
   margin: 0;
 }
 
+body {
+  background:
+    radial-gradient(circle at 12% -20%, rgba(124, 58, 237, 0.18), transparent 38%),
+    radial-gradient(circle at 82% -18%, rgba(59, 130, 246, 0.14), transparent 34%),
+    linear-gradient(180deg, #f8f7ff 0%, #f3f2ff 45%, #f6f6ff 100%);
+  color: #2a2946;
+}
+
 .texture-paper {
-  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.12'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23noise)' opacity='0.08'/%3E%3C/svg%3E");
   background-size: 200px 200px;
 }
 
 .texture-delight {
-  background-image: linear-gradient(to bottom, rgba(13, 148, 136, 0.02), transparent 20%),
-                    url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.12'/%3E%3C/svg%3E");
-  background-size: 200px 200px, 200px 200px;
+  background-image:
+    linear-gradient(to bottom, rgba(124, 58, 237, 0.045), transparent 24%),
+    url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23noise)' opacity='0.09'/%3E%3C/svg%3E");
+  background-size: 220px 220px, 220px 220px;
 }
 
 ::-webkit-scrollbar {
   width: 10px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #f2f0ed;
+  background: #e8e7ff;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #a39e97;
-  border-radius: 5px;
+  background: #bbb9e8;
+  border-radius: 8px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #736f6a;
+  background: #9f9ad8;
 }

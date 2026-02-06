@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, BarChart3, Download } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -356,123 +357,138 @@ const Analysis: React.FC = () => {
 
   return (
     <ScreenLayout size="wide">
-      <div className="space-y-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-brand/10 text-brand rounded-2xl shadow-brand/5 shadow-inner">
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3.5 bg-gradient-to-br from-brand/20 to-indigo-400/20 text-brand rounded-3xl border border-brand/25 shadow-brand-glow">
               <BarChart3 className="w-8 h-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-canvas-800 tracking-tight select-none">Financial Analysis</h1>
-              <p className="text-canvas-600 font-medium select-none">
-                Deep dive into your cash flow and spending habits.
+              <h1 className="text-4xl font-black text-canvas-900 tracking-tight select-none">Financial Analysis</h1>
+              <p className="text-canvas-600 text-base font-semibold mt-1 select-none">
+                Money pulse, trend radar, and spend receipts in one view.
               </p>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative" ref={exportDropdownRef}>
-              <button
+              <motion.button
                 onClick={() => setExportDropdownOpen(!exportDropdownOpen)}
                 disabled={exporting}
+                whileHover={exporting ? undefined : { y: -1 }}
+                whileTap={exporting ? undefined : { scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 450, damping: 28 }}
                 className={`
-                  p-2 rounded-lg transition-all
+                  inline-flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border transition-all
                   ${
                     exporting
-                      ? "bg-canvas-100 text-canvas-400 cursor-not-allowed"
-                      : "text-canvas-500 hover:text-canvas-700 hover:bg-canvas-200"
+                      ? "bg-canvas-100 text-canvas-400 border-canvas-200 cursor-not-allowed"
+                      : "text-canvas-600 border-canvas-200 bg-canvas-50 hover:text-canvas-900 hover:border-brand/35 hover:bg-brand/[0.06]"
                   }
                 `}
                 title="Export transactions"
+                aria-label="Export transactions"
               >
                 {exporting ? (
-                  <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Download className="w-5 h-5" />
+                  <Download className="w-4 h-4" />
                 )}
-              </button>
+                <span className="text-xs font-semibold uppercase tracking-[0.08em] select-none">Export</span>
+              </motion.button>
 
-              {exportDropdownOpen && (
-                <div className="absolute right-0 top-full mt-1 w-36 bg-canvas-50 rounded-lg border border-canvas-200 shadow-card overflow-hidden z-10">
-                  <button
-                    onClick={() => handleExport("csv")}
-                    disabled={!selectedMonth}
-                    className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors select-none"
+              <AnimatePresence>
+                {exportDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 4, scale: 0.98 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-2 w-40 bg-canvas-50/95 rounded-2xl border border-canvas-200 shadow-card overflow-hidden z-10 backdrop-blur-md"
                   >
-                    CSV
-                  </button>
-                  <button
-                    onClick={() => handleExport("xlsx")}
-                    disabled={!selectedMonth}
-                    className="w-full px-3 py-2 text-left text-sm font-medium text-canvas-700 hover:bg-brand/5 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors select-none"
-                  >
-                    Excel
-                  </button>
-                </div>
-              )}
+                    <button
+                      onClick={() => handleExport("csv")}
+                      disabled={!selectedMonth}
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-canvas-700 hover:bg-brand/10 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors select-none"
+                    >
+                      CSV
+                    </button>
+                    <button
+                      onClick={() => handleExport("xlsx")}
+                      disabled={!selectedMonth}
+                      className="w-full px-4 py-2.5 text-left text-sm font-medium text-canvas-700 hover:bg-brand/10 hover:text-brand disabled:text-canvas-400 disabled:cursor-not-allowed transition-colors select-none"
+                    >
+                      Excel
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>
 
         {displayWarning && (
           <div
-            className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
+            className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${
               displayWarning.tone === "error"
-                ? "bg-finance-expense/10 border-finance-expense/20 text-finance-expense"
+                ? "bg-finance-expense/10 border-finance-expense/25 text-finance-expense"
                 : "bg-yellow-100 border-yellow-300 text-yellow-800"
             }`}
           >
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 select-none" />
             <div>
-              <p className="text-sm font-semibold select-none">{displayWarning.title}</p>
+              <p className="text-sm font-bold select-none">{displayWarning.title}</p>
               <p className="text-sm select-none">{displayWarning.detail}</p>
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
-              <span className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest pl-2 select-none">
-                Group by
-              </span>
-              {groupingOptions.map((option) => (
-                <button
-                  key={option}
-                  onClick={() => setGroupBy(option)}
-                  className={`
-                    px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 select-none
-                    ${
-                      groupBy === option
-                        ? "bg-brand text-white shadow-brand-glow"
-                        : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
-                    }
-                  `}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
+        <motion.div
+          layout
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="flex flex-row items-center justify-between gap-3 rounded-3xl border border-canvas-200/80 bg-canvas-50/70 backdrop-blur-sm px-3 py-2.5"
+        >
+          <div className="flex items-center gap-2 bg-canvas-50/90 p-1 rounded-2xl border border-canvas-200 shadow-sm w-fit">
+            <span className="text-[10px] font-semibold text-canvas-500 uppercase tracking-[0.1em] pl-2 pr-1 select-none">
+              Group by
+            </span>
+            {groupingOptions.map((option) => (
+              <motion.button
+                key={option}
+                onClick={() => setGroupBy(option)}
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 450, damping: 28 }}
+                className={`
+                  px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 select-none
+                  ${
+                    groupBy === option
+                      ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                      : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
+                  }
+                `}
+              >
+                {option}
+              </motion.button>
+            ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center min-w-0">
             <TransactionSearch
               value={transactionSearch}
               onChange={setTransactionSearch}
               onClear={() => setTransactionSearch("")}
             />
-            <div className="text-[10px] font-bold text-canvas-500 uppercase tracking-widest select-none">
-              {searchActive
-                ? `${displayedTransactions.length} of ${transactions.length} Transactions`
-                : `${transactions.length} Transactions Found`}
-            </div>
           </div>
-        </div>
+        </motion.div>
 
         {loading ? (
-          <div className="py-20 flex flex-col items-center justify-center space-y-4">
-            <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>
-            <p className="text-canvas-600 font-medium animate-pulse select-none">Analyzing your finances...</p>
+          <div className="py-24 flex flex-col items-center justify-center space-y-4 rounded-3xl border border-canvas-200/80 bg-canvas-50/70">
+            <div className="w-12 h-12 border-4 border-brand/25 border-t-brand rounded-full animate-spin"></div>
+            <p className="text-canvas-600 font-semibold animate-pulse select-none">Crunching your numbers...</p>
           </div>
         ) : (
           <GroupedTransactionList
@@ -522,7 +538,7 @@ const Analysis: React.FC = () => {
             <Button
               onClick={confirmDelete}
               disabled={deleting}
-              className="bg-finance-expense hover:bg-finance-expense/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              className="!bg-finance-expense hover:!bg-finance-expense/90 !text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {deleting ? "Deleting..." : "Delete"}
             </Button>

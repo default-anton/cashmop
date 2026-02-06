@@ -13,7 +13,7 @@ const sizeClasses = {
 
 const ScreenLayout: React.FC<ScreenLayoutProps> = ({ children, size = "wide", centerContent = false }) => {
   return (
-    <div className="min-h-screen pt-24 pb-12 px-8 bg-canvas-100">
+    <div className="min-h-screen pt-28 pb-14 px-6 md:px-10 bg-transparent">
       <div className={`${sizeClasses[size]} mx-auto ${centerContent ? "flex flex-col items-center" : ""}`}>
         {children}
       </div>

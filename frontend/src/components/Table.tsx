@@ -54,9 +54,9 @@ const Table = <T,>({
   };
 
   return (
-    <div className={`overflow-x-auto rounded-lg border border-canvas-200 ${className}`}>
+    <div className={`overflow-x-auto rounded-3xl border border-canvas-200/80 bg-canvas-50/90 ${className}`}>
       <table className="w-full border-collapse">
-        <thead className="bg-canvas-100/80 backdrop-blur-sm sticky top-0 z-10 border-b border-canvas-200">
+        <thead className="bg-canvas-100/85 backdrop-blur-md sticky top-0 z-10 border-b border-canvas-200/80">
           <tr>
             {columns.map((column) => {
               const isCheckbox = column.isCheckbox;
@@ -64,7 +64,7 @@ const Table = <T,>({
                 const allSelected = data.length > 0 && data.every((row) => selectedIds?.has(getRowKey(row, 0)));
                 const someSelected = data.some((row) => selectedIds?.has(getRowKey(row, 0)));
                 return (
-                  <th key="checkbox" className="px-6 py-3 text-left w-10">
+                  <th key="checkbox" className="px-5 py-4 text-left w-10">
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -80,7 +80,7 @@ const Table = <T,>({
                           onSelectionChange?.(key, selected);
                         });
                       }}
-                      className="w-4 h-4 rounded border-canvas-300 text-brand focus:ring-brand focus:ring-offset-0 cursor-pointer"
+                      className="w-4 h-4 rounded-md border-canvas-300 accent-brand focus:ring-brand/30 focus:ring-offset-0 cursor-pointer"
                     />
                   </th>
                 );
@@ -92,8 +92,8 @@ const Table = <T,>({
               return (
                 <th
                   key={column.key as string}
-                  className={`px-6 py-3 text-left text-[10px] font-bold text-canvas-500 uppercase tracking-widest transition-colors group relative select-none ${
-                    canSort ? "cursor-pointer hover:bg-canvas-200/50 hover:text-canvas-700" : ""
+                  className={`px-6 py-4 text-left text-[11px] font-extrabold text-canvas-500 uppercase tracking-[0.16em] transition-colors group relative select-none ${
+                    canSort ? "cursor-pointer hover:bg-canvas-200/60 hover:text-canvas-700" : ""
                   } ${column.className || ""}`}
                   onClick={() => canSort && onSort(column.key)}
                   title={canSort ? `Sort by ${column.key}` : undefined}
@@ -144,7 +144,7 @@ const Table = <T,>({
         {data.length === 0 ? (
           <tbody>
             <tr>
-              <td colSpan={columns.length} className="px-6 py-8 text-center text-sm text-canvas-500">
+              <td colSpan={columns.length} className="px-6 py-10 text-center text-sm text-canvas-500">
                 <div className="space-y-2">
                   <p className="select-none">{emptyMessage}</p>
                   {emptyDetail && <p className="text-xs select-none">{emptyDetail}</p>}
@@ -153,12 +153,12 @@ const Table = <T,>({
             </tr>
           </tbody>
         ) : (
-          <tbody className="divide-y divide-canvas-200/50">
+          <tbody className="divide-y divide-canvas-200/60">
             {data.map((row, rowIndex) => (
               <tr
                 key={getRowKey(row, rowIndex)}
-                className={`hover:bg-brand/[0.02] even:bg-canvas-100/30 transition-colors group ${
-                  selectedIds?.has(getRowKey(row, rowIndex)) ? "bg-brand/[0.03]" : ""
+                className={`group transition-all duration-150 hover:bg-brand/[0.05] even:bg-canvas-100/35 ${
+                  selectedIds?.has(getRowKey(row, rowIndex)) ? "bg-brand/[0.08]" : ""
                 }`}
               >
                 {columns.map((column) => {
@@ -172,7 +172,7 @@ const Table = <T,>({
                           onChange={(e) => {
                             onSelectionChange?.(rowKeyVal, e.target.checked);
                           }}
-                          className="w-4 h-4 rounded border-canvas-300 text-brand focus:ring-brand focus:ring-offset-0 cursor-pointer"
+                          className="w-4 h-4 rounded-md border-canvas-300 accent-brand focus:ring-brand/30 focus:ring-offset-0 cursor-pointer"
                         />
                       </td>
                     );
@@ -182,7 +182,7 @@ const Table = <T,>({
                   return (
                     <td
                       key={column.key as string}
-                      className={`px-6 py-4 text-sm text-canvas-700 ${column.className || ""}`}
+                      className={`px-6 py-[18px] text-[15px] text-canvas-700 ${column.className || ""}`}
                     >
                       {renderedValue}
                     </td>

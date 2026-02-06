@@ -8,8 +8,8 @@ interface TransactionSearchProps {
 }
 
 const TransactionSearch: React.FC<TransactionSearchProps> = ({ value, onChange, onClear }) => (
-  <div className="relative flex items-center bg-canvas-50 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
-    <Search className="w-3.5 h-3.5 text-canvas-500 ml-2 select-none" />
+  <div className="relative flex h-11 items-center bg-canvas-50/90 rounded-2xl border border-canvas-200 shadow-sm min-w-[250px] px-2.5">
+    <Search className="w-4 h-4 text-canvas-500 ml-1 select-none" />
     <input
       value={value}
       onChange={(event) => onChange(event.target.value)}
@@ -19,7 +19,7 @@ const TransactionSearch: React.FC<TransactionSearchProps> = ({ value, onChange, 
         }
       }}
       placeholder="Search transactions..."
-      className="w-56 md:w-64 bg-transparent text-sm text-canvas-700 placeholder:text-canvas-500 focus:outline-none px-2"
+      className="w-44 md:w-52 bg-transparent text-sm text-canvas-800 placeholder:text-canvas-500 focus:outline-none px-2.5"
     />
     {value && (
       <button

@@ -201,7 +201,7 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
             minWidth: "280px",
             maxWidth: "360px",
           }}
-          className="bg-canvas-50 border border-canvas-200 rounded-2xl shadow-glass overflow-hidden z-[100]"
+          className="bg-canvas-50/95 border border-canvas-200/80 rounded-3xl shadow-glass overflow-hidden z-[100] backdrop-blur-md"
           onMouseDown={(e) => e.stopPropagation()}
         >
           {children}
@@ -211,53 +211,54 @@ export const TableHeaderFilter: React.FC<TableHeaderFilterProps> = ({
   );
 
   const defaultTrigger = (
-    <button
+    <motion.button
       ref={buttonRef}
       onClick={(e) => {
         e.stopPropagation();
         handleToggle();
       }}
+      whileHover={{ y: -1 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 450, damping: 28 }}
       className={`
         flex items-center gap-2 transition-all duration-200 group relative z-10 select-none
         ${
           variant === "bar"
-            ? `px-3 py-1.5 rounded-full border shadow-sm ${
+            ? `px-3.5 py-2.5 rounded-xl border shadow-sm ${
                 config.isActive
-                  ? "border-brand/20 bg-brand/[0.06] text-canvas-900"
-                  : "border-canvas-200 bg-canvas-50 text-canvas-800"
+                  ? "border-brand/25 bg-brand/[0.1] text-canvas-900"
+                  : "border-canvas-200 bg-canvas-50/90 text-canvas-700"
               } hover:bg-canvas-100`
-            : `px-2 py-1 rounded-md ${
+            : `px-2.5 py-1.5 rounded-lg ${
                 config.isActive
                   ? "bg-brand/10 text-brand hover:bg-brand/15"
-                  : "text-canvas-400 hover:text-canvas-600 hover:bg-canvas-100"
+                  : "text-canvas-500 hover:text-canvas-700 hover:bg-canvas-100"
               }`
         }
       `}
       aria-label={ariaLabel}
       title={config.isActive ? "Filter active - click to edit" : "Add filter"}
     >
-      <Icon className="w-3.5 h-3.5 opacity-70" />
+      <Icon className="w-3.5 h-3.5 opacity-80" />
 
       {showLabel &&
         (variant === "bar" ? (
-          <div className="flex items-baseline gap-1.5">
-            {titleLabel && (
-              <span className="text-[10px] font-bold uppercase tracking-widest text-canvas-600">{titleLabel}:</span>
-            )}
-            <span className={`text-xs font-semibold ${config.isActive ? "text-canvas-900" : "text-canvas-700"}`}>
+          <div className="flex items-center gap-1.5">
+            {titleLabel && <span className="text-sm font-medium text-canvas-600">{titleLabel}</span>}
+            <span className={`text-sm font-medium ${config.isActive ? "text-canvas-900" : "text-canvas-700"}`}>
               {config.label}
             </span>
           </div>
         ) : (
           config.isActive &&
-          config.label && <span className="text-[10px] font-bold uppercase tracking-tight">{config.label}</span>
+          config.label && <span className="text-[11px] font-bold uppercase tracking-tight">{config.label}</span>
         ))}
 
       <div className="flex items-center gap-1 ml-auto">
         {onClear && config.isActive && <X className="w-3 h-3 hover:text-canvas-900" onClick={handleClear} />}
         <ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
       </div>
-    </button>
+    </motion.button>
   );
 
   const trigger =
@@ -328,10 +329,10 @@ export const CategoryFilterContent: React.FC<{
   const isAllSelected = selectedCount === totalCount;
 
   return (
-    <div className="flex flex-col max-h-[360px]">
-      <div className="p-3 border-b border-canvas-100 space-y-3">
+    <div className="flex flex-col max-h-[380px]">
+      <div className="p-4 border-b border-canvas-200/70 space-y-3">
         <div className="flex justify-between items-center px-1">
-          <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
+          <span className="text-[10px] font-extrabold text-canvas-600 uppercase tracking-[0.14em] select-none">
             Filter by Category
           </span>
           <div className="flex gap-3">
@@ -340,7 +341,7 @@ export const CategoryFilterContent: React.FC<{
                 e.stopPropagation();
                 isAllSelected ? onClear() : onSelectAll();
               }}
-              className="text-[10px] font-bold text-brand uppercase hover:underline select-none"
+              className="text-[10px] font-extrabold text-brand uppercase tracking-[0.08em] hover:underline select-none"
             >
               {isAllSelected ? "Deselect All" : "Select All"}
             </button>
@@ -366,27 +367,27 @@ export const CategoryFilterContent: React.FC<{
             placeholder="Search categories..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full bg-canvas-100 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-brand/20 placeholder:text-canvas-500 outline-none"
+            className="w-full bg-canvas-100 border border-canvas-200/80 rounded-xl py-2.5 pl-9 pr-4 text-sm focus:ring-2 focus:ring-brand/20 placeholder:text-canvas-500 outline-none"
           />
         </div>
       </div>
 
-      <div className="overflow-y-auto flex-1 py-1 px-2">
+      <div className="overflow-y-auto flex-1 py-2 px-2.5">
         {filteredCategories.map((category) => {
           const isSelected = selectedIds.includes(category.id);
           return (
             <div key={category.id} className="group relative flex items-center">
               <button
                 onClick={() => onSelect(category.id)}
-                className="flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-canvas-100 transition-colors select-none"
+                className="flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-brand/[0.06] transition-colors select-none"
               >
-                <span className={`text-sm ${isSelected ? "font-bold text-canvas-800" : "text-canvas-600"}`}>
+                <span className={`text-[15px] ${isSelected ? "font-semibold text-canvas-800" : "text-canvas-700"}`}>
                   {category.name}
                 </span>
                 <div
                   className={`
                   w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all
-                  ${isSelected ? "bg-brand border-brand text-white" : "border-canvas-200 bg-white"}
+                  ${isSelected ? "bg-brand border-brand text-white shadow-brand-glow" : "border-canvas-200 bg-white"}
                 `}
                 >
                   {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
@@ -395,7 +396,7 @@ export const CategoryFilterContent: React.FC<{
 
               <button
                 onClick={(e) => onSelectOnly(category.id, e)}
-                className="absolute right-14 opacity-0 group-hover:opacity-100 px-2 py-1 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 hover:bg-canvas-300 transition-all z-10 select-none"
+                className="absolute right-14 opacity-0 group-hover:opacity-100 px-2 py-1 rounded-md bg-canvas-200 text-[10px] font-extrabold text-canvas-600 hover:bg-brand/15 hover:text-brand transition-all z-10 select-none"
               >
                 ONLY
               </button>
@@ -469,10 +470,10 @@ export const OwnerFilterContent: React.FC<{
   const isAllSelected = selectedCount === totalCount;
 
   return (
-    <div className="flex flex-col max-h-[360px]">
-      <div className="p-3 border-b border-canvas-100 space-y-3">
+    <div className="flex flex-col max-h-[380px]">
+      <div className="p-4 border-b border-canvas-200/70 space-y-3">
         <div className="flex justify-between items-center px-1">
-          <span className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest select-none">
+          <span className="text-[10px] font-extrabold text-canvas-600 uppercase tracking-[0.14em] select-none">
             Filter by Owner
           </span>
           <div className="flex gap-3">
@@ -481,7 +482,7 @@ export const OwnerFilterContent: React.FC<{
                 e.stopPropagation();
                 isAllSelected ? onClear() : onSelectAll();
               }}
-              className="text-[10px] font-bold text-brand uppercase hover:underline select-none"
+              className="text-[10px] font-extrabold text-brand uppercase tracking-[0.08em] hover:underline select-none"
             >
               {isAllSelected ? "Deselect All" : "Select All"}
             </button>
@@ -508,27 +509,27 @@ export const OwnerFilterContent: React.FC<{
             aria-label="Search owners"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full bg-canvas-100 border-none rounded-xl py-2 pl-9 pr-4 text-sm focus:ring-2 focus:ring-brand/20 placeholder:text-canvas-500 outline-none"
+            className="w-full bg-canvas-100 border border-canvas-200/80 rounded-xl py-2.5 pl-9 pr-4 text-sm focus:ring-2 focus:ring-brand/20 placeholder:text-canvas-500 outline-none"
           />
         </div>
       </div>
 
-      <div className="overflow-y-auto flex-1 py-1 px-2">
+      <div className="overflow-y-auto flex-1 py-2 px-2.5">
         {filteredOwners.map((owner) => {
           const isSelected = selectedIds.includes(owner.id);
           return (
             <div key={owner.id} className="group relative flex items-center">
               <button
                 onClick={() => onSelect(owner.id)}
-                className="flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-canvas-100 transition-colors select-none"
+                className="flex-1 flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-brand/[0.06] transition-colors select-none"
               >
-                <span className={`text-sm ${isSelected ? "font-bold text-canvas-800" : "text-canvas-600"}`}>
+                <span className={`text-[15px] ${isSelected ? "font-semibold text-canvas-800" : "text-canvas-700"}`}>
                   {owner.name}
                 </span>
                 <div
                   className={`
                   w-5 h-5 rounded-lg flex items-center justify-center border-2 transition-all
-                  ${isSelected ? "bg-brand border-brand text-white" : "border-canvas-200 bg-white"}
+                  ${isSelected ? "bg-brand border-brand text-white shadow-brand-glow" : "border-canvas-200 bg-white"}
                 `}
                 >
                   {isSelected && <Check className="w-3 h-3" strokeWidth={4} />}
@@ -537,7 +538,7 @@ export const OwnerFilterContent: React.FC<{
 
               <button
                 onClick={(e) => onSelectOnly(owner.id, e)}
-                className="absolute right-14 opacity-0 group-hover:opacity-100 px-2 py-1 rounded-md bg-canvas-200 text-[10px] font-bold text-canvas-600 hover:bg-canvas-300 transition-all z-10 select-none"
+                className="absolute right-14 opacity-0 group-hover:opacity-100 px-2 py-1 rounded-md bg-canvas-200 text-[10px] font-extrabold text-canvas-600 hover:bg-brand/15 hover:text-brand transition-all z-10 select-none"
               >
                 ONLY
               </button>

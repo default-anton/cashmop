@@ -6,12 +6,12 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const Card: React.FC<CardProps> = ({ children, className = "", variant = "default", ...props }) => {
-  const baseClasses = "bg-canvas-50 border rounded-2xl overflow-hidden";
+  const baseClasses = "bg-canvas-50/90 backdrop-blur-md border rounded-3xl overflow-hidden";
 
   const variantClasses = {
-    default: "border-canvas-200",
-    elevated: "border-canvas-200 shadow-card hover:shadow-card-hover",
-    glass: "border-canvas-200 shadow-glass",
+    default: "border-canvas-200/80",
+    elevated: "border-canvas-200/80 shadow-card hover:shadow-card-hover transition-shadow duration-300",
+    glass: "border-canvas-200/70 shadow-glass",
   };
 
   return (

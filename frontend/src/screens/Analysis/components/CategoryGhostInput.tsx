@@ -106,14 +106,14 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({ categories, ini
             left: coords.left,
             width: coords.width,
           }}
-          className="mt-1 bg-white border border-canvas-200 rounded-lg shadow-xl z-[100] overflow-hidden"
+          className="mt-1 bg-canvas-50/95 border border-canvas-200 rounded-xl shadow-glass z-[100] overflow-hidden backdrop-blur-md"
           onMouseDown={(e: React.MouseEvent) => e.preventDefault()}
         >
           {suggestions.map((suggestion, index) => (
             <div
               key={suggestion.id}
-              className={`px-3 py-1.5 text-[10px] font-bold tracking-tight cursor-pointer transition-colors ${
-                index === selectedIndex ? "bg-brand/10 text-brand" : "text-canvas-600 hover:bg-canvas-50"
+              className={`px-3 py-2 text-xs font-bold tracking-tight cursor-pointer transition-colors ${
+                index === selectedIndex ? "bg-brand/10 text-brand" : "text-canvas-600 hover:bg-canvas-100"
               }`}
               onClick={() => onSave(suggestion.name)}
             >
@@ -137,7 +137,7 @@ const CategoryGhostInput: React.FC<CategoryGhostInputProps> = ({ categories, ini
         }}
         onKeyDown={handleKeyDown}
         onBlur={handleBlur}
-        className="w-full h-7 px-2 py-0.5 text-[10px] font-bold text-brand bg-brand/5 border border-brand/30 rounded-md tracking-tight outline-none focus:ring-2 focus:ring-brand/20 transition-all"
+        className="w-full h-8 px-2.5 py-1 text-xs font-bold text-brand bg-brand/5 border border-brand/30 rounded-lg tracking-tight outline-none focus:ring-2 focus:ring-brand/20 transition-all"
         placeholder="Category..."
       />
       {createPortal(dropdown, document.body)}
