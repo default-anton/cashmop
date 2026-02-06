@@ -12,8 +12,17 @@
   - labels: minimum `text-xs`
   - controls/content: minimum `text-sm`
   - avoid `text-[10px]` except tiny static metadata.
+- Page header structure should mirror Analysis:
+  - icon + title/subtitle in page header
+  - put table-centric search + primary actions in the table toolbar (not duplicated in page header)
+  - avoid duplicate counters/info between header and toolbar.
+- Table styling parity with Analysis:
+  - avoid chips for routine table values (e.g., match type/category) unless state/severity needs emphasis
+  - keep table value weight comparable to Analysis body cells
+  - keep table header labels readable (avoid extra-heavy weight/tracking).
 - Motion polish must be subtle and stable:
-  - 1px hover lift + soft shadow only
+  - no hover translate on large containers/cards/panels/table wrappers
+  - use color/border/shadow changes for hover feedback on large elements
   - no aggressive scale effects
   - no layout jitter.
 - Use `frontend/src/screens/Analysis/Analysis.tsx` and `frontend/src/screens/Analysis/components/` as the visual baseline for scale, contrast, and density when revamping other screens.
