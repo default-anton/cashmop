@@ -18,31 +18,29 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
   return (
     <ScreenLayout size="wide">
       <div className="space-y-6 font-sans text-canvas-800">
-        <div className="rounded-3xl border border-canvas-200/80 bg-canvas-50/70 p-5 shadow-card backdrop-blur-sm transition-all duration-200 hover:-translate-y-px hover:shadow-card-hover">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-start gap-4">
-              <div className="rounded-2xl border border-brand/25 bg-gradient-to-br from-brand/20 to-indigo-400/15 p-3.5 text-brand shadow-brand-glow">
-                <FileSpreadsheet className="h-7 w-7" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-black tracking-tight text-canvas-900 select-none">Import Transactions</h1>
-                <p className="mt-1 text-base font-medium text-canvas-600 select-none">
-                  Drag files in, verify mappings, and ship clean data into your inbox.
-                </p>
-              </div>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-indigo-400/20 p-3.5 text-brand shadow-brand-glow">
+              <FileSpreadsheet className="h-8 w-8" />
             </div>
-
-            {model.currentFile && (
-              <div className="rounded-2xl border border-canvas-200 bg-canvas-50/95 px-3.5 py-2.5 shadow-sm">
-                <p className="text-xs font-bold uppercase tracking-[0.1em] text-canvas-500 select-none">
-                  File {model.currentFileIdx + 1} of {model.parsedFiles.length}
-                </p>
-                <p className="mt-0.5 max-w-[18rem] truncate font-mono text-xs text-canvas-700 select-none">
-                  {model.currentFile.file.name}
-                </p>
-              </div>
-            )}
+            <div>
+              <h1 className="text-4xl font-black tracking-tight text-canvas-900 select-none">Import Transactions</h1>
+              <p className="mt-1 text-base font-semibold text-canvas-600 select-none">
+                Drag files in, verify mappings, and ship clean data into your inbox.
+              </p>
+            </div>
           </div>
+
+          {model.currentFile && (
+            <div className="rounded-2xl border border-canvas-200 bg-canvas-50/95 px-3.5 py-2.5 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-[0.1em] text-canvas-500 select-none">
+                File {model.currentFileIdx + 1} of {model.parsedFiles.length}
+              </p>
+              <p className="mt-0.5 max-w-[18rem] truncate font-mono text-xs text-canvas-700 select-none">
+                {model.currentFile.file.name}
+              </p>
+            </div>
+          )}
         </div>
 
         {model.warning && (
@@ -80,10 +78,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
         ) : (
           <div className="flex flex-col gap-6">
             {showFilePicker && (
-              <Card
-                variant="glass"
-                className="p-6 transition-all duration-200 hover:-translate-y-px hover:shadow-card-hover md:p-7"
-              >
+              <Card variant="glass" className="p-6 md:p-7">
                 <FileDropZone
                   busy={model.parseBusy}
                   error={model.parseError}

@@ -55,10 +55,10 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
   ];
 
   return (
-    <Card variant="glass" className="p-5 transition-all duration-200 hover:-translate-y-px hover:shadow-card-hover">
+    <Card variant="glass" className="p-5">
       <div className="text-xs font-bold uppercase tracking-[0.12em] text-canvas-500 select-none">Import</div>
 
-      <div className="mt-4 rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-all duration-200 hover:-translate-y-px hover:border-canvas-300">
+      <div className="mt-4 rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-colors duration-200 hover:border-canvas-300">
         <div className={labelClass}>Months (per file)</div>
 
         {!mapping.csv.date && (
@@ -73,7 +73,7 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
                   key={month.key}
                   type="button"
                   onClick={() => onToggleMonth(month.key)}
-                  className={`rounded-full border px-3 py-1.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-px active:translate-y-0 ${
+                  className={`rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors duration-200 ${
                     selectedMonthKeys.has(month.key)
                       ? "border-brand/30 bg-brand/10 text-brand shadow-sm"
                       : "border-canvas-200 bg-canvas-50 text-canvas-600 hover:border-canvas-300 hover:bg-canvas-100"
@@ -98,7 +98,7 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
         )}
       </div>
 
-      <div className="mt-4 rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-all duration-200 hover:-translate-y-px hover:border-canvas-300">
+      <div className="mt-4 rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-colors duration-200 hover:border-canvas-300">
         <div className={labelClass}>Remember mapping</div>
         <div className="mt-3 grid gap-2">
           {rememberChoices.map((choice) => (
@@ -109,7 +109,7 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
                   ? "cursor-not-allowed border-canvas-200 bg-canvas-100/80 text-canvas-400"
                   : rememberChoice === choice.key
                     ? "border-brand/30 bg-brand/[0.07] text-canvas-800 shadow-sm"
-                    : "border-canvas-200 bg-canvas-50 text-canvas-600 hover:-translate-y-px hover:border-canvas-300"
+                    : "border-canvas-200 bg-canvas-50 text-canvas-600 hover:border-canvas-300"
               }`}
             >
               <span className="text-sm font-medium select-none">{choice.label}</span>

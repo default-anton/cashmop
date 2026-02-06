@@ -35,7 +35,7 @@ type MappingPanelProps = {
 };
 
 const sectionClass =
-  "rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-all duration-200 hover:-translate-y-px hover:border-canvas-300";
+  "rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-colors duration-200 hover:border-canvas-300";
 const labelClass = "text-xs font-bold uppercase tracking-[0.1em] text-canvas-600 select-none";
 
 const ImportFlowMappingPanel: React.FC<MappingPanelProps> = ({
@@ -67,7 +67,7 @@ const ImportFlowMappingPanel: React.FC<MappingPanelProps> = ({
   const sortedCurrencyOptions = sortOptions(currencyOptions);
 
   return (
-    <Card variant="glass" className="p-5 transition-all duration-200 hover:-translate-y-px hover:shadow-card-hover">
+    <Card variant="glass" className="p-5">
       <div className="mb-4">
         <div className="text-xs font-bold uppercase tracking-[0.12em] text-canvas-500 select-none">Mapping</div>
         <p className="mt-1 text-sm text-canvas-600 select-none">Required: Date, Amount, Description, Account.</p>

@@ -64,7 +64,7 @@ const Table = <T,>({
                 const allSelected = data.length > 0 && data.every((row) => selectedIds?.has(getRowKey(row, 0)));
                 const someSelected = data.some((row) => selectedIds?.has(getRowKey(row, 0)));
                 return (
-                  <th key="checkbox" className="px-5 py-4 text-left w-10">
+                  <th key="checkbox" className="w-10 px-6 py-4 text-center">
                     <input
                       type="checkbox"
                       checked={allSelected}
@@ -80,7 +80,7 @@ const Table = <T,>({
                           onSelectionChange?.(key, selected);
                         });
                       }}
-                      className="w-4 h-4 rounded-md border-canvas-300 accent-brand focus:ring-brand/30 focus:ring-offset-0 cursor-pointer"
+                      className="mx-auto block h-4 w-4 cursor-pointer rounded-md border-canvas-300 accent-brand focus:ring-brand/30 focus:ring-offset-0"
                     />
                   </th>
                 );
@@ -92,7 +92,7 @@ const Table = <T,>({
               return (
                 <th
                   key={column.key as string}
-                  className={`px-6 py-4 text-left text-[11px] font-extrabold text-canvas-500 uppercase tracking-[0.16em] transition-colors group relative select-none ${
+                  className={`px-6 py-4 text-left text-[11px] font-semibold text-canvas-500 uppercase tracking-[0.12em] transition-colors group relative select-none ${
                     canSort ? "cursor-pointer hover:bg-canvas-200/60 hover:text-canvas-700" : ""
                   } ${column.className || ""}`}
                   onClick={() => canSort && onSort(column.key)}
@@ -165,14 +165,14 @@ const Table = <T,>({
                   if (column.isCheckbox) {
                     const rowKeyVal = getRowKey(row, rowIndex);
                     return (
-                      <td key="checkbox" className="px-6 py-4">
+                      <td key="checkbox" className="w-10 px-6 py-4 text-center">
                         <input
                           type="checkbox"
                           checked={selectedIds?.has(rowKeyVal) || false}
                           onChange={(e) => {
                             onSelectionChange?.(rowKeyVal, e.target.checked);
                           }}
-                          className="w-4 h-4 rounded-md border-canvas-300 accent-brand focus:ring-brand/30 focus:ring-offset-0 cursor-pointer"
+                          className="mx-auto block h-4 w-4 cursor-pointer rounded-md border-canvas-300 accent-brand focus:ring-brand/30 focus:ring-offset-0"
                         />
                       </td>
                     );

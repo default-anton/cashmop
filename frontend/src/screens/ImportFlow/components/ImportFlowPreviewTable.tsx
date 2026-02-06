@@ -69,10 +69,7 @@ const ImportFlowPreviewTable: React.FC<PreviewTableProps> = ({
   };
 
   return (
-    <Card
-      variant="glass"
-      className="overflow-hidden p-5 transition-all duration-200 hover:-translate-y-px hover:shadow-card-hover"
-    >
+    <Card variant="glass" className="overflow-hidden p-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="text-xs font-bold uppercase tracking-[0.1em] text-canvas-500 select-none">File preview</div>
         <div className="rounded-full border border-canvas-200 bg-canvas-100 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-canvas-500 select-none">

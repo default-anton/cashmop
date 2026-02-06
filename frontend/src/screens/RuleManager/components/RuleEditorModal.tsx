@@ -17,6 +17,10 @@ interface RuleEditorModalProps {
   onSaved: () => void;
 }
 
+const sectionClass =
+  "rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 transition-colors duration-200 hover:border-canvas-300";
+const labelClass = "mb-2 block text-xs font-bold uppercase tracking-[0.1em] text-canvas-600 select-none";
+
 const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
   isOpen,
   activeRule,
@@ -333,82 +337,90 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
   return (
     <>
       <Modal isOpen={isOpen} onClose={handleClose} title={activeRule ? "Edit Rule" : "Create Rule"} size="lg">
-        <div className="space-y-6">
-          <div className="space-y-4">
-            <div>
-              <div className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 select-none">
-                Match Type
-              </div>
-              <div className="flex bg-white rounded-xl p-1 border border-canvas-200">
-                {matchTypeOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setMatchType(option.value)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all select-none ${
-                      matchType === option.value
-                        ? "bg-brand text-white shadow-sm"
-                        : "text-canvas-500 hover:text-brand hover:bg-brand/5"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+        <div className="space-y-5">
+          <p className="text-sm text-canvas-600 select-none">
+            Build a reusable match rule and preview exactly which transactions it will affect.
+          </p>
 
-            <div>
-              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block select-none">
-                Match Value
-              </label>
-              <Input
-                value={matchValue}
-                onChange={(e) => setMatchValue(e.target.value)}
-                placeholder="e.g., Uber, Starbucks"
-                className="w-full"
-              />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-bold text-canvas-600 uppercase tracking-widest mb-2 block select-none">
-                Category
-              </label>
-              <AutocompleteInput
-                value={categoryInput}
-                onChange={(value) => {
-                  setCategoryInput(value);
-                  setCategoryId(0);
-                }}
-                onSelect={(value) => {
-                  const id = parseInt(value, 10);
-                  if (!Number.isNaN(id)) {
-                    setCategoryId(id);
-                  }
-                }}
-                options={categorySuggestions.map((cat) => ({ value: String(cat.id), label: cat.name }))}
-                placeholder="Search categories..."
-                filterMode="none"
-                dropdownClassName="z-[110]"
-              />
+          <div className={sectionClass}>
+            <div className={labelClass}>Match type</div>
+            <div className="flex flex-wrap gap-2 rounded-xl border border-canvas-200 bg-canvas-50 p-1.5">
+              {matchTypeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setMatchType(option.value)}
+                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all select-none ${
+                    matchType === option.value
+                      ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                      : "text-canvas-600 hover:bg-canvas-100 hover:text-canvas-900"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <RuleEditor
-            selectionRule={selectionRule}
-            onClearRule={() => setMatchValue("")}
-            amountFilter={amountFilter}
-            setAmountFilter={setAmountFilter}
-            amountInputRef={amountInputRef}
-            currentAmount={currentAmountBasis}
-            matchingTransactions={matchingPreview}
-            matchingCount={matchingCount}
-            matchingLoading={matchingLoading}
-            amountDefaults={matchingAmountRange}
-            mainCurrency={mainCurrency}
-            showCategoryColumn
-            showCategoryHint={false}
-          />
+          <div className={sectionClass}>
+            <label className={labelClass} htmlFor="rule-match-value">
+              Match value
+            </label>
+            <Input
+              id="rule-match-value"
+              value={matchValue}
+              onChange={(e) => setMatchValue(e.target.value)}
+              placeholder="e.g., Uber, Starbucks"
+              aria-label="Match value"
+              className="w-full"
+            />
+          </div>
 
-          <div className="flex justify-end gap-3">
+          <div className={sectionClass}>
+            <label className={labelClass}>Category for rule</label>
+            <AutocompleteInput
+              value={categoryInput}
+              onChange={(value) => {
+                setCategoryInput(value);
+                setCategoryId(0);
+              }}
+              onSelect={(value) => {
+                const id = parseInt(value, 10);
+                if (!Number.isNaN(id)) {
+                  setCategoryId(id);
+                }
+              }}
+              options={categorySuggestions.map((cat) => ({ value: String(cat.id), label: cat.name }))}
+              placeholder="Search categories..."
+              aria-label="Category for rule"
+              filterMode="none"
+              dropdownClassName="z-[110]"
+            />
+          </div>
+
+          <div className={sectionClass}>
+            <div className="mb-2 flex items-center justify-between">
+              <div className={labelClass.replace("mb-2 ", "")}>Preview and amount filter</div>
+              <span className="text-xs text-canvas-500 select-none">Updates as you type</span>
+            </div>
+            <RuleEditor
+              selectionRule={selectionRule}
+              onClearRule={() => setMatchValue("")}
+              amountFilter={amountFilter}
+              setAmountFilter={setAmountFilter}
+              amountInputRef={amountInputRef}
+              currentAmount={currentAmountBasis}
+              matchingTransactions={matchingPreview}
+              matchingCount={matchingCount}
+              matchingLoading={matchingLoading}
+              amountDefaults={matchingAmountRange}
+              mainCurrency={mainCurrency}
+              showCategoryColumn
+              showCategoryHint={false}
+              showRuleBadge={false}
+            />
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-3">
             <Button variant="secondary" onClick={handleClose}>
               Cancel
             </Button>
@@ -424,12 +436,12 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
       <Modal isOpen={confirmUpdateOpen} onClose={() => setConfirmUpdateOpen(false)} title="Update Rule" size="sm">
         <div className="space-y-4">
           <p className="text-sm text-canvas-600 select-none">Choose how to apply your updated rule.</p>
-          <div className="text-xs text-canvas-500 select-none">
+          <div className="text-sm text-canvas-500 select-none">
             {confirmLoading
               ? "Checking matches..."
               : `${confirmMatchCount} matching transaction${confirmMatchCount !== 1 ? "s" : ""}`}
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button variant="secondary" onClick={() => setConfirmUpdateOpen(false)}>
               Cancel
             </Button>

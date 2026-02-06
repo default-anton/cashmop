@@ -28,6 +28,7 @@ interface RuleEditorProps {
   mainCurrency: string;
   showCategoryColumn?: boolean;
   showCategoryHint?: boolean;
+  showRuleBadge?: boolean;
 }
 
 export const RuleEditor: React.FC<RuleEditorProps> = ({
@@ -44,6 +45,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
   mainCurrency,
   showCategoryColumn = false,
   showCategoryHint = true,
+  showRuleBadge = true,
 }) => {
   const modeLabel =
     selectionRule?.mode === "starts_with"
@@ -89,9 +91,11 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-brand/10 px-2 py-0.5 rounded select-none">
-                      Auto-Rule
-                    </span>
+                    {showRuleBadge && (
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-brand/10 px-2 py-0.5 rounded select-none">
+                        Auto-Rule
+                      </span>
+                    )}
                     <span className="text-sm font-bold text-canvas-800">
                       Matching descriptions {modeLabel}{" "}
                       <span className="text-brand underline underline-offset-4 decoration-2">
@@ -179,12 +183,12 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
             </div>
             {previewVisible && (
               <div className="mt-2 animate-snap-in">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-black text-canvas-400 uppercase tracking-[0.2em] select-none">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-[0.1em] text-canvas-500 select-none">
                     {totalMatches} Matching Transaction{totalMatches !== 1 ? "s" : ""}
                   </span>
                   {totalMatches > matchingTransactions.length && (
-                    <span className="text-[10px] font-semibold text-canvas-400 select-none">
+                    <span className="text-xs text-canvas-500 select-none">
                       Showing {matchingTransactions.length} most recent
                     </span>
                   )}
@@ -205,17 +209,17 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                       <table className="w-full text-left border-collapse">
                         <thead className="sticky top-0 bg-canvas-100/80 backdrop-blur-sm shadow-sm select-none">
                           <tr>
-                            <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
+                            <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas-500">
                               Date
                             </th>
-                            <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
+                            <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas-500">
                               Description
                             </th>
-                            <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest text-right">
+                            <th className="px-3 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas-500">
                               Amount ({mainCurrency})
                             </th>
                             {showCategoryColumn && (
-                              <th className="px-3 py-1.5 text-[9px] font-black text-canvas-500 uppercase tracking-widest">
+                              <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas-500">
                                 Current Category
                               </th>
                             )}
@@ -224,16 +228,16 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                         <tbody className="divide-y divide-canvas-200/30">
                           {matchingTransactions.map((tx) => (
                             <tr key={tx.id} className="hover:bg-brand/5 transition-colors group">
-                              <td className="px-3 py-1.5 text-[10px] font-medium text-canvas-500 whitespace-nowrap">
+                              <td className="whitespace-nowrap px-3 py-1.5 text-xs text-canvas-600">
                                 {new Date(tx.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                               </td>
-                              <td className="px-3 py-1.5 text-[11px] font-bold text-canvas-700 truncate max-w-[200px]">
+                              <td className="max-w-[200px] truncate px-3 py-1.5 text-sm text-canvas-700">
                                 {tx.description}
                               </td>
                               <td className="px-3 py-1.5 text-right">
                                 <div className="flex flex-col items-end">
                                   <span
-                                    className={`text-[10px] font-black ${tx.main_amount === null ? "text-canvas-400" : tx.main_amount < 0 ? "text-finance-expense" : "text-finance-income"}`}
+                                    className={`text-sm font-semibold ${tx.main_amount === null ? "text-canvas-400" : tx.main_amount < 0 ? "text-finance-expense" : "text-finance-income"}`}
                                   >
                                     {formatCents(tx.main_amount, mainCurrency)}
                                   </span>
@@ -243,7 +247,7 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                                     const showOriginal = txCurrency !== main;
                                     return showOriginal ? (
                                       <span
-                                        className={`text-[9px] ${tx.amount < 0 ? "text-finance-expense/70" : "text-finance-income/70"}`}
+                                        className={`text-xs ${tx.amount < 0 ? "text-finance-expense/70" : "text-finance-income/70"}`}
                                       >
                                         {txCurrency} {formatCentsDecimal(Math.abs(tx.amount))}
                                       </span>
@@ -252,12 +256,8 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
                                 </div>
                               </td>
                               {showCategoryColumn && (
-                                <td className="px-3 py-1.5">
-                                  <span
-                                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold tracking-tight ${tx.category_name ? "bg-brand/5 text-brand border border-brand/10" : "bg-canvas-200 text-canvas-600 border border-canvas-300"}`}
-                                  >
-                                    {tx.category_name || "Uncategorized"}
-                                  </span>
+                                <td className="px-3 py-1.5 text-sm text-canvas-700">
+                                  {tx.category_name || "Uncategorized"}
                                 </td>
                               )}
                             </tr>
