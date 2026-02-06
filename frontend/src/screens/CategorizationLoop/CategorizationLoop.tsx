@@ -642,7 +642,16 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
     }
   }, [selectionRule]);
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  if (loading) {
+    return (
+      <ScreenLayout size="medium" centerContent>
+        <div className="flex min-h-[280px] flex-col items-center justify-center gap-3 rounded-3xl border border-canvas-200 bg-canvas-50/80 px-8 py-12 shadow-card">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand/25 border-t-brand" />
+          <p className="text-sm font-semibold text-canvas-600 select-none">Loading uncategorized transactions...</p>
+        </div>
+      </ScreenLayout>
+    );
+  }
 
   if (transactions.length === 0 || !currentTx) {
     return <InboxZero onRefresh={() => window.location.reload()} />;
@@ -658,13 +667,13 @@ const CategorizationLoop: React.FC<CategorizationLoopProps> = ({ onFinish }) => 
 
   return (
     <ScreenLayout size="medium" centerContent>
-      <div className="w-full max-w-2xl flex flex-col items-stretch gap-6">
+      <div className="w-full max-w-3xl space-y-5">
         {displayWarning && (
           <div
-            className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${
+            className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${
               displayWarning.tone === "error"
-                ? "bg-finance-expense/10 border-finance-expense/20 text-finance-expense"
-                : "bg-yellow-100 border-yellow-300 text-yellow-800"
+                ? "border-finance-expense/25 bg-finance-expense/10 text-finance-expense"
+                : "border-yellow-300 bg-yellow-100 text-yellow-800"
             }`}
           >
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />

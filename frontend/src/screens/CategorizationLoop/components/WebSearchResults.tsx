@@ -35,11 +35,11 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
       <div className="w-full">
         <button
           onClick={onSearch}
-          className="w-full flex items-center justify-center gap-2 bg-canvas-100 hover:bg-canvas-200 border-2 border-canvas-200 hover:border-brand/30 text-canvas-600 hover:text-brand rounded-xl py-3 px-4 font-bold transition-all duration-200 group select-none"
+          className="group flex w-full items-center justify-center gap-2 rounded-2xl border border-canvas-200 bg-canvas-50/90 px-4 py-3 text-sm font-semibold text-canvas-700 shadow-sm transition-colors hover:border-brand/30 hover:bg-brand/[0.05] hover:text-brand select-none"
         >
-          <Globe className="w-4 h-4" />
+          <Globe className="h-4 w-4" />
           Search Web for Context
-          <kbd className="ml-auto px-2 py-0.5 bg-canvas-200 rounded text-xs font-mono opacity-60 group-hover:opacity-100 select-none">
+          <kbd className="ml-auto rounded border border-canvas-300 bg-canvas-100 px-2 py-0.5 font-mono text-xs text-canvas-600 transition-colors group-hover:border-brand/25 group-hover:text-brand">
             ⌘K
           </kbd>
         </button>
@@ -48,111 +48,110 @@ export const WebSearchResults: React.FC<WebSearchResultsProps> = ({
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="w-full">
-      <div className="bg-white rounded-xl border border-canvas-200 shadow-sm overflow-hidden">
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="w-full overflow-hidden rounded-2xl border border-canvas-200 bg-canvas-50/90 shadow-card"
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-canvas-200/80 px-4 py-3">
         <button
-          onClick={() => {
-            if (isExpanded) {
-              onDismiss();
-            } else {
-              setIsExpanded(true);
-            }
-          }}
-          className="w-full flex items-center justify-between px-4 py-3 bg-canvas-50 hover:bg-canvas-100 transition-colors"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="min-w-0 flex-1 text-left"
+          aria-label={isExpanded ? "Collapse web search context" : "Expand web search context"}
         >
           <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-brand" />
-            <span className="text-sm font-bold text-canvas-700 select-none">Web Search Context</span>
-            {query && <span className="text-xs text-canvas-500 font-mono truncate max-w-[200px]">"{query}"</span>}
-          </div>
-          <div className="flex items-center gap-2">
-            {loading && <Loader2 className="w-4 h-4 text-brand animate-spin" />}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDismiss();
-              }}
-              className="p-1 hover:bg-canvas-200 rounded transition-colors"
-            >
-              <X className="w-4 h-4 text-canvas-500" />
-            </button>
-            {!loading &&
-              (isExpanded ? (
-                <ChevronUp className="w-4 h-4 text-canvas-500" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-canvas-500" />
-              ))}
+            <Globe className="h-4 w-4 text-brand" />
+            <span className="text-sm font-semibold text-canvas-800 select-none">Web search context</span>
+            {query && <span className="truncate text-xs text-canvas-500">“{query}”</span>}
           </div>
         </button>
 
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden"
-            >
-              <div className="p-4">
-                {loading && (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-6 h-6 text-brand animate-spin" />
-                    <span className="ml-2 text-canvas-600 font-medium select-none">Searching web...</span>
-                  </div>
-                )}
-
-                {error && (
-                  <div className="py-6 text-center text-canvas-500 select-none">
-                    <p className="text-sm">{error}</p>
-                    <button onClick={onSearch} className="mt-2 text-brand text-sm font-bold hover:underline">
-                      Try again
-                    </button>
-                  </div>
-                )}
-
-                {results && results.length === 0 && (
-                  <div className="py-6 text-center text-canvas-500 text-sm select-none">
-                    No results found for this transaction
-                  </div>
-                )}
-
-                {results && results.length > 0 && (
-                  <div className="space-y-3">
-                    {results.map((result, idx) => (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="p-3 rounded-lg border border-canvas-200 hover:border-brand/30 hover:bg-brand/5 transition-all duration-200 group cursor-pointer"
-                        onClick={() => openExternal(result.url)}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-bold text-canvas-800 group-hover:text-brand transition-colors truncate">
-                                {result.title}
-                              </h4>
-                              <ExternalLink className="w-3 h-3 text-canvas-400 flex-shrink-0" />
-                            </div>
-                            {result.snippet && (
-                              <p className="text-sm text-canvas-600 line-clamp-2 mb-1">{result.snippet}</p>
-                            )}
-                            {result.domain && (
-                              <span className="text-xs text-canvas-400 font-medium">{result.domain}</span>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="flex items-center gap-1">
+          {loading && <Loader2 className="h-4 w-4 animate-spin text-brand" />}
+          <button
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="rounded-md p-1 text-canvas-500 transition-colors hover:bg-canvas-100 hover:text-canvas-700"
+            aria-label={isExpanded ? "Collapse web search results" : "Expand web search results"}
+          >
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+          <button
+            onClick={onDismiss}
+            className="rounded-md p-1 text-canvas-500 transition-colors hover:bg-canvas-100 hover:text-canvas-700"
+            aria-label="Dismiss web search context"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
+      <AnimatePresence initial={false}>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="p-4">
+              {loading && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-brand" />
+                  <span className="ml-2 text-sm font-medium text-canvas-600 select-none">Searching web...</span>
+                </div>
+              )}
+
+              {error && (
+                <div className="py-6 text-center">
+                  <p className="text-sm text-canvas-500 select-none">{error}</p>
+                  <button onClick={onSearch} className="mt-2 text-sm font-semibold text-brand hover:underline">
+                    Try again
+                  </button>
+                </div>
+              )}
+
+              {results && results.length === 0 && (
+                <div className="py-6 text-center text-sm text-canvas-500 select-none">
+                  No results found for this transaction
+                </div>
+              )}
+
+              {results && results.length > 0 && (
+                <div className="space-y-2.5">
+                  {results.map((result, idx) => (
+                    <motion.button
+                      key={idx}
+                      role="link"
+                      onClick={() => openExternal(result.url)}
+                      initial={{ opacity: 0, y: 3 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.16, delay: idx * 0.03 }}
+                      className="group w-full rounded-xl border border-canvas-200 bg-white/90 p-3 text-left transition-colors hover:border-brand/30 hover:bg-brand/[0.04]"
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="truncate text-sm font-semibold text-canvas-800 transition-colors group-hover:text-brand">
+                              {result.title}
+                            </h4>
+                            <ExternalLink className="h-3.5 w-3.5 flex-shrink-0 text-canvas-400" />
+                          </div>
+                          {result.snippet && (
+                            <p className="mt-1 text-sm text-canvas-600 line-clamp-2">{result.snippet}</p>
+                          )}
+                          {result.domain && <p className="mt-1 text-xs text-canvas-500">{result.domain}</p>}
+                        </div>
+                      </div>
+                    </motion.button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

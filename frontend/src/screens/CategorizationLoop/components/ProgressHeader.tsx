@@ -7,18 +7,41 @@ interface ProgressHeaderProps {
 }
 
 export const ProgressHeader: React.FC<ProgressHeaderProps> = ({ currentIndex, totalTransactions }) => {
+  const safeTotal = Math.max(totalTransactions, 1);
+  const current = Math.min(currentIndex + 1, safeTotal);
+  const progressPercent = Math.round((current / safeTotal) * 100);
+
   return (
-    <div className="flex items-center justify-between w-full">
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-brand/10 text-brand rounded-lg">
-          <Layers className="w-6 h-6" />
+    <div className="space-y-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-4">
+          <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-indigo-400/20 p-3.5 text-brand shadow-brand-glow">
+            <Layers className="h-8 w-8" />
+          </div>
+          <div>
+            <h1 className="text-4xl font-black tracking-tight text-canvas-900 select-none">Review Inbox</h1>
+            <p className="mt-1 text-base font-semibold text-canvas-600 select-none">
+              One transaction at a time. Build clean categories at speed.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-canvas-800 select-none">Review Inbox</h1>
-          <p className="text-xs font-mono text-canvas-500 uppercase tracking-widest">
-            {currentIndex + 1} of {totalTransactions} items
+
+        <div className="w-fit rounded-2xl border border-canvas-200 bg-canvas-50/90 px-3.5 py-2 shadow-sm sm:min-w-[132px]">
+          <p className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">Progress</p>
+          <p className="mt-0.5 text-sm font-semibold text-canvas-800 select-none">
+            {current} of {safeTotal}
           </p>
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <div className="h-2 overflow-hidden rounded-full bg-canvas-200/80">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-brand to-indigo-500 transition-[width] duration-300 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+        <p className="text-xs font-semibold text-canvas-500 select-none">{progressPercent}% complete</p>
       </div>
     </div>
   );

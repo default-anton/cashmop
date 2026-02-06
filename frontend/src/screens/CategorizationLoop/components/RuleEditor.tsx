@@ -79,216 +79,210 @@ export const RuleEditor: React.FC<RuleEditorProps> = ({
     return { value1: String(value || ""), value2: "" };
   };
 
+  if (!selectionRule) {
+    return (
+      <div className="w-full rounded-3xl border border-canvas-200 bg-canvas-50/85 p-5 shadow-card">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <div className="rounded-full border border-canvas-200 bg-canvas-100 p-3 text-canvas-500">
+            <MousePointer2 className="h-5 w-5" />
+          </div>
+          <p className="text-sm font-semibold text-canvas-700 select-none">Automation rule wizard</p>
+          <p className="max-w-xl text-sm text-canvas-500 select-none">
+            Select text in the description above to match similar transactions automatically.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className={`relative w-full transition-all duration-300 ${selectionRule ? "min-h-[220px]" : "h-44"}`}>
-      {selectionRule ? (
-        <div className="w-full h-full animate-snap-in">
-          <div className="bg-brand/5 border-2 border-brand/20 rounded-2xl p-4 flex flex-col justify-center gap-4 text-brand shadow-lg backdrop-blur-sm h-full select-none">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-4">
-                <div className="bg-brand text-white p-2 rounded-lg shadow-brand-glow">
-                  <Wand2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    {showRuleBadge && (
-                      <span className="text-[10px] font-black uppercase tracking-[0.2em] bg-brand/10 px-2 py-0.5 rounded select-none">
-                        Auto-Rule
-                      </span>
-                    )}
-                    <span className="text-sm font-bold text-canvas-800">
-                      Matching descriptions {modeLabel}{" "}
-                      <span className="text-brand underline underline-offset-4 decoration-2">
-                        "{selectionRule.text}"
-                      </span>
-                    </span>
-                  </div>
-                  {showCategoryHint && (
-                    <p className="text-xs text-canvas-500 mt-0.5 select-none">
-                      Enter a category name below to save this rule.
-                    </p>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={onClearRule}
-                className="p-2 hover:bg-brand/10 text-canvas-500 hover:text-brand rounded-xl transition-all select-none"
-              >
-                <X className="w-5 h-5" />
-              </button>
+    <div className="w-full rounded-3xl border border-brand/20 bg-brand/[0.04] p-4 shadow-card">
+      <div className="space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="rounded-xl bg-brand p-2 text-white shadow-brand-glow">
+              <Wand2 className="h-4 w-4" />
             </div>
-
-            <div className="h-px bg-brand/10 w-full" />
-
-            <div className="flex items-center gap-2 w-full">
-              <span className="text-xs font-bold text-canvas-500 uppercase tracking-widest mr-2 select-none">
-                Amount:
-              </span>
-
-              <div className="flex bg-white rounded-lg p-1 border border-brand/20">
-                {(["none", "gt", "lt", "between"] as const).map((op) => (
-                  <button
-                    key={op}
-                    onClick={() => {
-                      const defaults = op === "none" ? { value1: "", value2: "" } : buildDefaultAmountValues(op);
-                      setAmountFilter({
-                        operator: op,
-                        value1: defaults.value1,
-                        value2: defaults.value2,
-                      });
-                      if (op !== "none") {
-                        setTimeout(() => amountInputRef.current?.focus(), 0);
-                      }
-                    }}
-                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all select-none ${
-                      amountFilter.operator === op
-                        ? "bg-brand text-white shadow-sm"
-                        : "text-canvas-500 hover:text-brand hover:bg-brand/5"
-                    }`}
-                  >
-                    {op === "none" && "Any"}
-                    {op === "gt" && "≥ More"}
-                    {op === "lt" && "≤ Less"}
-                    {op === "between" && "Between"}
-                  </button>
-                ))}
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                {showRuleBadge && (
+                  <span className="rounded-md border border-brand/20 bg-brand/10 px-2 py-0.5 text-xs font-bold uppercase tracking-[0.08em] text-brand select-none">
+                    Auto-rule
+                  </span>
+                )}
+                <p className="text-sm font-semibold text-canvas-800">
+                  Matching descriptions {modeLabel} <span className="font-bold text-brand">“{selectionRule.text}”</span>
+                </p>
               </div>
-
-              {amountFilter.operator !== "none" && (
-                <div className="flex items-center gap-2 animate-snap-in">
-                  <input
-                    ref={amountInputRef}
-                    type="number"
-                    placeholder={amountFilter.operator === "between" ? "Min" : "Value"}
-                    aria-label={amountFilter.operator === "between" ? "Minimum amount" : "Amount value"}
-                    value={amountFilter.value1}
-                    onChange={(e) => setAmountFilter({ ...amountFilter, value1: e.target.value })}
-                    className="w-28 px-3 py-1.5 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
-                  />
-                  {amountFilter.operator === "between" && (
-                    <>
-                      <span className="text-xs text-canvas-500 font-bold select-none">AND</span>
-                      <input
-                        type="number"
-                        placeholder="Max"
-                        aria-label="Maximum amount"
-                        value={amountFilter.value2}
-                        onChange={(e) => setAmountFilter({ ...amountFilter, value2: e.target.value })}
-                        className="w-28 px-3 py-1.5 text-sm border border-brand/20 rounded-lg focus:border-brand focus:ring-1 focus:ring-brand outline-none"
-                      />
-                    </>
-                  )}
-                </div>
+              {showCategoryHint && (
+                <p className="mt-1 text-sm text-canvas-500 select-none">
+                  Type a category below to save and apply this rule.
+                </p>
               )}
             </div>
-            {previewVisible && (
-              <div className="mt-2 animate-snap-in">
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-[0.1em] text-canvas-500 select-none">
-                    {totalMatches} Matching Transaction{totalMatches !== 1 ? "s" : ""}
-                  </span>
-                  {totalMatches > matchingTransactions.length && (
-                    <span className="text-xs text-canvas-500 select-none">
-                      Showing {matchingTransactions.length} most recent
-                    </span>
-                  )}
-                </div>
-                <div className="bg-white/50 rounded-xl border border-brand/10 overflow-hidden">
-                  <div className="max-h-32 min-h-[120px] overflow-y-auto custom-scrollbar">
-                    {matchingLoading ? (
-                      <div className="p-3 space-y-2 animate-pulse">
-                        {[0, 1, 2].map((idx) => (
-                          <div key={idx} className="h-6 rounded-lg bg-canvas-200/70" />
-                        ))}
-                      </div>
-                    ) : matchingTransactions.length === 0 ? (
-                      <div className="px-4 py-10 text-center text-xs text-canvas-400 select-none">
-                        No matching transactions found.
-                      </div>
-                    ) : (
-                      <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 bg-canvas-100/80 backdrop-blur-sm shadow-sm select-none">
-                          <tr>
-                            <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas-500">
-                              Date
-                            </th>
-                            <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas-500">
-                              Description
-                            </th>
-                            <th className="px-3 py-1.5 text-right text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas-500">
-                              Amount ({mainCurrency})
-                            </th>
-                            {showCategoryColumn && (
-                              <th className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-canvas-500">
-                                Current Category
-                              </th>
-                            )}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-canvas-200/30">
-                          {matchingTransactions.map((tx) => (
-                            <tr key={tx.id} className="hover:bg-brand/5 transition-colors group">
-                              <td className="whitespace-nowrap px-3 py-1.5 text-xs text-canvas-600">
-                                {new Date(tx.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                              </td>
-                              <td className="max-w-[200px] truncate px-3 py-1.5 text-sm text-canvas-700">
-                                {tx.description}
-                              </td>
-                              <td className="px-3 py-1.5 text-right">
-                                <div className="flex flex-col items-end">
-                                  <span
-                                    className={`text-sm font-semibold ${tx.main_amount === null ? "text-canvas-400" : tx.main_amount < 0 ? "text-finance-expense" : "text-finance-income"}`}
-                                  >
-                                    {formatCents(tx.main_amount, mainCurrency)}
-                                  </span>
-                                  {(() => {
-                                    const txCurrency = (tx.currency || mainCurrency).toUpperCase();
-                                    const main = mainCurrency.toUpperCase();
-                                    const showOriginal = txCurrency !== main;
-                                    return showOriginal ? (
-                                      <span
-                                        className={`text-xs ${tx.amount < 0 ? "text-finance-expense/70" : "text-finance-income/70"}`}
-                                      >
-                                        {txCurrency} {formatCentsDecimal(Math.abs(tx.amount))}
-                                      </span>
-                                    ) : null;
-                                  })()}
-                                </div>
-                              </td>
-                              {showCategoryColumn && (
-                                <td className="px-3 py-1.5 text-sm text-canvas-700">
-                                  {tx.category_name || "Uncategorized"}
-                                </td>
-                              )}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
+          </div>
+
+          <button
+            onClick={onClearRule}
+            className="rounded-lg border border-canvas-200 bg-canvas-50 p-1.5 text-canvas-500 transition-colors hover:border-brand/30 hover:text-brand"
+            aria-label="Clear selected rule"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+          <span className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">
+            Amount filter
+          </span>
+
+          <div className="flex flex-wrap items-center gap-1 rounded-xl border border-canvas-200 bg-white p-1">
+            {(["none", "gt", "lt", "between"] as const).map((op) => (
+              <button
+                key={op}
+                onClick={() => {
+                  const defaults = op === "none" ? { value1: "", value2: "" } : buildDefaultAmountValues(op);
+                  setAmountFilter({
+                    operator: op,
+                    value1: defaults.value1,
+                    value2: defaults.value2,
+                  });
+                  if (op !== "none") {
+                    setTimeout(() => amountInputRef.current?.focus(), 0);
+                  }
+                }}
+                className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors select-none ${
+                  amountFilter.operator === op
+                    ? "bg-brand text-white"
+                    : "text-canvas-600 hover:bg-canvas-100 hover:text-canvas-900"
+                }`}
+              >
+                {op === "none" && "Any"}
+                {op === "gt" && "≥ More"}
+                {op === "lt" && "≤ Less"}
+                {op === "between" && "Between"}
+              </button>
+            ))}
+          </div>
+
+          {amountFilter.operator !== "none" && (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={amountInputRef}
+                type="number"
+                placeholder={amountFilter.operator === "between" ? "Min" : "Value"}
+                aria-label={amountFilter.operator === "between" ? "Minimum amount" : "Amount value"}
+                value={amountFilter.value1}
+                onChange={(e) => setAmountFilter({ ...amountFilter, value1: e.target.value })}
+                className="w-28 rounded-lg border border-brand/20 px-3 py-1.5 text-sm text-canvas-700 outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+              />
+
+              {amountFilter.operator === "between" && (
+                <>
+                  <span className="text-xs font-semibold text-canvas-500 select-none">to</span>
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    aria-label="Maximum amount"
+                    value={amountFilter.value2}
+                    onChange={(e) => setAmountFilter({ ...amountFilter, value2: e.target.value })}
+                    className="w-28 rounded-lg border border-brand/20 px-3 py-1.5 text-sm text-canvas-700 outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+                  />
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {previewVisible && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">
+                {totalMatches} matching transaction{totalMatches !== 1 ? "s" : ""}
+              </p>
+              {totalMatches > matchingTransactions.length && (
+                <p className="text-xs text-canvas-500 select-none">Showing {matchingTransactions.length} most recent</p>
+              )}
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-canvas-200 bg-white/85">
+              <div className="custom-scrollbar max-h-36 min-h-[120px] overflow-y-auto">
+                {matchingLoading ? (
+                  <div className="space-y-2 p-3 animate-pulse">
+                    {[0, 1, 2].map((idx) => (
+                      <div key={idx} className="h-6 rounded-lg bg-canvas-200/70" />
+                    ))}
                   </div>
-                </div>
+                ) : matchingTransactions.length === 0 ? (
+                  <div className="px-4 py-10 text-center text-sm text-canvas-500 select-none">
+                    No matching transactions found.
+                  </div>
+                ) : (
+                  <table className="w-full border-collapse text-left">
+                    <thead className="sticky top-0 bg-canvas-100/90 backdrop-blur-sm select-none">
+                      <tr>
+                        <th className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-canvas-500">
+                          Date
+                        </th>
+                        <th className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-canvas-500">
+                          Description
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-[0.08em] text-canvas-500">
+                          Amount ({mainCurrency})
+                        </th>
+                        {showCategoryColumn && (
+                          <th className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-canvas-500">
+                            Current category
+                          </th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-canvas-200/50">
+                      {matchingTransactions.map((tx) => (
+                        <tr key={tx.id} className="transition-colors hover:bg-brand/[0.04]">
+                          <td className="whitespace-nowrap px-3 py-2 text-sm text-canvas-600">
+                            {new Date(tx.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                          </td>
+                          <td
+                            className="max-w-[220px] truncate px-3 py-2 text-sm font-medium text-canvas-700"
+                            title={tx.description}
+                          >
+                            {tx.description}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            <div className="flex flex-col items-end">
+                              <span
+                                className={`text-sm font-semibold ${tx.main_amount === null ? "text-canvas-500" : tx.main_amount < 0 ? "text-finance-expense" : "text-finance-income"}`}
+                              >
+                                {formatCents(tx.main_amount, mainCurrency)}
+                              </span>
+                              {(() => {
+                                const txCurrency = (tx.currency || mainCurrency).toUpperCase();
+                                const main = mainCurrency.toUpperCase();
+                                const showOriginal = txCurrency !== main;
+                                return showOriginal ? (
+                                  <span
+                                    className={`text-xs ${tx.amount < 0 ? "text-finance-expense/70" : "text-finance-income/70"}`}
+                                  >
+                                    {txCurrency} {formatCentsDecimal(Math.abs(tx.amount))}
+                                  </span>
+                                ) : null;
+                              })()}
+                            </div>
+                          </td>
+                          {showCategoryColumn && (
+                            <td className="px-3 py-2 text-sm text-canvas-700">{tx.category_name || "Uncategorized"}</td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
               </div>
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="w-full h-full border-2 border-dashed border-canvas-300 rounded-2xl flex flex-col items-center justify-center text-canvas-500 bg-canvas-200/20 gap-3 group transition-colors hover:border-brand/30 hover:bg-brand/[0.02] select-none">
-          <div className="relative">
-            <div className="bg-canvas-100 p-3 rounded-full group-hover:bg-brand/10 transition-colors">
-              <MousePointer2 className="w-6 h-6 opacity-40 group-hover:text-brand group-hover:opacity-100 transition-all duration-300" />
-            </div>
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-brand opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-2 group-hover:translate-y-0">
-              <span className="text-[20px] leading-none">↑</span>
             </div>
           </div>
-          <div className="text-center px-10">
-            <span className="text-sm font-bold block mb-1 text-canvas-700 select-none">Automation Rule Wizard</span>
-            <span className="text-xs font-medium text-canvas-500 select-none">
-              Select text in the description above to automatically match future transactions.
-            </span>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

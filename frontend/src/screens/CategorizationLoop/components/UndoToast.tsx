@@ -1,3 +1,4 @@
+import { AlertCircle, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useRef } from "react";
 
@@ -47,23 +48,19 @@ const UndoToast: React.FC<UndoToastProps> = ({
   }
 
   return (
-    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50" data-testid="undo-toast">
-      <div className="bg-gray-900 text-white rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[300px] max-w-md">
-        <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
+    <div
+      className="fixed bottom-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-lg -translate-x-1/2"
+      data-testid="undo-toast"
+    >
+      <div className="flex items-center gap-3 rounded-2xl border border-canvas-200 bg-canvas-50/95 px-4 py-3 shadow-card backdrop-blur-sm">
+        <AlertCircle className="h-4 w-4 flex-shrink-0 text-canvas-500" />
 
-        <span className="flex-1 text-sm truncate">{message}</span>
+        <span className="flex-1 truncate text-sm font-medium text-canvas-700">{message}</span>
 
         {canRedo && (
           <button
             onClick={onRedo}
-            className="text-green-400 hover:text-green-300 text-sm font-medium flex-shrink-0 transition-colors"
+            className="flex-shrink-0 rounded-lg border border-canvas-200 px-2 py-1 text-sm font-semibold text-canvas-700 transition-colors hover:border-brand/35 hover:text-brand"
           >
             Redo
           </button>
@@ -72,7 +69,7 @@ const UndoToast: React.FC<UndoToastProps> = ({
         {canUndo && (
           <button
             onClick={onUndo}
-            className="text-blue-400 hover:text-blue-300 text-sm font-medium flex-shrink-0 transition-colors"
+            className="flex-shrink-0 rounded-lg border border-brand/25 bg-brand/10 px-2 py-1 text-sm font-semibold text-brand transition-colors hover:bg-brand/15"
           >
             Undo
           </button>
@@ -80,12 +77,10 @@ const UndoToast: React.FC<UndoToastProps> = ({
 
         <button
           onClick={onDismiss}
-          className="text-gray-500 hover:text-gray-400 flex-shrink-0 transition-colors"
+          className="flex-shrink-0 rounded-md p-1 text-canvas-500 transition-colors hover:bg-canvas-100 hover:text-canvas-700"
           aria-label="Dismiss"
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X className="h-4 w-4" />
         </button>
       </div>
     </div>

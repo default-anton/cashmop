@@ -45,11 +45,9 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   const getOffsetFromPoint = (x: number, y: number): number | null => {
     if (!descriptionRef.current) return null;
 
-    // Check if point is roughly within bounds (vertical) to avoid jumping when far away
     const rect = descriptionRef.current.getBoundingClientRect();
     const isClose = y >= rect.top - 20 && y <= rect.bottom + 20;
 
-    // If we're far out, we might want to snap to start or end based on X
     if (!isClose) {
       if (x < rect.left) return 0;
       if (x > rect.right) return transaction.description.length;
@@ -59,7 +57,6 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
     if (document.caretRangeFromPoint) {
       range = document.caretRangeFromPoint(x, y);
     } else if ((document as any).caretPositionFromPoint) {
-      // Firefox fallback - unlikely needed for Wails but good practice
       const pos = (document as any).caretPositionFromPoint(x, y);
       if (pos) {
         range = document.createRange();
@@ -70,8 +67,6 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
 
     if (!range) return null;
 
-    // Now map range.startContainer + offset to global index
-    // We walk the descriptionRef text nodes
     let currentGlobalOffset = 0;
     const walker = document.createTreeWalker(descriptionRef.current, NodeFilter.SHOW_TEXT);
 
@@ -94,7 +89,7 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   React.useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (dragStart === null) return;
-      e.preventDefault(); // Stop native selection from interfering
+      e.preventDefault();
 
       const currentOffset = getOffsetFromPoint(e.clientX, e.clientY);
       if (currentOffset !== null && onSelectionChange) {
@@ -121,7 +116,6 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
   }, [dragStart, onSelectionChange, onMouseUp, transaction.description]);
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Only trigger on left click
     if (e.button !== 0) return;
 
     e.preventDefault();
@@ -130,8 +124,6 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
     if (offset !== null) {
       setDragStart(offset);
       if (onSelectionChange) {
-        // Initial click is a 0-length selection at that point
-        // or effectively "clearing" previous selection until drag happens
         onSelectionChange(offset, offset);
       }
     }
@@ -173,109 +165,96 @@ export const TransactionCard: React.FC<TransactionCardProps> = ({
     return (
       <>
         {before}
-        <span className="bg-brand text-white shadow-brand-glow py-0.5">{match}</span>
+        <span className="rounded-sm bg-brand/20 text-canvas-900">{match}</span>
         {after}
       </>
     );
   };
+
   const displayAmount = mainAmount ?? transaction.amount;
   const isExpense = displayAmount < 0;
   const formattedMain = formatCents(mainAmount, mainCurrency);
 
   return (
-    <div className="relative group perspective-1000 w-full">
-      <Card
-        variant="glass"
-        className="p-6 transform transition-all duration-500 hover:rotate-x-1 hover:shadow-2xl border-canvas-200/50 w-full"
-        onMouseUp={undefined} // We handle mouse up globally for the drag
-        onMouseDown={undefined}
-      >
-        <div className="text-center">
-          <div className="flex items-center justify-between mb-4 pb-4 border-b border-canvas-200/30">
-            <div className="flex flex-col items-start text-left">
-              <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5 select-none">
-                Date
-              </span>
-              <span className="text-sm font-bold text-canvas-700">
+    <Card variant="default" className="w-full p-5 shadow-card">
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 border-b border-canvas-200/80 pb-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-wrap items-start gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">Date</p>
+              <p className="mt-1 text-sm font-semibold text-canvas-800">
                 {new Date(transaction.date).toLocaleDateString("en-US", {
                   month: "long",
                   day: "numeric",
                   year: "numeric",
                 })}
-              </span>
+              </p>
             </div>
 
-            <div className="flex flex-col items-center">
-              <span
-                className={`text-[9px] font-black uppercase tracking-[0.2em] mb-0.5 select-none ${isExpense ? "text-finance-expense/60" : "text-finance-income/60"}`}
-              >
-                {isExpense ? "Expense" : "Income"}
-              </span>
-              <span
-                className={`text-sm font-mono font-black tracking-tight ${mainAmount === null ? "text-canvas-400" : isExpense ? "text-finance-expense" : "text-finance-income"}`}
-              >
-                {formattedMain}
-              </span>
-              {(() => {
-                const txCurrency = (transaction.currency || mainCurrency).toUpperCase();
-                const main = mainCurrency.toUpperCase();
-                const showOriginal = txCurrency !== main;
-                return showOriginal ? (
-                  <span
-                    className={`text-[10px] font-sans mt-1 ${transaction.amount < 0 ? "text-finance-expense/70" : "text-finance-income/70"}`}
-                  >
-                    {txCurrency} {formatCentsDecimal(Math.abs(transaction.amount))}
-                  </span>
-                ) : null;
-              })()}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">Account</p>
+              <p className="mt-1 text-sm font-semibold text-canvas-800">{transaction.account_name}</p>
             </div>
 
-            <div className="flex gap-6">
-              <div className="flex flex-col items-end text-right">
-                <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5 select-none">
-                  Account
-                </span>
-                <span className="text-sm font-black text-brand tracking-tight">{transaction.account_name}</span>
+            {transaction.owner_name && (
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">Owner</p>
+                <p className="mt-1 text-sm font-semibold text-canvas-800">{transaction.owner_name}</p>
               </div>
-              {transaction.owner_name && (
-                <div className="flex flex-col items-end text-right border-l border-canvas-200/50 pl-6">
-                  <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] mb-0.5 select-none">
-                    Owner
-                  </span>
-                  <span className="text-sm font-black text-canvas-800 tracking-tight">{transaction.owner_name}</span>
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
-          <div className="mb-4 flex flex-col items-center">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-[9px] font-black text-canvas-400 uppercase tracking-[0.2em] select-none">
-                Description
-              </span>
-            </div>
-            <div className="relative group/desc w-full">
-              {showOnboardingHint && !selectionRule && (
-                <div className="absolute -top-10 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center animate-snap-in pointer-events-none">
-                  <div className="bg-brand text-white text-[9px] font-black px-2.5 py-1.5 rounded-lg shadow-brand-glow uppercase tracking-widest flex items-center gap-2 border border-brand/20 backdrop-blur-sm select-none">
-                    <Wand2 className="w-3 h-3" />
-                    Select text to create rule
-                  </div>
-                  <div className="w-2 h-2 bg-brand rotate-45 -mt-1 shadow-brand-glow"></div>
-                </div>
-              )}
-              <h2
-                ref={descriptionRef}
-                onMouseDown={handleMouseDown}
-                aria-label="Transaction Description"
-                className="text-xl font-black text-canvas-800 leading-tight select-none cursor-text border-2 border-dashed border-canvas-300 bg-canvas-200/20 hover:bg-brand/[0.02] hover:border-brand/30 rounded-2xl transition-all duration-300 p-5 w-full"
-              >
-                {renderDescription()}
-              </h2>
-            </div>
+          <div className="rounded-2xl border border-canvas-200 bg-canvas-50/90 px-4 py-2 text-right sm:min-w-[170px]">
+            <p
+              className={`text-xs font-bold uppercase tracking-[0.08em] select-none ${isExpense ? "text-finance-expense/70" : "text-finance-income/70"}`}
+            >
+              {isExpense ? "Expense" : "Income"}
+            </p>
+            <p
+              className={`mt-1 text-sm font-semibold tracking-tight ${mainAmount === null ? "text-canvas-500" : isExpense ? "text-finance-expense" : "text-finance-income"}`}
+            >
+              {formattedMain}
+            </p>
+            {(() => {
+              const txCurrency = (transaction.currency || mainCurrency).toUpperCase();
+              const main = mainCurrency.toUpperCase();
+              const showOriginal = txCurrency !== main;
+              return showOriginal ? (
+                <p
+                  className={`mt-1 text-xs ${transaction.amount < 0 ? "text-finance-expense/80" : "text-finance-income/80"}`}
+                >
+                  {txCurrency} {formatCentsDecimal(Math.abs(transaction.amount))}
+                </p>
+              ) : null;
+            })()}
           </div>
         </div>
-      </Card>
-    </div>
+
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-bold uppercase tracking-[0.08em] text-canvas-500 select-none">Description</p>
+            {showOnboardingHint && !selectionRule && (
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand select-none">
+                <Wand2 className="h-3.5 w-3.5" />
+                Drag over words to create an auto-rule
+              </p>
+            )}
+          </div>
+
+          <h2
+            ref={descriptionRef}
+            onMouseDown={handleMouseDown}
+            aria-label="Transaction Description"
+            className="w-full cursor-text rounded-2xl border border-canvas-200 bg-canvas-50/90 p-4 text-xl font-black leading-tight text-canvas-900 transition-colors hover:border-brand/30 hover:bg-brand/[0.03] select-none"
+          >
+            {renderDescription()}
+          </h2>
+
+          <p className="text-xs text-canvas-500 select-none">
+            Tip: drag across the merchant text to preview a reusable rule.
+          </p>
+        </div>
+      </div>
+    </Card>
   );
 };
