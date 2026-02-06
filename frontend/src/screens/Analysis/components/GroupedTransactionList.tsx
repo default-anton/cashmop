@@ -422,11 +422,11 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
 
       <motion.div
         layout
-        className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-canvas-200/80 bg-canvas-50/70 backdrop-blur-sm px-3 py-2.5"
+        className="flex flex-wrap items-center justify-between gap-3 border-b border-canvas-200/80 pb-3"
       >
         <div className="flex flex-wrap items-center gap-2.5">
           {monthOptions.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-canvas-50/90 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
+            <div className="flex flex-wrap items-center gap-1.5 bg-canvas-50/90 p-1.5 rounded-2xl border border-canvas-200 shadow-sm">
               {monthTabs.map((option) => (
                 <motion.button
                   key={option.value}
@@ -637,15 +637,13 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
         </div>
 
         {selectedCount > 0 && onDeleteSelected && (
-          <div className="ml-auto inline-flex items-center rounded-2xl border border-finance-expense/30 bg-finance-expense/10 p-1.5">
-            <button
-              onClick={onDeleteSelected}
-              className="inline-flex items-center gap-2 rounded-xl border border-finance-expense/40 bg-canvas-50 px-3 py-2 text-sm font-bold text-finance-expense transition-colors hover:bg-finance-expense/15"
-            >
-              <Trash2 className="h-4 w-4" />
-              Delete ({selectedCount})
-            </button>
-          </div>
+          <button
+            onClick={onDeleteSelected}
+            className="ml-auto inline-flex items-center gap-2 rounded-xl border border-finance-expense/35 bg-finance-expense/10 px-3 py-2 text-sm font-bold text-finance-expense transition-colors hover:bg-finance-expense/15"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete ({selectedCount})
+          </button>
         )}
       </motion.div>
 

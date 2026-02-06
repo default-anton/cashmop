@@ -449,7 +449,7 @@ const Analysis: React.FC = () => {
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="flex flex-row items-center justify-between gap-3 rounded-3xl border border-canvas-200/80 bg-canvas-50/70 backdrop-blur-sm px-3 py-2.5"
+          className="flex flex-wrap items-center justify-between gap-3 pt-1"
         >
           <div className="flex items-center gap-2 bg-canvas-50/90 p-1 rounded-2xl border border-canvas-200 shadow-sm w-fit">
             <span className="text-[10px] font-semibold text-canvas-500 uppercase tracking-[0.1em] pl-2 pr-1 select-none">
