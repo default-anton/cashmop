@@ -26,3 +26,15 @@
   - no aggressive scale effects
   - no layout jitter.
 - Use `frontend/src/screens/Analysis/Analysis.tsx` and `frontend/src/screens/Analysis/components/` as the visual baseline for scale, contrast, and density when revamping other screens.
+
+## New UI migration status
+
+- Migrated to new UI:
+  - `frontend/src/screens/Analysis/`
+  - `frontend/src/screens/ImportFlow/`
+  - `frontend/src/screens/RuleManager/`
+  - `frontend/src/screens/About/`
+- TODO (use Analysis as the implementation + styling reference):
+  - [ ] `frontend/src/screens/CategorizationLoop/`
+  - [ ] `frontend/src/screens/CategoryManager/`
+  - [ ] `frontend/src/screens/Settings/`

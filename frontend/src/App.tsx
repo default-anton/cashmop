@@ -72,6 +72,8 @@ function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (showAbout) return;
+
       const modKey = e.metaKey || e.ctrlKey;
 
       if (modKey && !e.altKey) {
@@ -136,7 +138,7 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [hasData]);
+  }, [hasData, showAbout]);
 
   const handleImportComplete = async () => {
     const { anyUncategorized } = await checkStatus();
@@ -151,10 +153,6 @@ function App() {
     await checkStatus();
     setScreen("analysis");
   };
-
-  if (showAbout) {
-    return <About isOpen={showAbout} onClose={() => setShowAbout(false)} />;
-  }
 
   return (
     <ToastProvider>
@@ -273,6 +271,8 @@ function App() {
           ) : (
             <Analysis />
           )}
+
+          <About isOpen={showAbout} onClose={() => setShowAbout(false)} />
         </div>
       </CurrencyProvider>
     </ToastProvider>
