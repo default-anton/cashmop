@@ -336,7 +336,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={handleClose} title={activeRule ? "Edit Rule" : "Create Rule"} size="lg">
+      <Modal isOpen={isOpen} onClose={handleClose} title={activeRule ? "Edit Rule" : "Create Rule"} size="xl">
         <div className="space-y-5">
           <p className="text-sm text-canvas-600 select-none">
             Build a reusable match rule and preview exactly which transactions it will affect.
