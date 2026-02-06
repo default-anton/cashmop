@@ -370,8 +370,8 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
                   </div>
 
                   <div className="flex flex-wrap items-center justify-end gap-3">
-                    <div className="relative flex items-center rounded-2xl border border-canvas-200 bg-canvas-50/90 p-1.5 shadow-sm">
-                      <Search className="ml-2 h-4 w-4 text-canvas-500 select-none" />
+                    <div className="relative flex h-11 min-w-[250px] items-center rounded-2xl border border-canvas-200 bg-canvas-50/90 px-2.5 shadow-sm">
+                      <Search className="ml-1 h-4 w-4 text-canvas-500 select-none" />
                       <input
                         value={ruleSearch}
                         onChange={(event) => setRuleSearch(event.target.value)}
@@ -382,7 +382,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ initialCategoryIds = [] }) =>
                         }}
                         aria-label="Search rules"
                         placeholder="Search rules..."
-                        className="w-56 bg-transparent px-2 text-sm text-canvas-700 placeholder:text-canvas-500 focus:outline-none"
+                        className="w-56 md:w-64 bg-transparent px-2.5 text-sm text-canvas-700 placeholder:text-canvas-500 focus:outline-none"
                       />
                       {ruleSearch && (
                         <button
