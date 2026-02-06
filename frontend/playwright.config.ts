@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const parsedBasePort = Number.parseInt(process.env.CASHMOP_TEST_BASE_PORT || '34115', 10);
+const testBasePort = Number.isNaN(parsedBasePort) ? 34115 : parsedBasePort;
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -8,7 +11,7 @@ export default defineConfig({
   workers: process.env.WORKER_COUNT ? parseInt(process.env.WORKER_COUNT, 10) : 2,
   reporter: 'list',
   use: {
-    baseURL: `http://localhost:34115`, // Default for worker 0
+    baseURL: `http://localhost:${testBasePort}`,
     trace: 'on-first-retry',
   },
   projects: [

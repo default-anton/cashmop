@@ -60,23 +60,6 @@ if [ "$WORKER_COUNT" -lt 1 ] || [ "$WORKER_COUNT" -gt 8 ]; then
     exit 1
 fi
 
-# Check port availability
-for i in $(seq 0 $((WORKER_COUNT-1))); do
-    PORT=$((34115 + i))
-    if lsof -i :$PORT > /dev/null 2>&1; then
-        echo "Error: Port $PORT is already in use"
-        echo "Run: lsof -i :$PORT to find the process"
-        exit 1
-    fi
-done
-
-# Kill any existing wails dev or app processes
-if pgrep -f "wails dev" > /dev/null || pgrep -f "cashmop" > /dev/null; then
-    echo "Killing existing processes..."
-    pkill -f "wails dev" || true
-    pkill -f "cashmop" || true
-    sleep 2
-fi
 
 port_in_use() {
     local port=$1
@@ -122,6 +105,75 @@ PY
     lsof -i :$port > /dev/null 2>&1
 }
 
+DEFAULT_TEST_BASE_PORT=34115
+FALLBACK_TEST_BASE_PORT_START=34200
+FALLBACK_TEST_BASE_PORT_END=34900
+
+is_integer() {
+    local value=$1
+    [[ "$value" =~ ^[0-9]+$ ]]
+}
+
+ports_available() {
+    local base_port=$1
+    local workers=$2
+
+    if [ "$base_port" -lt 1024 ]; then
+        return 1
+    fi
+
+    local last_port=$((base_port + workers - 1))
+    if [ "$last_port" -gt 65535 ]; then
+        return 1
+    fi
+
+    for i in $(seq 0 $((workers - 1))); do
+        local port=$((base_port + i))
+        if port_in_use "$port"; then
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+choose_test_base_port() {
+    local requested_base_port="${CASHMOP_TEST_BASE_PORT:-}"
+
+    if [ -n "$requested_base_port" ]; then
+        if ! is_integer "$requested_base_port"; then
+            echo "Error: CASHMOP_TEST_BASE_PORT must be an integer"
+            exit 1
+        fi
+
+        if ! ports_available "$requested_base_port" "$WORKER_COUNT"; then
+            local requested_last=$((requested_base_port + WORKER_COUNT - 1))
+            echo "Error: requested port range $requested_base_port-$requested_last is unavailable"
+            echo "Hint: unset CASHMOP_TEST_BASE_PORT for auto-selection"
+            exit 1
+        fi
+
+        CASHMOP_TEST_BASE_PORT=$requested_base_port
+        return
+    fi
+
+    if ports_available "$DEFAULT_TEST_BASE_PORT" "$WORKER_COUNT"; then
+        CASHMOP_TEST_BASE_PORT=$DEFAULT_TEST_BASE_PORT
+        return
+    fi
+
+    for base_port in $(seq "$FALLBACK_TEST_BASE_PORT_START" "$FALLBACK_TEST_BASE_PORT_END"); do
+        if ports_available "$base_port" "$WORKER_COUNT"; then
+            CASHMOP_TEST_BASE_PORT=$base_port
+            return
+        fi
+    done
+
+    echo "Error: failed to find a free port range for $WORKER_COUNT worker(s)"
+    echo "Tried default base port $DEFAULT_TEST_BASE_PORT and fallback range $FALLBACK_TEST_BASE_PORT_START-$FALLBACK_TEST_BASE_PORT_END"
+    exit 1
+}
+
 choose_vite_port() {
     # GitHub runners often have something bound on 5173; avoid it.
     for port in $(seq 5174 5190); do
@@ -135,9 +187,14 @@ choose_vite_port() {
     exit 1
 }
 
+choose_test_base_port
+TEST_BASE_LAST_PORT=$((CASHMOP_TEST_BASE_PORT + WORKER_COUNT - 1))
+echo "Using integration Wails port range $CASHMOP_TEST_BASE_PORT-$TEST_BASE_LAST_PORT"
+
 TEST_RUN_ID="${CASHMOP_TEST_RUN_ID:-$(date +%s)-$$}"
 export CASHMOP_TEST_RUN_ID="$TEST_RUN_ID"
 export WORKER_COUNT
+export CASHMOP_TEST_BASE_PORT
 
 # Build test-helper once
 echo "Building test-helper..."
@@ -227,7 +284,7 @@ wait_for_vite() {
 
 start_worker() {
     local index=$1
-    local port=$((34115 + index))
+    local port=$((CASHMOP_TEST_BASE_PORT + index))
     local pid_file="$ROOT_DIR/tmp/.wails_dev_$index.pid"
     local log_file="$ROOT_DIR/tmp/wails_$index.log"
 
@@ -261,7 +318,7 @@ wait_for_workers() {
     local failed_startup=0
 
     for i in $(seq "$start_index" "$end_index"); do
-        local port=$((34115 + i))
+        local port=$((CASHMOP_TEST_BASE_PORT + i))
         local log_file="$ROOT_DIR/tmp/wails_$i.log"
 
         echo "    Waiting for worker $i to start..."

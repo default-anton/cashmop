@@ -18,6 +18,8 @@ type MyFixtures = {
 };
 
 const testRunId = process.env.CASHMOP_TEST_RUN_ID || "local";
+const parsedBasePort = Number.parseInt(process.env.CASHMOP_TEST_BASE_PORT || "34115", 10);
+const testBasePort = Number.isNaN(parsedBasePort) ? 34115 : parsedBasePort;
 
 const sanitize = (value: string) => value.replace(/[^a-zA-Z0-9_-]+/g, "_").slice(0, 80) || "test";
 
@@ -31,7 +33,7 @@ const getTestDir = () => {
 export const test = base.extend<MyFixtures>({
   // Override baseURL for worker-specific instance
   baseURL: async ({}, use, testInfo) => {
-    const port = 34115 + testInfo.parallelIndex;
+    const port = testBasePort + testInfo.parallelIndex;
     await use(`http://localhost:${port}`);
   },
 

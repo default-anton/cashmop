@@ -37,7 +37,10 @@ make integration-test NAME="pattern"       # Pattern match
 
 Wails dev server multi-instance:
 - Flag: `wails dev -devserver localhost:$PORT -m -s -nogorebuild -noreload -skipbindings`
-- Port range: 34115 + parallelIndex (e.g., 34115-34116 for 2 workers)
+- Port range: auto-selected by `scripts/run-integration-tests.sh`
+  - default base: `34115` (if free)
+  - fallback base: first free range in `34200-34900`
+  - override manually with `CASHMOP_TEST_BASE_PORT=<port>`
 - DB isolation: `CASHMOP_WORKER_ID=<index>` → DB suffix `_w<id>`
 - Playwright: override `baseURL` fixture with `testInfo.parallelIndex`
 - Shared Frontend: uses single Vite instance via `-frontenddevserverurl`
