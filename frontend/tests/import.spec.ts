@@ -118,6 +118,26 @@ test("import flow with header maps CAD + USD currencies", async ({ page, importF
   expect(usdTx?.amount).toBe(-1250);
 });
 
+test("import flow supports one-click unmap for role changes", async ({ page, importFlowPage }) => {
+  await importFlowPage.goto();
+  await page.evaluate(async () => {
+    const app = (window as any).go.main.App;
+    const mappings = await app.GetColumnMappings();
+    await Promise.all(mappings.map((m: any) => app.DeleteColumnMapping(m.id)));
+  });
+
+  await importFlowPage.uploadFile(headerCsvPath);
+  await importFlowPage.mapDate("Date");
+  await importFlowPage.mapAmount("Amount");
+  await importFlowPage.mapDescription("Description");
+  await importFlowPage.setAccountStatic("Checking");
+  await importFlowPage.expectCanImport();
+
+  await importFlowPage.unmapColumn("Amount");
+  await importFlowPage.expectColumnRoleLabel("Amount", "Not mapped");
+  await importFlowPage.expectCannotImport();
+});
+
 test("import flow supports csv without header row", async ({ page, importFlowPage }) => {
   const descriptions = ["Import No Header One", "Import No Header Two"];
 

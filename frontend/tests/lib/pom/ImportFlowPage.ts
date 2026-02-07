@@ -54,9 +54,25 @@ export class ImportFlowPage {
     const trySelect = async (name: string) => {
       const cell = this.mappingTable.locator(`th[data-column-header="${name}"]`).first();
       if ((await cell.count()) === 0) return false;
+
       await cell.waitFor({ state: "visible", timeout: 2000 });
-      const select = cell.locator("select");
-      await select.selectOption({ label: roleLabel });
+
+      const trigger = cell.getByTestId("column-role-trigger").first();
+      if ((await trigger.count()) === 0) return false;
+
+      await trigger.click();
+
+      const optionsMenu = this.page.locator('[data-testid="column-role-options"]:visible').last();
+      await optionsMenu.waitFor({ state: "visible", timeout: 2000 });
+
+      const option = optionsMenu.getByRole("button", { name: roleLabel, exact: true }).first();
+      if ((await option.count()) === 0) {
+        await this.page.keyboard.press("Escape");
+        return false;
+      }
+
+      await option.scrollIntoViewIfNeeded();
+      await option.click({ force: true });
       return true;
     };
 
@@ -93,6 +109,50 @@ export class ImportFlowPage {
     await this.mapColumnRole(headerName, "Currency");
   }
 
+  async unmapColumn(headerName: string) {
+    await this.mappingTable.waitFor({ state: "visible", timeout: 10000 });
+
+    const tryUnmap = async (name: string) => {
+      const cell = this.mappingTable.locator(`th[data-column-header="${name}"]`).first();
+      if ((await cell.count()) === 0) return false;
+
+      const clearButton = cell.getByLabel(`Unmap ${name} column`, { exact: true }).first();
+      if ((await clearButton.count()) === 0) return false;
+
+      await clearButton.click();
+      return true;
+    };
+
+    if (await tryUnmap(headerName)) return;
+
+    const fallback = this.getFallbackHeader(headerName);
+    if (fallback && (await tryUnmap(fallback))) return;
+
+    throw new Error(`Unable to unmap column: ${headerName}`);
+  }
+
+  async expectColumnRoleLabel(headerName: string, roleLabel: string) {
+    await this.mappingTable.waitFor({ state: "visible", timeout: 10000 });
+
+    const assertLabel = async (name: string) => {
+      const cell = this.mappingTable.locator(`th[data-column-header="${name}"]`).first();
+      if ((await cell.count()) === 0) return false;
+
+      const trigger = cell.getByTestId("column-role-trigger").first();
+      if ((await trigger.count()) === 0) return false;
+
+      await expect(trigger).toContainText(roleLabel, { timeout: 3000 });
+      return true;
+    };
+
+    if (await assertLabel(headerName)) return;
+
+    const fallback = this.getFallbackHeader(headerName);
+    if (fallback && (await assertLabel(fallback))) return;
+
+    throw new Error(`Unable to assert role label for column: ${headerName}`);
+  }
+
   async setAccountStatic(name: string) {
     await this.accountInput.fill(name);
   }
@@ -111,6 +171,10 @@ export class ImportFlowPage {
 
   async expectCanImport() {
     await expect(this.importButton).toBeEnabled({ timeout: 10000 });
+  }
+
+  async expectCannotImport() {
+    await expect(this.importButton).toBeDisabled({ timeout: 10000 });
   }
 
   async startImport() {
