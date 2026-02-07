@@ -2,6 +2,7 @@ import { Landmark, Sparkles, UserRound, Wallet2, X } from "lucide-react";
 import type React from "react";
 import { AutocompleteInput, Card, DragReorderableList } from "@/components";
 import type { ImportMapping } from "../components/ColumnMapperTypes";
+import { NONE_PRESET_VALUE } from "../constants";
 
 type PresetOption = { value: string; label: string };
 
@@ -61,17 +62,19 @@ const ImportFlowMappingPanel: React.FC<MappingPanelProps> = ({
   onDescriptionRemove,
   onDescriptionReorder,
 }) => {
-  const sortedPresetOptions = sortOptions(presetOptions);
+  const sortedPresetOptions = [
+    ...presetOptions
+      .filter((option) => option.value === NONE_PRESET_VALUE)
+      .map((option) => ({ ...option, label: "None (start fresh)" })),
+    ...sortOptions(presetOptions.filter((option) => option.value !== NONE_PRESET_VALUE)),
+  ];
   const sortedAccountOptions = sortOptions(accountOptions);
   const sortedOwnerOptions = sortOptions(ownerOptions);
   const sortedCurrencyOptions = sortOptions(currencyOptions);
 
   return (
     <Card variant="elevated" className="p-5">
-      <div className="mb-4">
-        <div className="text-xs font-bold uppercase tracking-[0.12em] text-canvas-500 select-none">Mapping</div>
-        <p className="mt-1 text-sm text-canvas-600 select-none">Required: Date, Amount, Description, Account.</p>
-      </div>
+      <div className="mb-4 text-xs font-bold uppercase tracking-[0.12em] text-canvas-500 select-none">Mapping</div>
 
       <div className="space-y-4">
         <div className={sectionClass}>

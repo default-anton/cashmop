@@ -308,16 +308,17 @@ export const useImportFlowModel = (onImportComplete?: () => void) => {
     return unique.map((r) => visibleIndexes.map((idx) => r[idx] ?? ""));
   }, [currentFile, visibleColumns]);
 
-  const canImport = canProceed && selectedMonths.length > 0;
-  const missingFields = useMemo(() => {
+  const missingRequiredFields = useMemo(() => {
     const missing: string[] = [];
     if (isMissing("date")) missing.push("Date");
     if (isMissing("amount")) missing.push("Amount");
     if (isMissing("description")) missing.push("Description");
     if (isMissing("account")) missing.push("Account");
-    if (selectedMonths.length === 0) missing.push("Month");
     return missing;
-  }, [isMissing, selectedMonths.length]);
+  }, [isMissing]);
+
+  const isMonthMissing = selectedMonths.length === 0;
+  const canImport = canProceed && !isMonthMissing;
 
   const handleRememberChoice = (choice: "off" | "save" | "update") => {
     updateCurrentFile((file) => ({
@@ -467,7 +468,8 @@ export const useImportFlowModel = (onImportComplete?: () => void) => {
     rememberError: currentFile?.rememberMappingError || null,
     canUpdatePreset: !!presetInfo.id,
     canImport,
-    missingFields,
+    missingRequiredFields,
+    isMonthMissing,
     handleFilesSelected,
     handlePresetSelection,
     handlePresetSubmit,

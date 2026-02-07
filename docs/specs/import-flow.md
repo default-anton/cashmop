@@ -143,7 +143,7 @@ Heuristic prefill is conservative:
 
 ## Column roles and mapping rules
 Each preview column has a role dropdown:
-- Ignore
+- Not mapped
 - Date
 - Description
 - Account
@@ -152,6 +152,8 @@ Each preview column has a role dropdown:
 - Money out
 - Money in
 - Direction (in/out)
+
+Mapped columns also expose a one-click clear (✕) action that sets the role back to **Not mapped**.
 
 Rules:
 - `Date`, `Account`, `Currency`, and amount-related roles are **one-to-one**.

@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import type React from "react";
 
 import { Button, Card, Input } from "@/components";
@@ -22,7 +22,8 @@ interface ImportPanelProps {
   canImport: boolean;
   importBusy: boolean;
   isLastFile: boolean;
-  missingFields: string[];
+  missingRequiredFields: string[];
+  isMonthMissing: boolean;
   onImport: () => void;
 }
 
@@ -45,7 +46,8 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
   canImport,
   importBusy,
   isLastFile,
-  missingFields,
+  missingRequiredFields,
+  isMonthMissing,
   onImport,
 }) => {
   const rememberChoices: Array<{ key: "off" | "save" | "update"; label: string; disabled?: boolean }> = [
@@ -53,6 +55,13 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
     { key: "save", label: "Save as new" },
     { key: "update", label: "Update selected", disabled: !canUpdatePreset },
   ];
+
+  const guidanceText =
+    missingRequiredFields.length > 0
+      ? "Finish required mapping fields above to enable import."
+      : isMonthMissing
+        ? "Select at least one month to enable import."
+        : "Ready to import.";
 
   return (
     <Card variant="elevated" className="p-5">
@@ -159,21 +168,7 @@ const ImportFlowImportPanel: React.FC<ImportPanelProps> = ({
             <span className="font-semibold select-none">Ready to import</span>
           </div>
         ) : (
-          missingFields.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-canvas-500">
-              <AlertTriangle className="h-4 w-4 text-canvas-400" />
-              <div className="flex flex-wrap gap-1.5">
-                {missingFields.map((field) => (
-                  <span
-                    key={field}
-                    className="rounded-full border border-canvas-200 bg-canvas-100 px-2 py-0.5 font-medium select-none"
-                  >
-                    {field}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )
+          <div className="text-xs text-canvas-500 select-none">{guidanceText}</div>
         )}
       </div>
     </Card>

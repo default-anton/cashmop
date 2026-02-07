@@ -148,6 +148,8 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
                     mapping={model.mapping}
                     roleOptions={model.roleOptions}
                     amountHint={model.amountHint}
+                    missingRequiredFields={model.missingRequiredFields}
+                    isMonthMissing={model.isMonthMissing}
                     onRoleChange={model.handleRoleChange}
                     onInvertToggle={model.handleInvertToggle}
                     onDirectionValueChange={model.handleDirectionValueChange}
@@ -170,7 +172,8 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
                     canImport={model.canImport}
                     importBusy={model.importBusy}
                     isLastFile={model.isLastFile}
-                    missingFields={model.missingFields}
+                    missingRequiredFields={model.missingRequiredFields}
+                    isMonthMissing={model.isMonthMissing}
                     onImport={model.handleImport}
                   />
                 </div>

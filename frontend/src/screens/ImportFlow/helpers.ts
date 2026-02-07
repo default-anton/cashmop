@@ -125,7 +125,7 @@ export const getHeaderRole = (mapping: ImportMapping, header: string): ColumnRol
 export const buildRoleOptions = (hasDirection: boolean) => {
   const moneyLabel = hasDirection ? "Money (signed/unsigned)" : "Money (signed)";
   const options = [
-    { value: "ignore", label: "Ignore" },
+    { value: "ignore", label: "Not mapped" },
     { value: "date", label: "Date" },
     { value: "description", label: "Description" },
     { value: "account", label: "Account" },
