@@ -14,6 +14,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.4.0] - 2026-02-08
+
+### Added
+- Category Manager workflows: category summaries, quick category creation, delete flow, and category-scoped rule management.
+- Import: support legacy `.xls` file imports in addition to CSV/XLSX.
+- UI scaling controls with persistence and keyboard shortcuts.
+- Fast UI feedback loop scripts (`make ui-loop-start|stop|status|url`) for tmux + Agent Browser iteration.
+
+### Changed
+- Import Flow redesigned into single-screen mapping + import panels with improved month selection and readiness flow.
+- Mapping schema updated from `defaultOwner`/`csv.owner` to top-level `owner`.
+- Analysis, Rule Manager, Categorization Loop, and Settings UI polished for denser workflows and consistent styling.
+- Frontend lint/format/check workflow migrated to Biome + `tsgo` checks.
+
+### Fixed
+- Rule editor and manager layout issues (search/input width and modal sizing).
+- Integration test stability improvements (worker port auto-selection, settings assertions/selectors).
+
 ## [0.3.0] - 2026-01-29
 
 ### Changed
