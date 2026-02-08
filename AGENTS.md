@@ -42,6 +42,23 @@ Current release platforms: macOS arm64, Linux amd64.
   - Frontend: `utils/currency.ts` (`formatCents`, `parseCents`)
   - Rounding: Go `math.Round(x + 0.5)`, JS `Math.round(x * 100)`
 
+### Fast UI Feedback Loop (tmux + Agent Browser)
+
+For UI iteration, keep dev servers running in tmux and inspect screens with Agent Browser.
+
+```bash
+make ui-loop-start
+agent-browser open "$(make -s ui-loop-url)"
+agent-browser snapshot -i
+```
+
+Useful commands:
+```bash
+make ui-loop-status
+make ui-loop-stop
+tmux attach -t cashmop-ui
+```
+
 ## Repo map (frequent paths)
 
 - `frontend/src/`: React UI (components, hooks, screens, utils)
