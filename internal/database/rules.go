@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"strings"
 
 	"github.com/default-anton/cashmop/internal/fuzzy"
@@ -9,6 +10,21 @@ import (
 type Category struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
+}
+
+type CategorySummary struct {
+	ID               int64  `json:"id"`
+	Name             string `json:"name"`
+	TransactionCount int64  `json:"transaction_count"`
+	RuleCount        int64  `json:"rule_count"`
+	LastUsedDate     string `json:"last_used_date"`
+}
+
+type CategoryDeleteStats struct {
+	CategoryID         int64  `json:"category_id"`
+	CategoryName       string `json:"category_name"`
+	UncategorizedCount int64  `json:"uncategorized_count"`
+	DeletedRuleCount   int64  `json:"deleted_rule_count"`
 }
 
 type CategorizationRule struct {
@@ -112,6 +128,91 @@ func (s *Store) RenameCategory(id int64, newName string) error {
 
 	s.invalidateCategoryCache()
 	return nil
+}
+
+func (s *Store) GetCategorySummaries() ([]CategorySummary, error) {
+	rows, err := s.db.Query(`
+		SELECT
+			c.id,
+			c.name,
+			(SELECT COUNT(*) FROM transactions t WHERE t.category_id = c.id) AS transaction_count,
+			(SELECT COUNT(*) FROM categorization_rules r WHERE r.category_id = c.id) AS rule_count,
+			(SELECT MAX(t.date) FROM transactions t WHERE t.category_id = c.id) AS last_used_date
+		FROM categories c
+		ORDER BY LOWER(c.name) ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	summaries := []CategorySummary{}
+	for rows.Next() {
+		var summary CategorySummary
+		var lastUsedDate sql.NullString
+		if err := rows.Scan(&summary.ID, &summary.Name, &summary.TransactionCount, &summary.RuleCount, &lastUsedDate); err != nil {
+			return nil, err
+		}
+		if lastUsedDate.Valid {
+			summary.LastUsedDate = lastUsedDate.String
+		}
+		summaries = append(summaries, summary)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return summaries, nil
+}
+
+func (s *Store) DeleteCategory(id int64) (CategoryDeleteStats, error) {
+	result := CategoryDeleteStats{CategoryID: id}
+
+	tx, err := s.db.Begin()
+	if err != nil {
+		return result, err
+	}
+	defer tx.Rollback()
+
+	if err := tx.QueryRow("SELECT name FROM categories WHERE id = ?", id).Scan(&result.CategoryName); err != nil {
+		return result, err
+	}
+
+	if err := tx.QueryRow("SELECT COUNT(*) FROM transactions WHERE category_id = ?", id).Scan(&result.UncategorizedCount); err != nil {
+		return result, err
+	}
+
+	if err := tx.QueryRow("SELECT COUNT(*) FROM categorization_rules WHERE category_id = ?", id).Scan(&result.DeletedRuleCount); err != nil {
+		return result, err
+	}
+
+	if _, err := tx.Exec("UPDATE transactions SET category_id = NULL WHERE category_id = ?", id); err != nil {
+		return result, err
+	}
+
+	if _, err := tx.Exec("DELETE FROM categorization_rules WHERE category_id = ?", id); err != nil {
+		return result, err
+	}
+
+	deleteRes, err := tx.Exec("DELETE FROM categories WHERE id = ?", id)
+	if err != nil {
+		return result, err
+	}
+
+	rowsAffected, err := deleteRes.RowsAffected()
+	if err != nil {
+		return result, err
+	}
+	if rowsAffected == 0 {
+		return result, sql.ErrNoRows
+	}
+
+	if err := tx.Commit(); err != nil {
+		return result, err
+	}
+
+	s.invalidateCategoryCache()
+	return result, nil
 }
 
 func (s *Store) SaveRule(rule CategorizationRule) (int64, error) {

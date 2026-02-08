@@ -7,11 +7,15 @@ export function CategorizeTransaction(arg1:number,arg2:string):Promise<main.Cate
 
 export function CreateAccount(arg1:string):Promise<number>;
 
+export function CreateCategory(arg1:string):Promise<number>;
+
 export function CreateManualBackup():Promise<string>;
 
 export function CreateOwner(arg1:string):Promise<number>;
 
 export function DeleteCategorizationRule(arg1:number,arg2:boolean):Promise<main.RuleDeleteResult>;
+
+export function DeleteCategory(arg1:number):Promise<main.CategoryDeleteResult>;
 
 export function DeleteColumnMapping(arg1:number):Promise<void>;
 
@@ -36,6 +40,8 @@ export function GetCategories():Promise<Array<database.Category>>;
 export function GetCategorizationRules():Promise<Array<database.CategorizationRule>>;
 
 export function GetCategorizationRulesCount():Promise<number>;
+
+export function GetCategorySummaries():Promise<Array<database.CategorySummary>>;
 
 export function GetColumnMappings():Promise<Array<database.ColumnMappingModel>>;
 

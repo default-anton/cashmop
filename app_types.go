@@ -37,6 +37,13 @@ type RuleDeleteResult struct {
 	UncategorizedCount int   `json:"uncategorized_count"`
 }
 
+type CategoryDeleteResult struct {
+	CategoryID         int64  `json:"category_id"`
+	CategoryName       string `json:"category_name"`
+	UncategorizedCount int64  `json:"uncategorized_count"`
+	DeletedRuleCount   int64  `json:"deleted_rule_count"`
+}
+
 type ExcelData struct {
 	Headers []string   `json:"headers"`
 	Rows    [][]string `json:"rows"`

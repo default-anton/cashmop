@@ -19,6 +19,17 @@ func (s *Service) CreateCategory(name string) (int64, error) {
 	return s.store.GetOrCreateCategory(name)
 }
 
+func (s *Service) GetCategorySummaries() ([]database.CategorySummary, error) {
+	return s.store.GetCategorySummaries()
+}
+
+func (s *Service) DeleteCategory(id int64) (database.CategoryDeleteStats, error) {
+	if id == 0 {
+		return database.CategoryDeleteStats{}, fmt.Errorf("category id is required")
+	}
+	return s.store.DeleteCategory(id)
+}
+
 func (s *Service) GetCategorizationRules() ([]database.CategorizationRule, error) {
 	return s.store.GetRules()
 }

@@ -54,6 +54,36 @@ func (a *App) GetCategories() ([]database.Category, error) {
 	return a.svc.GetCategories()
 }
 
+func (a *App) GetCategorySummaries() ([]database.CategorySummary, error) {
+	return a.svc.GetCategorySummaries()
+}
+
+func (a *App) CreateCategory(name string) (int64, error) {
+	id, err := a.svc.CreateCategory(name)
+	if err != nil {
+		return 0, err
+	}
+	a.emit(EventCategoriesUpdated)
+	return id, nil
+}
+
+func (a *App) DeleteCategory(id int64) (*CategoryDeleteResult, error) {
+	res, err := a.svc.DeleteCategory(id)
+	if err != nil {
+		return nil, err
+	}
+	if res.UncategorizedCount > 0 {
+		a.emit(EventTransactionsUpdated)
+	}
+	a.emit(EventCategoriesUpdated)
+	return &CategoryDeleteResult{
+		CategoryID:         res.CategoryID,
+		CategoryName:       res.CategoryName,
+		UncategorizedCount: res.UncategorizedCount,
+		DeletedRuleCount:   res.DeletedRuleCount,
+	}, nil
+}
+
 func (a *App) GetAccounts() ([]string, error) {
 	return a.svc.GetAccounts()
 }

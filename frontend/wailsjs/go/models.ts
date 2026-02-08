@@ -212,6 +212,26 @@ export namespace database {
 	        this.name = source["name"];
 	    }
 	}
+	export class CategorySummary {
+	    id: number;
+	    name: string;
+	    transaction_count: number;
+	    rule_count: number;
+	    last_used_date: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CategorySummary(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.name = source["name"];
+	        this.transaction_count = source["transaction_count"];
+	        this.rule_count = source["rule_count"];
+	        this.last_used_date = source["last_used_date"];
+	    }
+	}
 	export class ColumnMappingModel {
 	    id: number;
 	    name: string;
@@ -378,6 +398,24 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.transaction_id = source["transaction_id"];
 	        this.affected_ids = source["affected_ids"];
+	    }
+	}
+	export class CategoryDeleteResult {
+	    category_id: number;
+	    category_name: string;
+	    uncategorized_count: number;
+	    deleted_rule_count: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new CategoryDeleteResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.category_id = source["category_id"];
+	        this.category_name = source["category_name"];
+	        this.uncategorized_count = source["uncategorized_count"];
+	        this.deleted_rule_count = source["deleted_rule_count"];
 	    }
 	}
 	export class ExcelData {

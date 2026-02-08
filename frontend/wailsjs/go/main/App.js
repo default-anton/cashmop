@@ -10,6 +10,10 @@ export function CreateAccount(arg1) {
   return window['go']['main']['App']['CreateAccount'](arg1);
 }
 
+export function CreateCategory(arg1) {
+  return window['go']['main']['App']['CreateCategory'](arg1);
+}
+
 export function CreateManualBackup() {
   return window['go']['main']['App']['CreateManualBackup']();
 }
@@ -20,6 +24,10 @@ export function CreateOwner(arg1) {
 
 export function DeleteCategorizationRule(arg1, arg2) {
   return window['go']['main']['App']['DeleteCategorizationRule'](arg1, arg2);
+}
+
+export function DeleteCategory(arg1) {
+  return window['go']['main']['App']['DeleteCategory'](arg1);
 }
 
 export function DeleteColumnMapping(arg1) {
@@ -68,6 +76,10 @@ export function GetCategorizationRules() {
 
 export function GetCategorizationRulesCount() {
   return window['go']['main']['App']['GetCategorizationRulesCount']();
+}
+
+export function GetCategorySummaries() {
+  return window['go']['main']['App']['GetCategorySummaries']();
 }
 
 export function GetColumnMappings() {

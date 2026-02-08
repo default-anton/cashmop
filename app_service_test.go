@@ -456,6 +456,142 @@ func TestRenameCategory(t *testing.T) {
 	}
 }
 
+func TestCreateCategory(t *testing.T) {
+	store := setupTestDB(t)
+	app := newTestApp(t, store)
+
+	id, err := app.CreateCategory("Utilities")
+	if err != nil {
+		t.Fatalf("CreateCategory failed: %v", err)
+	}
+	if id <= 0 {
+		t.Fatalf("Expected positive ID, got %d", id)
+	}
+
+	categories, err := app.GetCategories()
+	if err != nil {
+		t.Fatalf("GetCategories failed: %v", err)
+	}
+	if len(categories) != 1 {
+		t.Fatalf("Expected 1 category, got %d", len(categories))
+	}
+	if categories[0].Name != "Utilities" {
+		t.Fatalf("Expected category name Utilities, got %s", categories[0].Name)
+	}
+}
+
+func TestGetCategorySummaries(t *testing.T) {
+	store := setupTestDB(t)
+	app := newTestApp(t, store)
+
+	accountID := createTestAccount(t, store, "Checking")
+	groceriesID := createTestCategory(t, store, "Groceries")
+	travelID := createTestCategory(t, store, "Travel")
+
+	createTestTransaction(t, store, accountID, nil, "2024-01-01", "Store", 1000, &groceriesID)
+	createTestTransaction(t, store, accountID, nil, "2024-02-01", "Store 2", 1200, &groceriesID)
+
+	createTestRule(t, store, database.CategorizationRule{
+		MatchType:    "contains",
+		MatchValue:   "store",
+		CategoryID:   groceriesID,
+		CategoryName: "Groceries",
+	})
+	createTestRule(t, store, database.CategorizationRule{
+		MatchType:    "contains",
+		MatchValue:   "flight",
+		CategoryID:   travelID,
+		CategoryName: "Travel",
+	})
+
+	summaries, err := app.GetCategorySummaries()
+	if err != nil {
+		t.Fatalf("GetCategorySummaries failed: %v", err)
+	}
+	if len(summaries) != 2 {
+		t.Fatalf("Expected 2 summaries, got %d", len(summaries))
+	}
+
+	var groceries database.CategorySummary
+	for _, summary := range summaries {
+		if summary.ID == groceriesID {
+			groceries = summary
+			break
+		}
+	}
+
+	if groceries.ID == 0 {
+		t.Fatalf("Expected groceries summary to be present")
+	}
+	if groceries.TransactionCount != 2 {
+		t.Fatalf("Expected groceries transaction count 2, got %d", groceries.TransactionCount)
+	}
+	if groceries.RuleCount != 1 {
+		t.Fatalf("Expected groceries rule count 1, got %d", groceries.RuleCount)
+	}
+	if groceries.LastUsedDate != "2024-02-01" {
+		t.Fatalf("Expected groceries last used 2024-02-01, got %s", groceries.LastUsedDate)
+	}
+}
+
+func TestDeleteCategory(t *testing.T) {
+	store := setupTestDB(t)
+	app := newTestApp(t, store)
+
+	accountID := createTestAccount(t, store, "Checking")
+	categoryID := createTestCategory(t, store, "Subscriptions")
+
+	txOne := createTestTransaction(t, store, accountID, nil, "2024-01-01", "Netflix", 1599, &categoryID)
+	txTwo := createTestTransaction(t, store, accountID, nil, "2024-01-02", "Spotify", 999, &categoryID)
+
+	createTestRule(t, store, database.CategorizationRule{
+		MatchType:    "contains",
+		MatchValue:   "netflix",
+		CategoryID:   categoryID,
+		CategoryName: "Subscriptions",
+	})
+
+	res, err := app.DeleteCategory(categoryID)
+	if err != nil {
+		t.Fatalf("DeleteCategory failed: %v", err)
+	}
+	if res == nil {
+		t.Fatalf("Expected delete result")
+	}
+	if res.UncategorizedCount != 2 {
+		t.Fatalf("Expected uncategorized count 2, got %d", res.UncategorizedCount)
+	}
+	if res.DeletedRuleCount != 1 {
+		t.Fatalf("Expected deleted rule count 1, got %d", res.DeletedRuleCount)
+	}
+
+	var categoriesCount int
+	if err := store.DB().QueryRow("SELECT COUNT(*) FROM categories WHERE id = ?", categoryID).Scan(&categoriesCount); err != nil {
+		t.Fatalf("count categories: %v", err)
+	}
+	if categoriesCount != 0 {
+		t.Fatalf("Expected category to be deleted")
+	}
+
+	var rulesCount int
+	if err := store.DB().QueryRow("SELECT COUNT(*) FROM categorization_rules WHERE category_id = ?", categoryID).Scan(&rulesCount); err != nil {
+		t.Fatalf("count rules: %v", err)
+	}
+	if rulesCount != 0 {
+		t.Fatalf("Expected rules to be deleted")
+	}
+
+	for _, txID := range []int64{txOne.ID, txTwo.ID} {
+		var category sql.NullInt64
+		if err := store.DB().QueryRow("SELECT category_id FROM transactions WHERE id = ?", txID).Scan(&category); err != nil {
+			t.Fatalf("query transaction category: %v", err)
+		}
+		if category.Valid {
+			t.Fatalf("Expected transaction %d to be uncategorized", txID)
+		}
+	}
+}
+
 // ============================================================================
 // 4. Account & Owner Management
 // ============================================================================
