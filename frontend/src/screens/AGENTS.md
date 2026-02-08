@@ -36,5 +36,4 @@
   - `frontend/src/screens/About/`
   - `frontend/src/screens/Settings/`
   - `frontend/src/screens/CategorizationLoop/`
-- TODO (use Analysis as the implementation + styling reference):
-  - [ ] `frontend/src/screens/CategoryManager/`
+  - `frontend/src/screens/CategoryManager/`
