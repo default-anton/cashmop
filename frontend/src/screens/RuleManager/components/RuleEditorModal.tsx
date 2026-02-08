@@ -13,6 +13,8 @@ interface RuleEditorModalProps {
   isOpen: boolean;
   activeRule: RuleRow | null;
   matchTypeOptions: MatchTypeOption[];
+  prefillCategory?: { id: number; name: string } | null;
+  disableCategorySelection?: boolean;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -25,6 +27,8 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
   isOpen,
   activeRule,
   matchTypeOptions,
+  prefillCategory = null,
+  disableCategorySelection = false,
   onClose,
   onSaved,
 }) => {
@@ -224,10 +228,15 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
       setCategoryInput(activeRule.category_name || "");
       setCategoryId(activeRule.category_id || 0);
       setAmountFilter(deriveAmountFilter(activeRule));
-    } else {
-      resetEditorState();
+      return;
     }
-  }, [activeRule, isOpen, resetEditorState]);
+
+    resetEditorState();
+    if (prefillCategory) {
+      setCategoryInput(prefillCategory.name);
+      setCategoryId(prefillCategory.id);
+    }
+  }, [activeRule, isOpen, prefillCategory, resetEditorState]);
 
   const buildRulePayload = (): RulePayload => {
     const { amountMin, amountMax } = buildAmountBounds(amountFilter, currentAmountBasis);
@@ -324,6 +333,40 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (confirmUpdateOpen) {
+          setConfirmUpdateOpen(false);
+          return;
+        }
+        handleClose();
+        return;
+      }
+
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        event.preventDefault();
+        if (confirmUpdateOpen && activeRule) {
+          handleUpdateRule(false);
+          return;
+        }
+        if (activeRule) {
+          openUpdateConfirm();
+          return;
+        }
+        handleSaveRule();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeRule, confirmUpdateOpen, handleClose, handleSaveRule, handleUpdateRule, isOpen, openUpdateConfirm]);
+
   const selectionRule: SelectionRule = {
     text: matchValue,
     mode: matchType,
@@ -394,7 +437,11 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
               aria-label="Category for rule"
               filterMode="none"
               dropdownClassName="z-[110]"
+              disabled={disableCategorySelection}
             />
+            {disableCategorySelection && (
+              <p className="mt-2 text-xs text-canvas-500 select-none">Category is fixed in quick-manage mode.</p>
+            )}
           </div>
 
           <div className={sectionClass}>
@@ -420,15 +467,18 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
             />
           </div>
 
-          <div className="flex flex-wrap justify-end gap-3">
-            <Button variant="secondary" onClick={handleClose}>
-              Cancel
-            </Button>
-            {activeRule ? (
-              <Button onClick={openUpdateConfirm}>Save Changes</Button>
-            ) : (
-              <Button onClick={handleSaveRule}>Save Rule</Button>
-            )}
+          <div className="space-y-2">
+            <p className="text-xs text-canvas-500 select-none">Shortcuts: Ctrl/Cmd+Enter save · Esc close</p>
+            <div className="flex flex-wrap justify-end gap-3">
+              <Button variant="secondary" onClick={handleClose}>
+                Cancel
+              </Button>
+              {activeRule ? (
+                <Button onClick={openUpdateConfirm}>Save Changes</Button>
+              ) : (
+                <Button onClick={handleSaveRule}>Save Rule</Button>
+              )}
+            </div>
           </div>
         </div>
       </Modal>
@@ -441,6 +491,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
               ? "Checking matches..."
               : `${confirmMatchCount} matching transaction${confirmMatchCount !== 1 ? "s" : ""}`}
           </div>
+          <p className="text-xs text-canvas-500 select-none">Shortcuts: Ctrl/Cmd+Enter update-only · Esc cancel</p>
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="secondary" onClick={() => setConfirmUpdateOpen(false)}>
               Cancel

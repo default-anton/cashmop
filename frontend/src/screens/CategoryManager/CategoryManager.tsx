@@ -1,157 +1,463 @@
-import { Check, Edit2, List, Search, Tag, X } from "lucide-react";
 import type React from "react";
-import { useEffect, useState } from "react";
-import { Card, ScreenLayout } from "../../components";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCurrency } from "@/contexts/CurrencyContext";
+import { EventsOn } from "../../../wailsjs/runtime/runtime";
+import { Card, ScreenLayout, Table, useToast } from "../../components";
+import { useFuzzySearch } from "../../hooks/useFuzzySearch";
+import { formatCents } from "../../utils/currency";
+import { EVENT_CATEGORIES_UPDATED, EVENT_TRANSACTIONS_UPDATED } from "../../utils/events";
+import RuleEditorModal from "../RuleManager/components/RuleEditorModal";
+import type { MatchType, RuleRow } from "../RuleManager/types";
+import { buildCategoryTableColumns } from "./components/buildCategoryTableColumns";
+import CategoryManagerHeader from "./components/CategoryManagerHeader";
+import CategoryRulesModal from "./components/CategoryRulesModal";
+import CategoryTableToolbar from "./components/CategoryTableToolbar";
+import CreateCategoryModal from "./components/CreateCategoryModal";
+import DeleteCategoryModal from "./components/DeleteCategoryModal";
+import DeleteRuleConfirmModal from "./components/DeleteRuleConfirmModal";
+import type { CategorySummary } from "./types";
 
-interface Category {
-  id: number;
-  name: string;
-}
+type SortField = "name" | "transaction_count" | "rule_count" | "last_used_date";
+type SortOrder = "asc" | "desc";
 
 interface CategoryManagerProps {
   onViewRules?: (categoryId: number) => void;
 }
 
+const matchTypeOptions: { value: MatchType; label: string }[] = [
+  { value: "contains", label: "Contains" },
+  { value: "starts_with", label: "Starts With" },
+  { value: "ends_with", label: "Ends With" },
+  { value: "exact", label: "Exact" },
+];
+
+const formatDate = (value: string) => {
+  if (!value) return "Never";
+  return new Date(value).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+
+const isEditableTarget = (target: EventTarget | null) => {
+  if (!(target instanceof HTMLElement)) return false;
+  const tagName = target.tagName.toLowerCase();
+  return tagName === "input" || tagName === "textarea" || target.isContentEditable;
+};
+
 const CategoryManager: React.FC<CategoryManagerProps> = ({ onViewRules }) => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editName, setEditName] = useState("");
-  const [search, setSearch] = useState("");
+  const { showToast } = useToast();
+  const { mainCurrency } = useCurrency();
+
+  const [categories, setCategories] = useState<CategorySummary[]>([]);
+  const [rules, setRules] = useState<RuleRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchCategories = async () => {
-    try {
-      const res = await (window as any).go.main.App.GetCategories();
-      setCategories(res || []);
-      setLoading(false);
-    } catch (e) {
-      console.error("Failed to fetch categories", e);
-      setLoading(false);
-    }
-  };
+  const [categorySearch, setCategorySearch] = useState("");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState("");
+  const [renameSaving, setRenameSaving] = useState(false);
+
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const [deleteCategory, setDeleteCategory] = useState<CategorySummary | null>(null);
+  const [deletingCategory, setDeletingCategory] = useState(false);
+
+  const [rulesCategory, setRulesCategory] = useState<CategorySummary | null>(null);
+
+  const [isRuleEditorOpen, setIsRuleEditorOpen] = useState(false);
+  const [activeRule, setActiveRule] = useState<RuleRow | null>(null);
+
+  const [confirmRule, setConfirmRule] = useState<RuleRow | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [confirmMatchCount, setConfirmMatchCount] = useState(0);
+
+  const categorySearchInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchData = useCallback(
+    async (silent = false) => {
+      if (!silent) {
+        setLoading(true);
+      }
+
+      try {
+        const [categorySummaries, ruleList] = await Promise.all([
+          (window as any).go.main.App.GetCategorySummaries(),
+          (window as any).go.main.App.GetCategorizationRules(),
+        ]);
+
+        setCategories(categorySummaries || []);
+        setRules(ruleList || []);
+
+        setRulesCategory((prev) => {
+          if (!prev) return prev;
+          const refreshed = (categorySummaries || []).find((category: CategorySummary) => category.id === prev.id);
+          return refreshed || null;
+        });
+      } catch (error) {
+        console.error("Failed to load categories screen data", error);
+        showToast("Failed to load categories", "error");
+      } finally {
+        if (!silent) {
+          setLoading(false);
+        }
+      }
+    },
+    [showToast],
+  );
 
   useEffect(() => {
-    fetchCategories();
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    const offs = [
+      EventsOn(EVENT_CATEGORIES_UPDATED, () => fetchData(true)),
+      EventsOn(EVENT_TRANSACTIONS_UPDATED, () => fetchData(true)),
+    ];
+
+    return () => {
+      offs.forEach((off) => {
+        off?.();
+      });
+    };
+  }, [fetchData]);
+
+  const hasModalOpen = createModalOpen || !!deleteCategory || !!rulesCategory || isRuleEditorOpen || confirmOpen;
+
+  useEffect(() => {
+    if (hasModalOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        setCreateModalOpen(true);
+        setNewCategoryName("");
+        return;
+      }
+
+      if (event.key === "/" && !isEditableTarget(event.target)) {
+        event.preventDefault();
+        categorySearchInputRef.current?.focus();
+        categorySearchInputRef.current?.select();
+        return;
+      }
+
+      if (event.key === "Escape" && categorySearch.trim()) {
+        setCategorySearch("");
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [categorySearch, hasModalOpen]);
+
+  const sortedCategories = useMemo(() => {
+    const next = [...categories];
+    next.sort((a, b) => {
+      let result = 0;
+      switch (sortField) {
+        case "name":
+          result = a.name.localeCompare(b.name);
+          break;
+        case "transaction_count":
+          result = a.transaction_count - b.transaction_count;
+          break;
+        case "rule_count":
+          result = a.rule_count - b.rule_count;
+          break;
+        case "last_used_date":
+          result = new Date(a.last_used_date || 0).getTime() - new Date(b.last_used_date || 0).getTime();
+          break;
+      }
+      return sortOrder === "asc" ? result : -result;
+    });
+
+    return next;
+  }, [categories, sortField, sortOrder]);
+
+  const buildCategorySearchLabel = useCallback((category: CategorySummary) => {
+    const parts = [
+      category.name,
+      String(category.transaction_count),
+      String(category.rule_count),
+      category.last_used_date || "",
+    ];
+    return `${parts.join(" | ")} ::${category.id}`;
   }, []);
 
-  const handleStartEdit = (category: Category) => {
-    setEditingId(category.id);
-    setEditName(category.name);
+  const filteredCategories = useFuzzySearch(sortedCategories, buildCategorySearchLabel, categorySearch);
+
+  const rulesForActiveCategory = useMemo(() => {
+    if (!rulesCategory) return [];
+    return rules.filter((rule) => rule.category_id === rulesCategory.id);
+  }, [rules, rulesCategory]);
+
+  const formatAmountFilter = (rule: RuleRow) => {
+    const min = rule.amount_min ?? null;
+    const max = rule.amount_max ?? null;
+
+    if (min === null && max === null) return "Any";
+
+    if (min !== null && max !== null) {
+      const lower = Math.min(Math.abs(min), Math.abs(max));
+      const upper = Math.max(Math.abs(min), Math.abs(max));
+      return `${formatCents(lower, mainCurrency)} - ${formatCents(upper, mainCurrency)}`;
+    }
+
+    if (min !== null) {
+      return min < 0 ? `≤ ${formatCents(min, mainCurrency)}` : `≥ ${formatCents(min, mainCurrency)}`;
+    }
+
+    return max !== null && max < 0 ? `≥ ${formatCents(max, mainCurrency)}` : `≤ ${formatCents(max || 0, mainCurrency)}`;
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortField(field);
+    setSortOrder(field === "name" ? "asc" : "desc");
   };
 
   const handleSaveEdit = async () => {
     if (!editingId) return;
+
+    const nextName = editName.trim();
+    if (!nextName) {
+      showToast("Category name cannot be empty", "error");
+      return;
+    }
+
+    setRenameSaving(true);
     try {
-      await (window as any).go.main.App.RenameCategory(editingId, editName);
+      await (window as any).go.main.App.RenameCategory(editingId, nextName);
+      setRulesCategory((prev) => (prev && prev.id === editingId ? { ...prev, name: nextName } : prev));
       setEditingId(null);
-      fetchCategories();
-    } catch (e) {
-      console.error("Failed to rename category", e);
+      setEditName("");
+      showToast("Category renamed", "success");
+      await fetchData(true);
+    } catch (error) {
+      console.error("Failed to rename category", error);
+      showToast("Failed to rename category", "error");
+    } finally {
+      setRenameSaving(false);
     }
   };
 
-  const filteredCategories = categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()));
+  const handleCreateCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) {
+      showToast("Category name is required", "error");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      await (window as any).go.main.App.CreateCategory(name);
+      setCreateModalOpen(false);
+      setNewCategoryName("");
+      showToast(`Category ${name} is ready`, "success");
+      await fetchData(true);
+    } catch (error) {
+      console.error("Failed to create category", error);
+      showToast("Failed to create category", "error");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDeleteCategory = async () => {
+    if (!deleteCategory) return;
+
+    setDeletingCategory(true);
+    try {
+      const res = await (window as any).go.main.App.DeleteCategory(deleteCategory.id);
+      const uncategorizedCount = res?.uncategorized_count || 0;
+      const deletedRuleCount = res?.deleted_rule_count || 0;
+
+      showToast(
+        `Deleted ${deleteCategory.name}: ${uncategorizedCount} uncategorized, ${deletedRuleCount} rule${deletedRuleCount !== 1 ? "s" : ""} removed`,
+        "success",
+      );
+
+      if (rulesCategory?.id === deleteCategory.id) {
+        setRulesCategory(null);
+      }
+
+      setDeleteCategory(null);
+      await fetchData(true);
+    } catch (error) {
+      console.error("Failed to delete category", error);
+      showToast("Failed to delete category", "error");
+    } finally {
+      setDeletingCategory(false);
+    }
+  };
+
+  const openRuleDeleteConfirm = async (rule: RuleRow) => {
+    setConfirmRule(rule);
+    setConfirmOpen(true);
+    setConfirmMatchCount(0);
+    setConfirmLoading(true);
+
+    try {
+      const count = await (window as any).go.main.App.GetRuleMatchCount(rule.id);
+      setConfirmMatchCount(count || 0);
+    } catch (error) {
+      console.error("Failed to fetch rule match count", error);
+      setConfirmMatchCount(0);
+    } finally {
+      setConfirmLoading(false);
+    }
+  };
+
+  const handleDeleteRule = async (rule: RuleRow, uncategorize: boolean) => {
+    try {
+      const res = await (window as any).go.main.App.DeleteCategorizationRule(rule.id, uncategorize);
+      if (uncategorize) {
+        showToast(
+          `Rule deleted and ${res?.uncategorized_count || 0} transaction${(res?.uncategorized_count || 0) !== 1 ? "s" : ""} uncategorized`,
+          "success",
+        );
+      } else {
+        showToast("Rule deleted", "success");
+      }
+      setConfirmOpen(false);
+      setConfirmRule(null);
+      await fetchData(true);
+    } catch (error) {
+      console.error("Failed to delete rule", error);
+      showToast("Failed to delete rule", "error");
+    }
+  };
+
+  const columns = buildCategoryTableColumns({
+    editingId,
+    editName,
+    renameSaving,
+    onEditNameChange: setEditName,
+    onSaveEdit: handleSaveEdit,
+    onCancelEdit: () => setEditingId(null),
+    onStartEdit: (category) => {
+      setEditingId(category.id);
+      setEditName(category.name);
+    },
+    onOpenRules: setRulesCategory,
+    onDeleteCategory: setDeleteCategory,
+    formatDate,
+  });
 
   return (
-    <ScreenLayout size="medium">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-brand/10 text-brand rounded-2xl shadow-brand/5 shadow-inner">
-            <Tag className="w-8 h-8" />
-          </div>
-          <div>
-            <h1 className="select-none text-3xl font-black text-canvas-800">Categories</h1>
-            <p className="select-none text-canvas-500 font-medium">Manage and rename your transaction categories</p>
-          </div>
-        </div>
+    <ScreenLayout size="wide">
+      <div className="space-y-6">
+        <CategoryManagerHeader />
 
-        <div className="relative w-64 group">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-canvas-400 group-focus-within:text-brand transition-colors" />
-          <input
-            type="text"
-            placeholder="Search categories..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-canvas-200 rounded-xl text-sm focus:outline-none focus:border-brand focus:ring-4 focus:ring-brand/5 transition-all shadow-sm"
-          />
-        </div>
+        <Card variant="elevated" className="overflow-hidden">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-20">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-brand/25 border-t-brand" />
+              <p className="text-sm font-semibold text-canvas-500 select-none">Loading categories...</p>
+            </div>
+          ) : (
+            <>
+              <CategoryTableToolbar
+                search={categorySearch}
+                categoryCount={filteredCategories.length}
+                onSearchChange={setCategorySearch}
+                onClearSearch={() => setCategorySearch("")}
+                onCreateCategory={() => {
+                  setCreateModalOpen(true);
+                  setNewCategoryName("");
+                }}
+                searchInputRef={categorySearchInputRef}
+              />
+
+              <Table
+                columns={columns}
+                data={filteredCategories}
+                className="!rounded-none !border-none !bg-transparent shadow-none"
+                sortField={sortField}
+                sortOrder={sortOrder}
+                onSort={(field) => handleSort(field as SortField)}
+                emptyMessage="No categories found"
+                emptyDetail="Create your first category and start wiring rules to it."
+              />
+            </>
+          )}
+        </Card>
       </div>
 
-      {loading ? (
-        <div className="select-none flex justify-center py-20 text-canvas-400">Loading categories...</div>
-      ) : filteredCategories.length === 0 ? (
-        <div className="bg-white rounded-3xl p-12 text-center border-2 border-dashed border-canvas-200">
-          <Tag className="w-12 h-12 text-canvas-200 mx-auto mb-4" />
-          <p className="select-none text-canvas-500 font-bold">No categories found matching "{search}"</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredCategories.map((category) => (
-            <Card
-              key={category.id}
-              variant="glass"
-              className={`p-4 group transition-all duration-300 ${editingId === category.id ? "ring-2 ring-brand border-brand shadow-brand-glow" : "hover:shadow-lg hover:border-canvas-300"}`}
-            >
-              <div className="flex items-center justify-between">
-                {editingId === category.id ? (
-                  <div className="flex-1 flex gap-2">
-                    <input
-                      autoFocus
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
-                      className="flex-1 bg-white border border-brand/30 rounded-lg px-3 py-1.5 font-bold text-canvas-800 focus:outline-none focus:ring-2 ring-brand/10"
-                    />
-                    <button
-                      onClick={handleSaveEdit}
-                      className="p-2 bg-brand text-white rounded-lg hover:bg-brand-600 transition-colors"
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setEditingId(null)}
-                      className="p-2 bg-canvas-200 text-canvas-600 rounded-lg hover:bg-canvas-300 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-canvas-100 flex items-center justify-center text-canvas-400 group-hover:bg-brand/5 group-hover:text-brand transition-colors">
-                        <Tag className="w-5 h-5" />
-                      </div>
-                      <span className="font-bold text-canvas-700 text-lg group-hover:text-canvas-900 transition-colors">
-                        {category.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {onViewRules && (
-                        <button
-                          onClick={() => onViewRules(category.id)}
-                          className="px-3 py-1.5 text-xs font-bold uppercase tracking-widest bg-canvas-100 text-canvas-600 hover:text-brand hover:bg-brand/5 rounded-lg transition-all"
-                          title="View Rules"
-                        >
-                          <span className="select-none flex items-center gap-1">
-                            <List className="w-3.5 h-3.5" />
-                            Rules
-                          </span>
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handleStartEdit(category)}
-                        className="p-2 opacity-0 group-hover:opacity-100 text-canvas-400 hover:text-brand hover:bg-brand/5 rounded-lg transition-all"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </Card>
-          ))}
-        </div>
-      )}
+      <CreateCategoryModal
+        isOpen={createModalOpen}
+        value={newCategoryName}
+        creating={creating}
+        onChange={setNewCategoryName}
+        onCreate={handleCreateCategory}
+        onClose={() => setCreateModalOpen(false)}
+      />
+
+      <DeleteCategoryModal
+        category={deleteCategory}
+        deleting={deletingCategory}
+        onClose={() => setDeleteCategory(null)}
+        onDelete={handleDeleteCategory}
+      />
+
+      <CategoryRulesModal
+        isOpen={!!rulesCategory}
+        category={rulesCategory}
+        rules={rulesForActiveCategory}
+        hotkeysEnabled={!isRuleEditorOpen && !confirmOpen}
+        onClose={() => setRulesCategory(null)}
+        onCreateRule={() => {
+          setActiveRule(null);
+          setIsRuleEditorOpen(true);
+        }}
+        onEditRule={(rule) => {
+          setActiveRule(rule);
+          setIsRuleEditorOpen(true);
+        }}
+        onDeleteRule={openRuleDeleteConfirm}
+        onOpenRuleManager={onViewRules}
+        formatAmountFilter={formatAmountFilter}
+      />
+
+      <RuleEditorModal
+        isOpen={isRuleEditorOpen}
+        activeRule={activeRule}
+        matchTypeOptions={matchTypeOptions}
+        prefillCategory={!activeRule && rulesCategory ? { id: rulesCategory.id, name: rulesCategory.name } : null}
+        disableCategorySelection={!!rulesCategory}
+        onClose={() => {
+          setIsRuleEditorOpen(false);
+          setActiveRule(null);
+        }}
+        onSaved={() => fetchData(true)}
+      />
+
+      <DeleteRuleConfirmModal
+        isOpen={confirmOpen}
+        rule={confirmRule}
+        matchCount={confirmMatchCount}
+        loading={confirmLoading}
+        onClose={() => {
+          setConfirmOpen(false);
+          setConfirmRule(null);
+        }}
+        onDeleteOnly={() => confirmRule && handleDeleteRule(confirmRule, false)}
+        onDeleteAndUncategorize={() => confirmRule && handleDeleteRule(confirmRule, true)}
+      />
     </ScreenLayout>
   );
 };
