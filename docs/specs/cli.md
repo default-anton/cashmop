@@ -146,7 +146,7 @@ Applies when output is JSON (default, or when `--format table` is not supported 
 ## Commands
 
 ### `import`
-Import CSV/XLSX with an explicit mapping. Non-interactive.
+Import CSV/XLSX/XLS with an explicit mapping. Non-interactive.
 
 #### Usage
 - `cashmop import --file <path> --mapping <path|name|-> [--month YYYY-MM ...] [--dry-run] [--no-apply-rules]`
@@ -172,13 +172,16 @@ Import CSV/XLSX with an explicit mapping. Non-interactive.
   - trims cells
   - auto header detection (keywords + heuristics) like GUI
   - date parsing: same as GUI `parseDateLoose` (ISO-ish, common bank formats like `MM/DD/YYYY` and `DD/MM/YYYY`, and `Date(...)` fallback)
-- XLSX:
+- Excel (`.xlsx` / `.xls`):
   - first sheet
   - trims cells
 
 #### Mapping JSON Schema (parity with GUI)
 
-Note: mapping JSON is stored/loaded exactly like the GUI (camelCase keys such as `amountMapping`, `invertSign`, `defaultOwner`, `currencyDefault`). Treat as an opaque blob.
+Note: mapping JSON is stored/loaded exactly like the GUI (camelCase keys such as `amountMapping`, `invertSign`, `owner`, `currencyDefault`). Treat as an opaque blob.
+
+`owner` is a static mapping-level default (applies to all imported rows). Owner is no longer mapped from a CSV column.
+Legacy keys (`defaultOwner`, `csv.owner`) are not part of the current schema and should not be used for new mappings.
 
 ```jsonc
 {
@@ -190,12 +193,11 @@ Note: mapping JSON is stored/loaded exactly like the GUI (camelCase keys such as
       // ... see variants below
       "invertSign": false          // optional
     },
-    "owner": "Owner",             // optional
     "account": "Account",         // optional
     "currency": "Currency"        // optional
   },
   "account": "BMO",               // required (used when csv.account not set)
-  "defaultOwner": "Unassigned",   // optional (used when csv.owner not set)
+  "owner": "Unassigned",          // optional static owner (applies to all rows)
   "currencyDefault": "CAD"        // required (used when csv.currency not set)
 }
 ```
@@ -204,6 +206,8 @@ Amount mapping variants:
 - `{"type":"single","column":"Amount","invertSign":false}`
 - `{"type":"debitCredit","debitColumn":"Debit","creditColumn":"Credit","invertSign":false}`
 - `{"type":"amountWithType","amountColumn":"Amount","typeColumn":"Type","negativeValue":"debit","positiveValue":"credit","invertSign":false}`
+
+`invertSign` is only applied for `single` mappings. For `debitCredit` and `amountWithType`, sign is derived from role semantics and `invertSign` is ignored.
 
 #### Success output
 
