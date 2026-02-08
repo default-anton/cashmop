@@ -23,15 +23,32 @@
 7. Tag + push:
    - `git tag vX.Y.Z`
    - `git push origin vX.Y.Z`
-8. Update GitHub release notes with changelog:
-   - GitHub Actions auto-creates release (empty notes).
+8. Wait for GitHub Actions to finish (REQUIRED):
+   - Wait for the `release` workflow for the tag commit:
+     ```bash
+     VERSION=0.1.1
+     SHA=$(git rev-list -n 1 v$VERSION)
+     RELEASE_RUN_ID=$(gh run list --workflow release --limit 30 --json databaseId,headSha --jq ".[] | select(.headSha == \"$SHA\") | .databaseId" | head -n1)
+     gh run watch "$RELEASE_RUN_ID" --exit-status
+     ```
+   - Also wait for CI on the release commit:
+     ```bash
+     CI_RUN_ID=$(gh run list --workflow ci --limit 30 --json databaseId,headSha --jq ".[] | select(.headSha == \"$SHA\") | .databaseId" | head -n1)
+     gh run watch "$CI_RUN_ID" --exit-status
+     ```
+9. Update GitHub release notes with changelog:
    - Update with `CHANGELOG.md` content for version:
      ```bash
      VERSION=0.1.1
      gh release edit v$VERSION --notes "$(./scripts/extract-changelog.ts $VERSION)"
      ```
-9. Verify GitHub release artifacts:
+10. Verify GitHub release artifacts:
    - Release notes match `CHANGELOG.md` section
    - `cashmop-macos-arm64-X.Y.Z.zip`
    - `cashmop-linux-amd64-X.Y.Z.AppImage`
    - `cashmop-linux-amd64-X.Y.Z.deb`
+   - Quick check command:
+     ```bash
+     VERSION=0.1.1
+     gh release view v$VERSION --json assets --jq '.assets[].name'
+     ```
