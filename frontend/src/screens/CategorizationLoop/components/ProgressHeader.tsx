@@ -20,7 +20,7 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
     <div className="space-y-1.5">
       <div className="h-2 overflow-hidden rounded-full bg-canvas-200/80">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-brand to-indigo-500 transition-[width] duration-300 ease-out"
+          className="h-full rounded-full bg-gradient-to-r from-brand to-brand-alt transition-[width] duration-300 ease-out"
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -46,7 +46,7 @@ export const ProgressHeader: React.FC<ProgressHeaderProps> = ({
     <div className="space-y-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
-          <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-indigo-400/20 p-3.5 text-brand shadow-brand-glow">
+          <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-brand-alt/20 p-3.5 text-brand shadow-brand-glow">
             <Layers className="h-8 w-8" />
           </div>
           <div>

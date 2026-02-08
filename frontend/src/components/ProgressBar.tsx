@@ -27,7 +27,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
     default: "bg-brand",
     success: "bg-finance-income",
     error: "bg-finance-expense",
-    warning: "bg-yellow-500",
+    warning: "bg-status-warning",
   };
 
   return (

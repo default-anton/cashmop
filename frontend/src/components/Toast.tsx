@@ -32,15 +32,15 @@ const Toast: React.FC<ToastProps> = ({ message, type = "info", duration = 5000, 
     },
     warning: {
       icon: AlertCircle,
-      bg: "bg-yellow-100",
-      border: "border-yellow-300",
-      text: "text-yellow-800",
+      bg: "bg-status-warning-soft",
+      border: "border-status-warning-border",
+      text: "text-status-warning-ink",
     },
     info: {
       icon: Info,
-      bg: "bg-blue-100",
-      border: "border-blue-300",
-      text: "text-blue-800",
+      bg: "bg-status-info-soft",
+      border: "border-status-info-border",
+      text: "text-status-info-ink",
     },
   };
 

@@ -20,7 +20,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
       <div className="space-y-6 font-sans text-canvas-800">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="flex items-start gap-4">
-            <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-indigo-400/20 p-3.5 text-brand shadow-brand-glow">
+            <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-brand-alt/20 p-3.5 text-brand shadow-brand-glow">
               <FileSpreadsheet className="h-8 w-8" />
             </div>
             <div>
@@ -48,7 +48,7 @@ export default function ImportFlow({ onImportComplete }: ImportFlowProps) {
             className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${
               model.warning.tone === "error"
                 ? "border-finance-expense/25 bg-finance-expense/10 text-finance-expense"
-                : "border-yellow-300 bg-yellow-100 text-yellow-800"
+                : "border-status-warning-border bg-status-warning-soft text-status-warning-ink"
             }`}
           >
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />

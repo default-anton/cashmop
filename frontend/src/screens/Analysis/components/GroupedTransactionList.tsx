@@ -382,7 +382,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
     <div className="w-full space-y-6">
       {showSummary && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card variant="elevated" className="p-6 bg-gradient-to-br from-emerald-50/60 to-canvas-50">
+          <Card variant="elevated" className="p-6 bg-gradient-to-br from-finance-income/10 to-canvas-50">
             <div className="text-[10px] font-extrabold text-canvas-600 uppercase tracking-[0.14em] mb-1 select-none">
               Total Income
             </div>
@@ -393,7 +393,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
               )}
             </div>
           </Card>
-          <Card variant="elevated" className="p-6 bg-gradient-to-br from-rose-50/60 to-canvas-50">
+          <Card variant="elevated" className="p-6 bg-gradient-to-br from-finance-expense/10 to-canvas-50">
             <div className="text-[10px] font-extrabold text-canvas-600 uppercase tracking-[0.14em] mb-1 select-none">
               Total Expenses
             </div>
@@ -406,7 +406,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
           </Card>
           <Card
             variant="elevated"
-            className="p-6 !border-brand/30 shadow-brand-glow bg-gradient-to-br from-brand/10 to-indigo-100/50"
+            className="p-6 !border-brand/30 shadow-brand-glow bg-gradient-to-br from-brand/10 to-brand-soft/70"
           >
             <div className="text-[10px] font-extrabold text-brand uppercase tracking-[0.14em] mb-1 select-none">
               Net Flow
@@ -440,7 +440,7 @@ const GroupedTransactionList: React.FC<GroupedTransactionListProps> = ({
                   transition={{ type: "spring", stiffness: 450, damping: 28 }}
                   className={
                     option.value === selectedMonth
-                      ? "px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 select-none bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                      ? "px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 select-none bg-gradient-to-r from-brand to-brand-alt text-white shadow-brand-glow"
                       : "px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 select-none text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
                   }
                 >

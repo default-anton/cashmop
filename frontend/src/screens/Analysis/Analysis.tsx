@@ -360,7 +360,7 @@ const Analysis: React.FC = () => {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="flex items-start gap-4">
-            <div className="p-3.5 bg-gradient-to-br from-brand/20 to-indigo-400/20 text-brand rounded-3xl border border-brand/25 shadow-brand-glow">
+            <div className="p-3.5 bg-gradient-to-br from-brand/20 to-brand-alt/20 text-brand rounded-3xl border border-brand/25 shadow-brand-glow">
               <BarChart3 className="w-8 h-8" />
             </div>
             <div>
@@ -433,7 +433,7 @@ const Analysis: React.FC = () => {
             className={`flex items-start gap-3 rounded-2xl border px-4 py-3.5 ${
               displayWarning.tone === "error"
                 ? "bg-finance-expense/10 border-finance-expense/25 text-finance-expense"
-                : "bg-yellow-100 border-yellow-300 text-yellow-800"
+                : "bg-status-warning-soft border-status-warning-border text-status-warning-ink"
             }`}
           >
             <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0 select-none" />
@@ -466,7 +466,7 @@ const Analysis: React.FC = () => {
                   px-3.5 py-2 rounded-xl text-sm font-semibold transition-all duration-200 select-none
                   ${
                     groupBy === option
-                      ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                      ? "bg-gradient-to-r from-brand to-brand-alt text-white shadow-brand-glow"
                       : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-100"
                   }
                 `}

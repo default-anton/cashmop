@@ -20,7 +20,7 @@ const Button: React.FC<ButtonProps> = ({
   const variantClasses = {
     primary: disabled
       ? "bg-canvas-200 text-canvas-500 cursor-not-allowed"
-      : "bg-gradient-to-r from-brand to-indigo-500 hover:from-brand-hover hover:to-indigo-600 text-white shadow-brand-glow",
+      : "bg-gradient-to-r from-brand to-brand-alt hover:from-brand-hover hover:to-brand text-white shadow-brand-glow",
     secondary: disabled
       ? "bg-canvas-100 text-canvas-500 cursor-not-allowed"
       : "bg-canvas-50 border border-canvas-300 text-canvas-700 hover:border-canvas-400 hover:bg-canvas-100",

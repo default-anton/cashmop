@@ -394,7 +394,7 @@ const RuleEditorModal: React.FC<RuleEditorModalProps> = ({
                   onClick={() => setMatchType(option.value)}
                   className={`rounded-lg px-3 py-2 text-sm font-semibold transition-all select-none ${
                     matchType === option.value
-                      ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                      ? "bg-gradient-to-r from-brand to-brand-alt text-white shadow-brand-glow"
                       : "text-canvas-600 hover:bg-canvas-100 hover:text-canvas-900"
                   }`}
                 >

@@ -141,7 +141,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
       <div className="px-6 pb-6 pt-6">
         <div className="space-y-4">
           <header className="flex items-start gap-4">
-            <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-indigo-400/20 p-3.5 text-brand shadow-brand-glow">
+            <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-brand-alt/20 p-3.5 text-brand shadow-brand-glow">
               <img src={logoSquare} alt="CashMop" className="h-8 w-8 select-none" />
             </div>
             <div>

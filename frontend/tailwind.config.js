@@ -16,44 +16,59 @@ export default {
         mono: ['"JetBrains Mono"', 'Menlo', 'Consolas', ...defaultTheme.fontFamily.mono],
       },
       colors: {
-        // "Canvas" - Cooler, brighter base so accents can pop.
+        // "Canvas" - cool neutral slate to reduce eye fatigue on dense finance views.
         canvas: {
           50: '#ffffff',
-          100: '#f5f5ff',
-          200: '#ececff',
-          300: '#d8d7ff',
-          400: '#b8b7e6',
-          500: '#8d8bb8',
-          600: '#615f87',
-          700: '#413f63',
-          800: '#2a2946',
-          900: '#1c1b34',
-          950: '#121124',
+          100: '#f8fafc',
+          200: '#f1f5f9',
+          300: '#e2e8f0',
+          400: '#cbd5e1',
+          500: '#94a3b8',
+          600: '#64748b',
+          700: '#475569',
+          800: '#334155',
+          900: '#1e293b',
+          950: '#0f172a',
         },
-        // "Brand" - punchy electric violet.
+        // "Brand" - Ledger Mint accent.
         brand: {
-          DEFAULT: '#7c3aed',
-          hover: '#6d28d9',
-          soft: '#ede9fe',
-          ink: '#1f1142',
-          glow: 'rgba(124, 58, 237, 0.35)',
+          DEFAULT: '#0f766e',
+          hover: '#115e59',
+          alt: '#0e7490',
+          soft: '#ccfbf1',
+          ink: '#092724',
+          glow: 'rgba(15, 118, 110, 0.35)',
         },
         // Semantic financial colors.
         finance: {
-          income: '#059669',
-          expense: '#ef4444',
-          net: '#6366f1',
-        }
+          income: '#15803d',
+          expense: '#b91c1c',
+          net: '#1d4ed8',
+        },
+        status: {
+          warning: {
+            DEFAULT: '#b45309',
+            soft: '#fffbeb',
+            border: '#fcd34d',
+            ink: '#78350f',
+          },
+          info: {
+            DEFAULT: '#0369a1',
+            soft: '#e0f2fe',
+            border: '#7dd3fc',
+            ink: '#0c4a6e',
+          },
+        },
       },
       backgroundImage: {
         'paper-texture': "url(\"data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.12'/%3E%3C/svg%3E\")",
       },
       boxShadow: {
-        'focus-ring': '0 0 0 2px rgba(124, 58, 237, 0.22)',
-        'glass': '0 18px 45px -22px rgba(34, 24, 80, 0.45)',
-        'brand-glow': '0 10px 28px -12px rgba(124, 58, 237, 0.55)',
-        'card': '0 12px 34px -24px rgba(24, 16, 56, 0.38)',
-        'card-hover': '0 20px 44px -24px rgba(30, 22, 70, 0.48)',
+        'focus-ring': '0 0 0 2px rgba(15, 118, 110, 0.22)',
+        'glass': '0 18px 45px -22px rgba(15, 23, 42, 0.32)',
+        'brand-glow': '0 10px 28px -12px rgba(15, 118, 110, 0.52)',
+        'card': '0 12px 34px -24px rgba(15, 23, 42, 0.24)',
+        'card-hover': '0 20px 44px -24px rgba(15, 23, 42, 0.34)',
       },
       animation: {
         // Fast, snappy transitions for the "TikTok style" swipe effect

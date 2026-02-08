@@ -168,7 +168,7 @@ function App() {
                 aria-label="Navigate to Analysis"
                 className={`px-4 py-2 rounded-2xl text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 ${
                   screen === "analysis"
-                    ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                    ? "bg-gradient-to-r from-brand to-brand-alt text-white shadow-brand-glow"
                     : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-200/80"
                 }`}
               >
@@ -183,7 +183,7 @@ function App() {
               aria-label="Navigate to Import"
               className={`px-4 py-2 rounded-2xl text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 ${
                 screen === "import"
-                  ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                  ? "bg-gradient-to-r from-brand to-brand-alt text-white shadow-brand-glow"
                   : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-200/80"
               }`}
             >
@@ -198,7 +198,7 @@ function App() {
                 aria-label="Navigate to Categorize"
                 className={`px-4 py-2 rounded-2xl text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 whitespace-nowrap ${
                   screen === "categorize"
-                    ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                    ? "bg-gradient-to-r from-brand to-brand-alt text-white shadow-brand-glow"
                     : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-200/80"
                 }`}
               >
@@ -215,7 +215,7 @@ function App() {
                 aria-label="Navigate to Rules"
                 className={`px-4 py-2 rounded-2xl text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 ${
                   screen === "rules"
-                    ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                    ? "bg-gradient-to-r from-brand to-brand-alt text-white shadow-brand-glow"
                     : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-200/80"
                 }`}
               >
@@ -230,7 +230,7 @@ function App() {
               aria-label="Navigate to Categories"
               className={`px-4 py-2 rounded-2xl text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 ${
                 screen === "categories"
-                  ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                  ? "bg-gradient-to-r from-brand to-brand-alt text-white shadow-brand-glow"
                   : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-200/80"
               }`}
             >
@@ -244,7 +244,7 @@ function App() {
               aria-label="Navigate to Settings"
               className={`px-4 py-2 rounded-2xl text-[11px] font-semibold tracking-[0.12em] uppercase transition-all duration-200 ${
                 screen === "settings"
-                  ? "bg-gradient-to-r from-brand to-indigo-500 text-white shadow-brand-glow"
+                  ? "bg-gradient-to-r from-brand to-brand-alt text-white shadow-brand-glow"
                   : "text-canvas-600 hover:text-canvas-900 hover:bg-canvas-200/80"
               }`}
             >

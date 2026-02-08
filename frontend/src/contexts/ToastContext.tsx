@@ -98,14 +98,14 @@ const ToastItem: React.FC<ToastItemProps> = ({ toast, onClose }) => {
       text: "text-finance-expense",
     },
     warning: {
-      bg: "bg-yellow-100",
-      border: "border-yellow-300",
-      text: "text-yellow-800",
+      bg: "bg-status-warning-soft",
+      border: "border-status-warning-border",
+      text: "text-status-warning-ink",
     },
     info: {
-      bg: "bg-blue-100",
-      border: "border-blue-300",
-      text: "text-blue-800",
+      bg: "bg-status-info-soft",
+      border: "border-status-info-border",
+      text: "text-status-info-ink",
     },
   };
 

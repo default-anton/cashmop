@@ -4,7 +4,7 @@ import type React from "react";
 const RuleManagerHeader: React.FC = () => (
   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
     <div className="flex items-start gap-4">
-      <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-indigo-400/20 p-3.5 text-brand shadow-brand-glow">
+      <div className="rounded-3xl border border-brand/25 bg-gradient-to-br from-brand/20 to-brand-alt/20 p-3.5 text-brand shadow-brand-glow">
         <Wand2 className="h-8 w-8" />
       </div>
       <div>

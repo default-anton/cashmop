@@ -13,8 +13,8 @@ const Badge: React.FC<BadgeProps> = ({ children, variant = "default", className 
     default: "bg-canvas-200 text-canvas-700",
     success: "bg-finance-income/10 text-finance-income border border-finance-income/30",
     error: "bg-finance-expense/10 text-finance-expense border border-finance-expense/30",
-    warning: "bg-yellow-100 text-yellow-800 border border-yellow-300",
-    info: "bg-blue-100 text-blue-800 border border-blue-300",
+    warning: "bg-status-warning-soft text-status-warning-ink border border-status-warning-border",
+    info: "bg-status-info-soft text-status-info-ink border border-status-info-border",
   };
 
   return <span className={`${baseClasses} ${variantClasses[variant]} ${className}`}>{children}</span>;
