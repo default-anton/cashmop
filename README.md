@@ -2,7 +2,7 @@
 
 Desktop-first cash flow tracking. Import messy bank exports, normalize once, punch through categorization fast, and export clean data. Local-only, open source, no cloud.
 
-**Status:** v0.4.0 released. Backward compatibility not guaranteed until v1.0.
+**Status:** v0.5.0 released. Backward compatibility not guaranteed until v1.0.
 
 ![CashMop logo](frontend/src/assets/branding/logo-landscape.png)
 
@@ -36,7 +36,7 @@ Screenshot and walkthrough coming soon.
 ### Installation
 Download the latest build from `https://github.com/default-anton/cashmop/releases`.
 
-macOS (Apple Silicon): unzip and drag to Applications. Not notarized; Gatekeeper will warn. If blocked:
+macOS (Apple Silicon): unzip and drag to Applications. App is not notarized yet, so Gatekeeper will warn. If blocked:
 ```bash
 xattr -dr com.apple.quarantine CashMop.app
 ```

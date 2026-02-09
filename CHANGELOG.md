@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.5.0] - 2026-02-08
+
+### Changed
+- Refreshed the app UI with the new ledger-mint visual palette across screens.
+
 ## [0.4.0] - 2026-02-08
 
 ### Added
