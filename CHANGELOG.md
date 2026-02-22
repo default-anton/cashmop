@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.5.1] - 2026-02-22
+
+### Fixed
+- Release packaging now consistently ships macOS bundle as `CashMop.app` (not lowercase), and release docs now verify the canonical bundle name.
+
 ## [0.5.0] - 2026-02-08
 
 ### Changed

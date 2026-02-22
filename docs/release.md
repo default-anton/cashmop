@@ -44,7 +44,7 @@
      ```
 10. Verify GitHub release artifacts:
    - Release notes match `CHANGELOG.md` section
-   - `cashmop-macos-arm64-X.Y.Z.zip`
+   - `cashmop-macos-arm64-X.Y.Z.zip` (contains `CashMop.app`)
    - `cashmop-linux-amd64-X.Y.Z.AppImage`
    - `cashmop-linux-amd64-X.Y.Z.deb`
    - Quick check command:

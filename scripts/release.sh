@@ -65,13 +65,29 @@ case "$TARGET" in
 
     wails build --platform darwin/$ARCH
 
-    APP_PATH="build/bin/cashmop.app"
-    if [ ! -d "$APP_PATH" ]; then
-      APP_PATH=$(ls build/bin/*.app 2>/dev/null | head -n 1 || true)
-      if [ -z "$APP_PATH" ]; then
-        echo "No .app bundle found in build/bin"
+    EXPECTED_APP_PATH="build/bin/CashMop.app"
+
+    DISCOVERED_APP_PATH=$(ls -d build/bin/*.app 2>/dev/null | head -n 1 || true)
+    if [ -z "$DISCOVERED_APP_PATH" ]; then
+      echo "No .app bundle found in build/bin"
+      exit 1
+    fi
+
+    if [ "$(basename "$DISCOVERED_APP_PATH")" != "CashMop.app" ]; then
+      TEMP_APP_PATH="build/bin/.cashmop-rename-$$.app"
+      if [ -e "$TEMP_APP_PATH" ]; then
+        echo "Temporary app path already exists: $TEMP_APP_PATH"
         exit 1
       fi
+
+      mv "$DISCOVERED_APP_PATH" "$TEMP_APP_PATH"
+      mv "$TEMP_APP_PATH" "$EXPECTED_APP_PATH"
+    fi
+
+    APP_PATH=$(ls -d build/bin/*.app 2>/dev/null | head -n 1 || true)
+    if [ "$APP_PATH" != "$EXPECTED_APP_PATH" ]; then
+      echo "Expected canonical app bundle at $EXPECTED_APP_PATH, found: ${APP_PATH:-<none>}"
+      exit 1
     fi
 
     if [ "${SKIP_CODESIGN:-}" != "1" ]; then
@@ -82,6 +98,11 @@ case "$TARGET" in
 
     ZIP_NAME="$OUTPUT_DIR/cashmop-macos-$ARCH-$VERSION_SEMVER.zip"
     ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_NAME"
+
+    if ! unzip -l "$ZIP_NAME" | grep 'CashMop\.app/' >/dev/null; then
+      echo "macOS zip does not contain CashMop.app: $ZIP_NAME"
+      exit 1
+    fi
     ;;
   linux)
     wails build --platform linux/$ARCH
