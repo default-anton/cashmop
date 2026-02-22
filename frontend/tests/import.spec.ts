@@ -17,6 +17,7 @@ type ImportFlowConfig = {
   filePath: string;
   mapCurrency: boolean;
   accountName: string;
+  ownerName: string;
 };
 
 const runImportFlow = async (importFlowPage: ImportFlowPage, config: ImportFlowConfig) => {
@@ -31,6 +32,7 @@ const runImportFlow = async (importFlowPage: ImportFlowPage, config: ImportFlowC
   await importFlowPage.mapAmount("Amount");
   await importFlowPage.mapDescription("Description");
   await importFlowPage.setAccountStatic(config.accountName);
+  await importFlowPage.setOwnerStatic(config.ownerName);
   if (config.mapCurrency) {
     await importFlowPage.mapCurrency("Currency");
   }
@@ -102,6 +104,7 @@ test("import flow with header maps CAD + USD currencies", async ({ page, importF
     filePath: headerCsvPath,
     mapCurrency: true,
     accountName: "Checking",
+    ownerName: "Anton",
   });
 
   const imported = await fetchImportedTransactions(page, descriptions);
@@ -131,6 +134,7 @@ test("import flow supports one-click unmap for role changes", async ({ page, imp
   await importFlowPage.mapAmount("Amount");
   await importFlowPage.mapDescription("Description");
   await importFlowPage.setAccountStatic("Checking");
+  await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.expectCanImport();
 
   await importFlowPage.unmapColumn("Amount");
@@ -145,6 +149,7 @@ test("import flow supports csv without header row", async ({ page, importFlowPag
     filePath: noHeaderCsvPath,
     mapCurrency: false,
     accountName: "Checking",
+    ownerName: "Anton",
   });
 
   const imported = await fetchImportedTransactions(page, descriptions);
@@ -190,9 +195,7 @@ test("import flow sets owner correctly", async ({ page, importFlowPage }) => {
   }
 });
 
-test("import flow defaults to Unassigned when no owner specified", async ({ page, importFlowPage }) => {
-  const descriptions = ["Import CAD Coffee", "Import USD Lunch"];
-
+test("import flow requires owner before import", async ({ page, importFlowPage }) => {
   await importFlowPage.goto();
   await page.evaluate(async () => {
     const app = (window as any).go.main.App;
@@ -206,16 +209,11 @@ test("import flow defaults to Unassigned when no owner specified", async ({ page
   await importFlowPage.mapDescription("Description");
   await importFlowPage.setAccountStatic("Checking");
   await importFlowPage.mapCurrency("Currency");
+
+  await importFlowPage.expectCannotImport();
+
+  await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.expectCanImport();
-  await importFlowPage.startImport();
-  await importFlowPage.expectComplete();
-
-  const imported = await fetchImportedTransactions(page, descriptions);
-  expect(imported).toHaveLength(2);
-
-  for (const tx of imported) {
-    expect(tx.owner).toBe("Unassigned");
-  }
 });
 
 test("import flow reuses saved mapping for same file format", async ({ page: _, importFlowPage }) => {
@@ -232,15 +230,18 @@ test("import flow reuses saved mapping for same file format", async ({ page: _, 
   await importFlowPage.mapAmount("Amount");
   await importFlowPage.mapDescription("Description");
   await importFlowPage.setAccountStatic("Checking");
+  await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.mapCurrency("Currency");
   await importFlowPage.expectCanImport();
   await importFlowPage.startImport();
   await importFlowPage.expectComplete();
 
-  // Second import: mapping should be auto-detected and we can continue without clicking headers.
+  // Second import: mapping should be auto-detected, but owner must be selected again.
   await importFlowPage.goto();
   await importFlowPage.uploadFile(headerCsvPath);
   await importFlowPage.expectAutoMappingDetected();
+  await importFlowPage.expectCannotImport();
+  await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.expectCanImport();
 });
 
@@ -262,12 +263,19 @@ test("import flow auto-maps next dropped file after saving mapping in the same s
   await importFlowPage.mapAmount("Amount");
   await importFlowPage.mapDescription("Description");
   await importFlowPage.setAccountStatic("Checking");
+  await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.mapCurrency("Currency");
   await importFlowPage.expectCanImport();
   await importFlowPage.startImport();
 
-  // File 2: mapping should already be applied.
+  // File 2: wait until we are on the second file before asserting mapping state.
+  await expect(importFlowPage.page.getByText("File 2 of 2", { exact: true })).toBeVisible();
+  await expect(importFlowPage.page.getByText("import_header_multi_currency_copy.csv", { exact: true })).toBeVisible();
+
+  // Mapping should already be applied, but owner must be set per file.
   await importFlowPage.expectAutoMappingDetected();
+  await importFlowPage.expectCannotImport();
+  await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.expectCanImport();
 });
 
@@ -285,6 +293,7 @@ test("import flow supports subset-match when bank adds a new column", async ({ p
   await importFlowPage.mapAmount("Amount");
   await importFlowPage.mapDescription("Description");
   await importFlowPage.setAccountStatic("Checking");
+  await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.mapCurrency("Currency");
   await importFlowPage.expectCanImport();
   await importFlowPage.startImport();
@@ -295,6 +304,8 @@ test("import flow supports subset-match when bank adds a new column", async ({ p
   // Upload a file with an extra column.
   await importFlowPage.uploadFile(headerCsvExtraColumnPath);
   await importFlowPage.expectAutoMappingDetected();
+  await importFlowPage.expectCannotImport();
+  await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.expectCanImport();
 });
 
@@ -312,6 +323,7 @@ test("ambiguous duplicate headers should not be auto-matched", async ({ page, im
   await importFlowPage.mapAmount("Amount");
   await importFlowPage.mapDescription("Description");
   await importFlowPage.setAccountStatic("Checking");
+  await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.mapCurrency("Currency");
   await importFlowPage.expectCanImport();
   await importFlowPage.startImport();

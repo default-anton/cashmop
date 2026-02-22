@@ -172,7 +172,7 @@ const ImportFlowMappingPanel: React.FC<MappingPanelProps> = ({
         <div className={sectionClass}>
           <div className="mb-2 flex items-center gap-2">
             <UserRound className="h-3.5 w-3.5 text-canvas-500" />
-            <div className={labelClass}>Owner (optional, static)</div>
+            <div className={labelClass}>Owner (required)</div>
           </div>
           <AutocompleteInput
             value={mapping.owner || ""}

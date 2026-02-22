@@ -35,7 +35,7 @@ type ColumnRoleDropdownProps = {
   onRoleSelect: (role: ColumnRole) => void;
 };
 
-const requiredMappingFields = ["Date", "Amount", "Description", "Account"];
+const requiredMappingFields = ["Date", "Amount", "Description", "Account", "Owner"];
 
 const ColumnRoleDropdown: React.FC<ColumnRoleDropdownProps> = ({
   columnKey,

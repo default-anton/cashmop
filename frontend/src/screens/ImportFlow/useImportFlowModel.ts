@@ -167,15 +167,23 @@ export const useImportFlowModel = (onImportComplete?: () => void) => {
     const picked = pickBestMapping(currentFile, savedMappings);
     if (!picked) return;
 
-    updateCurrentFile((file) => ({
-      ...file,
-      mapping: picked.mapping,
-      autoMatchedMappingId: picked.id,
-      autoMatchedMappingName: picked.name,
-      heuristicApplied: false,
-    }));
-    setMapping(picked.mapping);
-  }, [currentFile, savedMappings, setMapping]);
+    updateCurrentFile((file) => {
+      // Re-check against latest file state to avoid stale-effect races
+      // clobbering in-flight user edits (for example, owner entry).
+      if (file.userSelectedPresetId !== undefined) return file;
+      if (!file.hasHeader) return file;
+      if (file.mappingTouched) return file;
+      if (file.autoMatchedMappingId) return file;
+
+      return {
+        ...file,
+        mapping: picked.mapping,
+        autoMatchedMappingId: picked.id,
+        autoMatchedMappingName: picked.name,
+        heuristicApplied: false,
+      };
+    });
+  }, [currentFile, savedMappings]);
 
   const handleFilesSelected = async (files: File[]) => {
     setParseError(null);
@@ -314,6 +322,7 @@ export const useImportFlowModel = (onImportComplete?: () => void) => {
     if (isMissing("amount")) missing.push("Amount");
     if (isMissing("description")) missing.push("Description");
     if (isMissing("account")) missing.push("Account");
+    if (isMissing("owner")) missing.push("Owner");
     return missing;
   }, [isMissing]);
 
@@ -339,8 +348,10 @@ export const useImportFlowModel = (onImportComplete?: () => void) => {
 
   const buildMappingWithMeta = (name: string) => {
     if (!currentFile || !mapping) return null;
+    const mappingWithoutOwner: ImportMapping = { ...mapping };
+    delete mappingWithoutOwner.owner;
     const mappingWithMeta: ImportMapping = {
-      ...mapping,
+      ...mappingWithoutOwner,
       meta: {
         ...(mapping.meta ?? {}),
         headers: uniqueSortedNormalizedHeaders(currentFile.headers),

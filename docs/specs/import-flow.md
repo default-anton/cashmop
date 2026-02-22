@@ -200,9 +200,9 @@ Account must be provided via:
 - a static account name, or
 - an Account column mapping
 
-### Owner (optional, static)
-- Owner is a static string.
-- Default when empty: `Unassigned`.
+### Owner (required)
+- Owner is a static string selected per file before import.
+- Owner is intentionally **not** persisted in saved mappings.
 
 ### Currency (optional)
 - Currency can be mapped from a column or provided via default currency.
@@ -224,6 +224,7 @@ The Import CTA is enabled only when:
 - Amount mapping is valid for the chosen strategy
 - at least 1 Description column is selected
 - Account is set (static or mapped)
+- Owner is set (static)
 - at least 1 month is selected
 
 When disabled, the UI surfaces which fields are missing.
@@ -247,6 +248,7 @@ Save rules:
 - “Save” requires a unique name (case-insensitive).
 - “Update” uses the selected preset name.
 - Saved mappings store `meta.headers` and `meta.hasHeader` from the current file.
+- Saved mappings do **not** store `owner`; owner is selected every import.
 
 ---
 

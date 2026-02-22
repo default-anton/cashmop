@@ -7,10 +7,12 @@ export const fetchSavedMappings = async (): Promise<SavedMapping[]> => {
     try {
       const parsed = JSON.parse(m.mapping_json);
       if (!parsed?.csv?.amountMapping) continue;
+      const mappingWithoutOwner = { ...(parsed as ImportMapping) };
+      delete mappingWithoutOwner.owner;
       loaded.push({
         id: m.id,
         name: m.name,
-        mapping: parsed as ImportMapping,
+        mapping: mappingWithoutOwner,
       });
     } catch (e) {
       console.warn(`Skipping invalid saved mapping: ${m?.name ?? m?.id ?? "unknown"}`, e);
