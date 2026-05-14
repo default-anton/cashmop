@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.5.2] - 2026-05-14
+
+### Fixed
+- Import: keep Remember mapping Off for existing presets after column or setting edits unless explicitly changed.
+
+### Security
+- Update Go x/* dependencies to pick up HTTP/2 vulnerability fixes.
+
 ## [0.5.1] - 2026-02-22
 
 ### Fixed

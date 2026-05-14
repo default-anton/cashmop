@@ -1,11 +1,21 @@
 package brave
 
 import (
+	"os"
 	"strings"
 	"testing"
 )
 
+func requireNetworkSearch(t *testing.T) {
+	t.Helper()
+	if os.Getenv("CASHMOP_RUN_NETWORK_TESTS") != "1" {
+		t.Skip("set CASHMOP_RUN_NETWORK_TESTS=1 to run Brave network search tests")
+	}
+}
+
 func TestSearchBasic(t *testing.T) {
+	requireNetworkSearch(t)
+
 	results, err := Search("golang tutorial", 3)
 	if err != nil {
 		t.Fatalf("Search failed: %v", err)
@@ -36,6 +46,8 @@ func TestSearchBasic(t *testing.T) {
 }
 
 func TestSearchCount(t *testing.T) {
+	requireNetworkSearch(t)
+
 	tests := []struct {
 		name        string
 		query       string
