@@ -232,6 +232,7 @@ test("import flow reuses saved mapping for same file format", async ({ page: _, 
   await importFlowPage.setAccountStatic("Checking");
   await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.mapCurrency("Currency");
+  await importFlowPage.selectRememberMapping("Save as new");
   await importFlowPage.expectCanImport();
   await importFlowPage.startImport();
   await importFlowPage.expectComplete();
@@ -240,8 +241,13 @@ test("import flow reuses saved mapping for same file format", async ({ page: _, 
   await importFlowPage.goto();
   await importFlowPage.uploadFile(headerCsvPath);
   await importFlowPage.expectAutoMappingDetected();
+  await importFlowPage.expectRememberMapping("Off");
   await importFlowPage.expectCannotImport();
+
   await importFlowPage.setOwnerStatic("Anton");
+  await importFlowPage.expectRememberMapping("Off");
+  await importFlowPage.unmapColumn("Currency");
+  await importFlowPage.expectRememberMapping("Off");
   await importFlowPage.expectCanImport();
 });
 
@@ -258,13 +264,14 @@ test("import flow auto-maps next dropped file after saving mapping in the same s
 
   await importFlowPage.uploadFiles([headerCsvPath, headerCsvCopyPath]);
 
-  // File 1: create mapping (will be saved automatically after edit).
+  // File 1: create mapping and explicitly save it.
   await importFlowPage.mapDate("Date");
   await importFlowPage.mapAmount("Amount");
   await importFlowPage.mapDescription("Description");
   await importFlowPage.setAccountStatic("Checking");
   await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.mapCurrency("Currency");
+  await importFlowPage.selectRememberMapping("Save as new");
   await importFlowPage.expectCanImport();
   await importFlowPage.startImport();
 
@@ -295,6 +302,7 @@ test("import flow supports subset-match when bank adds a new column", async ({ p
   await importFlowPage.setAccountStatic("Checking");
   await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.mapCurrency("Currency");
+  await importFlowPage.selectRememberMapping("Save as new");
   await importFlowPage.expectCanImport();
   await importFlowPage.startImport();
   await importFlowPage.expectComplete();
@@ -325,6 +333,7 @@ test("ambiguous duplicate headers should not be auto-matched", async ({ page, im
   await importFlowPage.setAccountStatic("Checking");
   await importFlowPage.setOwnerStatic("Anton");
   await importFlowPage.mapCurrency("Currency");
+  await importFlowPage.selectRememberMapping("Save as new");
   await importFlowPage.expectCanImport();
   await importFlowPage.startImport();
   await importFlowPage.expectComplete();

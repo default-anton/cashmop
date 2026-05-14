@@ -238,10 +238,9 @@ Remember mapping has three states per file:
 - Update selected mapping
 
 Defaults:
-- starts Off for a new file
-- once the user edits the mapping:
-  - if the current preset was explicitly chosen by the user ⇒ default to **Update**
-  - otherwise (auto-match or None) ⇒ default to **Save**
+- starts Off for every file
+- stays Off when the user edits columns or settings, including with an auto-matched or selected preset
+- the user must explicitly choose **Save as new** or **Update selected mapping** to persist changes
 
 Save rules:
 - Saving is best-effort and must **not block import**.

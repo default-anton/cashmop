@@ -149,15 +149,6 @@ export const useImportFlowModel = (onImportComplete?: () => void) => {
   }, [currentFileIdx, presetInfo.name]);
 
   useEffect(() => {
-    if (!currentFile || !currentFile.mappingTouched) return;
-    if (currentFile.rememberMappingTouched) return;
-    if ((currentFile.rememberMappingChoice ?? "off") !== "off") return;
-
-    const choice = presetInfo.source === "user" ? "update" : "save";
-    updateCurrentFile((file) => ({ ...file, rememberMappingChoice: choice }));
-  }, [currentFile, presetInfo.source]);
-
-  useEffect(() => {
     if (!currentFile) return;
     if (currentFile.userSelectedPresetId !== undefined) return;
     if (!currentFile.hasHeader) return;

@@ -169,6 +169,14 @@ export class ImportFlowPage {
     await expect(this.autoMappingBanner).toHaveCount(0);
   }
 
+  async selectRememberMapping(choice: "Off" | "Save as new" | "Update selected") {
+    await this.page.getByLabel(choice, { exact: true }).check();
+  }
+
+  async expectRememberMapping(choice: "Off" | "Save as new" | "Update selected") {
+    await expect(this.page.getByLabel(choice, { exact: true })).toBeChecked();
+  }
+
   async expectCanImport() {
     await expect(this.importButton).toBeEnabled({ timeout: 10000 });
   }
