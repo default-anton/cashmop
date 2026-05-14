@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [0.5.3] - 2026-05-14
+
+### Changed
+- Upgrade backend toolchain to Go 1.26.3.
+
 ## [0.5.2] - 2026-05-14
 
 ### Fixed

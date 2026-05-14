@@ -263,7 +263,7 @@ const About: React.FC<AboutProps> = ({ isOpen, onClose }) => {
               <div className="px-4 py-3">
                 <p className="text-xs font-bold uppercase tracking-[0.1em] text-canvas-500 select-none">Built with</p>
                 <p className="mt-1 text-sm text-canvas-700 whitespace-nowrap overflow-x-auto">
-                  Go 1.25 · React 19 · Wails v2 · SQLite · Tailwind CSS · TypeScript
+                  Go 1.26 · React 19 · Wails v2 · SQLite · Tailwind CSS · TypeScript
                 </p>
               </div>
 

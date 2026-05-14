@@ -2,7 +2,7 @@
 
 Desktop-first cash flow tracking. Import messy bank exports, normalize once, punch through categorization fast, and export clean data. Local-only, open source, no cloud.
 
-**Status:** v0.5.2 released. Backward compatibility not guaranteed until v1.0.
+**Status:** v0.5.3 released. Backward compatibility not guaranteed until v1.0.
 
 ![CashMop logo](frontend/src/assets/branding/logo-landscape.png)
 
@@ -27,7 +27,7 @@ Screenshot and walkthrough coming soon.
 
 ## Tech Stack
 
-- Go 1.25 + Wails v2
+- Go 1.26 + Wails v2
 - React 19 + TypeScript + Vite
 - SQLite + Tailwind CSS
 
@@ -44,7 +44,7 @@ xattr -dr com.apple.quarantine CashMop.app
 Linux (amd64): use AppImage (recommended; works on Arch) or `.deb` (Debian/Ubuntu).
 
 ### Development
-1. Install Go 1.25+, Node.js, pnpm, and the Wails CLI.
+1. Install Go 1.26.3+, Node.js, pnpm, and the Wails CLI.
 2. Install frontend dependencies:
    ```bash
    cd frontend

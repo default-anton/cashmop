@@ -9,7 +9,7 @@ Current release platforms: macOS arm64, Linux amd64.
 
 ## Tech Stack
 
-- Backend: Go 1.25; Wails v2
+- Backend: Go 1.26; Wails v2
 - Frontend: React 19; TypeScript; Vite
 - UI: Tailwind CSS
 - DB: SQLite local
